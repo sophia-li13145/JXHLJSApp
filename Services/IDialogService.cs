@@ -10,6 +10,6 @@ public interface IDialogService
                               int? maxLength = null, Keyboard? keyboard = null);
 
     /// 选择库位（返回选中的库位信息；取消返回 null）
-    Task<BinInfo?> SelectBinAsync(string? preselectBinCode = null);
+   // Task<BinInfo?> SelectBinAsync(string? preselectBinCode = null);
 }
 

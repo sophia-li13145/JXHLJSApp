@@ -1,7 +1,9 @@
 ﻿using CommunityToolkit.Maui;
+using IndustrialControlMAUI.Pages;
 using IndustrialControlMAUI.Services;
 using IndustrialControlMAUI.ViewModels;
 using Microsoft.Extensions.Logging;
+
 
 namespace IndustrialControlMAUI
 {
@@ -30,7 +32,6 @@ namespace IndustrialControlMAUI
 
             // 扫码服务
             builder.Services.AddSingleton<ScanService>();
-            builder.Services.AddSingleton<IBinPickerService, BinPickerService>();
 
 
             // ===== 注册 ViewModels =====
@@ -38,7 +39,6 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<ViewModels.HomeViewModel>();
             builder.Services.AddTransient<ViewModels.AdminViewModel>();
             builder.Services.AddTransient<ViewModels.LogsViewModel>();
-            builder.Services.AddTransient<BinPickerViewModel>();
             builder.Services.AddTransient<ViewModels.InboundMaterialSearchViewModel>();
             builder.Services.AddTransient<ViewModels.InboundMaterialViewModel>();
             builder.Services.AddTransient<ViewModels.InboundProductionViewModel>();
@@ -52,6 +52,7 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<ViewModels.OutboundMoldViewModel>();
             builder.Services.AddTransient<ViewModels.WorkOrderSearchViewModel>();
             builder.Services.AddTransient<ViewModels.MoldOutboundExecuteViewModel>();
+            builder.Services.AddTransient<WarehouseLocationPickerViewModel>();
 
             // ===== 注册 Pages（DI 创建）=====
             builder.Services.AddTransient<Pages.LoginPage>();
@@ -60,8 +61,6 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<Pages.LogsPage>();
 
             // 注册需要路由的页面
-            builder.Services.AddTransient<Pages.BinPickerPage>();
-            builder.Services.AddTransient<Pages.BinListPage>(); // 供 VM 弹出列表
             builder.Services.AddTransient<Pages.InboundMaterialSearchPage>();
             builder.Services.AddTransient<Pages.InboundMaterialPage>();
             builder.Services.AddTransient<Pages.InboundProductionPage>();
@@ -75,6 +74,8 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<Pages.OutboundMoldPage>();
             builder.Services.AddTransient<Pages.WorkOrderSearchPage>();
             builder.Services.AddTransient<Pages.MoldOutboundExecutePage>();
+            
+            builder.Services.AddTransient<WarehouseLocationPickerPage>();
             // 先注册配置加载器
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();
 
@@ -90,19 +91,27 @@ namespace IndustrialControlMAUI
                .AddHttpMessageHandler<AuthHeaderHandler>();
             builder.Services.AddHttpClient<IMoldApi, MoldApi>(ConfigureBaseAddress)
              .AddHttpMessageHandler<AuthHeaderHandler>();
+            builder.Services.AddHttpClient<IWarehouseService, WarehouseService>(ConfigureBaseAddress)
+            .AddHttpMessageHandler<AuthHeaderHandler>();
+            
+
             var app = builder.Build();
             App.Services = app.Services;
+            CrashTrap.Init();
             return app;
         }
 
         private static void ConfigureBaseAddress(IServiceProvider sp, HttpClient http)
         {
-            var cfg = sp.GetRequiredService<IConfigLoader>().Load();
-            var scheme = (string?)cfg?["server"]?["scheme"] ?? "http";
-            var ip = (string?)cfg?["server"]?["ipAddress"] ?? "127.0.0.1";
-            var port = (int?)cfg?["server"]?["port"] ?? 80;
-            var baseUrl = port is > 0 and < 65536 ? $"{scheme}://{ip}:{port}" : $"{scheme}://{ip}";
-            http.BaseAddress = new Uri(baseUrl);
+            var cfg = sp.GetRequiredService<IConfigLoader>();
+            var baseUrl = cfg.GetBaseUrl();
+            if (string.IsNullOrWhiteSpace(baseUrl))
+                throw new InvalidOperationException("配置文件缺少有效的 BaseUrl。");
+
+            if (baseUrl.EndsWith("/"))
+                baseUrl = baseUrl.TrimEnd('/');
+
+            http.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
         }
     }
 }

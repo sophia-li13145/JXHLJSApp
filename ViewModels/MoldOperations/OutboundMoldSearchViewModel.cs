@@ -13,6 +13,7 @@ namespace IndustrialControlMAUI.ViewModels
     public partial class OutboundMoldSearchViewModel : ObservableObject
     {
         private readonly IMoldApi _api;
+        private readonly IWorkOrderApi _workapi;
 
         [ObservableProperty] private bool isBusy;
         [ObservableProperty] private string? keyword;
@@ -27,17 +28,19 @@ namespace IndustrialControlMAUI.ViewModels
         [ObservableProperty] private StatusOption? selectedStatusOption;
         private bool _dictsLoaded = false;
 
-        public ObservableCollection<MoldDto> Orders { get; } = new();
+        public ObservableCollection<WorkOrderDto> Orders { get; } = new();
 
         public IAsyncRelayCommand SearchCommand { get; }
         public IRelayCommand ClearCommand { get; }
 
-        public OutboundMoldSearchViewModel(IMoldApi api)
+        public OutboundMoldSearchViewModel(IMoldApi api, IWorkOrderApi workapi)
         {
             _api = api;
+            _workapi = workapi;
             SearchCommand = new AsyncRelayCommand(SearchAsync);
             ClearCommand = new RelayCommand(ClearFilters);
             _ = EnsureDictsLoadedAsync();   // fire-and-forget
+           
         }
         private async Task EnsureDictsLoadedAsync()
         {
@@ -45,7 +48,7 @@ namespace IndustrialControlMAUI.ViewModels
 
             try
             {
-                var bundle = await _api.GetMoldDictsAsync();
+                var bundle = await _workapi.GetWorkOrderDictsAsync();
 
                 // 1) 填充状态下拉
                 StatusOptions.Clear();
@@ -97,17 +100,17 @@ namespace IndustrialControlMAUI.ViewModels
                 DateTime? start = byOrderNo ? null : StartDate.Date;
                 DateTime? end = byOrderNo ? null : EndDate.Date.AddDays(1);
 
-                var q = new MoldQuery
+                var q = new WorkOrderQuery
                 {
                     PageNo = PageIndex,
                     PageSize = PageSize,
                     AuditStatus = byOrderNo ? null : SelectedStatusOption?.Value, // ★ 直接传字典值（"0"/"1"/...）
                     CreatedTimeStart = start,
                     CreatedTimeEnd = end,
-                    MoldNo = byOrderNo ? Keyword!.Trim() : null
+                    WorkOrderNo = byOrderNo ? Keyword!.Trim() : null
                 };
 
-                var page = await _api.GetMoldsAsync(q);
+                var page = await _workapi.GetWorkOrdersAsync(q);
                 var records = page?.result?.records
                            ?? page?.result?.list?.records
                            ?? new List<WorkOrderRecord>();
@@ -120,7 +123,7 @@ namespace IndustrialControlMAUI.ViewModels
                     var urgentName = MapByDict(_urgentMap, r.urgent);
                     var createdAt = TryParseDt(r.createdTime);
 
-                    Orders.Add(new MoldDto
+                    Orders.Add(new WorkOrderDto
                     {
                         Id = r.id ?? "",
                         OrderNo = r.workOrderNo ?? "-",
@@ -173,34 +176,15 @@ namespace IndustrialControlMAUI.ViewModels
         }
         // 点击一条工单进入执行页
         [RelayCommand]
-        private async Task GoExecuteAsync(MoldDto? item)
+        private async Task GoExecuteAsync(WorkOrderDto? item)
         {
             if (item is null) return;
 
-            // 基础信息列表（显示在执行页“工单基础信息表格”）
-            var baseInfos = new List<BaseInfoItem>
-    {
-        new() { Key = "工单编号",   Value = item.OrderNo },
-        new() { Key = "状态",       Value = item.Status },
-        new() { Key = "优先级",     Value = item.Urgent },
-        new() { Key = "生产数量",   Value = item.CurQty?.ToString() ?? "" },
-        new() { Key = "创建日期",   Value = item.CreateDate },
-        new() { Key = "物料编码",   Value = item.MaterialCode },
-        new() { Key = "物料名称",   Value = item.MaterialName },
-        new() { Key = "产线",       Value = item.LineName },
-        new() { Key = "BOM编号",    Value = item.BomCode ?? "" },
-        new() { Key = "工艺路线",   Value = item.RouteName ?? "" },
-        new() { Key = "车间",       Value = item.WorkShopName ?? "" },
-    };
-
-            var baseInfoJson = JsonSerializer.Serialize(baseInfos);
-
             // 跳到执行页（把 orderId/orderNo/baseInfo 都带上）
-            await Shell.Current.GoToAsync(nameof(Pages.MoldOutboundExecutePage), new Dictionary<string, object?>
+            await Shell.Current.GoToAsync(nameof(Pages.OutboundMoldPage), new Dictionary<string, object?>
             {
-                ["orderNo"] = item.OrderNo,
-                ["orderId"] = item.Id,
-                ["baseInfo"] = baseInfoJson
+                ["workOrderNo"] = item.OrderNo,
+                ["materialName"] = item.MaterialName
             });
         }
     }

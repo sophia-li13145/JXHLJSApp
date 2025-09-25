@@ -251,8 +251,6 @@ namespace IndustrialControlMAUI.ViewModels
 
         // InboundMaterialViewModel.cs
 
-        private Task<bool> AskAsync(string title, string message, string ok = "是", string cancel = "否") =>
-            Shell.Current?.DisplayAlert(title, message, ok, cancel) ?? Task.FromResult(false);
 
         public async Task<bool> ConfirmInboundAsync()
         {
@@ -384,6 +382,7 @@ namespace IndustrialControlMAUI.ViewModels
         [ObservableProperty] private string spec = "";
         [ObservableProperty] private string location = "请选择";
         [ObservableProperty] private int qty;
+        [ObservableProperty] private int outstockQty;
         [ObservableProperty] private string detailId;
         [ObservableProperty] private string id;
         [ObservableProperty] private bool scanStatus;

@@ -1,32 +1,58 @@
 {
-  "schemaVersion": 6,
+  "schemaVersion": 8,
   "server": {
-    "ipAddress": "114.250.20.230",
-    "port": 9128
+    "scheme": "http",
+    "ipAddress": "allysysindustrialsoft.aax6.cn"
+  },
+  "services": {
+    "normalService": "/normalService",
+    "current": "normalService"
   },
   "apiEndpoints": {
-    "login": "/normalService/pda/auth/login",
-    "workOrder": {
-      "page": "/normalService/pda/pmsWorkOrder/pageWorkOrders",
-      "workflow": "/normalService/pda/pmsWorkOrder/getWorkOrderWorkflow",
-      "processTasks": "/normalService/pda/pmsWorkOrder/pageWorkProcessTasks",
-      "dictList": "/normalService/pda/pmsMold/getMoldDictList"
-    },
+    "login": "/pda/auth/login",
     "inbound": {
-      "list": "/normalService/pda/wmsMaterialInstock/getInStock",
-      "detail": "/normalService/pda/wmsMaterialInstock/getInStockDetail",
-      "scanDetail": "/normalService/pda/wmsMaterialInstock/getInStockScanDetail",
-      "scanByBarcode": "/normalService/pda/wmsMaterialInstock/getInStockByBarcode",
-      "scanConfirm": "/normalService/pda/wmsMaterialInstock/scanConfirm",
-      "cancelScan": "/normalService/pda/wmsMaterialInstock/cancelScan",
-      "confirm": "/normalService/pda/wmsMaterialInstock/confirm",
-      "judgeScanAll": "/normalService/pda/wmsMaterialInstock/judgeInstockDetailScanAll"
+      "list": "/pda/wmsMaterialInstock/getInStock",
+      "detail": "/pda/wmsMaterialInstock/getInStockDetail",
+      "scanDetail": "/pda/wmsMaterialInstock/getInStockScanDetail",
+      "scanByBarcode": "/pda/wmsMaterialInstock/getInStockByBarcode",
+      "scanConfirm": "/pda/wmsMaterialInstock/scanConfirm",
+      "cancelScan": "/pda/wmsMaterialInstock/cancelScan",
+      "confirm": "/pda/wmsMaterialInstock/confirm",
+      "judgeScanAll": "/pda/wmsMaterialInstock/judgeInstockDetailScanAll",
+      "pageLocationQuery": "/pda/wmsMaterialInstock/pageLocationQuery",
+      "getInStockLocation": "/pda/wmsMaterialInstock/getInStockLocation",
+      "updateLocation": "/pda/wmsMaterialInstock/updateLocation",
+      "updateQuantity": "/pda/wmsMaterialInstock/updateQuantity"
+    },
+    "outbound": {
+      "list": "/pda/wmsMaterialOutstock/getOutStock",
+      "detail": "/pda/wmsMaterialOutstock/getOutStockDetail",
+      "scanDetail": "/pda/wmsMaterialOutstock/getOutStockScanDetail",
+      "scanByBarcode": "/pda/wmsMaterialOutstock/getOutStockByBarcode",
+      "scanConfirm": "/pda/wmsMaterialOutstock/scanOutConfirm",
+      "cancelScan": "/pda/wmsMaterialOutstock/cancelOutScan",
+      "confirm": "/pda/wmsMaterialOutstock/confirm",
+      "judgeScanAll": "/pda/wmsMaterialOutstock/judgeOutstockDetailScanAll",
+      "updateLocation": "/pda/wmsMaterialOutstock/updateLocation",
+      "updateQuantity": "/pda/wmsMaterialOutstock/updateQuantity"
+    },
+    "workOrder": {
+      "page": "/pda/pmsWorkOrder/pageWorkOrders",
+      "workflow": "/pda/pmsWorkOrder/getWorkOrderWorkflow",
+      "processTasks": "/pda/pmsWorkOrder/pageWorkProcessTasks",
+      "dictList": "/pda/pmsWorkOrder/getWorkOrderDictList"
     },
     "mold": {
-      "inStockScanQuery": "/normalService/pda/mold/inStockScanQuery",
-      "inStock": "/normalService/pda/mold/inStock"
+      "inStockScanQuery": "/pda/mold/inStockScanQuery",
+      "inStock": "/pda/mold/inStock",
+      "queryForWorkOrder": "/pda/mold/queryForWorkOrder",
+      "outStockScanQuery": "/pda/mold/outStockScanQuery",
+      "outStock": "/pda/mold/outStock"
+    },
+    "warehouse": {
+      "queryAll": "/pda/wmsWarehouse/queryAllWarehouse",
+      "queryByCode": "/pda/wmsWarehouse/queryLocationByWarehouseCode"
     }
   },
   "logging": { "level": "Information" }
 }
-

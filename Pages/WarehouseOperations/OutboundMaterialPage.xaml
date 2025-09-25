@@ -22,13 +22,14 @@
                    VerticalOptions="Center"
                    BackgroundColor="White"
                    HeightRequest="40"
-                   Text="{Binding ScanCode}" />
+                   Text="{Binding ScanCode}"
+                   Completed="OnScanEntryCompleted"/>
 
         </Grid>
 
         <!-- 基础信息 -->
         <Frame Grid.Row="2" Margin="8,0" Padding="8" BorderColor="#CCCCCC" BackgroundColor="White">
-            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,*" ColumnSpacing="16" RowSpacing="6">
+            <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,*" ColumnSpacing="16" RowSpacing="6">
 
                 <!-- 第一行左：出库单号 -->
                 <Label Grid.Row="0" Grid.Column="0" FontSize="13" LineBreakMode="TailTruncation" MaxLines="1">
@@ -88,7 +89,7 @@
             </Grid>
 
             <!-- 待入库明细表头 -->
-            <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*,*,*,*" BackgroundColor="#F2F2F2" IsVisible="{Binding IsPendingVisible}" Padding="8">
+            <Grid Grid.Row="1" ColumnDefinitions="70,70,40,70,60,*,*" BackgroundColor="#F2F2F2" IsVisible="{Binding IsPendingVisible}" Padding="8">
                 <Label Text="物料名称" FontAttributes="Bold" />
                 <Label Grid.Column="1" Text="物料编码" FontAttributes="Bold" />
                 <Label Grid.Column="2" Text="规格" FontAttributes="Bold" />
@@ -105,7 +106,7 @@
                             SelectionMode="Single">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Grid ColumnDefinitions="*,*,*,*,*,*,*" Padding="8" BackgroundColor="White">
+                        <Grid ColumnDefinitions="70,70,40,70,60,*,*" Padding="8" BackgroundColor="White">
                             <VisualStateManager.VisualStateGroups>
                                 <VisualStateGroup Name="CommonStates">
                                     <VisualState Name="Normal">
@@ -133,7 +134,7 @@
             </CollectionView>
 
             <!-- 扫描明细表头 -->
-            <Grid Grid.Row="1" ColumnDefinitions="40,*,*,*,*" BackgroundColor="#F2F2F2" IsVisible="{Binding IsScannedVisible}" Padding="8">
+            <Grid Grid.Row="1" ColumnDefinitions="40,120,120,*,*" BackgroundColor="#F2F2F2" IsVisible="{Binding IsScannedVisible}" Padding="8">
                 <Label Text="选择" FontAttributes="Bold" />
                 <Label Grid.Column="1" Text="物料名称" FontAttributes="Bold" />
                 <Label Grid.Column="2" Text="条码" FontAttributes="Bold" />
@@ -149,7 +150,7 @@
                 SelectedItem="{Binding SelectedScanItem, Mode=TwoWay}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Grid ColumnDefinitions="40,*,*,*,*" Padding="8" BackgroundColor="White">
+                        <Grid ColumnDefinitions="40,120,120,*,*" Padding="8" BackgroundColor="White">
                             <Grid.Triggers>
                                 <!-- ScanStatus = true → 绿色 -->
                                 <DataTrigger TargetType="Grid" Binding="{Binding ScanStatus}" Value="True">

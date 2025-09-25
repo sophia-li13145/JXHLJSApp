@@ -2,6 +2,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 namespace IndustrialControlMAUI.ViewModels;
 
@@ -35,17 +37,18 @@ public partial class LoginViewModel : ObservableObject
 
         try
         {
-            var cfg = _cfg.Load();
-            var scheme = cfg["server"]?["scheme"]?.GetValue<string>() ?? "http";
-            var host = cfg["server"]?["ipAddress"]?.GetValue<string>() ?? "127.0.0.1";
-            var port = cfg["server"]?["port"]?.GetValue<int?>();
+            // 1) 确保有本地配置
+            await _cfg.EnsureLatestAsync();
 
-            var path = cfg["apiEndpoints"]?["login"]?.GetValue<string>() ?? "/normalService/pda/auth/login";
-            if (!path.StartsWith("/")) path = "/" + path;
+            // 2) 登录验证前：根据用户名里的 @xxx 写入当前服务并保存
+            _cfg.SetCurrentServiceByUser(UserName);
 
-            var baseUrl = port is > 0 and < 65536 ? $"{scheme}://{host}:{port}" : $"{scheme}://{host}";
-            var fullUrl = new Uri(baseUrl + path);
+            // 3) 用最新配置拼 URL（端口已在 ipAddress 中）
+            var baseUrl = _cfg.GetBaseUrl();                // scheme://ip:port + /{servicePath}
+            var loginRel = _cfg.GetApiPath("login", "/pda/auth/login");
+            var fullUrl = new Uri(baseUrl + loginRel);
 
+            // 3) 表单校验后执行登录
             if (string.IsNullOrWhiteSpace(UserName) || string.IsNullOrWhiteSpace(Password))
             {
                 await Application.Current.MainPage.DisplayAlert("提示", "请输入用户名和密码", "确定");
@@ -76,10 +79,8 @@ public partial class LoginViewModel : ObservableObject
                 return;
             }
 
-            // 保存 token
             await TokenStorage.SaveAsync(token!);
 
-            // 如果勾选了记住密码，就保存账号信息
             if (RememberPassword)
             {
                 Preferences.Set("UserName", UserName ?? "");
@@ -93,7 +94,6 @@ public partial class LoginViewModel : ObservableObject
                 Preferences.Set("RememberPassword", false);
             }
 
-            // 进入主壳
             App.SwitchToLoggedInShell();
         }
         catch (OperationCanceledException)
@@ -124,6 +124,7 @@ public partial class LoginViewModel : ObservableObject
         Preferences.Remove("Password");
         Preferences.Set("RememberPassword", false);
     }
+
 
     private sealed class ApiResponse<T>
     {

@@ -129,6 +129,7 @@ namespace IndustrialControlMAUI.ViewModels
                     Spec = r.Spec ?? "",
                     Location = string.IsNullOrWhiteSpace(r.Location) ? "请选择" : r.Location!,
                     Qty = r.Qty,
+                    OutstockQty = r.OutstockQty,
                     ScanStatus = r.ScanStatus,
                     WarehouseCode = r.WarehouseCode ?? "",
                     DetailId = r.DetailId,
@@ -244,10 +245,6 @@ namespace IndustrialControlMAUI.ViewModels
             }
         }
 
-        // OutboundMaterialViewModel.cs
-
-        private Task<bool> AskAsync(string title, string message, string ok = "是", string cancel = "否") =>
-            Shell.Current?.DisplayAlert(title, message, ok, cancel) ?? Task.FromResult(false);
 
         public async Task<bool> ConfirmOutboundAsync()
         {

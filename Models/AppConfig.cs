@@ -3,7 +3,6 @@ namespace IndustrialControlMAUI.Models;
 public class ServerSettings
 {
     public string IpAddress { get; set; }
-    public int Port { get; set; } = 8080;
 }
 public class ApiEndpoints
 {

@@ -11,7 +11,7 @@ public partial class OutboundFinishedSearchViewModel : ObservableObject
 
     [ObservableProperty] private string searchOrderNo;
     [ObservableProperty] private DateTime startDate = DateTime.Today;
-    [ObservableProperty] private DateTime endDate = DateTime.Today;
+    [ObservableProperty] private DateTime endDate = DateTime.Today.AddDays(7);
     private CancellationTokenSource? _searchCts;
     // 仅用于“高亮选中”
     [ObservableProperty] private OutboundOrderSummary? selectedOrder;

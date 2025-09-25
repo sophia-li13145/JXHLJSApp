@@ -38,7 +38,7 @@ string warehouseCode, string layer,
 int pageNo = 1, int pageSize = 50, int status = 1,
 CancellationToken ct = default);
 
-    /// <summary>更新扫描明细的库位（/normalService/pda/wmsMaterialInstock/updateLocation）</summary>
+    /// <summary>更新扫描明细的库位（/pda/wmsMaterialInstock/updateLocation）</summary>
     Task<SimpleOk> UpdateInstockLocationAsync(
         string detailId,
         string id,

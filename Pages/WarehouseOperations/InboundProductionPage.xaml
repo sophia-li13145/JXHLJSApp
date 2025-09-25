@@ -22,7 +22,8 @@
                    VerticalOptions="Center"
                    BackgroundColor="White"
                    HeightRequest="40"
-                   Text="{Binding ScanCode}" />
+                   Text="{Binding ScanCode}" 
+                   Completed="OnScanEntryCompleted"/>
 
         </Grid>
 

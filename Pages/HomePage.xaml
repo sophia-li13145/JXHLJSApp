@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="IndustrialControlMAUI.Pages.HomePage"
     BackgroundColor="#F6F7FB"
-    Title="联创云工软平台">
+    Shell.NavBarIsVisible="True">
 
     <ContentPage.Resources>
         <!-- 区块标题样式 -->
@@ -36,6 +36,16 @@
                        TextColor="White"
                        FontSize="18"
                        FontAttributes="Bold"/>
+                <Button Text="退出登录"
+            TextColor="White"
+            BackgroundColor="DarkBlue"
+            CornerRadius="8"
+            Padding="12,4"
+            FontSize="14"
+            HorizontalOptions="End"
+            VerticalOptions="Center"
+            Grid.Column="1"
+            Clicked="OnLogoutClicked"/>
             </Grid>
 
             <!-- 仓储作业 -->

@@ -92,9 +92,6 @@
 		<Compile Update="Pages\MoldOperations\OutboundMoldSearchPage.xaml.cs">
 			<DependentUpon>OutboundMoldSearchPage.xaml</DependentUpon>
 		</Compile>
-		<Compile Update="Pages\WarehouseOperations\OutboundMaterialSearchPage.xaml.cs">
-			<DependentUpon>OutboundMaterialSearchPage.xaml</DependentUpon>
-		</Compile>
 		<Compile Update="Pages\WarehouseOperations\OutboundFinishedSearchPage.xaml.cs">
 			<DependentUpon>OutboundFinishedSearchPage.xaml</DependentUpon>
 		</Compile>
@@ -125,19 +122,13 @@
 		<MauiXaml Update="Pages\ProductionOperations\WorkOrderSearchPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
-		<MauiXaml Update="Pages\WarehouseOperations\BinListPage.xaml">
-			<Generator>MSBuild:Compile</Generator>
-		</MauiXaml>
-		<MauiXaml Update="Pages\WarehouseOperations\BinPickerPage.xaml">
-			<Generator>MSBuild:Compile</Generator>
+		<MauiXaml Update="Pages\Shared\WarehouseLocationPickerPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Pages\HomePage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Pages\WarehouseOperations\InboundMaterialPage.xaml">
-			<Generator>MSBuild:Compile</Generator>
-		</MauiXaml>
-		<MauiXaml Update="Pages\WarehouseOperations\OutboundMaterialSearchPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Pages\WarehouseOperations\OutboundFinishedSearchPage.xaml">

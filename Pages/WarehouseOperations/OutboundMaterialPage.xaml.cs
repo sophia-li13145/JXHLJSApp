@@ -1,5 +1,7 @@
+using IndustrialControlMAUI.Models;
 using IndustrialControlMAUI.Services;
 using IndustrialControlMAUI.ViewModels;
+using SharedLocationVM = IndustrialControlMAUI.ViewModels.LocationVM;
 
 namespace IndustrialControlMAUI.Pages;
 
@@ -18,21 +20,36 @@ public partial class OutboundMaterialPage : ContentPage
     public string? WorkOrderNo { get; set; }
     public string? Memo { get; set; }
     private readonly IDialogService _dialogs;
+    private readonly IServiceProvider _sp;
 
-    public OutboundMaterialPage(OutboundMaterialViewModel vm, IDialogService dialogs)
+    public OutboundMaterialPage(IServiceProvider sp, OutboundMaterialViewModel vm, IDialogService dialogs)
     {
         InitializeComponent();
         BindingContext = vm;
         //_scanSvc = scanSvc;
         _vm = vm;
         _dialogs = dialogs;
-        // 可选：配置前后缀与防抖
-        //_scanSvc.Prefix = null;     // 例如 "}q" 之类的前缀；没有就留 null
-                                    // _scanSvc.Suffix = "\n";     // 如果设备会附带换行，可去掉；没有就设 null
-                                    //_scanSvc.DebounceMs = 250;
-        //_scanSvc.Suffix = null;   // 先关掉
-        //_scanSvc.DebounceMs = 0;  // 先关掉
+        _sp = sp;
+    }
 
+    private async void OnScanEntryCompleted(object? sender, EventArgs e)
+    {
+        // 取输入框内容
+        var code = ScanEntry?.Text?.Trim();
+
+        // 可选：空码直接返回
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            // 也可以静默返回，不弹提示
+            return;
+        }
+
+        // 交给 VM 统一处理（第二个参数随意标记来源）
+        await _vm.HandleScannedAsync(code!, "KEYBOARD");
+
+        // 清空并继续聚焦，方便下一次输入/扫码
+        ScanEntry.Text = string.Empty;
+        ScanEntry.Focus();
     }
 
     protected override async void OnAppearing()
@@ -102,7 +119,7 @@ public partial class OutboundMaterialPage : ContentPage
             _vm.ClearAll();
 
             // ✅ 返回到工单查询页面（InboundMaterialSearchPage）
-            await Shell.Current.GoToAsync($"//{nameof(OutboundMaterialSearchPage)}");
+            await Shell.Current.GoToAsync(nameof(OutboundMaterialSearchPage));
         }
         else
         {
@@ -113,19 +130,34 @@ public partial class OutboundMaterialPage : ContentPage
 
     private async void OnBinTapped(object? sender, TappedEventArgs e)
     {
-        var bindable = sender as BindableObject;
-        var row = bindable?.BindingContext;
-        if (row == null) return;
+        // 1) 先拿到行对象并强转为 OutScannedItem
+        if ((sender as BindableObject)?.BindingContext is not IndustrialControlMAUI.ViewModels.OutScannedItem item)
+            return;
 
-        var type = row.GetType();
-        var currentBin = type.GetProperty("Location")?.GetValue(row)?.ToString();
+        // 2) 未扫描通过则提示并返回
+        if (!item.ScanStatus)   // 注意这里用 ! 而不是 =
+        {
+            await DisplayAlert("提示", "该行未扫描通过，不能修改库位。", "确定");
+            return;
+        }
+        // 用 B 方案的 ShowAsync（不需要 ServiceHelper）
+        SharedLocationVM? picked = await WarehouseLocationPickerPage.ShowAsync(_sp, this);
+        if (picked is null) return;
 
-        // 1) 打开公共组件选择库位（你已完成的组件）
-        var picked = await BinPickerPage.ShowAsync(currentBin);
-        if (picked == null) return;
+        var mapped = new BinInfo
+        {
+            WarehouseCode = picked.WarehouseCode,
+            WarehouseName = picked.WarehouseName,
+            ZoneCode = picked.Zone,
+            RackCode = picked.Rack,
+            LayerCode = picked.Layer,
+            Location = picked.Location,
+            InventoryStatus = picked.InventoryStatus,
+            InStock = string.Equals(picked.InventoryStatus, "instock", StringComparison.OrdinalIgnoreCase)
+        };
 
-        // 2) 调用 VM：带上行对象 + 选中的 BinInfo，内部会调接口 & 回填行
-        await _vm.UpdateRowLocationAsync(row, picked);
+        await _vm.UpdateRowLocationAsync(item, mapped);
+        _vm.ShowScannedCommand.Execute(null);
     }
 
     private async void OnQtyCompleted(object sender, EventArgs e)

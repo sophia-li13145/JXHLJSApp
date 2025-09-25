@@ -37,5 +37,17 @@ namespace IndustrialControlMAUI.Pages
             => await DisplayAlert("FQC", "待接入页面", "确定");
         private async void GotoOQC(object? s, TappedEventArgs e)
             => await DisplayAlert("OQC", "待接入页面", "确定");
+        // ✅ 退出登录
+        private async void OnLogoutClicked(object? sender, EventArgs e)
+        {
+            await TokenStorage.ClearAsync();   // 清除 token
+            ApiClient.SetBearer(null);         // 清空请求头
+
+            // 切换到未登录的 Shell：显示 登录｜日志｜管理员
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                App.SwitchToLoggedOutShell();
+            });
+        }
     }
 }

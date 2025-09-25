@@ -22,6 +22,6 @@ public class DialogService : IDialogService
                 maxLength ?? -1, keyboard ?? Keyboard.Text, initial ?? string.Empty) ?? Task.FromResult<string?>(null));
 
     // ★ 新增：库位选择弹窗
-    public Task<BinInfo?> SelectBinAsync(string? preselectBinCode = null)
-        => BinPickerPage.ShowAsync(preselectBinCode);
+    //public Task<BinInfo?> SelectBinAsync(string? preselectBinCode = null)
+        //=> //BinPickerPage.ShowAsync(preselectBinCode);
 }

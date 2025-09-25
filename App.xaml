@@ -1,4 +1,4 @@
-<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+﻿<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="IndustrialControlMAUI.App">
     <Application.Resources>
@@ -29,6 +29,7 @@
             </Style>
             <converters:NullToBoolConverter x:Key="NullToBoolConverter" xmlns:converters="clr-namespace:IndustrialControlMAUI.Converters" />
             <converters:IntConverter x:Key="IntConverter" xmlns:converters="clr-namespace:IndustrialControlMAUI.Converters" />
+            <converters:BoolToExpandIconConverter x:Key="BoolToExpandIcon" Expanded="▾" Collapsed="▸"  xmlns:converters="clr-namespace:IndustrialControlMAUI.Converters"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

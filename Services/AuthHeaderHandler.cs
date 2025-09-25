@@ -49,16 +49,5 @@ namespace IndustrialControlMAUI.Services
         }
 
 
-        // 去引号/控制字符，并剥掉可能的 "Bearer " 前缀，得到裸 token
-        private static string? CleanToken(string? raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) return null;
-            var s = raw.Trim().Trim('"', '\'');
-            s = new string(s.Where(ch => !char.IsControl(ch)).ToArray());
-            if (s.StartsWith("Bearer", StringComparison.OrdinalIgnoreCase))
-                s = s.Substring(6).TrimStart(':', ' ', '\t');
-            s = s.Replace(" ", "");
-            return string.IsNullOrWhiteSpace(s) ? null : s;
-        }
     }
 }

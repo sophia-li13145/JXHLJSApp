@@ -1,175 +1,276 @@
+using System.Collections.ObjectModel;
+using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IndustrialControlMAUI.Services;
-using System.Collections.ObjectModel;
 
 namespace IndustrialControlMAUI.ViewModels
 {
-    public partial class OutboundMoldViewModel : ObservableObject
+    /// <summary>
+    /// 出库-模具页面 ViewModel
+    /// 依赖 IMoldApi.GetViewAsync(workOrderNo) 获取「型号+基础需求数量+模具编码列表」视图
+    /// </summary>
+    public partial class OutboundMoldViewModel : ObservableObject, IQueryAttributable
     {
-        [ObservableProperty] private string? scanCode;
         private readonly IMoldApi _api;
 
-        // === 基础信息（由搜索页带入） ===
-        [ObservableProperty] private string? instockId;
-        [ObservableProperty] private string? instockNo;
-        [ObservableProperty] private string? orderType;
-        [ObservableProperty] private string? orderTypeName;
-        [ObservableProperty] private string? purchaseNo;
-        [ObservableProperty] private string? supplierName;
-        [ObservableProperty] private string? createdTime;
-
-        // 列表数据源
-        public ObservableCollection<string> AvailableBins { get; } = new();
-        public ObservableCollection<OutScannedItem> ScannedList { get; } = new();
-        public ObservableCollection<OutPendingItem> PendingList { get; } = new();
-
-        [ObservableProperty] private OutScannedItem? selectedScanItem;
-
-        // Tab 控制
-        [ObservableProperty] private bool isPendingVisible = true;
-        [ObservableProperty] private bool isScannedVisible = false;
-
-        // Tab 颜色
-        [ObservableProperty] private string pendingTabColor = "#E6F2FF";
-        [ObservableProperty] private string scannedTabColor = "White";
-        [ObservableProperty] private string pendingTextColor = "#007BFF";
-        [ObservableProperty] private string scannedTextColor = "#333333";
-
-        // 命令
-        public IRelayCommand ShowPendingCommand { get; }
-        public IRelayCommand ShowScannedCommand { get; }
-        public IAsyncRelayCommand ConfirmCommand { get; }
-
+        #region 构造 & 注入
         public OutboundMoldViewModel(IMoldApi api)
         {
             _api = api;
-            ShowPendingCommand = new RelayCommand(() => SwitchTab(true));
-            ShowScannedCommand = new RelayCommand(() => SwitchTab(false));
-            //ConfirmCommand = new AsyncRelayCommand(ConfirmOutboundAsync);
-        }
 
-        // ================ 初始化入口（页面 OnAppearing 调用） ================
-        public async Task InitializeFromSearchAsync(
-            string instockId, string instockNo, string orderType, string orderTypeName,
-            string purchaseNo, string supplierName, string createdTime)
-        {
-            // 1) 基础信息
-            InstockId = instockId;
-            InstockNo = instockNo;
-            OrderType = orderType;
-            OrderTypeName = orderTypeName;
-            PurchaseNo = purchaseNo;
-            SupplierName = supplierName;
-            CreatedTime = createdTime;
+            MoldGroups = new ObservableCollection<MoldGroupVM>();
+            ScannedList = new ObservableCollection<ScannedRow>();
 
-            // 2) 下拉库位（如无接口可留空或使用后端返回的 location 聚合）
-            AvailableBins.Clear();
-
-            // 默认显示“待入库明细”
-            SwitchTab(true);
-        }
-
-        private void SwitchTab(bool showPending)
-        {
-            IsPendingVisible = showPending;
-            IsScannedVisible = !showPending;
-            if (showPending)
+            ShowScannedCommand = new RelayCommand(() =>
             {
-                PendingTabColor = "#E6F2FF"; ScannedTabColor = "White";
-                PendingTextColor = "#007BFF"; ScannedTextColor = "#333333";
+                IsScannedVisible = true;
+                ScannedTabColor = "#2196F3";
+                ScannedTextColor = "White";
+            });
+
+            CancelScanCommand = new AsyncRelayCommand(CancelScanAsync);
+            ConfirmCommand = new AsyncRelayCommand(ConfirmAsync);
+            ScanSubmitCommand = new RelayCommand(ScanSubmit);
+        }
+
+        // 无 DI 场景可用的辅助构造（可按需删除）
+        public OutboundMoldViewModel() : this(
+            (IMoldApi)App.Current!.Handler!.MauiContext!.Services.GetService(typeof(IMoldApi))!)
+        { }
+        #endregion
+
+        #region 顶部信息 & 输入
+        [ObservableProperty] private string? workOrderNo;
+        [ObservableProperty] private string? materialName;
+        [ObservableProperty] private string? scanCode;
+        #endregion
+
+        #region 分组（一级=型号/数量，二级=模具编码列表）
+        public ObservableCollection<MoldGroupVM> MoldGroups { get; }
+        #endregion
+
+        #region 扫描明细
+        public ObservableCollection<ScannedRow> ScannedList { get; }
+
+        [ObservableProperty] private ScannedRow? selectedScanItem;
+
+        [ObservableProperty] private bool isScannedVisible = true;
+        [ObservableProperty] private string scannedTabColor = "#2196F3";
+        [ObservableProperty] private string scannedTextColor = "White";
+        #endregion
+
+        #region 命令
+        public ICommand ShowScannedCommand { get; }
+        public IAsyncRelayCommand CancelScanCommand { get; }
+        public IAsyncRelayCommand ConfirmCommand { get; }
+        public ICommand ScanSubmitCommand { get; }
+        #endregion
+
+        #region 加载
+        public async Task LoadAsync(string workOrderNo)
+        {
+            WorkOrderNo = workOrderNo;
+
+            var view = await _api.GetViewAsync(workOrderNo);
+            MaterialName = view.MaterialName;
+
+            MoldGroups.Clear();
+            foreach (var m in view.Models)
+            {
+                var group = new MoldGroupVM(m.ModelCode, m.BaseQty);
+                int idx = 1;
+                foreach (var code in m.MoldNumbers)
+                {
+                    group.Items.Add(new MoldItemVM { Index = idx++, MoldNumber = code });
+                }
+                MoldGroups.Add(group);
             }
-            else
-            {
-                PendingTabColor = "White"; ScannedTabColor = "#E6F2FF";
-                PendingTextColor = "#333333"; ScannedTextColor = "#007BFF";
-            }
+
+            // 默认展开第一组（可按需注释）
+            if (MoldGroups.Count > 0)
+                MoldGroups[0].SetExpanded(true);
         }
+        #endregion
 
-
-        [RelayCommand]
-        private async Task PassScan()
+        #region 扫码加入明细（支持扫“模具编码”，或扫“型号”批量加入）
+        private void ScanSubmit()
         {
-            if (string.IsNullOrWhiteSpace(InstockId))
+            var code = (ScanCode ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(code))
+                return;
+
+            // 1) 先按“模具编码”匹配二级
+            var hit = MoldGroups
+                .SelectMany(g => g.Items.Select(i => new { g, i }))
+                .FirstOrDefault(x => string.Equals(x.i.MoldNumber, code, System.StringComparison.OrdinalIgnoreCase));
+
+            if (hit != null)
             {
-                await ShowTip("缺少 InstockId，无法确认。请从查询页进入。");
+                AddOrIncreaseScanned(hit.i.MoldNumber!, hit.g.ModelCode);
+                ScanCode = string.Empty;
                 return;
             }
-            await ShowTip("已确认通过。");
+
+            // 2) 再按“型号”匹配一级（批量加入该型号下所有模具编码）
+            var group = MoldGroups.FirstOrDefault(g =>
+                string.Equals(g.ModelCode, code, System.StringComparison.OrdinalIgnoreCase));
+
+            if (group != null)
+            {
+                foreach (var item in group.Items)
+                    AddOrIncreaseScanned(item.MoldNumber!, group.ModelCode);
+
+                ScanCode = string.Empty;
+                return;
+            }
+
+            // 3) 未匹配到
+            Application.Current?.MainPage?.DisplayAlert("提示", $"未在当前工单模型中找到：{code}", "知道了");
         }
 
-
-        [RelayCommand]
-        private async Task CancelScan()
+        private void AddOrIncreaseScanned(string moldCode, string modelCode)
         {
-            if (string.IsNullOrWhiteSpace(InstockId))
+            // 若已存在同编码，则数量 +1；否则新增一行
+            var exist = ScannedList.FirstOrDefault(x =>
+                string.Equals(x.MoldCode, moldCode, System.StringComparison.OrdinalIgnoreCase));
+
+            if (exist != null)
             {
-                await ShowTip("缺少 InstockId，无法取消。请从查询页进入。");
+                exist.OutQty += 1;
                 return;
             }
 
-
-            await ShowTip("已取消扫描。");
+            ScannedList.Add(new ScannedRow
+            {
+                Index = ScannedList.Count + 1,
+                MoldCode = moldCode,
+                MoldModel = modelCode,
+                OutQty = 1,
+                Location = string.Empty,
+                IsSelected = false
+            });
         }
+        #endregion
 
-
-        public async Task HandleScannedAsync(string data, string symbology)
+        #region 取消扫描（支持勾选多选移除）
+        private async Task CancelScanAsync()
         {
-            var barcode = (data ?? string.Empty).Trim();
-            if (string.IsNullOrWhiteSpace(barcode))
+            var toRemove = ScannedList.Where(x => x.IsSelected).ToList();
+            if (toRemove.Count == 0)
             {
-                await ShowTip("无效条码。");
+                await Application.Current.MainPage.DisplayAlert("提示", "请勾选要取消的记录。", "知道了");
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(InstockId))
-            {
-                await ShowTip("缺少 InstockId，无法入库。请从查询页进入。");
-                return;
-            }
+            foreach (var r in toRemove)
+                ScannedList.Remove(r);
 
-            // 调用扫码入库接口
-            var resp = await _api.InStockByBarcodeAsync(InstockId!, barcode);
+            // 重新编号
+            for (int i = 0; i < ScannedList.Count; i++)
+                ScannedList[i].Index = i + 1;
 
-            if (!resp.Succeeded)
-            {
-                await ShowTip(string.IsNullOrWhiteSpace(resp.Message) ? "入库失败，请重试或检查条码。" : resp.Message!);
-                return;
-            }
-
-
+            await Application.Current.MainPage.DisplayAlert("提示", "已取消选择的扫描记录。", "OK");
         }
+        #endregion
 
-
-        private Task ShowTip(string message) =>
-            Shell.Current?.DisplayAlert("提示", message, "确定") ?? Task.CompletedTask;
-
-
-        public void ClearScan() => ScannedList.Clear();
-        public void ClearAll()
+        #region 确认出库
+        private async Task ConfirmAsync()
         {
-            PendingList.Clear();
+            if (string.IsNullOrWhiteSpace(WorkOrderNo))
+            {
+                await Application.Current.MainPage.DisplayAlert("错误", "缺少工单号，无法确认出库。", "OK");
+                return;
+            }
+            if (ScannedList.Count == 0)
+            {
+                bool goOn = await Application.Current.MainPage.DisplayAlert("提示", "当前扫描明细为空，确定继续出库？", "继续", "取消");
+                if (!goOn) return;
+            }
+
+            // TODO: 这里根据你项目中「出库确认」的请求模型补齐构造（字段名可能为示例）：
+            // var req = new MoldOutConfirmReq
+            // {
+            //     workOrderNo = WorkOrderNo,
+            //     // 例如：details / outStockDetailList / items
+            //     details = ScannedList.Select(x => new MoldOutDetail
+            //     {
+            //         moldCode = x.MoldCode,
+            //         model = x.MoldModel,
+            //         outQty = x.OutQty,
+            //         location = x.Location
+            //     }).ToList()
+            // };
+            //
+            // var ok = await _api.ConfirmOutStockAsync(req);
+            // if (!ok.Succeeded)
+            // {
+            //     await Application.Current.MainPage.DisplayAlert("错误", ok.Message ?? "确认出库失败。", "OK");
+            //     return;
+            // }
+
+            // 为保证当前文件可编译运行，先给出占位成功提示：
+            await Application.Current.MainPage.DisplayAlert("成功（占位）", "已调用出库确认，请接入请求模型后提交后端。", "OK");
             ScannedList.Clear();
         }
-
-
-
-        public async Task<bool> ConfirmOutboundAsync()
+        #endregion
+        public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
-            if (string.IsNullOrWhiteSpace(InstockId))
+            if (query.TryGetValue("workOrderNo", out var v) && v is string no && !string.IsNullOrWhiteSpace(no))
             {
-                await ShowTip("缺少 InstockId，无法确认入库。请从查询页进入。");
-                return false;
+                // 异步加载放到主线程调度
+                MainThread.BeginInvokeOnMainThread(async () => await LoadAsync(no));
             }
-
-
-
-            return true;
         }
-
     }
 
-    // === 列表行模型 ===
+    #region 分组子VM
+    public partial class MoldGroupVM : ObservableObject
+    {
+        public MoldGroupVM(string modelCode, int baseQty)
+        {
+            ModelCode = modelCode;
+            BaseQty = baseQty;
 
+            Items = new ObservableCollection<MoldItemVM>();
+            ToggleCommand = new RelayCommand(() =>
+            {
+                IsExpanded = !IsExpanded;
+                ToggleIndicator = IsExpanded ? "-" : "+";
+            });
+        }
 
+        [ObservableProperty] private string modelCode;
+        [ObservableProperty] private int baseQty;
+
+        [ObservableProperty] private bool isExpanded = false;
+        [ObservableProperty] private string toggleIndicator = "+";
+
+        public ObservableCollection<MoldItemVM> Items { get; }
+
+        public ICommand ToggleCommand { get; }
+
+        public void SetExpanded(bool expanded)
+        {
+            IsExpanded = expanded;
+            ToggleIndicator = expanded ? "-" : "+";
+        }
+    }
+
+    public partial class MoldItemVM : ObservableObject
+    {
+        [ObservableProperty] private int index;
+        [ObservableProperty] private string? moldNumber;
+    }
+
+    public partial class ScannedRow : ObservableObject
+    {
+        [ObservableProperty] private bool isSelected;
+        [ObservableProperty] private int index;
+        [ObservableProperty] private string? moldCode;
+        [ObservableProperty] private string? moldModel;
+        [ObservableProperty] private int outQty;
+        [ObservableProperty] private string? location;
+    }
+    #endregion
 }

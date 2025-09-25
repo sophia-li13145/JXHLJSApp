@@ -3,9 +3,9 @@ using CommunityToolkit.Mvvm.Input;
 using IndustrialControlMAUI.Pages;   // 用于弹出 BinPickerPage / BinListPage
 using IndustrialControlMAUI.Services;
 using System.Collections.ObjectModel;
-using ConfirmDetail = IndustrialControlMAUI.Services.InStockDetail;
+using ConfirmDetail = IndustrialControlMAUI.Models.InStockDetail;
 // 使用服务层 DTO，避免 VM 内重复定义
-using ConfirmReq = IndustrialControlMAUI.Services.InStockConfirmReq;
+using ConfirmReq = IndustrialControlMAUI.Models.InStockConfirmReq;
 
 namespace IndustrialControlMAUI.ViewModels
 {
@@ -40,18 +40,18 @@ namespace IndustrialControlMAUI.ViewModels
 
             // 2) 弹出库位选择（预选：取第一条的 Location）
             var preselect = rows[0].Location;
-            var pickedBin = await BinPickerPage.ShowAsync(preselect);   // 由页面加载库位并返回 BinInfo
-            if (pickedBin is null) return; // 取消
+           // var pickedBin = await BinPickerPage.ShowAsync(preselect);   // 由页面加载库位并返回 BinInfo
+           // if (pickedBin is null) return; // 取消
 
             // 从 BinInfo 智能提取库位编码（兼容 Code/BinCode/Location 等命名）
-            string? pickedCode = GetBinCode(pickedBin);
-            if (string.IsNullOrWhiteSpace(pickedCode))
-            {
-                await ShowTip("未能识别所选库位编码，请重试或检查库位数据。");
-                return;
-            }
+            //string? pickedCode = GetBinCode(pickedBin);
+            //if (string.IsNullOrWhiteSpace(pickedCode))
+            //{
+            //    await ShowTip("未能识别所选库位编码，请重试或检查库位数据。");
+            //    return;
+            //}
 
-            // 3) 组装请求体（/normalService/pda/mold/inStock）
+            // 3) 组装请求体（/pda/mold/inStock）
             var req = new ConfirmReq
             {
                 instockDate = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
@@ -70,7 +70,7 @@ namespace IndustrialControlMAUI.ViewModels
                     instockQty = 1,
                     instockWarehouse = null,
                     instockWarehouseCode = string.IsNullOrWhiteSpace(r.WarehouseCode) ? null : r.WarehouseCode, // 来自查询
-                    location = pickedCode,                           // ★ 用户从 BinPicker 选的库位
+                   // location = pickedCode,                           // ★ 用户从 BinPicker 选的库位
                     materialCode = r.MoldCode,                       // ★ 模具编号作为编码
                     materialName = string.IsNullOrWhiteSpace(r.MoldModel) ? r.MoldCode : r.MoldModel,
                     model = r.MoldModel

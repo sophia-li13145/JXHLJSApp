@@ -30,13 +30,6 @@
                         HeightRequest="40"
                         Command="{Binding SearchCommand}" />
 
-                <!-- 图标按钮：避免 Button 内嵌 <Image> 的限制 -->
-                <ImageButton Grid.Column="2"
-                             HeightRequest="40"
-                             WidthRequest="44"
-                             BackgroundColor="Transparent"
-                             Source="scan.png"
-                             Clicked="OnScanHintClicked" />
             </Grid>
 
             <!-- 第二行：时间 + 状态 -->

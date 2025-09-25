@@ -6,7 +6,7 @@ public partial class OutboundMaterialSearchPage : ContentPage
 
     //private readonly ScanService _scanSvc;
     private readonly OutboundMaterialSearchViewModel _vm;
-    public OutboundMaterialSearchPage(OutboundMaterialSearchViewModel vm, ScanService scanSvc)
+    public OutboundMaterialSearchPage(OutboundMaterialSearchViewModel vm)
     {
         _vm = vm;
 

@@ -132,6 +132,7 @@ namespace IndustrialControlMAUI.ViewModels
                     Spec = r.Spec ?? "",
                     Location = string.IsNullOrWhiteSpace(r.Location) ? "请选择" : r.Location!,
                     Qty = r.Qty,
+                    OutstockQty = r.OutstockQty,
                     ScanStatus = r.ScanStatus,
                     WarehouseCode = r.WarehouseCode ?? "",
                     DetailId = r.DetailId,

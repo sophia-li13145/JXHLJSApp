@@ -77,6 +77,7 @@ public record OutboundScannedRow(
     string Location,
     string MaterialName,
     int Qty,
+    int OutstockQty,
     string Spec,
     bool ScanStatus,
     string? WarehouseCode

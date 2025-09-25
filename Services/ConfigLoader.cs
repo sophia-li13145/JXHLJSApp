@@ -18,7 +18,7 @@ public class ConfigLoader
 
     public AppConfig Current { get; private set; } = new AppConfig();
 
-    public string BaseUrl => $"http://{Current.Server.IpAddress}:{Current.Server.Port}";
+    public string BaseUrl => $"http://{Current.Server.IpAddress}";
 
     public ConfigLoader()
     {
