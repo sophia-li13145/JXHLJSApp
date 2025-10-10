@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="IndustrialControlMAUI.Pages.MaterialInputPopupPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="新增投料"
+    Padding="12"
+    BackgroundColor="White">
+
+    <VerticalStackLayout Spacing="10">
+        <!-- 物料名称，只读展示 -->
+        <Grid ColumnDefinitions="90,*">
+            <Label Text="物料名称：" VerticalTextAlignment="Center"/>
+            <Label Grid.Column="1" Text="{Binding MaterialName}" FontAttributes="Bold"/>
+        </Grid>
+
+        <!-- 单位，只读展示（可要可不要） -->
+        <Grid ColumnDefinitions="90,*">
+            <Label Text="单位：" VerticalTextAlignment="Center"/>
+            <Label Grid.Column="1" Text="{Binding Unit}" />
+        </Grid>
+
+        <!-- 投入数量 -->
+        <Entry Placeholder="投入数量"
+               Keyboard="Numeric"
+               Text="{Binding QtyText}" />
+
+        <!-- 备注 -->
+        <Editor Placeholder="备注" AutoSize="TextChanges" Text="{Binding Memo}" />
+
+        <!-- 操作 -->
+        <Grid ColumnDefinitions="*,*">
+            <Button Text="取消" Command="{Binding CancelCommand}" />
+            <Button Grid.Column="1" Text="确定" Command="{Binding ConfirmCommand}" />
+        </Grid>
+    </VerticalStackLayout>
+</ContentPage>
+

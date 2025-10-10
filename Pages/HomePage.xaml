@@ -170,6 +170,52 @@
                 </Frame>
 
             </Grid>
+            <!-- 仓储作业 -->
+            <Label Text="生产作业" Style="{StaticResource SectionTitle}"/>
+
+            <Grid ColumnDefinitions="*,*"
+       RowDefinitions="Auto,Auto,Auto"
+       Padding="8,0,8,24">
+
+                <!-- 工单查询 -->
+                <Frame Grid.Row="0" Grid.Column="0" Style="{StaticResource Card}">
+                    <VerticalStackLayout HorizontalOptions="Center">
+                        <Border HeightRequest="64" WidthRequest="64"
+                     BackgroundColor="#00ACC1"
+                     StrokeShape="RoundRectangle 32">
+                            <Image Source="pen_24_filled.svg"
+                        HeightRequest="28" WidthRequest="28"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"/>
+                        </Border>
+                        <Label Text="工单查询 " FontSize="12" Margin="0,6,0,0"
+                    HorizontalTextAlignment="Center" TextColor="#333"/>
+                    </VerticalStackLayout>
+
+                </Frame>
+
+                <!-- 工序任务执行 -->
+                <Frame Grid.Row="0" Grid.Column="1" Style="{StaticResource Card}">
+                    <VerticalStackLayout HorizontalOptions="Center">
+                        <Border HeightRequest="64" WidthRequest="64"
+                     BackgroundColor="#26C6DA"
+                     StrokeShape="RoundRectangle 32">
+                            <Image Source="checkmark_circle_24_filled.svg"
+                        HeightRequest="28" WidthRequest="28"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"/>
+                        </Border>
+                        <Label Text="工序任务执行" FontSize="12" Margin="0,6,0,0"
+                    HorizontalTextAlignment="Center" TextColor="#333"/>
+                    </VerticalStackLayout>
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnInProcess"/>
+                    </Frame.GestureRecognizers>
+                </Frame>
+
+               
+
+            </Grid>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

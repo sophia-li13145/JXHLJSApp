@@ -1,5 +1,11 @@
-﻿using System.Net.Http.Headers;
+﻿using GoogleGson;
+using IndustrialControlMAUI.Models;
+using System.Collections.Generic;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace IndustrialControlMAUI.Services
 {
@@ -9,8 +15,43 @@ namespace IndustrialControlMAUI.Services
         Task<WorkOrderPageResult> GetWorkOrdersAsync(WorkOrderQuery q, CancellationToken ct = default);
         Task<DictBundle> GetWorkOrderDictsAsync(CancellationToken ct = default);
         Task<WorkflowResp?> GetWorkOrderWorkflowAsync(string id, CancellationToken ct = default);
-        Task<PageResp<ProcessTask>?> PageWorkProcessTasksAsync(string workOrderNo, int pageNo = 1, int pageSize = 50, CancellationToken ct = default);
+        Task<PageResp<ProcessTask>?> PageWorkProcessTasksAsync(
+         string? workOrderNo,
+         IEnumerable<string>? auditStatusList,   // ★ 改为数组
+         string? processCode,
+         DateTime? createdTimeStart = null,
+         DateTime? createdTimeEnd = null,
+         string? materialName = null,
+         string? platPlanNo = null,
+         string? schemeNo = null,
+         bool? searchCount = null,      // 是否计算总记录数（可选）
+         int pageNo = 1,
+         int pageSize = 50,
+         CancellationToken ct = default);
+        Task<ApiResp<List<FieldDict>>> GetWorkProcessTaskDictListAsync(CancellationToken ct = default);
+        Task<ApiResp<List<ProcessInfo>>> GetProcessInfoListAsync(CancellationToken ct = default);
+        Task<ApiResp<WorkProcessTaskDetail>> GetWorkProcessTaskDetailAsync(string id, CancellationToken ct = default);
+        Task<ApiResp<List<ShiftInfo>>> GetShiftOptionsAsync(
+        string factoryCode,
+        string workshopsCode,
+        CancellationToken ct = default);
+        Task<ApiResp<List<DevicesInfo>>> GetDeviceOptionsAsync(
+        string factoryCode,
+        string processCode,
+        CancellationToken ct = default);
+        Task<SimpleOk> UpdateWorkProcessTaskAsync(
+            string id, string? productionMachine, string? productionMachineName, int? taskReportedQty, string? teamCode, string? teamName, int? workHours, string? startDate, string? endDate, CancellationToken ct = default);
+        Task<ApiResp<bool>> StartWorkAsync(string processCode, string workOrderNo, string? memo = null);
+
+        Task<ApiResp<bool>> CompleteWorkAsync(string processCode, string workOrderNo, string? memo = null);
+
+        Task<ApiResp<bool>> PauseWorkAsync(string processCode, string workOrderNo, string? memo = null);
+
+        Task<ApiResp<bool>> AddWorkProcessTaskMaterialInputAsync(AddWorkProcessTaskMaterialInputReq req);
+
+        Task<ApiResp<bool>> AddWorkProcessTaskProductOutputAsync(AddWorkProcessTaskProductOutputReq req);
     }
+
 
     // ===================== 实现 =====================
     public class WorkOrderApi : IWorkOrderApi
@@ -20,6 +61,19 @@ namespace IndustrialControlMAUI.Services
         private readonly string _workflowEndpoint;
         private readonly string _processTasksEndpoint;
         private readonly string _dictEndpoint;
+        private readonly string _workProcessTaskDictEndpoint;
+        private readonly string _processInfoListEndpoint;
+        private readonly string _workProcessTaskDetailEndpoint;
+        private readonly string _shiftEndpoint;
+        private readonly string _deviceEndpoint;
+        private readonly string _updateTeamEndpoint;
+        private readonly string _startworkEndpoint;
+        private readonly string _completeworkEndpoint;
+        private readonly string _pauseworkEndpoint;
+        private readonly string _addMaterialEndpoint;
+        private readonly string _addOutputEndpoint;
+
+        private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
         public WorkOrderApi(HttpClient http, IConfigLoader configLoader)
         {
@@ -44,8 +98,29 @@ namespace IndustrialControlMAUI.Services
                 configLoader.GetApiPath("workOrder.processTasks", "/pda/pmsWorkOrder/pageWorkProcessTasks"), servicePath);
             _dictEndpoint = NormalizeRelative(
                 configLoader.GetApiPath("workOrder.dictList", "/pda/pmsWorkOrder/getWorkOrderDictList"), servicePath);
+            _workProcessTaskDictEndpoint = NormalizeRelative(
+                configLoader.GetApiPath("workOrder.dictProcessList", "/pda/pmsWorkOrder/getWorkProcessTaskDictList"), servicePath);
+            _processInfoListEndpoint = NormalizeRelative(
+                configLoader.GetApiPath("workOrder.ProcessList", "/pda/pmsWorkOrder/PmsProcessInfoList"), servicePath);
+            _workProcessTaskDetailEndpoint = NormalizeRelative(
+                configLoader.GetApiPath("workOrder.ProcessDetail", "/pda/pmsWorkOrder/getWorkProcessTaskDetail"), servicePath);
+            _shiftEndpoint = NormalizeRelative(
+                configLoader.GetApiPath("workOrder.shift", "/pda/pmsWorkOrder/getClassesListByWorkShopLine"), servicePath);
+            _deviceEndpoint = NormalizeRelative(
+                configLoader.GetApiPath("workOrder.device", "/pda/pmsWorkOrder/getPmsEqptPointListByLineProcess"), servicePath);
+            _updateTeamEndpoint = NormalizeRelative(
+                configLoader.GetApiPath("workOrder.updateWorkProcess", "/pda/pmsWorkOrder/editWorkProcessTask"), servicePath);
+            _startworkEndpoint = NormalizeRelative(
+                configLoader.GetApiPath("workOrder.startwork", "/pda/pmsWorkOrder/workProcessTaskWorkStart"), servicePath);
+            _completeworkEndpoint = NormalizeRelative(
+                configLoader.GetApiPath("workOrder.completework", "/pda/pmsWorkOrder/workProcessTaskWorkChangeComplete"), servicePath);
+            _pauseworkEndpoint = NormalizeRelative(
+                configLoader.GetApiPath("workOrder.pausework", "/pda/pmsWorkOrder/workProcessTaskWorkChange"), servicePath);
+            _addMaterialEndpoint = NormalizeRelative(
+                configLoader.GetApiPath("workOrder.addMaterial", "/pda/pmsWorkOrder/addWorkProcessTaskMaterialInput"), servicePath);
+            _addOutputEndpoint = NormalizeRelative(
+                    configLoader.GetApiPath("workOrder.addOutput", "/pda/pmsWorkOrder/addWorkProcessTaskMaterialOutput"), servicePath);
         }
-
         // ===== 公共工具 =====
         private static string BuildFullUrl(Uri? baseAddress, string url)
         {
@@ -135,16 +210,64 @@ namespace IndustrialControlMAUI.Services
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new WorkflowResp();
         }
 
-        public async Task<PageResp<ProcessTask>?> PageWorkProcessTasksAsync(string workOrderNo, int pageNo = 1, int pageSize = 50, CancellationToken ct = default)
+        public async Task<PageResp<ProcessTask>?> PageWorkProcessTasksAsync(
+    string? workOrderNo,
+    IEnumerable<string>? auditStatusList,   // ★ 改为数组
+    string? processCode,
+    DateTime? createdTimeStart = null,
+    DateTime? createdTimeEnd = null,
+    string? materialName = null,
+    string? platPlanNo = null,
+    string? schemeNo = null,
+    bool? searchCount = null,      // 是否计算总记录数（可选）
+    int pageNo = 1,
+    int pageSize = 50,
+    CancellationToken ct = default)
         {
-            var p = new Dictionary<string, string>
-            {
-                ["pageNo"] = pageNo.ToString(),
-                ["pageSize"] = pageSize.ToString()
-            };
-            if (!string.IsNullOrWhiteSpace(workOrderNo)) p["workOrderNo"] = workOrderNo.Trim();
+            // 用 pair 列表承载，便于添加“重复 key”
+            var pairs = new List<KeyValuePair<string, string>>
+    {
+        new("pageNo",   pageNo.ToString()),
+        new("pageSize", pageSize.ToString())
+    };
 
-            var url = _processTasksEndpoint + "?" + BuildQuery(p);
+            void AddIf(string key, string? val)
+            {
+                if (!string.IsNullOrWhiteSpace(val))
+                    pairs.Add(new KeyValuePair<string, string>(key, val.Trim()));
+            }
+
+            // 普通参数
+            AddIf("workOrderNo", workOrderNo);
+            AddIf("processCode", processCode);
+            AddIf("materialName", materialName);
+            AddIf("platPlanNo", platPlanNo);
+            AddIf("schemeNo", schemeNo);
+
+            if (createdTimeStart.HasValue)
+                pairs.Add(new("createdTimeStart", createdTimeStart.Value.ToString("yyyy-MM-dd HH:mm:ss")));
+            if (createdTimeEnd.HasValue)
+                pairs.Add(new("createdTimeEnd", createdTimeEnd.Value.ToString("yyyy-MM-dd HH:mm:ss")));
+
+            if (searchCount.HasValue)
+                pairs.Add(new("searchCount", searchCount.Value ? "true" : "false"));
+
+            // ★ 数组参数：auditStatusList（0/1/2…）
+            if (auditStatusList != null)
+            {
+                foreach (var s in auditStatusList)
+                {
+                    if (!string.IsNullOrWhiteSpace(s))
+                        pairs.Add(new KeyValuePair<string, string>("auditStatusList", s.Trim()));
+                }
+            }
+
+            // 生成 querystring（key 重复）
+            string BuildQueryMulti(IEnumerable<KeyValuePair<string, string>> kvs)
+                => string.Join("&", kvs.Select(kv =>
+                       $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+
+            var url = _processTasksEndpoint + "?" + BuildQueryMulti(pairs);
             var full = BuildFullUrl(_http.BaseAddress, url);
 
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
@@ -155,8 +278,10 @@ namespace IndustrialControlMAUI.Services
                 return new PageResp<ProcessTask> { success = false, message = $"HTTP {(int)httpResp.StatusCode}" };
 
             return JsonSerializer.Deserialize<PageResp<ProcessTask>>(json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new PageResp<ProcessTask>();
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                ?? new PageResp<ProcessTask>();
         }
+
 
         public async Task<DictBundle> GetWorkOrderDictsAsync(CancellationToken ct = default)
         {
@@ -177,137 +302,219 @@ namespace IndustrialControlMAUI.Services
 
             return new DictBundle { AuditStatus = audit, Urgent = urgent };
         }
+
+        public async Task<ApiResp<List<FieldDict>>> GetWorkProcessTaskDictListAsync(CancellationToken ct = default)
+        {
+            var full = BuildFullUrl(_http.BaseAddress, _workProcessTaskDictEndpoint);
+            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
+            var resp = await _http.SendAsync(req, ct);
+            resp.EnsureSuccessStatusCode();
+            await using var stream = await resp.Content.ReadAsStreamAsync(ct);
+            var data = await JsonSerializer.DeserializeAsync<ApiResp<List<FieldDict>>>(stream, _json, ct);
+            return data ?? new ApiResp<List<FieldDict>> { success = false, message = "empty response", result = new List<FieldDict>() };
+        }
+        public async Task<ApiResp<List<ProcessInfo>>> GetProcessInfoListAsync(CancellationToken ct = default)
+        {
+            var full = BuildFullUrl(_http.BaseAddress, _processInfoListEndpoint);
+            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
+            var resp = await _http.SendAsync(req, ct);
+            resp.EnsureSuccessStatusCode();
+            await using var stream = await resp.Content.ReadAsStreamAsync(ct);
+            var data = await JsonSerializer.DeserializeAsync<ApiResp<List<ProcessInfo>>>(stream, _json, ct);
+            return data ?? new ApiResp<List<ProcessInfo>> { success = false, message = "empty response", result = new List<ProcessInfo>() };
+        }
+        public async Task<ApiResp<WorkProcessTaskDetail>> GetWorkProcessTaskDetailAsync(string id, CancellationToken ct = default)
+        {
+            var url = _workProcessTaskDetailEndpoint + "?id=" + Uri.EscapeDataString(id ?? "");
+            var full = BuildFullUrl(_http.BaseAddress, url);
+            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
+            var resp = await _http.SendAsync(req, ct);
+            resp.EnsureSuccessStatusCode();
+            await using var stream = await resp.Content.ReadAsStreamAsync(ct);
+            var data = await JsonSerializer.DeserializeAsync<ApiResp<WorkProcessTaskDetail>>(stream, _json, ct);
+            return data ?? new ApiResp<WorkProcessTaskDetail> { success = false, message = "empty response" };
+        }
+
+        public async Task<ApiResp<List<ShiftInfo>>> GetShiftOptionsAsync(
+    string factoryCode,
+    string workshopsCode,
+    CancellationToken ct = default)
+        {
+            var full = BuildFullUrl(_http.BaseAddress, _shiftEndpoint);
+            var query = BuildQuery(new Dictionary<string, string?>
+            {
+                ["factoryCode"] = factoryCode,
+                ["workshopsCode"] = workshopsCode
+            });
+
+            var url = string.IsNullOrEmpty(query) ? full : $"{full}?{query}";
+            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url, UriKind.Absolute));
+            var resp = await _http.SendAsync(req, ct);
+            resp.EnsureSuccessStatusCode();
+            await using var stream = await resp.Content.ReadAsStreamAsync(ct);
+            var data = await JsonSerializer.DeserializeAsync<ApiResp<List<ShiftInfo>>>(stream, _json, ct);
+            return data ?? new ApiResp<List<ShiftInfo>> { success = false, message = "empty response", result = new List<ShiftInfo>() };
+        }
+
+        public async Task<ApiResp<List<DevicesInfo>>> GetDeviceOptionsAsync(
+            string factoryCode,
+            string processCode,
+            CancellationToken ct = default)
+        {
+            var full = BuildFullUrl(_http.BaseAddress, _deviceEndpoint);
+            var query = BuildQuery(new Dictionary<string, string?>
+            {
+                ["factoryCode"] = factoryCode,
+                ["processCode"] = processCode
+            });
+
+            var url = string.IsNullOrEmpty(query) ? full : $"{full}?{query}";
+            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url, UriKind.Absolute));
+            var resp = await _http.SendAsync(req, ct);
+            resp.EnsureSuccessStatusCode();
+            await using var stream = await resp.Content.ReadAsStreamAsync(ct);
+            var data = await JsonSerializer.DeserializeAsync<ApiResp<List<DevicesInfo>>>(stream, _json, ct);
+            return data ?? new ApiResp<List<DevicesInfo>> { success = false, message = "empty response", result = new List<DevicesInfo>() };
+        }
+
+        private static string BuildQuery(Dictionary<string, string?> parameters)
+        {
+            return string.Join("&",
+                parameters
+                    .Where(p => !string.IsNullOrWhiteSpace(p.Value))
+                    .Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value!)}"));
+        }
+
+        public async Task<SimpleOk> UpdateWorkProcessTaskAsync(
+    IEnumerable<WorkProcessTaskTeamUpdateReq> req,
+    CancellationToken ct = default)
+        {
+            var full = BuildFullUrl(_http.BaseAddress, _updateTeamEndpoint);
+            var body = JsonSerializer.Serialize(req);
+            using var msg = new HttpRequestMessage(HttpMethod.Post, new Uri(full, UriKind.Absolute))
+            { Content = new StringContent(body, Encoding.UTF8, "application/json") };
+
+            using var res = await _http.SendAsync(msg, ct);
+            var txt = await res.Content.ReadAsStringAsync(ct);
+
+            var dto = JsonSerializer.Deserialize<ConfirmResp>(
+                txt, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            var ok = dto?.success == true && dto.result == true;
+            return new SimpleOk(ok, dto?.message ?? (ok ? "成功" : "失败"));
+        }
+
+        // 更新班次
+        public Task<SimpleOk> UpdateWorkProcessTaskAsync(
+            string id, string? productionMachine, string? productionMachineName, int? taskReportedQty, string? teamCode, string? teamName, int? workHours, string? startDate, string? endDate, CancellationToken ct = default)
+        {
+            var payload = new[]
+            {
+        new WorkProcessTaskTeamUpdateReq { id = id, productionMachine = productionMachine, productionMachineName = productionMachineName,taskReportedQty = taskReportedQty,teamCode= teamCode,teamName=teamName,workHours = workHours,startDate= startDate,endDate = endDate }
+    };
+            return UpdateWorkProcessTaskAsync(payload, ct);
+        }
+
+        public async Task<ApiResp<bool>> StartWorkAsync(string processCode, string workOrderNo, string? memo = null)
+        {
+            var body = new
+            {
+                memo = memo ?? "",
+                processCode,
+                workOrderNo
+            };
+            var full = BuildFullUrl(_http.BaseAddress, _startworkEndpoint);
+            var resp = await _http.PostAsJsonAsync(full, body);
+            var json = await resp.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<ApiResp<bool>>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }) ?? new ApiResp<bool> { success = false, message = "反序列化失败" };
+        }
+
+        public async Task<ApiResp<bool>> CompleteWorkAsync(string processCode, string workOrderNo, string? memo = null)
+        {
+            var body = new
+            {
+                memo = memo ?? "",
+                processCode,
+                workOrderNo
+            };
+            var full = BuildFullUrl(_http.BaseAddress, _completeworkEndpoint);
+            var resp = await _http.PostAsJsonAsync(full, body);
+            var json = await resp.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<ApiResp<bool>>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }) ?? new ApiResp<bool> { success = false, message = "反序列化失败" };
+        }
+
+        public async Task<ApiResp<bool>> PauseWorkAsync(string processCode, string workOrderNo, string? memo = null)
+        {
+            var body = new
+            {
+                memo = memo ?? "",
+                processCode,
+                workOrderNo
+            };
+            var full = BuildFullUrl(_http.BaseAddress, _pauseworkEndpoint);
+            var resp = await _http.PostAsJsonAsync(full, body);
+            var json = await resp.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<ApiResp<bool>>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }) ?? new ApiResp<bool> { success = false, message = "反序列化失败" };
+        }
+
+        public async Task<ApiResp<bool>> AddWorkProcessTaskMaterialInputAsync(AddWorkProcessTaskMaterialInputReq req)
+        {
+            var full = BuildFullUrl(_http.BaseAddress, _addMaterialEndpoint);
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+
+            using var resp = await _http.PostAsJsonAsync(full, req, options);
+            if (!resp.IsSuccessStatusCode)
+            {
+                return new ApiResp<bool>
+                {
+                    success = false,
+                    message = $"HTTP错误 {resp.StatusCode}"
+                };
+            }
+
+            var json = await resp.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResp<bool>>(json, options);
+            return result ?? new ApiResp<bool> { success = false, message = "解析响应失败" };
+        }
+
+        public async Task<ApiResp<bool>> AddWorkProcessTaskProductOutputAsync(AddWorkProcessTaskProductOutputReq req)
+        {
+            var full = BuildFullUrl(_http.BaseAddress, _addOutputEndpoint);
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+
+            using var resp = await _http.PostAsJsonAsync(full, req, options);
+            if (!resp.IsSuccessStatusCode)
+            {
+                return new ApiResp<bool>
+                {
+                    success = false,
+                    message = $"HTTP错误 {resp.StatusCode}"
+                };
+            }
+
+            var json = await resp.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResp<bool>>(json, options);
+            return result ?? new ApiResp<bool> { success = false, message = "解析响应失败" };
+        }
     }
 
-    // ===================== 模型（与之前一致，可放在 Models 下） =====================
-    public class WorkOrderQuery
-    {
-        public int PageNo { get; set; } = 1;
-        public int PageSize { get; set; } = 50;
-        public string? AuditStatus { get; set; }
-        public DateTime? CreatedTimeStart { get; set; }
-        public DateTime? CreatedTimeEnd { get; set; }
-        public string? WorkOrderNo { get; set; }
-        public string? MaterialName { get; set; }
-    }
-
-    public class WorkOrderPageResult
-    {
-        public int code { get; set; }
-        public string? message { get; set; }
-        public bool success { get; set; }
-        public WorkOrderPageData? result { get; set; }
-        public long costTime { get; set; }
-    }
-
-    public class WorkOrderPageData
-    {
-        public WorkOrderPageList? list { get; set; }
-        public int pageNo { get; set; }
-        public int pageSize { get; set; }
-        public long total { get; set; }
-        public List<WorkOrderRecord> records { get; set; } = new();
-    }
-
-    public class WorkOrderPageList
-    {
-        public int pageNo { get; set; }
-        public int pageSize { get; set; }
-        public long total { get; set; }
-        public List<WorkOrderRecord> records { get; set; } = new();
-    }
-
-    public class WorkOrderRecord
-    {
-        public string? id { get; set; }
-        public string? workOrderNo { get; set; }
-        public string? workOrderName { get; set; }
-        public string? auditStatus { get; set; }
-        public decimal? curQty { get; set; }
-        public string? materialCode { get; set; }
-        public string? materialName { get; set; }
-        public string? line { get; set; }
-        public string? lineName { get; set; }
-        public string? workShop { get; set; }
-        public string? workShopName { get; set; }
-        public string? urgent { get; set; }
-        public string? schemeStartDate { get; set; }
-        public string? schemeEndDate { get; set; }
-        public string? createdTime { get; set; }
-        public string? modifiedTime { get; set; }
-        public string? commitedTime { get; set; }
-        public string? bomCode { get; set; }
-        public string? routeName { get; set; }
-    }
-
-    public class DictResponse
-    {
-        public bool success { get; set; }
-        public string? message { get; set; }
-        public int code { get; set; }
-        public List<DictField>? result { get; set; }
-        public long costTime { get; set; }
-    }
-
-    public class DictField
-    {
-        public string? field { get; set; }
-        public List<DictItem> dictItems { get; set; } = new();
-    }
-
-    public class DictItem
-    {
-        public string? dictItemValue { get; set; }
-        public string? dictItemName { get; set; }
-    }
-
-    public class DictBundle
-    {
-        public List<DictItem> AuditStatus { get; set; } = new();
-        public List<DictItem> Urgent { get; set; } = new();
-    }
-
-    public sealed class WorkflowResp
-    {
-        public bool success { get; set; }
-        public string? message { get; set; }
-        public int code { get; set; }
-        public List<WorkflowItem>? result { get; set; }
-    }
-
-    public sealed class WorkflowItem
-    {
-        public string? statusValue { get; set; }
-        public string? statusName { get; set; }
-        public string? statusTime { get; set; }
-    }
-
-    public sealed class PageResp<T>
-    {
-        public bool success { get; set; }
-        public string? message { get; set; }
-        public int code { get; set; }
-        public PageResult<T>? result { get; set; }
-    }
-
-    public sealed class PageResult<T>
-    {
-        public int pageNo { get; set; }
-        public int pageSize { get; set; }
-        public int total { get; set; }
-        public List<T>? records { get; set; }
-    }
-
-    public sealed class ProcessTask
-    {
-        public string? id { get; set; }
-        public string? processCode { get; set; }
-        public string? processName { get; set; }
-        public decimal? scheQty { get; set; }
-        public decimal? completedQty { get; set; }
-        public string? startDate { get; set; }
-        public string? endDate { get; set; }
-        public int? sortNumber { get; set; }
-        public string? auditStatus { get; set; }
-    }
 }

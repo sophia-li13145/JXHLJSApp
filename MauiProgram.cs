@@ -52,7 +52,9 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<ViewModels.OutboundMoldViewModel>();
             builder.Services.AddTransient<ViewModels.WorkOrderSearchViewModel>();
             builder.Services.AddTransient<ViewModels.MoldOutboundExecuteViewModel>();
-            builder.Services.AddTransient<WarehouseLocationPickerViewModel>();
+            builder.Services.AddTransient<ViewModels.ProcessTaskSearchViewModel>();
+            builder.Services.AddTransient<ViewModels.WarehouseLocationPickerViewModel>();
+            builder.Services.AddTransient<ViewModels.WorkProcessTaskDetailViewModel>();
 
             // ===== 注册 Pages（DI 创建）=====
             builder.Services.AddTransient<Pages.LoginPage>();
@@ -74,7 +76,9 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<Pages.OutboundMoldPage>();
             builder.Services.AddTransient<Pages.WorkOrderSearchPage>();
             builder.Services.AddTransient<Pages.MoldOutboundExecutePage>();
-            
+            builder.Services.AddTransient<Pages.ProcessTaskSearchPage>();
+            builder.Services.AddTransient<Pages.WorkProcessTaskDetailPage>();
+
             builder.Services.AddTransient<WarehouseLocationPickerPage>();
             // 先注册配置加载器
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();

@@ -92,6 +92,9 @@
 		<Compile Update="Pages\MoldOperations\OutboundMoldSearchPage.xaml.cs">
 			<DependentUpon>OutboundMoldSearchPage.xaml</DependentUpon>
 		</Compile>
+		<Compile Update="Pages\ProductionOperations\ProcessTaskSearchPage.xaml.cs">
+		  <DependentUpon>ProcessTaskSearchPage.xaml</DependentUpon>
+		</Compile>
 		<Compile Update="Pages\WarehouseOperations\OutboundFinishedSearchPage.xaml.cs">
 			<DependentUpon>OutboundFinishedSearchPage.xaml</DependentUpon>
 		</Compile>
@@ -119,8 +122,17 @@
 		<MauiXaml Update="Pages\ProductionOperations\MoldOutboundExecutePage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
+		<MauiXaml Update="Pages\ProductionOperations\OutputPopupPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\ProductionOperations\ProcessTaskSearchPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
 		<MauiXaml Update="Pages\ProductionOperations\WorkOrderSearchPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\ProductionOperations\WorkProcessTaskDetailPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Pages\Shared\WarehouseLocationPickerPage.xaml">
 		  <Generator>MSBuild:Compile</Generator>
@@ -154,6 +166,9 @@
 		</MauiXaml>
 		<MauiXaml Update="Pages\WarehouseOperations\OutboundMaterialPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\ProductionOperations\MaterialInputPopupPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 	</ItemGroup>
 

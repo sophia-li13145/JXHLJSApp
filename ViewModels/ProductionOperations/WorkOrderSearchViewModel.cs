@@ -203,10 +203,5 @@ namespace IndustrialControlMAUI.ViewModels
             });
         }
     }
-    public class StatusOption
-    {
-        public string Text { get; set; } = "";     // 显示：dictItemName
-        public string? Value { get; set; }         // 参数：dictItemValue（"0"/"1"...，全部用 null）
-        public override string ToString() => Text; // 某些平台用 ToString() 展示
-    }
+
 }

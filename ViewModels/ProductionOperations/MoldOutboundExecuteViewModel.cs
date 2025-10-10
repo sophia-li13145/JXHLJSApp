@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using IndustrialControlMAUI.Services;
 using System.Collections.ObjectModel;
+using static Android.Icu.Util.LocaleData;
 
 namespace IndustrialControlMAUI.ViewModels;
 
@@ -76,26 +77,42 @@ public partial class MoldOutboundExecuteViewModel : ObservableObject
     private async Task LoadProcessTasksAsync()
     {
         ProcessTasks.Clear();
-        if (string.IsNullOrWhiteSpace(OrderNo)) return;
-
-        var page = await _api.PageWorkProcessTasksAsync(OrderNo!, 1, 50);
+        var byOrderNo = !string.IsNullOrWhiteSpace(OrderNo);
+        //var page = await _api.PageWorkProcessTasksAsync(
+        //            workOrderNo: byOrderNo ? OrderNo?.Trim() : null,
+        //            auditStatus: byOrderNo ? null : SelectedStatusOption?.Value,   // 状态下拉 Value
+        //            processCode: SelectedProcessOption?.Value,                      // 工序下拉 Value（processCode）
+        //            createdTimeStart: byOrderNo ? null : StartDate.Date,            // 可选
+        //            createdTimeEnd: byOrderNo ? null : EndDate.Date.AddDays(1).AddSeconds(-1),
+        //            pageNo: PageIndex,
+        //            pageSize: PageSize,
+        //            ct: CancellationToken.None);
+        var page = await _api.PageWorkProcessTasksAsync(
+                    workOrderNo: byOrderNo ? OrderNo?.Trim() : null,
+                    auditStatusList:  null ,   // 状态下拉 Value
+                    processCode: null,                      // 工序下拉 Value（processCode）
+                    createdTimeStart: null,            // 可选
+                    createdTimeEnd: null,
+                    pageNo: 0,
+                    pageSize: 50,
+                    ct: CancellationToken.None);
         var records = page?.result?.records;
         if (records == null || records.Count == 0) return;
 
         int i = 1;
-        foreach (var t in records.OrderBy(x => x.sortNumber ?? int.MaxValue))
+        foreach (var t in records.OrderBy(x => x.SortNumber ?? int.MaxValue))
         {
-            var statusName = MapByDict(_auditMap, t.auditStatus); // e.g. "未开始"/"进行中"/"完成"
+            //var statusName = MapByDict(_auditMap, t.auditStatus); // e.g. "未开始"/"进行中"/"完成"
             ProcessTasks.Add(new UiProcessTask
             {
                 Index = i++,
-                Code = t.processCode ?? "",
-                Name = t.processName ?? "",
-                PlanQty = (t.scheQty ?? 0).ToString("0.####"),
-                DoneQty = (t.completedQty ?? 0).ToString("0.####"),
-                Start = ToShort(t.startDate),
-                End = ToShort(t.endDate),
-                StatusText = statusName
+                Code = t.ProcessCode ?? "",
+                Name = t.ProcessName ?? "",
+                PlanQty = (t.ScheQty ?? 0).ToString("0.####"),
+                DoneQty = (t.CompletedQty ?? 0).ToString("0.####"),
+                Start = ToShort(t.StartDate),
+                End = ToShort(t.EndDate),
+                StatusText = ""
             });
         }
     }

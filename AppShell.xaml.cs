@@ -21,6 +21,8 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(nameof(Pages.OutboundMoldSearchPage), typeof(Pages.OutboundMoldSearchPage));
         Routing.RegisterRoute(nameof(Pages.WorkOrderSearchPage), typeof(Pages.WorkOrderSearchPage));
         Routing.RegisterRoute(nameof(Pages.MoldOutboundExecutePage), typeof(Pages.MoldOutboundExecutePage));
+        Routing.RegisterRoute(nameof(Pages.ProcessTaskSearchPage), typeof(Pages.ProcessTaskSearchPage));
+        Routing.RegisterRoute(nameof(Pages.WorkProcessTaskDetailPage), typeof(Pages.WorkProcessTaskDetailPage));
         BuildTabs(authed);
     }
 
