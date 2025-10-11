@@ -386,11 +386,16 @@ namespace IndustrialControlMAUI.Services
         }
 
         public async Task<SimpleOk> UpdateWorkProcessTaskAsync(
-    IEnumerable<WorkProcessTaskTeamUpdateReq> req,
+    WorkProcessTaskTeamUpdateReq req,
     CancellationToken ct = default)
         {
             var full = BuildFullUrl(_http.BaseAddress, _updateTeamEndpoint);
-            var body = JsonSerializer.Serialize(req);
+            var options = new JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+
+            var body = JsonSerializer.Serialize(req, options);
             using var msg = new HttpRequestMessage(HttpMethod.Post, new Uri(full, UriKind.Absolute))
             { Content = new StringContent(body, Encoding.UTF8, "application/json") };
 
@@ -408,10 +413,8 @@ namespace IndustrialControlMAUI.Services
         public Task<SimpleOk> UpdateWorkProcessTaskAsync(
             string id, string? productionMachine, string? productionMachineName, int? taskReportedQty, string? teamCode, string? teamName, int? workHours, string? startDate, string? endDate, CancellationToken ct = default)
         {
-            var payload = new[]
-            {
-        new WorkProcessTaskTeamUpdateReq { id = id, productionMachine = productionMachine, productionMachineName = productionMachineName,taskReportedQty = taskReportedQty,teamCode= teamCode,teamName=teamName,workHours = workHours,startDate= startDate,endDate = endDate }
-    };
+            var payload = 
+        new WorkProcessTaskTeamUpdateReq { id = id, productionMachine = productionMachine, productionMachineName = productionMachineName,taskReportedQty = taskReportedQty,teamCode= teamCode,teamName=teamName,workHours = workHours,startDate= startDate,endDate = endDate };
             return UpdateWorkProcessTaskAsync(payload, ct);
         }
 

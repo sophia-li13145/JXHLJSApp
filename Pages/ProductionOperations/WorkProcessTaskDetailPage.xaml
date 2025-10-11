@@ -17,7 +17,21 @@
                 <Setter Property="TextColor" Value="White" />
                 <Setter Property="FontAttributes" Value="Bold" />
                 <Setter Property="Padding" Value="18,6" />
+                <!-- 增加禁用态 -->
+                <Setter Property="VisualStateManager.VisualStateGroups">
+                    <VisualStateGroupList>
+                        <VisualStateGroup Name="CommonStates">
+                            <VisualState Name="Normal" />
+                            <VisualState Name="Disabled">
+                                <VisualState.Setters>
+                                    <Setter Property="Opacity" Value="0.5" />
+                                </VisualState.Setters>
+                            </VisualState>
+                        </VisualStateGroup>
+                    </VisualStateGroupList>
+                </Setter>
             </Style>
+            
             <Style x:Key="BtnGreen" BasedOn="{StaticResource TopActionButton}" TargetType="Button">
                 <Setter Property="BackgroundColor" Value="#12C312" />
             </Style>
@@ -95,8 +109,7 @@
                         <Label Grid.Row="3" Grid.Column="2" Text="报工数量：" />
                         <Entry Grid.Row="3"
                                Grid.Column="3"
-                               Placeholder="请输入"
-                               Text="{Binding ReportQty}"
+                               Text="{Binding ReportQtyText, Mode=TwoWay}"
                                Keyboard="Numeric"
                                IsEnabled="{Binding IsEditing}"
                                Completed="OnReportQtyCompleted" /> 
@@ -211,7 +224,8 @@
                                 x:Name="MaterialInputView"
                                 ItemsSource="{Binding Detail.materialInputList}" 
                                 SelectionMode="Single"
-                                SelectedItem="{Binding SelectedMaterialItem}" 
+                                 SelectionChangedCommand="{Binding MaterialItemSelectedCommand}"
+    SelectionChangedCommandParameter="{Binding SelectedItem, Source={x:Reference MaterialInputView}}"
                                 IsVisible="{Binding IsInputVisible}"
                                 >
                     <CollectionView.ItemTemplate>
@@ -315,8 +329,10 @@
                 <CollectionView x:Name="OutputListView"
                     ItemsSource="{Binding Detail.materialOutputList}" 
                                 IsVisible="{Binding IsOutputVisible}"
-                                SelectionMode="Single"
-                                SelectedItem="{Binding SelectedOutputPlanItem}">
+                                SelectionMode="Single"       
+                             SelectionChangedCommand="{Binding OutputItemSelectedCommand}"
+SelectionChangedCommandParameter="{Binding SelectedItem, Source={x:Reference OutputListView}}"
+                            >
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
                             <Grid ColumnDefinitions="40,80,60,60,60,60"
@@ -339,8 +355,8 @@
                                 <Label Grid.Column="1" Text="{Binding materialName}" />
                                 <Label Grid.Column="2" Text="{Binding unit}" />
                                 <Label Grid.Column="3" Text="{Binding qty, StringFormat='{0:G29}'}" />
-                                <Label Grid.Column="4" Text="{Binding hasInputQty, StringFormat='{0:G29}'}" />
-                                <Label Grid.Column="5" Text="{Binding hasInputCount}" />
+                                <Label Grid.Column="4" Text="{Binding hasOutputQty, StringFormat='{0:G29}'}" />
+                                <Label Grid.Column="5" Text="{Binding hasOutputCount}" />
                             </Grid>
                             
                         </DataTemplate>

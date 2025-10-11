@@ -13,8 +13,8 @@ public partial class WorkProcessTaskDetailPage : ContentPage
     public WorkProcessTaskDetailPage(WorkProcessTaskDetailViewModel vm)
     {
         InitializeComponent();
-        BindingContext = vm;
-
+        _vm = vm ?? throw new ArgumentNullException(nameof(vm));
+        BindingContext = _vm;
         vm.TabChanged += (_, __) => ApplyTab(vm.ActiveTab);
         Loaded += (_, __) => ApplyTab(vm.ActiveTab);
         Seg.SizeChanged += (_, __) => ApplyTab(vm.ActiveTab);

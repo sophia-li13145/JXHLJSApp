@@ -80,16 +80,14 @@ public partial class LoginViewModel : ObservableObject
             }
 
             await TokenStorage.SaveAsync(token!);
-
+            Preferences.Set("UserName", UserName ?? "");
             if (RememberPassword)
             {
-                Preferences.Set("UserName", UserName ?? "");
                 Preferences.Set("Password", Password ?? "");
                 Preferences.Set("RememberPassword", true);
             }
             else
             {
-                Preferences.Remove("UserName");
                 Preferences.Remove("Password");
                 Preferences.Set("RememberPassword", false);
             }

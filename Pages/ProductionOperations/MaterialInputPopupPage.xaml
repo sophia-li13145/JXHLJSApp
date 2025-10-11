@@ -3,36 +3,44 @@
     x:Class="IndustrialControlMAUI.Pages.MaterialInputPopupPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    Title="新增投料"
-    Padding="12"
-    BackgroundColor="White">
+    xmlns:vm="clr-namespace:IndustrialControlMAUI.ViewModels"
+    BackgroundColor="#F2F7FF"
+    Padding="14">
 
-    <VerticalStackLayout Spacing="10">
-        <!-- 物料名称，只读展示 -->
-        <Grid ColumnDefinitions="90,*">
-            <Label Text="物料名称：" VerticalTextAlignment="Center"/>
-            <Label Grid.Column="1" Text="{Binding MaterialName}" FontAttributes="Bold"/>
-        </Grid>
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*" ColumnSpacing="8" RowSpacing="10">
+        <!-- 投入物料 -->
+        <Label Text="*投入物料：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+        <Picker Grid.Column="1"
+        ItemsSource="{Binding MaterialOptions}"
+        ItemDisplayBinding="{Binding materialName}"  
+        SelectedItem="{Binding SelectedMaterial}"
+        IsEnabled="{Binding IsPickerEnabled}" />
 
-        <!-- 单位，只读展示（可要可不要） -->
-        <Grid ColumnDefinitions="90,*">
-            <Label Text="单位：" VerticalTextAlignment="Center"/>
-            <Label Grid.Column="1" Text="{Binding Unit}" />
-        </Grid>
-
-        <!-- 投入数量 -->
-        <Entry Placeholder="投入数量"
+            <!-- 投入数量 -->
+        <Label Grid.Row="1" Text="*投入数量：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+        <Entry Grid.Row="1" Grid.Column="1"
+               Placeholder="请输入"
                Keyboard="Numeric"
-               Text="{Binding QtyText}" />
+               Text="{Binding QuantityText}" />
 
         <!-- 备注 -->
-        <Editor Placeholder="备注" AutoSize="TextChanges" Text="{Binding Memo}" />
+        <Label Grid.Row="2" Text="备注：" VerticalTextAlignment="Center" />
+        <Entry Grid.Row="2" Grid.Column="1"
+               Placeholder="请输入"
+               Text="{Binding Memo}" />
 
-        <!-- 操作 -->
-        <Grid ColumnDefinitions="*,*">
-            <Button Text="取消" Command="{Binding CancelCommand}" />
-            <Button Grid.Column="1" Text="确定" Command="{Binding ConfirmCommand}" />
+        <!-- 底部按钮 -->
+        <Grid Grid.Row="3" ColumnDefinitions="*,*" Margin="0,16,0,0">
+            <Button
+        Text="确认投料"
+        Command="{Binding ConfirmCommand}"
+        Margin="0,0,6,0" />
+            <Button
+        Grid.Column="1"
+        Text="取消"
+        Command="{Binding CancelCommand}" />
         </Grid>
-    </VerticalStackLayout>
+    </Grid>
 </ContentPage>
+
 

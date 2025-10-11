@@ -271,6 +271,7 @@ public class WorkProcessTaskDetail
 {
     public string? id { get; set; }
     public string? workOrderNo { get; set; }
+    public string? materialName { get; set; }
     public string? workOrderName { get; set; }
     public string? processCode { get; set; }
     public string? processName { get; set; }
@@ -279,6 +280,7 @@ public class WorkProcessTaskDetail
     public string? auditStatus { get; set; }
     public string? teamCode { get; set; }
     public string? teamName { get; set; }
+    public decimal? taskReportedQty { get; set; }
     public string? productionMachine { get; set; }
     public string? productionMachineName { get; set; }
     public string? workShop { get; set; }
@@ -286,6 +288,10 @@ public class WorkProcessTaskDetail
     public string? line { get; set; }
 
     public string? periodExecute { get; set; }
+
+    public string? schemeNo { get; set; }
+
+    public string? platPlanNo { get; set; }
 
     public List<TaskMaterialInput> materialInputList { get; set; } = new();
     public List<TaskMaterialOutput> materialOutputList { get; set; } = new();
@@ -298,7 +304,11 @@ public class WorkProcessTaskDetail
 public class TaskMaterialInput
 {
     public string? id { get; set; }
+    public string? materialClassName { get; set; }
     public string? materialName { get; set; }
+    public string? materialCode { get; set; }
+    public string? materialTypeName { get; set; }
+    
     public string? unit { get; set; }
     public decimal? qty { get; set; }
     public decimal? hasInputQty { get; set; }
@@ -309,7 +319,10 @@ public class TaskMaterialInput
 public class TaskMaterialOutput
 {
     public string? id { get; set; }
+    public string? materialClassName { get; set; }
     public string? materialName { get; set; }
+    public string? materialCode { get; set; }
+    public string? materialTypeName { get; set; }
     public string? unit { get; set; }
     public decimal? qty { get; set; }
     public decimal? hasOutputQty { get; set; }
@@ -380,7 +393,11 @@ public class AddWorkProcessTaskMaterialInputReq
     public string? schemeNo { get; set; }
     public string? unit { get; set; }
     public string workOrderNo { get; set; } = "";
+    public string operationTime { get; set; }
+    
 }
+
+
 // “投料记录”表格的数据行
 public class MaterialInputRecord
 {
@@ -389,6 +406,7 @@ public class MaterialInputRecord
     public string Unit { get; set; } = "";
     public double Qty { get; set; }
     public DateTime? RawMaterialProductionDate { get; set; }
+    public DateTime? OperationDate { get; set; }
     public string? Memo { get; set; }
 }
 
@@ -414,7 +432,8 @@ public class OutputRecord
     public string MaterialName { get; set; } = "";
     public string Unit { get; set; } = "";
     public double Qty { get; set; }
-    public DateTime? OperateTime { get; set; }
+    public DateTime? RawMaterialProductionDate { get; set; }
+    public DateTime? OperationDate { get; set; }
     public string? Memo { get; set; }
 }
 
@@ -425,25 +444,18 @@ public class AddWorkProcessTaskProductOutputReq
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
     public string? materialTypeName { get; set; }
-    public string? unit { get; set; }
-    public double qty { get; set; }
-    public string? operateTime { get; set; } // yyyy-MM-dd HH:mm:ss
     public string? memo { get; set; }
-
-    public string? workOrderNo { get; set; }
+    public string? platPlanNo { get; set; }
     public string? processCode { get; set; }
     public string? processName { get; set; }
+    public double qty { get; set; }
+    public string? rawMaterialProductionDate { get; set; } // "yyyy-MM-dd HH:mm:ss"
     public string? schemeNo { get; set; }
-    public string? platPlanNo { get; set; }
+    public string? unit { get; set; }
+    public string workOrderNo { get; set; } = "";
+    public string operationTime { get; set; }
 }
 
-
-public class MaterialInputPopupResult
-{
-    public double Qty { get; set; }
-    public string? Memo { get; set; }
-    public DateTime? RawMaterialProductionDate { get; set; } // 可选
-}
 public class OutputPlanItem
 {
     public int index { get; set; }
@@ -460,6 +472,24 @@ public class OutputPlanItem
 
 public class OutputPopupResult
 {
-    public double Qty { get; set; }
+    public string materialClassName { get; set; } = "";
+    public string MaterialCode { get; set; } = "";
+    public string MaterialName { get; set; } = "";
+    public string materialTypeName { get; set; } = "";
+    public decimal Quantity { get; set; }
     public string? Memo { get; set; }
+    public string? Unit { get; set; }
+    public DateTime? OperationTime { get; set; }
+}
+
+public class MaterialInputResult
+{
+    public string materialClassName { get; set; } = "";
+    public string MaterialCode { get; set; } = "";
+    public string MaterialName { get; set; } = "";
+    public string materialTypeName { get; set; } = "";
+    public decimal Quantity { get; set; }
+    public string? Memo { get; set; }
+    public string? Unit { get; set; }
+    public DateTime? OperationTime { get; set; }
 }
