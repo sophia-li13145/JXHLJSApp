@@ -27,7 +27,7 @@ namespace IndustrialControlMAUI.Services
         private readonly HttpClient _http;
         private readonly string _pageEndpoint;
         private readonly string _dictEndpoint;
-
+        private readonly string _detailsEndpoint;
 
         private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
@@ -49,8 +49,10 @@ namespace IndustrialControlMAUI.Services
             _pageEndpoint = NormalizeRelative(
                 configLoader.GetApiPath("quality.page", "/pda/qsOrderQuality/pageQuery"), servicePath);
             _dictEndpoint = NormalizeRelative(
-               configLoader.GetApiPath("workOrder.dictList", "/pda/qsOrderQuality/getDictList"), servicePath);
-            
+               configLoader.GetApiPath("quality.dictList", "/pda/qsOrderQuality/getDictList"), servicePath);
+            _detailsEndpoint = NormalizeRelative(
+               configLoader.GetApiPath("quality.detailList", "/pda/qsOrderQuality/detail"), servicePath);
+
         }
         // ===== 公共工具 =====
         private static string BuildFullUrl(Uri? baseAddress, string url)
@@ -172,10 +174,8 @@ namespace IndustrialControlMAUI.Services
         // Services/QualityApi.cs 追加方法（沿用你 BuildQuery/BuildFullUrl 风格）
         public async Task<ApiResp<QualityDetailDto>?> GetDetailAsync(string id, CancellationToken ct = default)
         {
-            var p = new Dictionary<string, string> { ["id"] = id };
-            var url = "/normalService/pda/qsOrderQuality/detail" + "?" + BuildQuery(p);
+            var url = _detailsEndpoint + "?id=" + Uri.EscapeDataString(id ?? "");
             var full = BuildFullUrl(_http.BaseAddress, url);
-
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
             using var res = await _http.SendAsync(req, ct);
             var json = await res.Content.ReadAsStringAsync(ct);

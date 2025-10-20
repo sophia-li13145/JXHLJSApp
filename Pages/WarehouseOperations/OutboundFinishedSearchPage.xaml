@@ -10,13 +10,20 @@
         <VerticalStackLayout Spacing="12" Padding="12">
 
             <!-- 查询区域 -->
-            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+            <Grid ColumnDefinitions="*,40,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
                 <Entry x:Name="OrderEntry"
                        Grid.Row="0" Grid.Column="0"
                        Placeholder="请扫描输入出库单条码"
                        Text="{Binding SearchOrderNo}" />
-
-                <Button Grid.Row="0" Grid.Column="1"
+                <ImageButton Grid.Row="0" Grid.Column="1"
+                            Source="scan_button.png"      
+                            WidthRequest="36"
+                             HeightRequest="36"
+                             BackgroundColor="Transparent"
+                             Padding="0"
+                             Aspect="AspectFit"
+                             Clicked="OnScanClicked"  /> 
+                <Button Grid.Row="0" Grid.Column="2"
                         Text="查询"
                         Command="{Binding SearchCommand}" />
 

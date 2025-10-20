@@ -15,38 +15,45 @@ public partial class WorkOrderSearchPage : ContentPage
         InitializeComponent();
         BindingContext = vm;
         _vm = vm;
-        //_scanSvc = scanSvc;
 
-        //// 与现有页面一致的扫码策略
-        //_scanSvc.Prefix = null;
-        //_scanSvc.Suffix = null;
-        //_scanSvc.DebounceMs = 0;
     }
 
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        //_scanSvc.Scanned += OnScanned;
-        //_scanSvc.StartListening();
-        //_scanSvc.Attach(OrderEntry);   // 支持键盘/手持枪统一输入
         OrderEntry.Focus();
     }
 
     protected override void OnDisappearing()
     {
-        //_scanSvc.Scanned -= OnScanned;
-        //_scanSvc.StopListening();
         base.OnDisappearing();
     }
 
-    private void OnScanned(string data, string type)
+    // 新增：扫码按钮事件
+    private async void OnScanClicked(object sender, EventArgs e)
     {
-        MainThread.BeginInvokeOnMainThread(async () =>
+        var tcs = new TaskCompletionSource<string>();
+        await Navigation.PushAsync(new QrScanPage(tcs));
+
+        // 等待扫码结果
+        var result = await tcs.Task;
+        if (string.IsNullOrWhiteSpace(result))
+            return;
+
+        // 回填到输入框
+        OrderEntry.Text = result.Trim();
+
+        // 同步到 ViewModel
+        if (BindingContext is WorkOrderSearchViewModel vm)
         {
-            _vm.Keyword = data;   // 回填查询条件
-            await _vm.SearchAsync();    // 触发查询
-        });
+            vm.Keyword = result.Trim();
+
+            // 可选：扫码后自动触发查询
+            if (vm.SearchCommand.CanExecute(null))
+                vm.SearchCommand.Execute(null);
+        }
     }
+
 
     // 点整张卡片跳转（推荐）
 

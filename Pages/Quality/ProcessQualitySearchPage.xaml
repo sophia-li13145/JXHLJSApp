@@ -19,13 +19,20 @@
         <!-- 条件区 -->
         <VerticalStackLayout Grid.Row="1" Padding="12" Spacing="10">
             <!-- 第一行：工单号 + 查询 + 扫码图标按钮 -->
-            <Grid ColumnDefinitions="*,44" ColumnSpacing="8">
+            <Grid ColumnDefinitions="*,40,Auto" ColumnSpacing="8">
                 <Entry x:Name="QualityNoEntry"
                        Placeholder="请输入/扫描质检单号"
                        Text="{Binding Keyword}"
                        HeightRequest="40" />
-
-                <Button Grid.Column="1"
+                <ImageButton  Grid.Column="1"
+                    Source="scan_button.png"      
+                    WidthRequest="36"
+                     HeightRequest="36"
+                     BackgroundColor="Transparent"
+                     Padding="0"
+                     Aspect="AspectFit"
+                     Clicked="OnScanClicked"  /> 
+                <Button Grid.Column="2"
                         Text="查询"
                         HeightRequest="40"
                         Command="{Binding SearchCommand}" />
@@ -53,7 +60,6 @@
                 <DataTemplate>
                     <Frame Margin="0,6,0,0" Padding="10"
                            HasShadow="False" BorderColor="#E0E6EF">
-
                         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
                             <!-- 右上角蓝点 -->
                             <BoxView Grid.Column="1" WidthRequest="8" HeightRequest="8"

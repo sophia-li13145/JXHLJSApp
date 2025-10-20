@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +9,7 @@ namespace IndustrialControlMAUI.Models;
 
     public class QualityRecordDto
     {
+        public string? id { get; set; }
         public string? factoryCode { get; set; }
         public string? qualityNo { get; set; }
         public string? inspectStatus { get; set; }
@@ -23,6 +25,7 @@ namespace IndustrialControlMAUI.Models;
 /// </summary>
 public class QualityOrderItem
 {
+    public string? Id { get; set; }
     /// <summary>
     /// 质检单号
     /// </summary>
@@ -86,21 +89,21 @@ public class QualityDetailDto
     public string? factoryCode { get; set; }
     public string? inspecter { get; set; }         // 检验人
 
-    public decimal passRate { get; set; }
-    public decimal totalQualified { get; set; }
-    public decimal totalUnqualified { get; set; }
-    public decimal totalBad { get; set; }
-    public decimal totalSampling { get; set; }
-    public decimal samplingDefectRate { get; set; }
+    public decimal? passRate { get; set; }
+    public decimal? totalQualified { get; set; }
+    public decimal? totalUnqualified { get; set; }
+    public decimal? totalBad { get; set; }
+    public decimal? totalSampling { get; set; }
+    public decimal? samplingDefectRate { get; set; }
 
     // 物料
     public QualityMaterial? orderQualityMaterial { get; set; }
 
     // 明细行
-    public List<QualityItem> orderQualityDetailList { get; set; } = new();
+    public List<QualityItem>? orderQualityDetailList { get; set; } = new();
 
     // 附件
-    public List<QualityAttachment> orderQualityAttachmentList { get; set; } = new();
+    public List<QualityAttachment>? orderQualityAttachmentList { get; set; } = new();
 }
 
 public class QualityMaterial
@@ -109,13 +112,13 @@ public class QualityMaterial
     public string? materialName { get; set; }
     public string? model { get; set; }
     public string? spec { get; set; }
-    public decimal qty { get; set; }               // 生产/到货数量
+    public decimal? qty { get; set; }               // 生产/到货数量
     public string? unit { get; set; }
 }
 
 public class QualityItem
 {
-    public int? Index { get; set; }
+    public int? index { get; set; }
     public string? id { get; set; }
     public string? inspectionCode { get; set; }
     public string? inspectionName { get; set; }
@@ -132,8 +135,8 @@ public class QualityItem
     public string? inspectResult { get; set; }   // 合格/不合格
     public string? defect { get; set; }
     public string? badCause { get; set; }
-    public decimal badQty { get; set; }
-    public decimal sampleQty { get; set; }
+    public decimal? badQty { get; set; }
+    public decimal? sampleQty { get; set; }
 }
 
 public class QualityAttachment
@@ -144,5 +147,105 @@ public class QualityAttachment
     public string? attachmentUrl { get; set; }
     public string? attachmentExt { get; set; }
     public string? attachmentLocation { get; set; } // main/table
-    public decimal attachmentSize { get; set; }     // KB
+    public long? attachmentSize { get; set; }     // KB
+    public string? attachmentFolder { get; set; }
+    public string? memo { get; set; }
+}
+
+public partial class AttachmentItem
+{
+    public string? Id { get; set; }
+    public string Name { get; set; } = "";
+    public string Url { get; set; } = "";       // 上传后可访问的地址
+    public long SizeBytes { get; set; }         // 大小（字节）
+}
+
+public class OrderQualitySaveReq
+{
+    public decimal arrivalQty { get; set; }
+    public string id { get; set; } = "";
+    public string inspectRemark { get; set; } = "";
+    public string inspectResult { get; set; } = "";
+    public string inspectTime { get; set; } = "";          // "yyyy-MM-dd HH:mm:ss"
+    public string inspecter { get; set; } = "";
+    public decimal inspectionLossQty { get; set; }
+    public string inspectionObject { get; set; } = "";
+    public string inspectionSchemeName { get; set; } = "";
+    public string inspectionSchemeTypeName { get; set; } = "";
+    public string orderNumber { get; set; } = "";
+
+    public List<OrderQualityAttachmentDto> orderQualityAttachmentList { get; set; } = new();
+    public List<OrderQualityDetailDto> orderQualityDetailList { get; set; } = new();
+
+    public decimal passRate { get; set; }
+    public string processCode { get; set; } = "";
+    public string processName { get; set; } = "";
+    public string qualityType { get; set; } = "";
+    public string qualityTypeName { get; set; } = "";
+    public string retainedSampleNumber { get; set; } = "";
+    public decimal retainedSampleQty { get; set; }
+    public decimal samplingDefectRate { get; set; }
+    public string supplierName { get; set; } = "";
+    public decimal totalBad { get; set; }
+    public decimal totalQualified { get; set; }
+    public decimal totalSampling { get; set; }
+    public decimal totalUnqualified { get; set; }
+}
+
+public class OrderQualityAttachmentDto
+{
+    public string attachmentExt { get; set; } = "";
+    public string attachmentFolder { get; set; } = "";
+    public string attachmentLocation { get; set; } = "";
+    public string attachmentName { get; set; } = "";
+    public string attachmentRealName { get; set; } = "";
+    public long attachmentSize { get; set; }
+    public string attachmentUrl { get; set; } = "";
+    public string id { get; set; } = "";
+    public string memo { get; set; } = "";
+}
+
+public class OrderQualityDetailDto
+{
+    public string badCause { get; set; } = "";
+    public decimal badQty { get; set; }
+    public decimal badRate { get; set; }
+    public string defect { get; set; } = "";
+    public string id { get; set; } = "";
+    public string inspectResult { get; set; } = "";
+    public string inspectionAttributeName { get; set; } = "";
+    public string inspectionCode { get; set; } = "";
+    public string inspectionMode { get; set; } = "";
+    public string inspectionName { get; set; } = "";
+    public string inspectionStandard { get; set; } = "";
+    public string inspectionTypeName { get; set; } = "";
+    public string lowerLimit { get; set; } = "";
+    public decimal sampleQty { get; set; }
+    public string standardValue { get; set; } = "";
+    public string unit { get; set; } = "";
+    public string upperLimit { get; set; } = "";
+}
+public partial class OrderQualityAttachmentItem : ObservableObject
+{
+    // —— 后端字段（保存时会用到）——
+    [ObservableProperty] private string attachmentExt = "";
+    [ObservableProperty] private string attachmentFolder = "";
+    [ObservableProperty] private string attachmentLocation = "";
+    [ObservableProperty] private string attachmentName = "";
+    [ObservableProperty] private string attachmentRealName = "";
+    [ObservableProperty] private long? attachmentSize;
+    [ObservableProperty] private string attachmentUrl = ""; // 统一保存时才会有
+    [ObservableProperty] private string id = "";
+    [ObservableProperty] private string memo = "";
+
+    // —— 前端用（不提交给后端）——
+    [ObservableProperty] private string? localPath;   // 本地缓存路径
+    [ObservableProperty] private bool isUploaded;     // 是否已传后端（点保存后才会变 true）
+
+    public ImageSource? DisplaySource =>
+        !string.IsNullOrWhiteSpace(LocalPath)
+            ? ImageSource.FromFile(LocalPath!)
+            : (!string.IsNullOrWhiteSpace(AttachmentUrl)
+                ? ImageSource.FromUri(new Uri(AttachmentUrl))
+                : null);
 }

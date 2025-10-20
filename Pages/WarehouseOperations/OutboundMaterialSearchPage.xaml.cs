@@ -4,30 +4,18 @@ namespace IndustrialControlMAUI.Pages;
 public partial class OutboundMaterialSearchPage : ContentPage
 {
 
-    //private readonly ScanService _scanSvc;
     private readonly OutboundMaterialSearchViewModel _vm;
     public OutboundMaterialSearchPage(OutboundMaterialSearchViewModel vm)
     {
         _vm = vm;
 
         BindingContext = vm;
-        //_scanSvc = scanSvc;
         InitializeComponent();
-        // 可选：配置前后缀与防抖
-        //_scanSvc.Prefix = null;     // 例如 "}q" 之类的前缀；没有就留 null
-                                    // _scanSvc.Suffix = "\n";     // 如果设备会附带换行，可去掉；没有就设 null
-                                    //_scanSvc.DebounceMs = 250;
-        //_scanSvc.Suffix = null;   // 先关掉
-        //_scanSvc.DebounceMs = 0;  // 先关掉
+
     }
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        // 动态注册广播接收器（只在当前页面前台时生效）
-        //_scanSvc.Scanned += OnScanned;
-        //_scanSvc.StartListening();
-        //键盘输入
-       // _scanSvc.Attach(OrderEntry);
         OrderEntry.Focus();
 
 
@@ -44,21 +32,34 @@ public partial class OutboundMaterialSearchPage : ContentPage
 
     protected override void OnDisappearing()
     {
-        // 退出页面即注销（防止多个程序/页面抢处理）
-        //_scanSvc.Scanned -= OnScanned;
-        //_scanSvc.StopListening();
 
         base.OnDisappearing();
     }
 
-    private void OnScanned(string data, string type)
+    
+
+    // 新增：扫码按钮事件
+    private async void OnScanClicked(object sender, EventArgs e)
     {
-        MainThread.BeginInvokeOnMainThread(async () =>
+        var tcs = new TaskCompletionSource<string>();
+        await Navigation.PushAsync(new QrScanPage(tcs));
+
+        // 等待扫码结果
+        var result = await tcs.Task;
+        if (string.IsNullOrWhiteSpace(result))
+            return;
+
+        // 回填到输入框
+        OrderEntry.Text = result.Trim();
+
+        // 同步到 ViewModel
+        if (BindingContext is OutboundMaterialSearchViewModel vm)
         {
-            // 常见处理：自动填入单号/条码并触发查询或加入明细
-            _vm.SearchOrderNo = data;
-        });
+            vm.SearchOrderNo = result.Trim();
+
+            // 可选：扫码后自动触发查询
+            if (vm.SearchCommand.CanExecute(null))
+                vm.SearchCommand.Execute(null);
+        }
     }
-
-
 }

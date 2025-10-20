@@ -14,7 +14,6 @@ namespace IndustrialControlMAUI.Pages;
 [QueryProperty(nameof(DeliveryMemo), "deliveryMemo")]
 public partial class OutboundFinishedPage : ContentPage
 {
-    //private readonly ScanService _scanSvc;
     private readonly OutboundFinishedViewModel _vm;
     private readonly IServiceProvider _sp;
     public string? OutstockId { get; set; }
@@ -30,16 +29,10 @@ public partial class OutboundFinishedPage : ContentPage
     {
         InitializeComponent();
         BindingContext = vm;
-        //_scanSvc = scanSvc;
         _vm = vm;
         _dialogs = dialogs;
         _sp = sp;
-        // 可选：配置前后缀与防抖
-        //_scanSvc.Prefix = null;     // 例如 "}q" 之类的前缀；没有就留 null
-        // _scanSvc.Suffix = "\n";     // 如果设备会附带换行，可去掉；没有就设 null
-        //_scanSvc.DebounceMs = 250;
-        //_scanSvc.Suffix = null;   // 先关掉
-        //_scanSvc.DebounceMs = 0;  // 先关掉
+
     }
 
     private async void OnScanEntryCompleted(object? sender, EventArgs e)
@@ -81,9 +74,6 @@ public partial class OutboundFinishedPage : ContentPage
             );
         }
 
-        //_scanSvc.Scanned += OnScanned;
-        //_scanSvc.StartListening();
-        //_scanSvc.Attach(ScanEntry);
         ScanEntry.Focus();
     }
 
@@ -101,8 +91,6 @@ public partial class OutboundFinishedPage : ContentPage
     protected override void OnDisappearing()
     {
         // 退出页面即注销（防止多个程序/页面抢处理）
-        //_scanSvc.Scanned -= OnScanned;
-        //_scanSvc.StopListening();
 
         base.OnDisappearing();
     }
@@ -176,4 +164,30 @@ public partial class OutboundFinishedPage : ContentPage
         await _vm.UpdateQuantityForRowAsync(row);
     }
 
+
+    // 新增：扫码按钮事件
+    private async void OnScanClicked(object sender, EventArgs e)
+    {
+        var tcs = new TaskCompletionSource<string>();
+        await Navigation.PushAsync(new QrScanPage(tcs));
+
+        // 等待扫码结果
+        var result = await tcs.Task;
+        if (string.IsNullOrWhiteSpace(result))
+            return;
+
+        // 回填到输入框
+        ScanEntry.Text = result.Trim();
+
+        // 同步到 ViewModel
+        if (BindingContext is OutboundFinishedViewModel vm)
+        {
+            // 交给 VM 统一处理（第二个参数随意标记来源）
+            await _vm.HandleScannedAsync(ScanEntry.Text!, "KEYBOARD");
+
+            // 清空并继续聚焦，方便下一次输入/扫码
+            ScanEntry.Text = string.Empty;
+            ScanEntry.Focus();
+        }
+    }
 }

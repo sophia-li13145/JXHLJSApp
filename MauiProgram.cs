@@ -1,8 +1,9 @@
 ﻿using CommunityToolkit.Maui;
 using IndustrialControlMAUI.Pages;
 using IndustrialControlMAUI.Services;
-using IndustrialControlMAUI.ViewModels;
 using Microsoft.Extensions.Logging;
+using ZXing.Net.Maui;
+using ZXing.Net.Maui.Controls;
 
 
 namespace IndustrialControlMAUI
@@ -15,6 +16,7 @@ namespace IndustrialControlMAUI
             builder
                 .UseMauiApp<App>()
                 .UseMauiCommunityToolkit()
+                .UseBarcodeReader()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -52,7 +54,7 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<ViewModels.OutboundMoldViewModel>();
             builder.Services.AddTransient<ViewModels.WorkOrderSearchViewModel>();
             builder.Services.AddTransient<ViewModels.MoldOutboundExecuteViewModel>();
-            builder.Services.AddTransient<ViewModels.ProcessQualitySearchViewModel>();
+            builder.Services.AddTransient<ViewModels.ProcessTaskSearchViewModel>();
             builder.Services.AddTransient<ViewModels.WarehouseLocationPickerViewModel>();
             builder.Services.AddTransient<ViewModels.WorkProcessTaskDetailViewModel>();
             builder.Services.AddTransient<ViewModels.ProcessQualityDetailViewModel>();
@@ -84,6 +86,7 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<Pages.ProcessQualityDetailPage>();
 
             builder.Services.AddTransient<WarehouseLocationPickerPage>();
+            builder.Services.AddTransient<QrScanPage>();
             // 先注册配置加载器
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();
 
@@ -103,6 +106,8 @@ namespace IndustrialControlMAUI
             .AddHttpMessageHandler<AuthHeaderHandler>();
             builder.Services.AddHttpClient<IQualityApi, QualityApi>(ConfigureBaseAddress)
             .AddHttpMessageHandler<AuthHeaderHandler>();
+            builder.Services.AddHttpClient<IAuthApi, AuthApi>(ConfigureBaseAddress)
+           .AddHttpMessageHandler<AuthHeaderHandler>();
 
             var app = builder.Build();
             App.Services = app.Services;

@@ -15,14 +15,22 @@
         </Grid>
 
         <!-- 扫描输入行 -->
-        <Grid Grid.Row="1" ColumnDefinitions="Auto,*" ColumnSpacing="8" Padding="16,0">
+        <Grid Grid.Row="1" ColumnDefinitions="*,40" ColumnSpacing="8" Padding="16,0">
             <Entry x:Name="ScanEntry"
                    Placeholder="请扫描/输入模具编码"
                    Text="{Binding ScanCode}"
                    ReturnType="Done"
                    Completed="OnScanCompleted"
                    WidthRequest="300"
-                   /> 
+                   />
+            <ImageButton  Grid.Column="1"
+                    Source="scan_button.png"      
+                    WidthRequest="36"
+                     HeightRequest="36"
+                     BackgroundColor="Transparent"
+                     Padding="0"
+                     Aspect="AspectFit"
+                     Clicked="OnScanClicked"  /> 
         </Grid>
 
         <!-- 模具状态信息（绿色卡片，仅加入“使用中”的记录） -->

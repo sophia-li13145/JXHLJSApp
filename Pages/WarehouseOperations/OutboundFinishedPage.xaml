@@ -15,7 +15,7 @@
         </Grid>
 
         <!-- 入库单/条码扫描 -->
-        <Grid Grid.Row="1" ColumnDefinitions="*,60" Padding="16,8">
+        <Grid Grid.Row="1" ColumnDefinitions="*,40" Padding="16,8">
             <Entry x:Name="ScanEntry" 
                    Placeholder="请扫描出库单/产品/包装条码" 
                    FontSize="14"
@@ -24,7 +24,14 @@
                    HeightRequest="40"
                    Text="{Binding ScanCode}"
                    Completed="OnScanEntryCompleted"/>
-
+            <ImageButton Grid.Column="1"
+            Source="scan_button.png"      
+            WidthRequest="36"
+             HeightRequest="36"
+             BackgroundColor="Transparent"
+             Padding="0"
+             Aspect="AspectFit"
+             Clicked="OnScanClicked"  />
         </Grid>
 
         <!-- 基础信息 -->

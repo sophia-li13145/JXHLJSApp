@@ -12,7 +12,6 @@ namespace IndustrialControlMAUI.Pages;
 [QueryProperty(nameof(Memo), "memo")]
 public partial class OutboundMaterialPage : ContentPage
 {
-    //private readonly ScanService _scanSvc;
     private readonly OutboundMaterialViewModel _vm;
     public string? OutstockId { get; set; }
     public string? OutstockNo { get; set; }
@@ -26,7 +25,6 @@ public partial class OutboundMaterialPage : ContentPage
     {
         InitializeComponent();
         BindingContext = vm;
-        //_scanSvc = scanSvc;
         _vm = vm;
         _dialogs = dialogs;
         _sp = sp;
@@ -68,9 +66,6 @@ public partial class OutboundMaterialPage : ContentPage
             );
         }
 
-        //_scanSvc.Scanned += OnScanned;
-        //_scanSvc.StartListening();
-        //_scanSvc.Attach(ScanEntry);
         ScanEntry.Focus();
     }
 
@@ -88,22 +83,34 @@ public partial class OutboundMaterialPage : ContentPage
     protected override void OnDisappearing()
     {
         // 退出页面即注销（防止多个程序/页面抢处理）
-        //_scanSvc.Scanned -= OnScanned;
-       // _scanSvc.StopListening();
 
         base.OnDisappearing();
     }
 
-    private void OnScanned(string data, string type)
+    // 新增：扫码按钮事件
+    private async void OnScanClicked(object sender, EventArgs e)
     {
-        MainThread.BeginInvokeOnMainThread(async () =>
-        {
-            // 常见处理：自动填入单号/条码并触发查询或加入明细
-            _vm.ScanCode = data;
+        var tcs = new TaskCompletionSource<string>();
+        await Navigation.PushAsync(new QrScanPage(tcs));
 
-            // 你原本的逻辑：若识别到是订单号 → 查询；若是包装码 → 加入列表等
-            await _vm.HandleScannedAsync(data, type);
-        });
+        // 等待扫码结果
+        var result = await tcs.Task;
+        if (string.IsNullOrWhiteSpace(result))
+            return;
+
+        // 回填到输入框
+        ScanEntry.Text = result.Trim();
+
+        // 同步到 ViewModel
+        if (BindingContext is OutboundMaterialViewModel vm)
+        {
+            // 交给 VM 统一处理（第二个参数随意标记来源）
+            await _vm.HandleScannedAsync(ScanEntry.Text!, "KEYBOARD");
+
+            // 清空并继续聚焦，方便下一次输入/扫码
+            ScanEntry.Text = string.Empty;
+            ScanEntry.Focus();
+        }
     }
 
 

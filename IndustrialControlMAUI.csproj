@@ -80,6 +80,11 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
 		<PackageReference Include="Serilog" Version="4.0.0" />
+		<PackageReference Include="SkiaSharp" Version="3.119.1" />
+		<PackageReference Include="ZXing.Net" Version="0.16.9" />
+		<PackageReference Include="ZXing.Net.Bindings.SkiaSharp" Version="0.16.9" />
+		<PackageReference Include="ZXing.Net.Maui" Version="0.4.0" />
+		<PackageReference Include="ZXing.Net.Maui.Controls" Version="0.4.0" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -147,6 +152,9 @@
 		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Pages\Shared\DateTimePickerPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\Shared\QrScanPage.xaml">
 		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Pages\Shared\WarehouseLocationPickerPage.xaml">

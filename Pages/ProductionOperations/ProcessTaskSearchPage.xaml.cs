@@ -5,9 +5,9 @@ namespace IndustrialControlMAUI.Pages;
 
 public partial class ProcessTaskSearchPage : ContentPage
 {
-    private readonly ProcessQualitySearchViewModel _vm;
+    private readonly ProcessTaskSearchViewModel _vm;
 
-    public ProcessTaskSearchPage(ProcessQualitySearchViewModel vm, ScanService scanSvc)
+    public ProcessTaskSearchPage(ProcessTaskSearchViewModel vm)
     {
         InitializeComponent();
         BindingContext = vm;
@@ -25,5 +25,28 @@ public partial class ProcessTaskSearchPage : ContentPage
         base.OnDisappearing();
     }
 
+    // 新增：扫码按钮事件
+    private async void OnScanClicked(object sender, EventArgs e)
+    {
+        var tcs = new TaskCompletionSource<string>();
+        await Navigation.PushAsync(new QrScanPage(tcs));
 
+        // 等待扫码结果
+        var result = await tcs.Task;
+        if (string.IsNullOrWhiteSpace(result))
+            return;
+
+        // 回填到输入框
+        OrderEntry.Text = result.Trim();
+
+        // 同步到 ViewModel
+        if (BindingContext is ProcessTaskSearchViewModel vm)
+        {
+            vm.Keyword = result.Trim();
+
+            // 可选：扫码后自动触发查询
+            if (vm.SearchCommand.CanExecute(null))
+                vm.SearchCommand.Execute(null);
+        }
+    }
 }

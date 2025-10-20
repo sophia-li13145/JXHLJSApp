@@ -114,7 +114,8 @@ namespace IndustrialControlMAUI.ViewModels
                 var records = page?.result?.records
                            ?? page?.result?.list?.records
                            ?? new List<WorkOrderRecord>();
-
+                if (records == null || !records.Any())
+                    await Shell.Current.DisplayAlert("提示", "未查询到任何模具出库单", "确定");
                 Orders.Clear();
                 foreach (var r in records)
                 {
@@ -140,6 +141,10 @@ namespace IndustrialControlMAUI.ViewModels
                         WorkShopName = r.workShopName        // e.g. "制造二组"
                     });
                 }
+            }
+            catch (Exception ex)
+        {
+                await Shell.Current.DisplayAlert("查询失败", ex.Message, "确定");
             }
             finally { IsBusy = false; }
         }

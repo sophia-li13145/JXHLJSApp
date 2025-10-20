@@ -117,6 +117,7 @@ namespace IndustrialControlMAUI.ViewModels
 
                     Orders.Add(new QualityOrderItem
                     {
+                        Id = t.id,
                         QualityNo = t.qualityNo,
                         InspectStatus = t.inspectStatus,
                         InspectStatusText = t.inspectStatusName,
@@ -152,10 +153,9 @@ namespace IndustrialControlMAUI.ViewModels
             Orders.Clear();
         }
 
-
         // 点击一条工单进入执行页
         [RelayCommand]
-        private async Task GoExecuteAsync(ProcessTask? item)
+        private async Task GoDetailAsync(QualityOrderItem? item)
         {
             if (item is null) return;
             await Shell.Current.GoToAsync(nameof(ProcessQualityDetailPage) + $"?id={Uri.EscapeDataString(item.Id)}");

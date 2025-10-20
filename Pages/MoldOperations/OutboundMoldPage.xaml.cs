@@ -50,8 +50,33 @@ public partial class OutboundMoldPage : ContentPage
         {
             _submitting = false;
             await Task.Delay(30);
+            ScanEntry.Text = string.Empty;
             ScanEntry?.Focus(); // 连续扫描更顺手
         }
     }
+    // 新增：扫码按钮事件
+    private async void OnScanClicked(object sender, EventArgs e)
+    {
+        var tcs = new TaskCompletionSource<string>();
+        await Navigation.PushAsync(new QrScanPage(tcs));
 
+        // 等待扫码结果
+        var result = await tcs.Task;
+        if (string.IsNullOrWhiteSpace(result))
+            return;
+
+        // 回填到输入框
+        ScanEntry.Text = result.Trim();
+
+        // 同步到 ViewModel
+        if (BindingContext is OutboundMoldViewModel vm)
+        {
+            if (_vm.ScanSubmitCommand.CanExecute(null))
+                await _vm.ScanSubmitCommand.ExecuteAsync(null); // ★ await 异步命令
+
+            // 清空并继续聚焦，方便下一次输入/扫码
+            ScanEntry.Text = string.Empty;
+            ScanEntry.Focus();
+        }
+    }
 }
