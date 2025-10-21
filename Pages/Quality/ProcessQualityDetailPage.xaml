@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
+    x:Name="ThisPage"
     x:Class="IndustrialControlMAUI.Pages.ProcessQualityDetailPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
@@ -12,6 +13,7 @@
         <ResourceDictionary>
             <conv:NullOrEmptyToBoolInverseConverter x:Key="NullOrEmptyToBoolInverseConverter" />
             <conv:StringToNullableDecimalConverter x:Key="DecConv" />
+            <conv:DecParseOnlyConverter x:Key="DecParseOnlyConv" />
             <Style x:Key="PrimaryBtn" TargetType="Button">
                 <Setter Property="HeightRequest" Value="36" />
                 <Setter Property="CornerRadius" Value="8" />
@@ -31,10 +33,14 @@
             <Style x:Key="FieldLabel" TargetType="Label">
                 <Setter Property="TextColor" Value="#4B5563" />
                 <Setter Property="VerticalTextAlignment" Value="Center" />
+                <Setter Property="HorizontalOptions" Value="Start" />
+                <Setter Property="HorizontalTextAlignment" Value="Start" />
             </Style>
             <Style x:Key="FieldValue" TargetType="Label">
                 <Setter Property="TextColor" Value="#111827" />
                 <Setter Property="VerticalTextAlignment" Value="Center" />
+                <Setter Property="HorizontalOptions" Value="Start" />
+                <Setter Property="HorizontalTextAlignment" Value="Start" />
             </Style>
             <Style x:Key="Card" TargetType="Frame">
                 <Setter Property="Padding" Value="12" />
@@ -58,12 +64,6 @@
                 <Setter Property="BackgroundColor" Value="Transparent" />
                 <Setter Property="HorizontalTextAlignment" Value="Start" />
             </Style>
-            <Style  TargetType="Label">
-                <Setter Property="TextColor" Value="#4B5563" />
-                <Setter Property="VerticalTextAlignment" Value="Center" />
-                <Setter Property="HorizontalOptions" Value="End" />
-                <!-- 靠右对齐 -->
-            </Style>
         </ResourceDictionary>
     </ContentPage.Resources>
 
@@ -74,7 +74,7 @@
             <Label Text="质检单基础信息"
                    VerticalOptions="Start"
                    TextColor="Black"
-                   FontSize="18"
+                   FontSize="14"
                    FontAttributes="Bold" />
             <Button Grid.Column="1"
                     Text="保存"
@@ -133,6 +133,9 @@
                                 <Entry
                                     Text="{Binding InspectorText, Mode=TwoWay}"
                                     Placeholder="输入"
+                                    Keyboard="Text"
+                                    IsTextPredictionEnabled="True"
+                                    IsSpellCheckEnabled="True"
                                     ClearButtonVisibility="WhileEditing"
                                     Completed="OnInspectorEntryCompleted" 
                                     />
@@ -154,7 +157,7 @@
                                     <CollectionView.ItemTemplate>
                                         <DataTemplate>
                                             <Grid Padding="12">
-                                                <Label Text="{Binding username}" />
+                                                <Label Text="{Binding realname}" />
                                                 <Grid.GestureRecognizers>
                                                     <TapGestureRecognizer
                                 Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.PickInspectorCommand}"
@@ -168,10 +171,7 @@
                         </Grid>
 
                         <Label Grid.Row="3" Grid.Column="2" Text="检验日期：" Style="{StaticResource FieldLabel}" />
-                        <DatePicker Grid.Row="3" Grid.Column="3"
-                                    Date="{Binding InspectDate, Mode=TwoWay}"
-                                    Format="yyyy-MM-dd" /> 
-
+                        <Label Grid.Row="3" Grid.Column="3" Text="{Binding Detail.inspectTime}" Style="{StaticResource FieldValue}" />
                     </Grid>
                 </Frame>
 
@@ -182,48 +182,64 @@
                           RowSpacing="10" ColumnSpacing="10"> 
 
                         <!-- 第0行：检验结果 下拉 -->
-                        <Label Grid.Row="0" Grid.Column="0" Text="检验结果：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="0" Grid.Column="0"  Grid.ColumnSpan="5" Text="检验结果：" Style="{StaticResource FieldLabel}" />
                         <Picker Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="5"
                                 ItemsSource="{Binding InspectResultOptions}"
                                 ItemDisplayBinding="{Binding Text}"
                                 SelectedItem="{Binding SelectedInspectResult, Mode=TwoWay}"
-                                IsEnabled="{Binding IsEditing}" /> 
+                                IsEnabled="{Binding IsEditing}">
+                            <Picker.Triggers>
+                                <DataTrigger TargetType="Picker"
+                       Binding="{Binding SelectedInspectResult.Text}"
+                       Value="合格">
+                                    <Setter Property="BackgroundColor" Value="#B2F2BB"/>
+                                </DataTrigger>
+                                <DataTrigger TargetType="Picker"
+                       Binding="{Binding SelectedInspectResult.Text}"
+                       Value="不合格">
+                                    <Setter Property="BackgroundColor" Value="#FFA8A8"/>
+                                </DataTrigger>
+                            </Picker.Triggers>
+
+                        </Picker>
+
 
                         <!-- 第1行：抽样总数、不良总数、抽样不良率(只读) -->
                         <Label Grid.Row="1" Grid.Column="0" Text="抽样总数：" Style="{StaticResource FieldLabel}" />
                         <Entry Grid.Row="1" Grid.Column="1"
-                               Text="{Binding Detail.totalSampling, Mode=TwoWay, Converter={StaticResource DecConv}}"
+                               Text="{Binding Detail.totalSampling, Mode=TwoWay, Converter={StaticResource DecParseOnlyConv}}"
                                Keyboard="Numeric"
                                IsEnabled="{Binding IsEditing}" />   
 
                         <Label Grid.Row="1" Grid.Column="2" Text="不良总数：" Style="{StaticResource FieldLabel}" />
                         <Entry Grid.Row="1" Grid.Column="3"
-                               Text="{Binding Detail.totalBad, Mode=TwoWay, Converter={StaticResource DecConv}}"
+                               Text="{Binding Detail.totalBad, Mode=TwoWay, Converter={StaticResource DecParseOnlyConv}}"
                                Keyboard="Numeric"
-                               IsEnabled="{Binding IsEditing}" />   
+                               IsEnabled="{Binding IsEditing}" />
 
                         <Label Grid.Row="1" Grid.Column="4" Text="抽样不良率：" Style="{StaticResource FieldLabel}" />
                         <Entry Grid.Row="1" Grid.Column="5"
-                               Text="{Binding Detail.samplingDefectRate, Mode=OneWay, StringFormat='{0:G29}'}"
+                               Text="{Binding Detail.samplingDefectRate, Mode=OneWay, StringFormat='{0:0.##}%'}"
                                IsEnabled="False" /> 
+
                         <!-- 只读，显示XXXX风格 -->
 
                         <!-- 第2行：合格总数、不合格总数、总体合格率(只读) -->
                         <Label Grid.Row="2" Grid.Column="0" Text="合格总数：" Style="{StaticResource FieldLabel}" />
                         <Entry Grid.Row="2" Grid.Column="1"
-                               Text="{Binding Detail.totalQualified, Mode=TwoWay,  Converter={StaticResource DecConv,DecConv}}"
+                               Text="{Binding Detail.totalQualified, Mode=TwoWay,  Converter={StaticResource DecParseOnlyConv}}"
                                Keyboard="Numeric"
                                IsEnabled="{Binding IsEditing}" /> 
 
                         <Label Grid.Row="2" Grid.Column="2" Text="不合格总数：" Style="{StaticResource FieldLabel}" />
                         <Entry Grid.Row="2" Grid.Column="3"
-                               Text="{Binding Detail.totalUnqualified, Mode=TwoWay,Converter={StaticResource DecConv,DecConv}}"
+                               Text="{Binding Detail.totalUnqualified, Mode=TwoWay,Converter={StaticResource DecParseOnlyConv}}"
                                Keyboard="Numeric"
                                IsEnabled="{Binding IsEditing}" /> 
 
                         <Label Grid.Row="2" Grid.Column="4" Text="总体合格率：" Style="{StaticResource FieldLabel}" />
                         <Entry Grid.Row="2" Grid.Column="5"
-                               Text="{Binding Detail.passRate, Mode=OneWay, StringFormat='{0:G29}'}"
+                               Text="{Binding Detail.passRate, Mode=OneWay, StringFormat='{0:0.##}%'}"
                                IsEnabled="False" /> 
                         <!-- 只读 -->
 
@@ -303,15 +319,36 @@
                                         </Grid>
 
                                         <!-- 行3：检验结果 -->
+                                        <!-- 行3：检验结果（明细项） -->
                                         <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
-                              ColumnDefinitions="Auto,*" ColumnSpacing="10">
+      ColumnDefinitions="Auto,*" ColumnSpacing="10">
                                             <Label Grid.Column="0" Text="检验结果：" Style="{StaticResource FieldLabel}" />
-                                            <Picker Grid.Column="1"
-                                    ItemsSource="{Binding BindingContext.InspectResultOptions, Source={x:Reference Name=ThisPage}}"
-                                    ItemDisplayBinding="{Binding Text}"
-                                    SelectedItem="{Binding InspectResultOption, Mode=TwoWay}"
-                                    IsEnabled="{Binding Source={x:Reference Name=ThisPage}, Path=BindingContext.IsEditing}" />
+
+                                            <Picker x:Name="RowResultPicker"
+            Grid.Column="1"
+            ItemsSource="{Binding Source={x:Reference ThisPage}, Path=BindingContext.InspectResultTextList}"
+            SelectedItem="{Binding inspectResult, Mode=TwoWay}"
+            IsEnabled="{Binding Source={x:Reference ThisPage}, Path=BindingContext.IsEditing}">
+                                                <!-- 默认底色（可选） -->
+                                                <Picker.BackgroundColor>#F3F4F6</Picker.BackgroundColor>
+
+                                                <Picker.Triggers>
+                                                    <!-- 直接监听控件自己的 SelectedItem，避免依赖模型的通知 -->
+                                                    <DataTrigger TargetType="Picker"
+                         Binding="{Binding Source={x:Reference RowResultPicker}, Path=SelectedItem}"
+                         Value="合格">
+                                                        <Setter Property="BackgroundColor" Value="#B2F2BB"/>
+                                                    </DataTrigger>
+
+                                                    <DataTrigger TargetType="Picker"
+                         Binding="{Binding Source={x:Reference RowResultPicker}, Path=SelectedItem}"
+                         Value="不合格">
+                                                        <Setter Property="BackgroundColor" Value="#FFA8A8"/>
+                                                    </DataTrigger>
+                                                </Picker.Triggers>
+                                            </Picker>
                                         </Grid>
+
 
                                         <!-- 行4：抽样数、不良数、不良率(只读) -->
                                         <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
@@ -324,9 +361,11 @@
                                    IsEnabled="{Binding Source={x:Reference Name=ThisPage}, Path=BindingContext.IsEditing}" />
                                             <Label Grid.Column="4" Text="不良率：" Style="{StaticResource FieldLabel}" />
                                             <Frame Grid.Column="5" Padding="8,6" CornerRadius="6" HasShadow="False"
-                                   BackgroundColor="#F3F4F6" BorderColor="#E5E7EB">
-                                                <Label Text="{Binding badRate, StringFormat='{0:G29}'}" VerticalTextAlignment="Center" />
+       BackgroundColor="#F3F4F6" BorderColor="#E5E7EB">
+                                                <Label Text="{Binding badRate, StringFormat='{0:0.##}%'}"
+           VerticalTextAlignment="Center" />
                                             </Frame>
+
                                         </Grid>
 
                                         <!-- 行5：不良原因 -->

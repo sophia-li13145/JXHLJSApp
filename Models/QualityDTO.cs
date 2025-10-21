@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -67,8 +68,8 @@ public class DictQuality
     public List<DictItem> InspectStatus { get; set; } = new();
 }
 
-// Models/QualityDetailDto.cs
-public class QualityDetailDto
+
+public class QualityDetailDto : ObservableObject
 {
     public string? id { get; set; }
     public string? qualityNo { get; set; }
@@ -89,22 +90,89 @@ public class QualityDetailDto
     public string? factoryCode { get; set; }
     public string? inspecter { get; set; }         // 检验人
 
-    public decimal? passRate { get; set; }
-    public decimal? totalQualified { get; set; }
-    public decimal? totalUnqualified { get; set; }
-    public decimal? totalBad { get; set; }
-    public decimal? totalSampling { get; set; }
-    public decimal? samplingDefectRate { get; set; }
+    // === 参与计算的字段（带通知 + 触发重算） ===
+    private decimal? _totalQualified;
+    public decimal? totalQualified
+    {
+        get => _totalQualified;
+        set { if (SetProperty(ref _totalQualified, value)) RecalcRates(); }
+    }
 
-    // 物料
+    private decimal? _totalUnqualified;
+    public decimal? totalUnqualified
+    {
+        get => _totalUnqualified;
+        set { if (SetProperty(ref _totalUnqualified, value)) RecalcRates(); }
+    }
+
+    private decimal? _totalBad;
+    public decimal? totalBad
+    {
+        get => _totalBad;
+        set { if (SetProperty(ref _totalBad, value)) RecalcRates(); }
+    }
+
+    private decimal? _totalSampling;
+    public decimal? totalSampling
+    {
+        get => _totalSampling;
+        set { if (SetProperty(ref _totalSampling, value)) RecalcRates(); }
+    }
+
+    // === 计算结果（公开可设，便于反序列化；内部重算时会通知 UI） ===
+    private decimal? _samplingDefectRate;
+    public decimal? samplingDefectRate
+    {
+        get => _samplingDefectRate;
+        set => SetProperty(ref _samplingDefectRate, value);
+    }
+
+    private decimal? _passRate;
+    public decimal? passRate
+    {
+        get => _passRate;
+        set => SetProperty(ref _passRate, value);
+    }
+
+    // 物料/明细/附件
     public QualityMaterial? orderQualityMaterial { get; set; }
-
-    // 明细行
     public List<QualityItem>? orderQualityDetailList { get; set; } = new();
-
-    // 附件
     public List<QualityAttachment>? orderQualityAttachmentList { get; set; } = new();
+
+    // —— 重入保护标志 —— 
+    private bool _inRecalc;
+
+    // 外部（如 VM 的 LoadAsync）可手动触发一次
+    public void Recalc() => RecalcRates();
+
+    // === 统一计算入口 ===
+    private void RecalcRates()
+    {
+        if (_inRecalc) return;
+        _inRecalc = true;
+        try
+        {
+            var s = totalSampling ?? 0m;
+            var b = totalBad ?? 0m;
+            var q = totalQualified ?? 0m;
+            var u = totalUnqualified ?? 0m;
+
+            // 抽样不良率 = 不良总数 / 抽样总数 * 100%
+            var newDefect = s > 0 ? decimal.Round(b / s * 100m, 2) : (decimal?)null;
+
+            // 总体合格率 =  合格数/ 生产总数 * 100%
+            var denom = orderQualityMaterial?.qty ?? 0m;
+            var newPass = denom > 0 ? decimal.Round(q / denom * 100m, 2) : (decimal?)null;
+
+            // 只在值变化时写回，减少多余通知
+            if (newDefect != _samplingDefectRate) samplingDefectRate = newDefect;
+            if (newPass != _passRate) passRate = newPass;
+        }
+        finally { _inRecalc = false; }
+    }
 }
+
+
 
 public class QualityMaterial
 {
@@ -116,27 +184,61 @@ public class QualityMaterial
     public string? unit { get; set; }
 }
 
-public class QualityItem
+public partial class QualityItem : ObservableObject
 {
     public int? index { get; set; }
     public string? id { get; set; }
-    public string? inspectionCode { get; set; }
     public string? inspectionName { get; set; }
     public string? inspectionAttributeName { get; set; }
-    public string? inspectionTypeName { get; set; }
     public string? inspectionMode { get; set; }
-    public string? inspectionStandard { get; set; }
-
     public string? standardValue { get; set; }
-    public string? lowerLimit { get; set; }
     public string? upperLimit { get; set; }
-    public string? unit { get; set; }
-
-    public string? inspectResult { get; set; }   // 合格/不合格
-    public string? defect { get; set; }
+    public string? lowerLimit { get; set; }
     public string? badCause { get; set; }
-    public decimal? badQty { get; set; }
-    public decimal? sampleQty { get; set; }
+    public string? defect { get; set; }
+    public string? inspectResult { get; set; }
+
+    // === 自动计算部分 ===
+    private decimal? _sampleQty;
+    public decimal? sampleQty
+    {
+        get => _sampleQty;
+        set
+        {
+            if (SetProperty(ref _sampleQty, value))
+                RecalcBadRate();
+        }
+    }
+
+    private decimal? _badQty;
+    public decimal? badQty
+    {
+        get => _badQty;
+        set
+        {
+            if (SetProperty(ref _badQty, value))
+                RecalcBadRate();
+        }
+    }
+
+    private decimal? _badRate;
+    public decimal? badRate
+    {
+        get => _badRate;
+        set => SetProperty(ref _badRate, value);
+    }
+
+    // 计算不良率 = 不良数 / 抽样数 * 100%
+    private void RecalcBadRate()
+    {
+        var s = sampleQty ?? 0m;
+        var b = badQty ?? 0m;
+
+        if (s > 0)
+            badRate = decimal.Round(b / s * 100m, 2);
+        else
+            badRate = null;
+    }
 }
 
 public class QualityAttachment
