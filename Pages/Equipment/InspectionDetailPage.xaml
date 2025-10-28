@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Name="ThisPage"
+    x:Class="IndustrialControlMAUI.Pages.InspectionDetailPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:conv="clr-namespace:IndustrialControlMAUI.Converters"
+    BackgroundColor="White"
+    Title="设备管理系统">
+
+    <!-- 局部样式：按钮/标题/分组标题 -->
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <conv:NullOrEmptyToBoolInverseConverter x:Key="NullOrEmptyToBoolInverseConverter" />
+            <conv:StringToNullableDecimalConverter x:Key="DecConv" />
+            <conv:DecParseOnlyConverter x:Key="DecParseOnlyConv" />
+            <conv:DefectLevelToColorConverter x:Key="DefectLevelToColor"/>
+            <conv:IntGreaterThanZeroConverter x:Key="IntGT0" />
+            <conv:IndexConverter x:Key="IndexConverter" />
+            <conv:BoolToPrimaryOrGrayConverter x:Key="BoolToPrimaryOrGray" />
+            <conv:ActiveToTitleColorConverter  x:Key="ActiveToTitleColor"  />
+            <Style x:Key="PrimaryBtn" TargetType="Button">
+                <Setter Property="HeightRequest" Value="36" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="18,6" />
+                <Setter Property="TextColor" Value="White" />
+                <Setter Property="BackgroundColor" Value="#2F80ED" />
+                <Setter Property="FontAttributes" Value="Bold" />
+            </Style>
+            <Style x:Key="SuccessBtn" TargetType="Button" BasedOn="{StaticResource PrimaryBtn}">
+                <Setter Property="BackgroundColor" Value="#27AE60" />
+            </Style>
+            <Style x:Key="SectionTitle" TargetType="Label">
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="TextColor" Value="#1F2937" />
+                <Setter Property="Margin" Value="0,5,0,4" />
+            </Style>
+            <Style x:Key="FieldLabel" TargetType="Label">
+                <Setter Property="TextColor" Value="#4B5563" />
+                <Setter Property="VerticalTextAlignment" Value="Center" />
+                <Setter Property="HorizontalOptions" Value="Start" />
+                <Setter Property="HorizontalTextAlignment" Value="Start" />
+                <Setter Property="Padding" Value="0" />
+            </Style>
+            <Style x:Key="FieldValue" TargetType="Label">
+                <Setter Property="TextColor" Value="#111827" />
+                <Setter Property="VerticalTextAlignment" Value="Center" />
+                <Setter Property="HorizontalOptions" Value="Start" />
+                <Setter Property="HorizontalTextAlignment" Value="Start" />
+            </Style>
+            <Style x:Key="Card" TargetType="Frame">
+                <Setter Property="Padding" Value="12" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="HasShadow" Value="False" />
+                <Setter Property="BorderColor" Value="#E5E7EB" />
+            </Style>
+            <!-- 只读展示小灰框 -->
+            <Style x:Key="ReadonlyPill" TargetType="Frame">
+                <Setter Property="Padding" Value="8,6" />
+                <Setter Property="CornerRadius" Value="6" />
+                <Setter Property="HasShadow" Value="False" />
+                <Setter Property="BackgroundColor" Value="#F3F4F6" />
+                <Setter Property="BorderColor" Value="#E5E7EB" />
+            </Style>
+            <Style TargetType="Entry">
+                <Setter Property="HorizontalOptions" Value="Fill" />
+                <Setter Property="Margin" Value="0" />
+                <Setter Property="HeightRequest" Value="42" />
+                <Setter Property="VerticalOptions" Value="Center" />
+                <Setter Property="BackgroundColor" Value="Transparent" />
+                <Setter Property="HorizontalTextAlignment" Value="Start" />
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,*" RowSpacing="0">
+
+        <!-- 顶部蓝条 -->
+        <Grid Grid.Row="0"  HeightRequest="56" Padding="12" ColumnDefinitions="*" ColumnSpacing="8">
+            <Label Text="点巡检单基础信息"
+                   VerticalOptions="Start"
+                   TextColor="Black"
+                   FontSize="14"
+                   FontAttributes="Bold" />
+        </Grid>
+        <!-- 点巡检单基础信息 - 工作流时间轴 -->
+        <Grid Margin="0,8,0,0" RowDefinitions="Auto" Grid.Row="1" >
+            <CollectionView ItemsSource="{Binding WorkflowSteps}"
+                    SelectionMode="None"
+                    ItemsLayout="HorizontalList"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <!-- 三行两列：行0图形，行1标题，行2时间 -->
+                        <Grid ColumnDefinitions="Auto,20,30,25"
+          RowDefinitions="Auto,Auto,Auto"
+          Padding="12,0"
+          HorizontalOptions="Center" VerticalOptions="Center">
+
+                            <!-- 圆点：默认白底；激活(已完成/当前)描边蓝，未到达描边灰 -->
+                            <Frame Grid.Row="0" Grid.Column="0"
+                                   WidthRequest="36" HeightRequest="36"
+                                   Padding="0" HasShadow="False"
+                                   CornerRadius="20"
+                                   BackgroundColor="White"
+                                   BorderColor="{Binding IsActive, Converter={StaticResource BoolToPrimaryOrGray}}"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center">    
+
+                                <!-- 这里只放一个内容：Grid 叠放两个 Label，避免“Content 被设置多次” -->
+                                <Grid>
+                                    <!-- 当前步骤：蓝底白字数字（可见性互斥） -->
+                                    <Label Text="{Binding StepNo}"
+               FontSize="14"
+               FontAttributes="Bold"
+               TextColor="White"
+               HorizontalOptions="Center"
+               VerticalOptions="Center"
+               IsVisible="{Binding IsCurrent}" />
+
+                                    <!-- 已完成：蓝色对勾（字符；如果太细可把 FontSize 调到 20~22） -->
+                                    <Label Text="✓"
+               FontSize="18"
+               FontAttributes="Bold"
+               TextColor="{Binding IsActive, Converter={StaticResource BoolToPrimaryOrGray}}"
+               HorizontalOptions="Center"
+               VerticalOptions="Center"
+               IsVisible="{Binding IsCompleted}" />
+                                </Grid>
+
+                                <!-- 关键：触发器写在 Frame 上，直接改 Frame 的底色与描边 -->
+                                <Frame.Triggers>
+                                    <DataTrigger TargetType="Frame" Binding="{Binding IsCurrent}" Value="True">
+                                        <Setter Property="BackgroundColor" Value="#3B82F6" />
+                                        <Setter Property="BorderColor"     Value="#3B82F6" />
+                                    </DataTrigger>
+                                </Frame.Triggers>
+                            </Frame>
+                            <!-- 标题：激活(已完成/当前)为深色，未到达为灰 -->
+                            <Label Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
+           Text="{Binding Title}"
+           FontSize="13"
+           TextColor="{Binding IsActive, Converter={StaticResource ActiveToTitleColor}}"
+           HorizontalTextAlignment="Center" VerticalOptions="Center"/>
+
+                            <!-- 连线：当前或已完成为蓝，否则灰；最后一个隐藏 -->
+                            <BoxView Grid.Row="0" Grid.Column="3"
+                 WidthRequest="20" HeightRequest="2"
+                 VerticalOptions="Center" HorizontalOptions="Center"
+                 BackgroundColor="{Binding IsActive, Converter={StaticResource BoolToPrimaryOrGray}}">
+                                <BoxView.Triggers>
+                                    <DataTrigger TargetType="BoxView" Binding="{Binding IsLast}" Value="True">
+                                        <Setter Property="IsVisible" Value="False" />
+                                    </DataTrigger>
+                                </BoxView.Triggers>
+                            </BoxView>
+
+                            
+
+                            <!-- 时间：只有有值才显示（当前与已完成都有时间）；未到达不显示 -->
+                            <Label Grid.Row="2"  Grid.Column="1" Grid.ColumnSpan="3"
+                                   Text="{Binding Time}"
+                                   FontSize="11"
+                                   TextColor="#888888"
+                                   HorizontalTextAlignment="Center"> 
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding Time}" Value="">
+                                        <Setter Property="IsVisible" Value="False"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label" Binding="{Binding Time}" Value="{x:Null}">
+                                        <Setter Property="IsVisible" Value="False"/>
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+
+
+        <!-- 主体滚动 -->
+        <ScrollView Grid.Row="2" >
+            <VerticalStackLayout Spacing="10" Padding="12" >
+
+                <!-- 基础信息卡片 -->
+                <Frame Style="{StaticResource Card}">
+                    <Grid ColumnDefinitions="80,*,80,*"
+                          RowDefinitions="Auto,Auto,Auto,Auto"
+                          ColumnSpacing="2" >
+
+                        <!-- 第一行 -->
+                        <Label Grid.Row="0" Grid.Column="0" Text="点检单号：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding Detail.inspectNo}" Style="{StaticResource FieldValue}" />
+
+                        <Label Grid.Row="0" Grid.Column="2" Text="计划名称：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="0" Grid.Column="3" Text="{Binding Detail.planName}" Style="{StaticResource FieldValue}" />
+
+                        <!-- 第二行 -->
+                        <Label Grid.Row="1" Grid.Column="0" Text="计划编号：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding Detail.planCode}" Style="{StaticResource FieldValue}" />
+                        <Label Grid.Row="1" Grid.Column="2" Text="设备名称：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="1" Grid.Column="3" Text="{Binding Detail.devName}" Style="{StaticResource FieldValue}" />
+                        <Label Grid.Row="2" Grid.Column="0" Text="设备编号：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding Detail.devCode}" Style="{StaticResource FieldValue}" />
+                        <Label Grid.Row="2" Grid.Column="2" Text="计划点检日期：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="2" Grid.Column="3" Text="{Binding Detail.planInspectTime}" Style="{StaticResource FieldValue}" />
+
+                        <!-- 第三行 -->
+                        <Label Grid.Row="3" Grid.Column="0" Text="备注：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Detail.memo}" Style="{StaticResource FieldValue}" />
+
+                    </Grid>
+                </Frame>
+                <Label Text="检验结果"
+            VerticalOptions="Start"
+            Style="{StaticResource SectionTitle}" />
+                <Frame Style="{StaticResource Card}">
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                          ColumnDefinitions="90,*,60,*,60,*"
+                           ColumnSpacing="2"> 
+
+                        <Label Grid.Row="0" Grid.Column="0"  Grid.ColumnSpan="2" Text="检验结果：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"  Text="{Binding Detail.inspectResult}"
+         />
+                        <Label Grid.Row="1" Grid.Column="0" Text="点检项目总数：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="1" Grid.Column="1"  Text="{Binding Detail.inspectNum}"/>   
+
+                        <Label Grid.Row="1" Grid.Column="2" Text="合格项目数：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="1" Grid.Column="3"
+                               Text="{Binding Detail.qualifiedNum}"
+                                />
+
+                        <Label Grid.Row="1" Grid.Column="4" Text="不合格项目数：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="1" Grid.Column="5"
+                                Text="{Binding Detail.unqualifiedNum}"
+                                /> 
+
+                        <Label Grid.Row="2" Grid.Column="0" Text="实际点检日期：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                               Text="{Binding Detail.inspectTime}"
+                               />
+
+                        <Label Grid.Row="2" Grid.Column="3" Grid.ColumnSpan="2" Text="操作人：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="2" Grid.Column="4" Grid.ColumnSpan="2"
+                                Text="{Binding Detail.inspecter}"
+                               />
+
+                        <!-- 第4行：检验备注（整行） -->
+                        <Label Grid.Row="4" Grid.Column="0" Text="检验备注：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="5"
+                               Text="{Binding Detail.inspectMemo}" /> 
+                    </Grid>
+                </Frame>
+
+                <!-- 点检项目执行 -->
+                <Label Text="点检项目执行" Style="{StaticResource SectionTitle}"/>
+
+                <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <!-- 左侧序号 + 右侧原卡片 -->
+                            <Grid ColumnDefinitions="12,*" ColumnSpacing="8" Margin="0,6,0,0">
+                                <!-- 序号：与卡片顶部对齐 -->
+                                <Label Grid.Column="0"
+                       Text="{Binding index}"
+                       VerticalOptions="Center"
+                       HorizontalTextAlignment="Center"
+                       VerticalTextAlignment="Center"
+                       FontAttributes="Bold"
+                       TextColor="#111827"
+                       Margin="0,8,0,0"/>
+
+                                <!-- 右侧你的原 Frame 卡片，内容保持不变 -->
+                                <Frame Grid.Column="1" Style="{StaticResource Card}">
+                                    <Grid
+                        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                        ColumnDefinitions="Auto,*"
+                        RowSpacing="8" ColumnSpacing="10">
+
+                                        <!-- 行0：项目名称 -->
+                                        <Label Grid.Row="0" Grid.Column="0" Text="项目名称：" Style="{StaticResource FieldLabel}" />
+                                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding itemName}" Style="{StaticResource FieldValue}" />
+
+                                        <!-- 行1：检验属性、检验方式 -->
+                                        <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                              ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="10">
+                                            <Label Grid.Column="0" Text="检验属性：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="1" Text="{Binding inspectionAttributeName}" Style="{StaticResource FieldValue}" />
+                                            <Label Grid.Column="2" Text="检验方式：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="3" Text="{Binding inspectionMode}" Style="{StaticResource FieldValue}" />
+                                        </Grid>
+                                        <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                            <Label Grid.Column="0" Text="检验标准：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="1" Text="{Binding inspectionStandard}" Style="{StaticResource FieldValue}" />
+                                        </Grid>
+                                        <!-- 行2：标准值、上限值、下限值 -->
+                                        <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                              ColumnDefinitions="Auto,*,Auto,*,Auto,*" ColumnSpacing="10">
+                                            <Label Grid.Column="0" Text="标准值：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="1" Text="{Binding standardValue}" Style="{StaticResource FieldValue}" />
+                                            <Label Grid.Column="2" Text="上限值：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="3" Text="{Binding upperLimit}" Style="{StaticResource FieldValue}" />
+                                            <Label Grid.Column="4" Text="下限值：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="5" Text="{Binding lowerLimit}" Style="{StaticResource FieldValue}" />
+                                        </Grid>
+
+                                        <!-- 行4：抽样数、不良数、不良率(只读) -->
+                                        <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+                              ColumnDefinitions="Auto,*,Auto,*,Auto,*" ColumnSpacing="10">
+                                            <Label Grid.Column="0" Text="点检值：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="1" Text="{Binding inspectValue}" />
+                                            <Label Grid.Column="2" Text="单位：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="3" Text="{Binding unit}"  />
+                                            <Label Grid.Column="4" Text="点检结果：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="5" Text="{Binding inspectResult}" />
+                                        </Grid>
+
+                                        <!-- 行5：不良原因 -->
+                                        <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
+                              ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                            <Label Grid.Column="0" Text="备注：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="1" Text="{Binding memo}" />
+                                        </Grid>
+                                    </Grid>
+                                </Frame>
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- 图片附件 -->
+                <Label Text="图片附件" Style="{StaticResource SectionTitle}" HorizontalOptions="Start" />
+                <!-- 左窄右宽两列 -->
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="40,*" RowSpacing="8">
+
+                    <!-- Row0 左：图片上传标题 -->
+                    <Label Grid.Row="0" Grid.Column="0" Text="图片上传：" VerticalTextAlignment="Start" />
+
+                    <!-- Row0 右：缩略图 + 上传方块 -->
+                    <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="8" VerticalOptions="Start">
+
+                        <CollectionView ItemsSource="{Binding ImageAttachments}"
+                    ItemsLayout="HorizontalList"
+                    HeightRequest="96"
+                    SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Frame Padding="0" WidthRequest="96" HeightRequest="96"
+                   CornerRadius="8" HasShadow="False" BorderColor="#E5E7EB" Margin="0,0,8,0">
+                                            <Image Aspect="AspectFill" Source="{Binding DisplaySource}" />
+                                        </Frame>
+                                        <!-- 右上角删除 -->
+                                        <Button Text="×" FontSize="12" Padding="0"
+                    WidthRequest="22" HeightRequest="22" CornerRadius="11"
+                    BackgroundColor="#00000066" TextColor="White"
+                    HorizontalOptions="End" VerticalOptions="Start" Margin="2"
+                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.RemoveAttachmentCommand}"
+                    CommandParameter="{Binding .}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <!-- 上传方块 -->
+                        <Frame WidthRequest="96" HeightRequest="96" CornerRadius="8"
+           BorderColor="#E5E7EB" BackgroundColor="White"
+           HasShadow="False" Padding="8" VerticalOptions="Start">
+                            <VerticalStackLayout Spacing="4" VerticalOptions="Center" HorizontalOptions="Center">
+                                <Label Text="＋" FontSize="28" TextColor="#9CA3AF" />
+                                <Label Text="单击上传" FontSize="12" TextColor="#9CA3AF" Margin="0,0,0,2" LineHeight="1.1"/>
+                            </VerticalStackLayout>
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer  Tapped="OnPickImagesClicked" />
+                            </Frame.GestureRecognizers>
+                        </Frame>
+                    </HorizontalStackLayout>
+
+                    <!-- Row1 左：附件信息标题 -->
+                    <Label Grid.Row="1" Grid.Column="0" Text="附件信息：" VerticalTextAlignment="Center" />
+
+                    <!-- Row1 右：上传附件链接 -->
+                    <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="12" VerticalOptions="Center">
+                        <Label Text="上传附件" TextColor="#3B82F6">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPickFileClicked" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </HorizontalStackLayout>
+
+                    <!-- Row2 右：提示 -->
+                    <Label Grid.Row="2" Grid.Column="1"
+         Text="（单个附件最大支持20M，支持格式PDF、Word、Excel、Txt、JPG、PNG、RAR）"
+         FontSize="12" TextColor="#9CA3AF" />
+
+                    <!-- Row3 右：附件表格 -->
+                    <Grid Grid.Row="3" Grid.Column="1" RowDefinitions="Auto,*" Margin="0,4,0,0">
+                        <Grid Grid.Row="0" ColumnDefinitions="40,100,40,80,120"
+          BackgroundColor="#E5EEF9" Padding="8,8">
+                            <Label Grid.Column="0" Text="序号" />
+                            <Label Grid.Column="1" Text="附件名称" />
+                            <Label Grid.Column="2" Text="大小" />
+                            <Label Grid.Column="3" Text="上传时间" />
+                            <Label Grid.Column="4" Text="操作" />
+                        </Grid>
+
+                        <CollectionView x:Name="AttList" Grid.Row="1" ItemsSource="{Binding Attachments}" SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="40,100,40,80,120" Padding="8,10">
+                                        <Label Text="{Binding .,
+                                      Converter={StaticResource IndexConverter},
+                                      ConverterParameter={x:Reference AttList}}" />
+                                        <Label Grid.Column="1" Text="{Binding AttachmentName}" LineBreakMode="TailTruncation"/>
+                                        <Label Grid.Column="2" Text="{Binding AttachmentSize}" />
+                                        <Label Grid.Column="3" Text="{Binding CreatedTime}" />
+                                        <HorizontalStackLayout Grid.Column="4" Spacing="16">
+                                            <Label Text="下载" TextColor="#3B82F6">
+                                                <Label.GestureRecognizers>
+                                                    <TapGestureRecognizer
+                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DownloadAttachmentCommand}"
+                    CommandParameter="{Binding .}" />
+                                                </Label.GestureRecognizers>
+                                            </Label>
+                                            <Label Text="删除" TextColor="Red">
+                                                <Label.GestureRecognizers>
+                                                    <TapGestureRecognizer
+                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteAttachmentCommand}"
+                    CommandParameter="{Binding .}" />
+                                                </Label.GestureRecognizers>
+                                            </Label>
+                                        </HorizontalStackLayout>
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </Grid>
+                </Grid>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>
+

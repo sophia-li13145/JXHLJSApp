@@ -172,7 +172,7 @@
                     </Grid>
 
                     <Grid Grid.Row="1"
-                          ColumnDefinitions="80,*,*,120,120"
+                          ColumnDefinitions="80,*,*,60,60"
                           BackgroundColor="#F2F2F2"
                           IsVisible="{Binding IsScannedVisible}"
                           Padding="8">

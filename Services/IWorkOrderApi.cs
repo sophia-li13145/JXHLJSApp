@@ -228,7 +228,7 @@ namespace IndustrialControlMAUI.Services
             if (q.CreatedTimeEnd.HasValue) p["createdTimeEnd"] = q.CreatedTimeEnd.Value.ToString("yyyy-MM-dd HH:mm:ss");
             if (!string.IsNullOrWhiteSpace(q.WorkOrderNo)) p["workOrderNo"] = q.WorkOrderNo!.Trim();
             if (!string.IsNullOrWhiteSpace(q.MaterialName)) p["materialName"] = q.MaterialName!.Trim();
-
+            if (!string.IsNullOrWhiteSpace(q.AuditStatus)) p["auditStatus"] = q.AuditStatus!.Trim();
             var url = _pageEndpoint + "?" + BuildQuery(p);
             var full = BuildFullUrl(_http.BaseAddress, url);
 

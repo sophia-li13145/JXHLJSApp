@@ -14,6 +14,7 @@ namespace IndustrialControlMAUI.ViewModels
     {
         private readonly IQualityApi _api;
         private readonly IAuthApi _authApi;
+        private readonly IAttachmentApi _attachmentApi;
         private readonly CancellationTokenSource _cts = new();
         private const string FolderImage = "image";
         private const string FolderFile = "file";
@@ -22,13 +23,6 @@ namespace IndustrialControlMAUI.ViewModels
         private const int MaxImageCount = 9;
         private const long MaxImageBytes = 2L * 1024 * 1024;   // 2MB
         private const long MaxFileBytes = 20L * 1024 * 1024;  // 20MB
-                                                              // 识别图片扩展名（用于是否进缩略图）
-        private static readonly HashSet<string> _imgExts = new(StringComparer.OrdinalIgnoreCase)
-{ "jpg","jpeg","png","gif","bmp","webp","heic","heif" };
-
-        // 文件允许的扩展名（包含图片）——按你给的要求
-        private static readonly HashSet<string> _allowedFileExts = new(StringComparer.OrdinalIgnoreCase)
-{ "pdf","doc","docx","xls","xlsx","txt","jpg","jpeg","png","rar" };
 
         public ObservableCollection<OrderQualityAttachmentItem> Attachments { get; } = new();
         public ObservableCollection<OrderQualityAttachmentItem> ImageAttachments { get; } = new(); // 仅图片
@@ -69,10 +63,11 @@ namespace IndustrialControlMAUI.ViewModels
         public int Index { get; set; }
         public IReadOnlyList<string> InspectResultTextList { get; } = new[] { "合格", "不合格" };
 
-        public ProcessQualityDetailViewModel(IQualityApi api, IAuthApi authApi)
+        public ProcessQualityDetailViewModel(IQualityApi api, IAuthApi authApi, IAttachmentApi attachmentApi)
         {
             _api = api;
             _authApi = authApi;
+            _attachmentApi = attachmentApi;
 
             // 默认选项（也可以从字典接口加载）
             InspectResultOptions.Add(new StatusOption { Text = "合格", Value = "合格" });
@@ -80,6 +75,7 @@ namespace IndustrialControlMAUI.ViewModels
 
             InspectorSuggestions = new ObservableCollection<UserInfoDto>();
             AllUsers = new List<UserInfoDto>();
+           
         }
 
         public List<UserInfoDto> AllUsers { get; private set; }
@@ -296,7 +292,7 @@ namespace IndustrialControlMAUI.ViewModels
                     try
                     {
                         // 预签名有效期：例如 10 分钟
-                        var resp = _api.GetPreviewUrlAsync(item.AttachmentUrl!, 600, options.CancellationToken).GetAwaiter().GetResult();
+                        var resp = _attachmentApi.GetPreviewUrlAsync(item.AttachmentUrl!, 600, options.CancellationToken).GetAwaiter().GetResult();
                         if (resp?.success == true && !string.IsNullOrWhiteSpace(resp.result))
                         {
                             MainThread.BeginInvokeOnMainThread(() =>
@@ -332,7 +328,7 @@ namespace IndustrialControlMAUI.ViewModels
                 PreparePayloadFromUi();
 
                 var resp = await _api.ExecuteSaveAsync(Detail);
-                if (resp?.success == true && resp.result)
+                if (resp?.success == true && resp.result == true)
                 {
                     await ShowTip("已保存。");
                 }
@@ -370,7 +366,7 @@ namespace IndustrialControlMAUI.ViewModels
                 PreparePayloadFromUi();
 
                 var resp = await _api.ExecuteCompleteInspectionAsync(Detail);
-                if (resp?.success == true && resp.result)
+                if (resp?.success == true && resp.result == true)
                 {
                     await ShowTip("已完成质检。");
                     // 可选：返回上页 / 刷新列表
@@ -505,7 +501,7 @@ namespace IndustrialControlMAUI.ViewModels
 
                     // 用临时文件重新打开流，避免上面 using 的 src 已被释放
                     await using var fs = File.OpenRead(tmpPath);
-                    var resp = await _api.UploadAttachmentAsync(
+                    var resp = await _attachmentApi.UploadAttachmentAsync(
                                 attachmentFolder: folder,
                                 attachmentLocation: LocationQuality,
                                 fileStream: fs,
@@ -745,17 +741,5 @@ namespace IndustrialControlMAUI.ViewModels
 
        
     }
-    public static class FileResultExtensions
-    {
-        public static async Task<(string tempPath, long len)> CopyToTempAndLenAsync(this Stream s)
-        {
-            var tmp = Path.Combine(FileSystem.CacheDirectory, $"up_{Guid.NewGuid():N}.bin");
-            using (var fs = File.Create(tmp))
-            {
-                await s.CopyToAsync(fs);
-            }
-            var fi = new FileInfo(tmp);
-            return (tmp, fi.Length);
-        }
-    }
+    
 }

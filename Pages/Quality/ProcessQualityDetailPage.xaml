@@ -123,8 +123,14 @@
                         <Label Grid.Row="2" Grid.Column="3" Text="{Binding Detail.orderQualityMaterial.qty, StringFormat='{0:G29}'}" Style="{StaticResource FieldValue}" />
 
                         <!-- 第四行 -->
-                        <Label Grid.Row="3" Grid.Column="0" Text="检验员：" Style="{StaticResource FieldLabel}" />
-
+                        <Label Grid.Row="3" Grid.Column="0" Style="{StaticResource FieldLabel}" >
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="*" TextColor="Red" FontAttributes="Bold"/>
+                                    <Span Text=" 检验员：" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                        </Label>
                         <!-- 外层容器，便于定位下拉 -->
                         <Grid Grid.Row="3" Grid.Column="1">
                             <Grid.RowDefinitions>
@@ -186,7 +192,14 @@
                           RowSpacing="10" ColumnSpacing="10"> 
 
                         <!-- 第0行：检验结果 下拉 -->
-                        <Label Grid.Row="0" Grid.Column="0"  Grid.ColumnSpan="5" Text="检验结果：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="0" Grid.Column="0"  Grid.ColumnSpan="5"  Style="{StaticResource FieldLabel}" >
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="*" TextColor="Red" FontAttributes="Bold"/>
+                                    <Span Text=" 检验结果: " />
+                            </FormattedString>
+                        </Label.FormattedText>
+                        </Label>
                         <Picker Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="5"
                                 ItemsSource="{Binding InspectResultOptions}"
                                 ItemDisplayBinding="{Binding Text}"

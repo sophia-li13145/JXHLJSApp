@@ -61,6 +61,8 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<ViewModels.ProcessQualitySearchViewModel>();
             builder.Services.AddTransient<ViewModels.FinishedQualityDetailViewModel>();
             builder.Services.AddTransient<ViewModels.FinishedQualitySearchViewModel>();
+            builder.Services.AddTransient<ViewModels.InspectionDetailViewModel>();
+            builder.Services.AddTransient<ViewModels.InspectionSearchViewModel>();
 
             // ===== 注册 Pages（DI 创建）=====
             builder.Services.AddTransient<Pages.LoginPage>();
@@ -88,6 +90,8 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<Pages.ProcessQualityDetailPage>();
             builder.Services.AddTransient<Pages.FinishedQualitySearchPage>();
             builder.Services.AddTransient<Pages.FinishedQualityDetailPage>();
+            builder.Services.AddTransient<Pages.InspectionSearchPage>();
+            builder.Services.AddTransient<Pages.InspectionDetailPage>();
 
             builder.Services.AddTransient<WarehouseLocationPickerPage>();
             builder.Services.AddTransient<QrScanPage>();
@@ -112,6 +116,10 @@ namespace IndustrialControlMAUI
             .AddHttpMessageHandler<AuthHeaderHandler>();
             builder.Services.AddHttpClient<IAuthApi, AuthApi>(ConfigureBaseAddress)
            .AddHttpMessageHandler<AuthHeaderHandler>();
+            builder.Services.AddHttpClient<IEquipmentApi, EquipmentApi>(ConfigureBaseAddress)
+          .AddHttpMessageHandler<AuthHeaderHandler>();
+            builder.Services.AddHttpClient<IAttachmentApi, AttachmentApi>(ConfigureBaseAddress)
+          .AddHttpMessageHandler<AuthHeaderHandler>();
 
             var app = builder.Build();
             App.Services = app.Services;

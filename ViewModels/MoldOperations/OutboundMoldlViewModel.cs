@@ -137,6 +137,7 @@ namespace IndustrialControlMAUI.ViewModels
                     return;
                 }
 
+
                 var r = resp!.result!;
                 var moldCode = (r.moldCode ?? string.Empty).Trim();
                 var moldModel = (r.moldModel ?? string.Empty).Trim();

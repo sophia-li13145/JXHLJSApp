@@ -10,39 +10,34 @@ namespace IndustrialControlMAUI.ViewModels
     /// <summary>
     /// 质检单详情页 VM
     /// </summary>
-    public partial class FinishedQualityDetailViewModel : ObservableObject, IQueryAttributable
+    public partial class InspectionDetailViewModel : ObservableObject, IQueryAttributable
     {
-        private readonly IQualityApi _api;
+        private readonly IEquipmentApi _api;
         private readonly IAuthApi _authApi;
         private readonly IAttachmentApi _attachmentApi;
         private readonly CancellationTokenSource _cts = new();
         private const string FolderImage = "image";
         private const string FolderFile = "file";
-        private const string LocationQuality = "processQuality";
+        private const string LocationInspection = "processInspection";
         // ===== 上传限制 =====
         private const int MaxImageCount = 9;
         private const long MaxImageBytes = 2L * 1024 * 1024;   // 2MB
         private const long MaxFileBytes = 20L * 1024 * 1024;  // 20MB
-                                                              // 识别图片扩展名（用于是否进缩略图）
-        private static readonly HashSet<string> _imgExts = new(StringComparer.OrdinalIgnoreCase)
-{ "jpg","jpeg","png","gif","bmp","webp","heic","heif" };
 
-        // 文件允许的扩展名（包含图片）——按你给的要求
-        private static readonly HashSet<string> _allowedFileExts = new(StringComparer.OrdinalIgnoreCase)
-{ "pdf","doc","docx","xls","xlsx","txt","jpg","jpeg","png","rar" };
+        public ObservableCollection<OrderInspectionAttachmentItem> Attachments { get; } = new();
+        public ObservableCollection<OrderInspectionAttachmentItem> ImageAttachments { get; } = new(); // 仅图片
 
-        public ObservableCollection<OrderQualityAttachmentItem> Attachments { get; } = new();
-        public ObservableCollection<OrderQualityAttachmentItem> ImageAttachments { get; } = new(); // 仅图片
+        public ObservableCollection<WorkflowVmItem> WorkflowSteps { get; } = new();
 
         [ObservableProperty] private bool isBusy;
-        [ObservableProperty] private QualityDetailDto? detail;
+        [ObservableProperty] private InspectionDetailDto? detail;
         [ObservableProperty]
         private bool isInspectorDropdownOpen = false; // 检验员下拉列表框默认关闭
         [ObservableProperty]
         private double inspectorDropdownOffset = 40; // Entry 高度 + 间距
 
         // 明细与附件集合（用于列表绑定）
-        public ObservableCollection<QualityItem> Items { get; } = new();
+        public ObservableCollection<InspectionItem> Items { get; } = new();
 
         // 检验结果下拉（合格 / 不合格）
         public ObservableCollection<StatusOption> InspectResultOptions { get; } = new();
@@ -70,7 +65,7 @@ namespace IndustrialControlMAUI.ViewModels
         public int Index { get; set; }
         public IReadOnlyList<string> InspectResultTextList { get; } = new[] { "合格", "不合格" };
 
-        public FinishedQualityDetailViewModel(IQualityApi api, IAuthApi authApi, IAttachmentApi attachmentApi)
+        public InspectionDetailViewModel(IEquipmentApi api, IAuthApi authApi, IAttachmentApi attachmentApi)
         {
             _api = api;
             _authApi = authApi;
@@ -162,7 +157,7 @@ namespace IndustrialControlMAUI.ViewModels
         }
 
         /// <summary>
-        /// Shell 路由入参，例如：.../ProcessQualityDetailPage?id=xxxx
+        /// Shell 路由入参，例如：.../InspectionDetailPage?id=xxxx
         /// </summary>
         public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
@@ -188,9 +183,7 @@ namespace IndustrialControlMAUI.ViewModels
                 }
 
                 Detail = resp.result;
-
-                // —— 只在这里手动触发一次计算，保证初值显示一致 ——
-                Detail?.Recalc();
+                await LoadWorkflowAsync(_id!);
 
                 await LoadInspectorsAsync();
 
@@ -199,30 +192,23 @@ namespace IndustrialControlMAUI.ViewModels
                 {
                     Items.Clear();
                     int i = 1;
-                    foreach (var it in Detail.orderQualityDetailList ?? new())
+                    foreach (var it in Detail.devInspectTaskDetailList ?? new())
                     {
                         it.index = i++; // 1,2,3...
                         Items.Add(it);
                     }
                 });
-                Color[] palette =
-            {
-        Color.FromArgb("#DCEBFF"), // 淡蓝
-        Color.FromArgb("#FFF4B0"), // 淡黄
-        Color.FromArgb("#FFDCDC"), // 淡红
-        Color.FromArgb("#E3FFE3"), // 淡绿
-        Color.FromArgb("#EDE3FF"), // 淡紫
-    };
+
                 // ===== 附件 =====
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
                     Attachments.Clear();
 
-                    foreach (var at in (Detail.orderQualityAttachmentList ?? new List<QualityAttachment>()))
+                    foreach (var at in (Detail.devInspectTaskAttachmentList ?? new List<InspectionAttachment>()))
                     {
                         if (string.IsNullOrWhiteSpace(at.attachmentUrl)) continue;
 
-                        var item = new OrderQualityAttachmentItem
+                        var item = new OrderInspectionAttachmentItem
                         {
                             AttachmentExt = at.attachmentExt ?? "",
                             AttachmentFolder = at.attachmentFolder ?? "",
@@ -245,21 +231,7 @@ namespace IndustrialControlMAUI.ViewModels
                         if (item.IsImage) ImageAttachments.Add(item);
                     }
 
-                    foreach (var it in Detail.orderQualityDetailList ?? new())
-                    {
-                        var names = (it.defect ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-                        it.SelectedDefects.Clear();
-                        int i = 0;
-                        foreach (var d in names)
-                        {
-                            it.SelectedDefects.Add(new DefectChip
-                            {
-                                Name = d ,
-                                ColorHex = palette[i++ % palette.Length]
-                            });
-                        }
-                    }
+                    
                 });
                 await LoadPreviewThumbnailsAsync();
 
@@ -280,14 +252,12 @@ namespace IndustrialControlMAUI.ViewModels
                 IsBusy = false;
             }
         }
-
         private async Task LoadPreviewThumbnailsAsync()
         {
             // 只处理“图片且当前没有 PreviewUrl，但有 AttachmentUrl 的项”
             var list = Attachments
                 .Where(a => (a.IsImage || IsImageExt(a.AttachmentExt))
-                            && string.IsNullOrWhiteSpace(a.PreviewUrl)
-                            && !string.IsNullOrWhiteSpace(a.AttachmentUrl))
+                            && string.IsNullOrWhiteSpace(a.PreviewUrl)                            && !string.IsNullOrWhiteSpace(a.AttachmentUrl))
                 .ToList();
             if (list.Count == 0) return;
 
@@ -318,97 +288,14 @@ namespace IndustrialControlMAUI.ViewModels
                 })
             );
         }
-
-        /// <summary>
-        /// 保存（示例：仅做本地校验与提示；如需调用后端保存接口，按你后端补齐）
-        /// </summary>
-        [RelayCommand]
-        private async Task Save()
-        {
-            if (Detail is null)
-            {
-                await ShowTip("没有可保存的数据。");
-                return;
-            }
-            if (Detail.totalQualified is null || Detail.totalUnqualified is null) {
-                await ShowTip("合格总数或不合格总数不能为空。");
-                return;
-            }
-            try
-            {
-                IsBusy = true;
-                PreparePayloadFromUi();
-
-                var resp = await _api.ExecuteSaveAsync(Detail);
-                if (resp?.success == true && resp.result == true)
-                {
-                    await ShowTip("已保存。");
-                }
-                else
-                {
-                    await ShowTip($"保存失败：{resp?.message ?? "接口返回失败"}");
-                }
-            }
-            catch (Exception ex)
-            {
-                await ShowTip($"保存异常：{ex.Message}");
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-
-        [RelayCommand]
-        private async Task Complete()
-        {
-            if (Detail is null)
-            {
-                await ShowTip("没有可提交的数据。");
-                return;
-            }
-            if (Detail.totalQualified is null || Detail.totalUnqualified is null)
-            {
-                await ShowTip("合格总数或不合格总数不能为空。");
-                return;
-            }
-            try
-            {
-                // 可选：校验必须字段，例如检验结果/抽样/不良数等
-                // if (string.IsNullOrWhiteSpace(Detail.inspectResult)) { await ShowTip("请先选择检验结果"); return; }
-
-                IsBusy = true;
-                PreparePayloadFromUi();
-
-                var resp = await _api.ExecuteCompleteInspectionAsync(Detail);
-                if (resp?.success == true && resp.result == true)
-                {
-                    await ShowTip("已完成质检。");
-                    // 可选：返回上页 / 刷新列表
-                    // await Shell.Current.GoToAsync("..");
-                }
-                else
-                {
-                    await ShowTip($"提交失败：{resp?.message ?? "接口返回失败"}");
-                }
-            }
-            catch (Exception ex)
-            {
-                await ShowTip($"提交异常：{ex.Message}");
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
+       
 
 
         /// <summary>
         /// 预览附件
         /// </summary>
         [RelayCommand]
-        private async Task PreviewAttachment(QualityAttachment? att)
+        private async Task PreviewAttachment(InspectionAttachment? att)
         {
             if (att is null || string.IsNullOrWhiteSpace(att.attachmentUrl))
             {
@@ -496,7 +383,7 @@ namespace IndustrialControlMAUI.ViewModels
                     }
 
                     // === 4) 构造本地项（先让 UI 有反馈）
-                    var localItem = new OrderQualityAttachmentItem
+                    var localItem = new OrderInspectionAttachmentItem
                     {
                         AttachmentName = f.FileName,
                         AttachmentExt = ext,
@@ -511,22 +398,23 @@ namespace IndustrialControlMAUI.ViewModels
                     // 仅图片列表
                     if (isImg) ImageAttachments.Insert(0, localItem);
 
-                    // === 5) 调接口（图片/文件都同一条）
+                    // 6) 真正上传文件（关键：multipart/form-data + file）
                     var folder = isImg ? FolderImage : FolderFile;
                     var contentType = DetectContentType(ext);     // 见下方辅助函数
-                                                                  // 用临时文件重新打开流，避免上面 using 的 src 已被释放
-                    await using var fs = File.OpenRead(tmpPath);
 
+                    // 用临时文件重新打开流，避免上面 using 的 src 已被释放
+                    await using var fs = File.OpenRead(tmpPath);
                     var resp = await _attachmentApi.UploadAttachmentAsync(
-                        attachmentFolder: folder,
-                        attachmentLocation: LocationQuality,
-                        fileStream: fs,                    // ← 传文件流
-                        fileName: f.FileName,            // ← 必须带文件名
-                        contentType: contentType,           // ← 可选但推荐
-                        attachmentName: f.FileName,
-                        attachmentExt: ext,
-                        attachmentSize: len
-                    );
+                                attachmentFolder: folder,
+                                attachmentLocation: LocationInspection,
+                                fileStream: fs,
+                                fileName: f.FileName,
+                                contentType: contentType,
+                                attachmentName: f.FileName,
+                                attachmentExt: ext,
+                                attachmentSize: len
+                            );
+
 
                     if (resp?.success == true && resp.result != null)
                     {
@@ -535,7 +423,7 @@ namespace IndustrialControlMAUI.ViewModels
                                                         : resp.result.attachmentUrl;
                         localItem.AttachmentRealName = resp.result.attachmentRealName ?? localItem.AttachmentRealName;
                         localItem.AttachmentFolder = resp.result.attachmentFolder ?? folder;
-                        localItem.AttachmentLocation = resp.result.attachmentLocation ?? LocationQuality;
+                        localItem.AttachmentLocation = resp.result.attachmentLocation ?? LocationInspection;
                         localItem.AttachmentExt = resp.result.attachmentExt ?? ext;
 
                         // 如果服务端给了 URL，就让图片改走网络地址展示；本地临时可清掉
@@ -602,7 +490,7 @@ namespace IndustrialControlMAUI.ViewModels
             if (Detail is null) return;
 
             // 1) 附件：把 UI 集合映射回服务器字段
-            Detail.orderQualityAttachmentList = Attachments.Select(a => new QualityAttachment
+            Detail.devInspectTaskAttachmentList = Attachments.Select(a => new InspectionAttachment
             {
                 attachmentExt = a.AttachmentExt,
                 attachmentFolder = a.AttachmentFolder,
@@ -611,26 +499,18 @@ namespace IndustrialControlMAUI.ViewModels
                 attachmentRealName = a.AttachmentRealName,
                 attachmentSize = a.AttachmentSize,
                 attachmentUrl = a.AttachmentUrl,
-                id = a.Id,
-                createdTime = a.CreatedTime
+                createdTime = a.CreatedTime,
+                id = a.Id
             }).ToList();
 
-            // 2) 明细：Items 已经是服务器的明细模型（你加载时就是 Detail.orderQualityDetailList → Items）
-            //    如果后端要求传回列表字段名叫 orderQualityDetailList，则回填：
-            Detail.orderQualityDetailList = Items?.ToList() ?? new List<QualityItem>();
-
-            // 3) 选中的检验结果（你在 SelectedInspectResult setter 已经把 Text/Value 写回 Detail.inspectResult）
-            //    这里无需额外处理，确保 Detail.inspectResult 已是最终值即可。
-            foreach (var it in Detail.orderQualityDetailList ?? new())
-            {
-                // 让 DTO 里的 defect = “名称1,名称2”
-                it.defect = string.Join(",", it.SelectedDefects.Select(d => d.Name ));
-                // 如需传编码，再加 it.defectCodeList = it.SelectedDefects.Select(d => d.Code).ToList();
-            }
+            // 2) 明细：Items 已经是服务器的明细模型（你加载时就是 Detail.orderInspectionDetailList → Items）
+            //    如果后端要求传回列表字段名叫 orderInspectionDetailList，则回填：
+            Detail.devInspectTaskDetailList = Items?.ToList() ?? new List<InspectionItem>();
 
         }
+
         [RelayCommand]
-        private async Task DownloadAttachment(OrderQualityAttachmentItem? item)
+        private async Task DownloadAttachment(OrderInspectionAttachmentItem? item)
         {
             if (item is null)
             {
@@ -665,8 +545,9 @@ namespace IndustrialControlMAUI.ViewModels
                 await ShowTip($"下载/打开失败：{ex.Message}");
             }
         }
+
         [RelayCommand]
-        private async Task DeleteAttachmentAsync(OrderQualityAttachmentItem? item)
+        private async Task DeleteAttachmentAsync(OrderInspectionAttachmentItem? item)
         {
             if (item is null) return;
 
@@ -705,47 +586,67 @@ namespace IndustrialControlMAUI.ViewModels
             }
         }
 
-      
 
-        [RelayCommand]
-        private async Task OpenDefectPicker(QualityItem? row)
+
+       
+
+
+        private void RemoveFromCollections(OrderInspectionAttachmentItem item)
         {
-            if (row == null) return;
-
-            var preselectedCodes = row.SelectedDefects.Select(x => x.Name).ToList(); // 你若保存的是 code，就改成 Code
-            var picked = await DefectPickerPopup.ShowAsync(_api, preselectedCodes);
-            if (picked == null) return;
-
-            // 固定调色板，依次循环
-            Color[] palette =
-            {
-        Color.FromArgb("#DCEBFF"), // 淡蓝
-        Color.FromArgb("#FFF4B0"), // 淡黄
-        Color.FromArgb("#FFDCDC"), // 淡红
-        Color.FromArgb("#E3FFE3"), // 淡绿
-        Color.FromArgb("#EDE3FF"), // 淡紫
-    };
-
-            row.SelectedDefects.Clear();
-            int i = 0;
-            foreach (var d in picked)
-            {
-                row.SelectedDefects.Add(new DefectChip
-                {
-                    Name = d.DefectName ?? d.DefectCode ?? "",
-                    ColorHex = palette[i++ % palette.Length]
-                });
-            }
-
-            // 如果后端需要回填文本字段：
-            row.defect = string.Join(",", row.SelectedDefects.Select(x => x.Name));
+            Attachments.Remove(item);
+            if (item.IsImage && ImageAttachments.Contains(item))
+                ImageAttachments.Remove(item);
         }
-
         // --------- 工具方法 ----------
         private static Task ShowTip(string msg) =>
             Application.Current?.MainPage?.DisplayAlert("提示", msg, "OK") ?? Task.CompletedTask;
 
-       
+        private async Task LoadWorkflowAsync(string id)
+        {
+            try
+            {
+                var baseSteps = new List<WorkflowVmItem>
+        {
+            new() { StatusValue = "0", Title = "待执行" },
+            new() { StatusValue = "1", Title = "执行中" },
+            new() { StatusValue = "2", Title = "已完成" },
+        };
+
+                var resp = await _api.GetWorkflowAsync(id, _cts.Token);
+                var list = resp?.result ?? new List<InspectWorkflowNode>();
+
+                // 回填时间 & 找“当前”
+                int currentIndex = -1;
+                for (int i = 0; i < baseSteps.Count; i++)
+                {
+                    var s = baseSteps[i];
+                    s.StepNo = i + 1;
+                    var hit = list.FirstOrDefault(x => string.Equals(x.statusValue, s.StatusValue, StringComparison.OrdinalIgnoreCase));
+                    if (hit != null && !string.IsNullOrWhiteSpace(hit.statusTime))
+                    {
+                        s.Time = hit.statusTime.Split(' ')[0];
+                        currentIndex = i; // 最后一个有时间的就是“当前”
+                    }
+                }
+
+                // 标注 Completed/Current
+                for (int i = 0; i < baseSteps.Count; i++)
+                {
+                    baseSteps[i].IsCurrent = (i == currentIndex);
+                    baseSteps[i].IsCompleted = (i < currentIndex) && !string.IsNullOrWhiteSpace(baseSteps[i].Time);
+                    baseSteps[i].IsLast = (i == baseSteps.Count - 1);
+                }
+
+                WorkflowSteps.Clear();
+                foreach (var s in baseSteps) WorkflowSteps.Add(s);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("LoadWorkflowAsync error: " + ex.Message);
+            }
+        }
+
+
     }
 
 }
