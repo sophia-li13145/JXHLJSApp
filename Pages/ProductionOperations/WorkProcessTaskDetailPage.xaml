@@ -43,23 +43,6 @@
             <Style x:Key="BtnBlue" BasedOn="{StaticResource TopActionButton}" TargetType="Button">
                 <Setter Property="BackgroundColor" Value="#1E76FF" />
             </Style>
-            <!--<Style x:Key="HyperlinkLabelStyle" TargetType="Label">
-                <Setter Property="TextDecorations" Value="Underline" />
-                <Setter Property="BackgroundColor" Value="Transparent" />
-                <Setter Property="VerticalTextAlignment" Value="Center" />
-                <Setter Property="Padding" Value="2,0" />
-                --><!-- 默认显示为“有值时”的链接颜色 --><!--
-                <Setter Property="TextColor" Value="#2D6AE3" />
-                <Style.Triggers>
-                    --><!-- 值为空：浅灰“请选择” --><!--
-                    <DataTrigger TargetType="Label" Binding="{Binding RawMaterialProductionDate}" Value="">
-                        <Setter Property="TextColor" Value="#999999" />
-                    </DataTrigger>
-                    <DataTrigger TargetType="Label" Binding="{Binding RawMaterialProductionDate}" Value="{x:Null}">
-                        <Setter Property="TextColor" Value="#999999" />
-                    </DataTrigger>
-                </Style.Triggers>
-            </Style>-->
             <!-- 日期“超链接”标签样式 -->
             <Style x:Key="DateActionLabelStyle" TargetType="Label">
                 <Setter Property="TextDecorations" Value="Underline" />

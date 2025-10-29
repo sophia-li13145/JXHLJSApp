@@ -274,11 +274,11 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
             {
                 State = TaskRunState.Finished;
                 //await Task.CompletedTask;
-                await Shell.Current.DisplayAlert("提示", "开工成功！", "确定");
+                await Shell.Current.DisplayAlert("提示", "完工成功！", "确定");
             }
             else
             {
-                await Shell.Current.DisplayAlert("错误", resp.message ?? "开工失败！", "确定");
+                await Shell.Current.DisplayAlert("错误", resp.message ?? "完工失败！", "确定");
             }
         }
         catch (Exception ex)
