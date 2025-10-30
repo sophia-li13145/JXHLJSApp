@@ -14,16 +14,6 @@ public partial class InspectionDetailPage : ContentPage
         BindingContext = _vm;
     }
 
-    private async void OnPickImagesClicked(object sender, EventArgs e)
-    {
-        await _vm.PickImagesAsync();
-    }
-
-    private async void OnPickFileClicked(object sender, EventArgs e)
-    {
-        await _vm.PickFilesAsync();
-    }
-
     protected override void OnAppearing()
     {
         base.OnAppearing();

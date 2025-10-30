@@ -9,150 +9,53 @@ namespace IndustrialControlMAUI.ViewModels
     /// <summary>
     /// 质检单详情页 VM
     /// </summary>
-    public partial class InspectionDetailViewModel : ObservableObject, IQueryAttributable
+    public partial class MaintenanceDetailViewModel : ObservableObject, IQueryAttributable
     {
         private readonly IEquipmentApi _api;
-        private readonly IAuthApi _authApi;
         private readonly IAttachmentApi _attachmentApi;
         private readonly CancellationTokenSource _cts = new();
-        private const string FolderImage = "image";
-        private const string FolderFile = "file";
-        private const string LocationInspection = "processInspection";
 
-        public ObservableCollection<OrderInspectionAttachmentItem> Attachments { get; } = new();
-        public ObservableCollection<OrderInspectionAttachmentItem> ImageAttachments { get; } = new(); // 仅图片
+        public ObservableCollection<OrderMaintenanceAttachmentItem> Attachments { get; } = new();
+        public ObservableCollection<OrderMaintenanceAttachmentItem> ImageAttachments { get; } = new(); // 仅图片
 
         public ObservableCollection<WorkflowVmItem> WorkflowSteps { get; } = new();
 
         [ObservableProperty] private bool isBusy;
-        [ObservableProperty] private InspectionDetailDto? detail;
-        [ObservableProperty]
-        private bool isInspectorDropdownOpen = false; // 检验员下拉列表框默认关闭
-        [ObservableProperty]
-        private double inspectorDropdownOffset = 40; // Entry 高度 + 间距
+        [ObservableProperty] private MaintenanceDetailDto? detail;
+
 
         // 明细与附件集合（用于列表绑定）
-        public ObservableCollection<InspectionItem> Items { get; } = new();
+        public ObservableCollection<MaintenanceItem> Items { get; } = new();
 
         // 检验结果下拉（合格 / 不合格）
-        public ObservableCollection<StatusOption> InspectResultOptions { get; } = new();
-
-        private StatusOption? _selectedInspectResult;
-        public StatusOption? SelectedInspectResult
-        {
-            get => _selectedInspectResult;
-            set
-            {
-                if (SetProperty(ref _selectedInspectResult, value))
-                {
-                    // 选中后回写到 Detail.inspectResult（不去改 total*，避免触发连锁）
-                    if (Detail != null)
-                        Detail.inspectResult = value?.Value ?? value?.Text;
-                }
-            }
-        }
+        public ObservableCollection<StatusOption> MaintenanceResultOptions { get; } = new();
 
         // 可编辑开关（如需控制 Entry/Picker 的 IsEnabled）
         [ObservableProperty] private bool isEditing = true;
 
+        private static bool IsImageExt(string? ext)
+            => ext is "jpg" or "jpeg" or "png" or "gif" or "bmp" or "webp";
+
+
         // 导航入参
         private string? _id;
         public int Index { get; set; }
-        public IReadOnlyList<string> InspectResultTextList { get; } = new[] { "合格", "不合格" };
+        public IReadOnlyList<string> MaintenanceResultTextList { get; } = new[] { "合格", "不合格" };
 
-        public InspectionDetailViewModel(IEquipmentApi api, IAuthApi authApi, IAttachmentApi attachmentApi)
+        public MaintenanceDetailViewModel(IEquipmentApi api, IAttachmentApi attachmentApi)
         {
             _api = api;
-            _authApi = authApi;
 
             // 默认选项（也可以从字典接口加载）
-            InspectResultOptions.Add(new StatusOption { Text = "合格", Value = "合格" });
-            InspectResultOptions.Add(new StatusOption { Text = "不合格", Value = "不合格" });
+            MaintenanceResultOptions.Add(new StatusOption { Text = "合格", Value = "合格" });
+            MaintenanceResultOptions.Add(new StatusOption { Text = "不合格", Value = "不合格" });
 
-            InspectorSuggestions = new ObservableCollection<UserInfoDto>();
-            AllUsers = new List<UserInfoDto>();
             _attachmentApi = attachmentApi;
         }
 
-        public List<UserInfoDto> AllUsers { get; private set; }
-        public ObservableCollection<UserInfoDto> InspectorSuggestions { get; }
-
-        private string? inspectorText;
-        public string? InspectorText
-        {
-            get => inspectorText;
-            set
-            {
-                if (SetProperty(ref inspectorText, value))
-                {
-                    // 仅做显示文字，不直接写回 Detail.inspecter（等选中再写回更稳）
-                    FilterInspectorSuggestions(value);
-                    IsInspectorDropdownOpen =  InspectorSuggestions.Count > 0;
-                }
-            }
-        }
-
-
-        [RelayCommand]
-        public async Task LoadInspectorsAsync()
-        {
-            try
-            {
-                AllUsers = await _authApi.GetAllUsersAsync();
-
-                if (!string.IsNullOrWhiteSpace(Detail?.inspecter))
-                {
-                    // 直接显示已有检验员名称
-                    InspectorText = Detail.inspecter;
-                }
-            }
-            catch (Exception ex)
-            {
-                await Application.Current.MainPage.DisplayAlert("错误", $"加载用户列表失败：{ex.Message}", "OK");
-            }
-        }
-
-        [RelayCommand]
-        private void PickInspector(UserInfoDto? user)
-        {
-            if (user is null) return;
-
-            // 存到后端字段
-            if (Detail != null) Detail.inspecter = user.realname;
-            // 输入框显示
-            InspectorText = user.realname;
-
-            IsInspectorDropdownOpen = false;
-            InspectorSuggestions.Clear();
-        }
-
-        [RelayCommand]
-        private void ClearInspector()
-        {
-            InspectorText = string.Empty;
-            IsInspectorDropdownOpen = false;
-        }
-
-        private void FilterInspectorSuggestions(string? keyword)
-        {
-            InspectorSuggestions.Clear();
-            if (string.IsNullOrWhiteSpace(keyword)) return;
-
-            var k = keyword.Trim();
-
-            foreach (var u in AllUsers.Where(u =>
-                     (!string.IsNullOrWhiteSpace(u.realname) && u.realname.Contains(k, StringComparison.OrdinalIgnoreCase)) ||
-                     (!string.IsNullOrWhiteSpace(u.username) && u.username.Contains(k, StringComparison.OrdinalIgnoreCase)) ||
-                     (!string.IsNullOrWhiteSpace(u.phone) && u.phone.Contains(k, StringComparison.OrdinalIgnoreCase)) ||
-                     (!string.IsNullOrWhiteSpace(u.email) && u.email.Contains(k, StringComparison.OrdinalIgnoreCase)))
-                     .Take(50))
-            {
-                InspectorSuggestions.Add(u);
-            }
-        }
 
         /// <summary>
-        /// Shell 路由入参，例如：.../InspectionDetailPage?id=xxxx
+        /// Shell 路由入参，例如：.../MaintenanceDetailPage?id=xxxx
         /// </summary>
         public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
@@ -170,7 +73,7 @@ namespace IndustrialControlMAUI.ViewModels
             IsBusy = true;
             try
             {
-                var resp = await _api.GetDetailAsync(_id!);
+                var resp = await _api.GetMainDetailAsync(_id!);
                 if (resp?.result == null)
                 {
                     await ShowTip("未获取到详情数据");
@@ -180,14 +83,12 @@ namespace IndustrialControlMAUI.ViewModels
                 Detail = resp.result;
                 await LoadWorkflowAsync(_id!);
 
-                await LoadInspectorsAsync();
-
                 // ===== 明细 =====
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
                     Items.Clear();
                     int i = 1;
-                    foreach (var it in Detail.devInspectTaskDetailList ?? new())
+                    foreach (var it in Detail.devUpkeepTaskDetailList ?? new())
                     {
                         it.index = i++; // 1,2,3...
                         Items.Add(it);
@@ -199,11 +100,11 @@ namespace IndustrialControlMAUI.ViewModels
                 {
                     Attachments.Clear();
 
-                    foreach (var at in (Detail.devInspectTaskAttachmentList ?? new List<InspectionAttachment>()))
+                    foreach (var at in (Detail.devUpkeepTaskAttachmentList ?? new List<MaintenanceAttachment>()))
                     {
                         if (string.IsNullOrWhiteSpace(at.attachmentUrl)) continue;
 
-                        var item = new OrderInspectionAttachmentItem
+                        var item = new OrderMaintenanceAttachmentItem
                         {
                             AttachmentExt = at.attachmentExt ?? "",
                             AttachmentFolder = at.attachmentFolder ?? "",
@@ -229,14 +130,6 @@ namespace IndustrialControlMAUI.ViewModels
                     
                 });
                 await LoadPreviewThumbnailsAsync();
-
-                // ===== 下拉选中项：检验结果 =====
-                SelectedInspectResult = InspectResultOptions
-                    .FirstOrDefault(o =>
-                        string.Equals(o.Value, Detail.inspectResult, StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(o.Text, Detail.inspectResult, StringComparison.OrdinalIgnoreCase));
-               
-                IsInspectorDropdownOpen = false;
             }
             catch (Exception ex)
             {
@@ -290,7 +183,7 @@ namespace IndustrialControlMAUI.ViewModels
         /// 预览附件
         /// </summary>
         [RelayCommand]
-        private async Task PreviewAttachment(InspectionAttachment? att)
+        private async Task PreviewAttachment(MaintenanceAttachment? att)
         {
             if (att is null || string.IsNullOrWhiteSpace(att.attachmentUrl))
             {
@@ -308,39 +201,9 @@ namespace IndustrialControlMAUI.ViewModels
             }
         }
 
-        
-
-        private static string? DetectContentType(string? ext)
-        {
-            switch (ext?.ToLowerInvariant())
-            {
-                case "jpg":
-                case "jpeg": return "image/jpeg";
-                case "png": return "image/png";
-                case "gif": return "image/gif";
-                case "bmp": return "image/bmp";
-                case "webp": return "image/webp";
-                case "pdf": return "application/pdf";
-                case "doc": return "application/msword";
-                case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-                case "xls": return "application/vnd.ms-excel";
-                case "xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-                case "txt": return "text/plain";
-                case "rar": return "application/x-rar-compressed";
-                case "zip": return "application/zip";
-                default: return null; // 让 HttpClient 自行处理
-            }
-        }
-
-        private static bool IsImageExt(string? ext)
-            => ext is "jpg" or "jpeg" or "png" or "gif" or "bmp" or "webp";
-
-        private static bool IsAllowedFile(string? ext)
-            => IsImageExt(ext) || ext is "pdf" or "doc" or "docx" or "xls" or "xlsx" or "txt" or "rar" or "zip";
-
 
         [RelayCommand]
-        private async Task DownloadAttachment(OrderInspectionAttachmentItem? item)
+        private async Task DownloadAttachment(OrderMaintenanceAttachmentItem? item)
         {
             if (item is null)
             {
@@ -376,9 +239,6 @@ namespace IndustrialControlMAUI.ViewModels
             }
         }
 
-
-
-        // --------- 工具方法 ----------
         private static Task ShowTip(string msg) =>
             Application.Current?.MainPage?.DisplayAlert("提示", msg, "OK") ?? Task.CompletedTask;
 
@@ -388,13 +248,14 @@ namespace IndustrialControlMAUI.ViewModels
             {
                 var baseSteps = new List<WorkflowVmItem>
         {
-            new() { StatusValue = "0", Title = "待执行" },
-            new() { StatusValue = "1", Title = "执行中" },
-            new() { StatusValue = "2", Title = "已完成" },
+            new() { StatusValue = "0", Title = "新建" },
+            new() { StatusValue = "1", Title = "待保养" },
+            new() { StatusValue = "2", Title = "保养中" },
+            new() { StatusValue = "3", Title = "已完成" }
         };
 
-                var resp = await _api.GetWorkflowAsync(id, _cts.Token);
-                var list = resp?.result ?? new List<InspectWorkflowNode>();
+                var resp = await _api.GetMainWorkflowAsync(id, _cts.Token);
+                var list = resp?.result ?? new List<MaintenanceWorkflowNode>();
 
                 // 回填时间 & 找“当前”
                 int currentIndex = -1;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
     x:Name="ThisPage"
-    x:Class="IndustrialControlMAUI.Pages.InspectionDetailPage"
+    x:Class="IndustrialControlMAUI.Pages.MaintenanceDetailPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:conv="clr-namespace:IndustrialControlMAUI.Converters"
@@ -78,7 +78,7 @@
 
         <!-- 顶部蓝条 -->
         <Grid Grid.Row="0"  HeightRequest="56" Padding="12" ColumnDefinitions="*" ColumnSpacing="8">
-            <Label Text="点巡检单基础信息"
+            <Label Text="保养单基础信息"
                    VerticalOptions="Start"
                    TextColor="Black"
                    FontSize="14"
@@ -94,16 +94,16 @@
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
                         <!-- 三行两列：行0图形，行1标题，行2时间 -->
-                        <Grid ColumnDefinitions="Auto,20,30,25"
+                        <Grid ColumnDefinitions="20,15,25,15"
           RowDefinitions="Auto,Auto,Auto"
           Padding="12,0"
           HorizontalOptions="Center" VerticalOptions="Center">
 
                             <!-- 圆点：默认白底；激活(已完成/当前)描边蓝，未到达描边灰 -->
                             <Frame Grid.Row="0" Grid.Column="0"
-                                   WidthRequest="36" HeightRequest="36"
+                                   WidthRequest="24" HeightRequest="24"
                                    Padding="0" HasShadow="False"
-                                   CornerRadius="20"
+                                   CornerRadius="16"
                                    BackgroundColor="White"
                                    BorderColor="{Binding IsActive, Converter={StaticResource BoolToPrimaryOrGray}}"
                                    HorizontalOptions="Center"
@@ -188,78 +188,36 @@
                 <!-- 基础信息卡片 -->
                 <Frame Style="{StaticResource Card}">
                     <Grid ColumnDefinitions="80,*,80,*"
-                          RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="5"
+                          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="5"
                           >
 
                         <!-- 第一行 -->
-                        <Label Grid.Row="0" Grid.Column="0" Text="点检单号：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding Detail.inspectNo}" Style="{StaticResource FieldValue}" />
+                        <Label Grid.Row="0" Grid.Column="0" Text="保养单号：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding Detail.upkeepNo}" Style="{StaticResource FieldValue}" />
 
                         <Label Grid.Row="0" Grid.Column="2" Text="计划名称：" Style="{StaticResource FieldLabel}" />
                         <Label Grid.Row="0" Grid.Column="3" Text="{Binding Detail.planName}" Style="{StaticResource FieldValue}" />
-
-                        <!-- 第二行 -->
                         <Label Grid.Row="1" Grid.Column="0" Text="计划编号：" Style="{StaticResource FieldLabel}" />
                         <Label Grid.Row="1" Grid.Column="1" Text="{Binding Detail.planCode}" Style="{StaticResource FieldValue}" />
                         <Label Grid.Row="1" Grid.Column="2" Text="设备名称：" Style="{StaticResource FieldLabel}" />
                         <Label Grid.Row="1" Grid.Column="3" Text="{Binding Detail.devName}" Style="{StaticResource FieldValue}" />
                         <Label Grid.Row="2" Grid.Column="0" Text="设备编号：" Style="{StaticResource FieldLabel}" />
                         <Label Grid.Row="2" Grid.Column="1" Text="{Binding Detail.devCode}" Style="{StaticResource FieldValue}" />
-                        <Label Grid.Row="2" Grid.Column="2" Text="计划点检日期：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="2" Grid.Column="3" Text="{Binding Detail.planInspectTime}" Style="{StaticResource FieldValue}" />
-
-                        <!-- 第三行 -->
-                        <Label Grid.Row="3" Grid.Column="0" Text="备注：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Detail.memo}" Style="{StaticResource FieldValue}" />
-
-                    </Grid>
-                </Frame>
-                <Label Text="检验结果"
-            VerticalOptions="Start"
-            Style="{StaticResource SectionTitle}" />
-                <Frame Style="{StaticResource Card}">
-                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto"
-                          ColumnDefinitions="90,*,60,*,60,*" 
-                           RowSpacing="8" ColumnSpacing="5"> 
-                        <Label Grid.Row="0" Grid.Column="0"  Grid.ColumnSpan="2" Text="检验结果：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="0" Grid.Column="3"
-                               Text="{Binding Detail.inspectResult}"
-                               TextColor="{Binding Detail.inspectResult, Converter={StaticResource InspectResultToColorConverter}}"
-                               FontAttributes="Bold"
-                               />
-                        <!-- 分割线 -->
-                        <BoxView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="6" HeightRequest="1" BackgroundColor="#E5E7EB" />
-                        <Label Grid.Row="2" Grid.Column="0" Text="点检项目总数：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="2" Grid.Column="1"  Text="{Binding Detail.inspectNum}"/>   
-
-                        <Label Grid.Row="2" Grid.Column="2" Text="合格项目数：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="2" Grid.Column="3"
-                               Text="{Binding Detail.qualifiedNum}"
-                                />
-                        <Label Grid.Row="2" Grid.Column="4" Text="不合格项目数：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="2" Grid.Column="5"
-                                Text="{Binding Detail.unqualifiedNum}"
-                                /> 
-
-                        <Label Grid.Row="3" Grid.Column="0" Text="实际点检日期：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
-                               Text="{Binding Detail.inspectTime}"
-                               />
-
-                        <Label Grid.Row="3" Grid.Column="3" Grid.ColumnSpan="2" Text="操作人：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="3" Grid.Column="4" Grid.ColumnSpan="2"
-                                Text="{Binding Detail.inspecter}"
-                               />
-
-                        <!-- 第4行：检验备注（整行） -->
-                        <Label Grid.Row="4" Grid.Column="0" Text="检验备注：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="5"
-                               Text="{Binding Detail.inspectMemo}" /> 
+                        <Label Grid.Row="2" Grid.Column="2" Text="计划保养日期：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="2" Grid.Column="3" Text="{Binding Detail.planUpkeepTime}" Style="{StaticResource FieldValue}" />
+                        <Label Grid.Row="3" Grid.Column="0" Text="实际保养日期：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="3" Grid.Column="1" Text="{Binding Detail.upkeepTime}" Style="{StaticResource FieldValue}" />
+                        <Label Grid.Row="3" Grid.Column="2" Text="操作人：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="3" Grid.Column="3" Text="{Binding Detail.upkeepOperator}" Style="{StaticResource FieldValue}" />
+                        <Label Grid.Row="4" Grid.Column="0" Text="备注：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Detail.memo}" Style="{StaticResource FieldValue}" />
+                        <Label Grid.Row="5" Grid.Column="0" Text="保养备注：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Detail.upkeepMemo}" Style="{StaticResource FieldValue}" />
                     </Grid>
                 </Frame>
 
-                <!-- 点检项目执行 -->
-                <Label Text="点检项目执行" Style="{StaticResource SectionTitle}"/>
+                <!-- 保养项目执行 -->
+                <Label Text="保养项目执行" Style="{StaticResource SectionTitle}"/>
 
                 <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
                     <CollectionView.ItemTemplate>
@@ -279,57 +237,43 @@
                                 <!-- 右侧你的原 Frame 卡片，内容保持不变 -->
                                 <Frame Grid.Column="1" Style="{StaticResource Card}">
                                     <Grid
-                        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                         ColumnDefinitions="Auto,*"
                         RowSpacing="8" ColumnSpacing="5">
 
-                                        <!-- 行0：项目名称 -->
                                         <Label Grid.Row="0" Grid.Column="0" Text="项目名称：" Style="{StaticResource FieldLabel}" />
                                         <Label Grid.Row="0" Grid.Column="1" Text="{Binding itemName}" Style="{StaticResource FieldValue}" />
-                                        <BoxView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="6" HeightRequest="1" BackgroundColor="#E5E7EB" />
-                                        <!-- 行1：检验属性、检验方式 -->
+                                        <BoxView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" HeightRequest="1" BackgroundColor="#E5E7EB" />
+
                                         <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
                               ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="10">
-                                            <Label Grid.Column="0" Text="检验属性：" Style="{StaticResource FieldLabel}" />
-                                            <Label Grid.Column="1" Text="{Binding inspectionAttributeName}" Style="{StaticResource FieldValue}" />
-                                            <Label Grid.Column="2" Text="检验方式：" Style="{StaticResource FieldLabel}" />
-                                            <Label Grid.Column="3" Text="{Binding inspectionMode}" Style="{StaticResource FieldValue}" />
+                                            <Label Grid.Column="0" Text="保养内容：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding upkeepContent}" Style="{StaticResource FieldValue}" />
                                         </Grid>
                                         <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                            <Label Grid.Column="0" Text="检验标准：" Style="{StaticResource FieldLabel}" />
-                                            <Label Grid.Column="1" Text="{Binding inspectionStandard}" Style="{StaticResource FieldValue}" />
+                                            <Label Grid.Column="0" Text="操作方法及标准：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding upkeepStandard}" Style="{StaticResource FieldValue}" />
                                         </Grid>
-                                        <!-- 行2：标准值、上限值、下限值 -->
+
                                         <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
                               ColumnDefinitions="Auto,*,Auto,*,Auto,*" ColumnSpacing="10">
-                                            <Label Grid.Column="0" Text="标准值：" Style="{StaticResource FieldLabel}" />
-                                            <Label Grid.Column="1" Text="{Binding standardValue}" Style="{StaticResource FieldValue}" />
-                                            <Label Grid.Column="2" Text="上限值：" Style="{StaticResource FieldLabel}" />
-                                            <Label Grid.Column="3" Text="{Binding upperLimit}" Style="{StaticResource FieldValue}" />
-                                            <Label Grid.Column="4" Text="下限值：" Style="{StaticResource FieldLabel}" />
-                                            <Label Grid.Column="5" Text="{Binding lowerLimit}" Style="{StaticResource FieldValue}" />
+                                            <Label Grid.Column="0" Text="耗材：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding consumeMaterial}" Style="{StaticResource FieldValue}" />
                                         </Grid>
-
-                                        <!-- 行4：抽样数、不良数、不良率(只读) -->
                                         <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
-                                                ColumnDefinitions="Auto,*,Auto,*,Auto,*" ColumnSpacing="10"> 
-                                            <Label Grid.Column="0" Text="点检值：" Style="{StaticResource FieldLabel}" />
-                                            <Label Grid.Column="1" Text="{Binding inspectValue}" />
-                                            <Label Grid.Column="2" Text="单位：" Style="{StaticResource FieldLabel}" />
-                                            <Label Grid.Column="3" Text="{Binding unit}"  />
-                                            <Label Grid.Column="4" Text="点检结果：" Style="{StaticResource FieldLabel}" />
-                                            <Label Grid.Column="5"
-                                                   Text="{Binding inspectResult}"
-                                                   TextColor="{Binding inspectResult, Converter={StaticResource InspectResultToColorConverter}}"
-                                                   FontAttributes="Bold"
-                                                   /> 
+                                                ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="10">
+                                            <Label Grid.Column="0" Text="工具：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding upkeepTool}" Style="{StaticResource FieldValue}" />
                                         </Grid>
-
-                                        <!-- 行5：不良原因 -->
                                         <Grid Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2"
-                                                ColumnDefinitions="Auto,*" ColumnSpacing="10">
+        ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="10">
+                                            <Label Grid.Column="0" Text="保养结果：" Style="{StaticResource FieldLabel}" />
+                                            <Label Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding upkeepResult}" Style="{StaticResource FieldValue}" />
+                                        </Grid>
+                                        <Grid Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2"
+ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="10">
                                             <Label Grid.Column="0" Text="备注：" Style="{StaticResource FieldLabel}" />
-                                            <Label Grid.Column="1" Text="{Binding memo}" />
+                                            <Label Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding memo}" Style="{StaticResource FieldValue}" />
                                         </Grid>
                                     </Grid>
                                 </Frame>

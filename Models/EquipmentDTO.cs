@@ -295,3 +295,256 @@ public class WorkflowVmItem
     public bool IsActive => IsCompleted || IsCurrent; // 蓝色描边/连线的条件
     public bool IsLast { get; set; }
 }
+
+
+public class MaintenanceRecordDto
+{
+    /// <summary>主键ID</summary>
+    public string? id { get; set; }
+
+    /// <summary>设备名称</summary>
+    public string? devName { get; set; }
+
+    public string? devCode { get; set; }
+
+    /// <summary>工厂编码</summary>
+    public string? factoryCode { get; set; }
+
+    /// <summary>工厂名称</summary>
+    public string? factoryName { get; set; }
+
+    /// <summary>质检单号</summary>
+    public string? upkeepNo { get; set; }
+
+    /// <summary>检验状态（0-新建；1-待检验；2-检验中；3-检验完成）</summary>
+    public string? upkeepStatus { get; set; }
+    public string? upkeepStatusText { get; set; }
+
+    public string? upkeepResult { get; set; }
+
+
+    /// <summary>计划编码</summary>
+    public string? planCode { get; set; }
+
+    /// <summary>计划名称</summary>
+    public string? planName { get; set; }
+
+    /// <summary>实际保养日期</summary>
+    public string? upkeepTime { get; set; }
+
+    /// <summary>计划保养日期</summary>
+    public string? planUpkeepTime { get; set; }
+
+    /// <summary>备注</summary>
+    public string? memo { get; set; }
+
+    /// <summary>创建时间</summary>
+    public string? createdTime { get; set; }
+
+    /// <summary>修改时间</summary>
+    public string? modifiedTime { get; set; }
+}
+
+/// <summary>
+/// 设备
+/// </summary>
+public class MaintenanceOrderItem
+{
+    /// <summary>主键ID</summary>
+    public string? Id { get; set; }
+
+    /// <summary>设备名称</summary>
+    public string? DevName { get; set; }
+
+    /// <summary>设备编码</summary>
+    public string? DevCode { get; set; }
+
+    /// <summary>工厂编码</summary>
+    public string? FactoryCode { get; set; }
+
+    /// <summary>工厂名称</summary>
+    public string? FactoryName { get; set; }
+
+    /// <summary>质检单号</summary>
+    public string? UpkeepNo { get; set; }
+
+    /// <summary>检验状态（0-新建；1-待检验；2-检验中；3-检验完成）</summary>
+    public string? UpkeepStatus { get; set; }
+
+    /// <summary>检验状态名称（映射显示用）</summary>
+    public string? UpkeepStatusText { get; set; }
+
+    /// <summary>检验员</summary>
+    public string? UpkeepOperator { get; set; }
+
+    /// <summary>计划编码</summary>
+    public string? PlanCode { get; set; }
+
+    /// <summary>计划名称</summary>
+    public string? PlanName { get; set; }
+
+    /// <summary>计划保养日期</summary>
+    public DateTime? PlanUpkeepTime { get; set; }
+
+    /// <summary>保养日期</summary>
+    public DateTime? UpkeepTime { get; set; }
+
+    /// <summary>备注</summary>
+    public string? Memo { get; set; }
+
+    /// <summary>创建时间</summary>
+    public DateTime? CreatedTime { get; set; }
+
+    /// <summary>修改时间</summary>
+    public DateTime? ModifiedTime { get; set; }
+}
+
+public class DictMaintenance
+{
+    public List<DictItem> MaintenanceStatus { get; set; } = new();
+}
+
+
+public class MaintenanceDetailDto : ObservableObject
+{
+    public string? id { get; set; }
+    /// <summary>设备编码</summary>
+    public string? devCode { get; set; }
+
+    /// <summary>工厂编码</summary>
+    public string? factoryCode { get; set; }
+
+    /// <summary>工厂名称</summary>
+    public string? factoryName { get; set; }
+
+    /// <summary>质检单号</summary>
+    public string? upkeepNo { get; set; }
+
+    /// <summary>检验状态（0-新建；1-待检验；2-检验中；3-检验完成）</summary>
+    public string? upkeepStatus { get; set; }
+
+    /// <summary>检验状态名称（映射显示用）</summary>
+    public string? upkeepStatusText { get; set; }
+    //保养内容
+    public string? upkeepContent { get; set; }
+    //耗材
+    public string? consumeMaterial { get; set; }
+    //工具
+    public string? upkeepTool { get; set; }
+
+    //标准
+    public string? upkeepStandard { get; set; }
+
+    //保养结果
+    public string? upkeepResult { get; set; }
+
+    public string? upkeepMemo { get; set; }
+
+    /// <summary>计划编码</summary>
+    public string? planCode { get; set; }
+
+    /// <summary>计划名称</summary>
+    public string? planName { get; set; }
+
+    /// <summary>计划保养日期</summary>
+    public string? planUpkeepTime { get; set; }
+
+    /// <summary>保养日期</summary>
+    public string? upkeepTime { get; set; }
+
+    /// <summary>备注</summary>
+    public string? memo { get; set; }
+
+    /// <summary>创建时间</summary>
+    public string? createdTime { get; set; }
+
+    /// <summary>修改时间</summary>
+    public string? modifiedTime { get; set; }
+
+    public List<MaintenanceItem>? devUpkeepTaskDetailList { get; set; } = new();
+    public List<MaintenanceAttachment>? devUpkeepTaskAttachmentList { get; set; } = new();
+
+
+}
+
+
+
+public class MaintenanceMaterial
+{
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
+    public string? model { get; set; }
+    public string? spec { get; set; }
+    public decimal? qty { get; set; }               // 生产/到货数量
+    public string? unit { get; set; }
+}
+
+public partial class MaintenanceItem : ObservableObject
+{
+    public int? index { get; set; }
+    public string? id { get; set; }
+    public string? itemName { get; set; }
+    public string? itemCode { get; set; }
+    public string? upkeepStandard { get; set; }
+    public string? upkeepContent { get; set; }
+    public string? consumeMaterial { get; set; }
+    public string? upkeepTool { get; set; }
+    public string? upkeepResult { get; set; }
+    public string? upkeepNo { get; set; }
+    public string? memo { get; set; }
+
+}
+
+public class MaintenanceAttachment
+{
+    public string? id { get; set; }
+    public string? attachmentName { get; set; }
+    public string? attachmentRealName { get; set; }
+    public string? attachmentUrl { get; set; }
+    public string? attachmentExt { get; set; }
+    public string? attachmentLocation { get; set; } // main/table
+    public decimal? attachmentSize { get; set; }     // KB
+    public string? attachmentFolder { get; set; }
+    public string? createdTime { get; set; }
+}
+
+public partial class OrderMaintenanceAttachmentItem : ObservableObject
+{
+    // 只保留这一个：使用 MVVM Toolkit 自动生成 Public LocalPath
+    [ObservableProperty]
+    [JsonIgnore]                 // 不序列化给后端
+    private string? localPath;
+
+    public bool IsImage { get; set; }   // 只要它为 true 才进缩略图
+
+    // 统一用 PascalCase 命名，别和小写混用
+    public string? AttachmentUrl { get; set; }
+    public string? AttachmentName { get; set; }
+    public string? AttachmentRealName { get; set; }
+    public string? AttachmentExt { get; set; }
+    public string? AttachmentFolder { get; set; }
+    public string? AttachmentLocation { get; set; }
+    public long AttachmentSize { get; set; }
+    public string? Id { get; set; }
+    public string? CreatedTime { get; set; }
+    public string? Memo { get; set; }
+    public bool IsUploaded { get; set; }
+    // 预览接口返回的直连 URL（短期有效）
+    private string? _previewUrl;
+    public string? PreviewUrl { get => _previewUrl; set => SetProperty(ref _previewUrl, value); }
+
+    // 供 XAML 绑定：优先显示 Preview → Local → 原地址
+    public string? DisplaySource => PreviewUrl ?? LocalPath ?? AttachmentUrl;
+
+    // 通知 UI 刷新 DisplaySource
+    public void RefreshDisplay() => OnPropertyChanged(nameof(DisplaySource));
+}
+
+public class MaintenanceWorkflowNode
+{
+    public string? statusValue { get; set; }  // "0" | "1" | "2"
+    public string? statusName { get; set; }  // "新建"、"待检验" 等（仅展示用）
+    public string? statusTime { get; set; }  // "2025-01-02 12:34:56"
+}
+
+

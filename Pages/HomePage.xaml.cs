@@ -46,7 +46,10 @@ namespace IndustrialControlMAUI.Pages
             => await DisplayAlert("OQC", "待接入页面", "确定");
 
         private async void OnInSpectionSearch(object? s, TappedEventArgs e)
-           => await Shell.Current.GoToAsync(nameof(InspectionSearchPage));            
+           => await Shell.Current.GoToAsync(nameof(InspectionSearchPage));
+
+        private async void OnMaintenanceSearch(object? s, TappedEventArgs e)
+          => await Shell.Current.GoToAsync(nameof(MaintenanceSearchPage));
 
         // ✅ 退出登录
         private async void OnLogoutClicked(object? sender, EventArgs e)

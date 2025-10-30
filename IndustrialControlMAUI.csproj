@@ -107,6 +107,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Update="Pages\Equipment\MaintenanceSearchPage.xaml.cs">
+		  <DependentUpon>MaintenanceSearchPage.xaml</DependentUpon>
+		</Compile>
+		<Compile Update="Pages\Equipment\MaintenanceDetailPage.xaml.cs">
+		  <DependentUpon>MaintenanceDetailPage.xaml</DependentUpon>
+		</Compile>
 		<Compile Update="Pages\Equipment\InspectionDetailPage.xaml.cs">
 		  <DependentUpon>InspectionDetailPage.xaml</DependentUpon>
 		</Compile>
@@ -152,7 +158,13 @@
 		<MauiXaml Update="Pages\AdminPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
+		<MauiXaml Update="Pages\Equipment\MaintenanceDetailPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
 		<MauiXaml Update="Pages\Equipment\InspectionDetailPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\Equipment\MaintenanceSearchPage.xaml">
 		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Pages\Equipment\InspectionSearchPage.xaml">

@@ -308,7 +308,7 @@ Padding="8,0,8,24">
                     Padding="8,0,8,24"> 
 
                 <!-- 过程质检执行IPQC -->
-                <Frame Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}">
+                <Frame Grid.Row="0" Grid.Column="0" Style="{StaticResource Card}">
                     <VerticalStackLayout HorizontalOptions="Center">
                         <Border HeightRequest="64" WidthRequest="64"
                                 BackgroundColor="#00796B"
@@ -344,7 +344,23 @@ Padding="8,0,8,24">
                         <TapGestureRecognizer Tapped="OnFQC"/>
                     </Frame.GestureRecognizers>
                 </Frame>-->
-
+                <Frame Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}">
+                    <VerticalStackLayout HorizontalOptions="Center">
+                        <Border HeightRequest="64" WidthRequest="64"
+                 BackgroundColor="#00796B"
+                 StrokeShape="RoundRectangle 32">
+                            <Image Source="search_24_filled.svg"
+                    HeightRequest="28" WidthRequest="28"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"/>
+                        </Border>
+                        <Label Text="维护保养任务查询" FontSize="12" Margin="0,6,0,0"
+                HorizontalTextAlignment="Center" TextColor="#333"/>
+                    </VerticalStackLayout>
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnMaintenanceSearch"/>
+                    </Frame.GestureRecognizers>
+                </Frame>
 
             </Grid>
         </VerticalStackLayout>
