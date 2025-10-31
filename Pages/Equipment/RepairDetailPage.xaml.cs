@@ -2,12 +2,12 @@ using IndustrialControlMAUI.ViewModels;
 
 namespace IndustrialControlMAUI.Pages;
 
-public partial class InspectionDetailPage : ContentPage
+public partial class RepairDetailPage : ContentPage
 {
-    private readonly InspectionDetailViewModel _vm;
-    public InspectionDetailPage() : this(ServiceHelper.GetService<InspectionDetailViewModel>()) { }
+    private readonly RepairDetailViewModel _vm;
+    public RepairDetailPage() : this(ServiceHelper.GetService<RepairDetailViewModel>()) { }
 
-    public InspectionDetailPage(InspectionDetailViewModel vm)
+    public RepairDetailPage(RepairDetailViewModel vm)
     {
         InitializeComponent();
         _vm = vm ?? throw new ArgumentNullException(nameof(vm));
@@ -21,6 +21,6 @@ public partial class InspectionDetailPage : ContentPage
 
     }
 
-    
+   
 
 }

@@ -548,3 +548,359 @@ public class MaintenanceWorkflowNode
 }
 
 
+public class RepairRecordDto
+{
+    public string? id { get; set; }
+    public string? maintainNo { get; set; }
+    public string? workOrderNo { get; set; }
+
+    public string? devCode { get; set; }
+    public string? devName { get; set; }
+    public string? devModel { get; set; }
+
+    public string? maintainType { get; set; }
+    public string? factoryCode { get; set; }
+    public string? factoryName { get; set; }
+    public string? assignTo { get; set; }
+    public string? assignToName { get; set; }
+
+    public string? mainRepairUser { get; set; }
+    public string? assitRepairUsers { get; set; }
+
+    public string? acceptanceDate { get; set; }
+    public string? acceptanceOpinion { get; set; }
+    public string? acceptor { get; set; }
+
+    public string? expectedRepairDate { get; set; }
+    public string? completedRepairDate { get; set; }
+    public string? repairStartTime { get; set; }
+    public string? repairEndTime { get; set; }
+    public string? repairResult { get; set; }
+
+    public decimal? repairDuration { get; set; }
+    public string? urgent { get; set; }
+
+    public string? urgentText { get; set; }
+
+    public bool? auditBack { get; set; }
+    public string? auditStatus { get; set; }
+    public string?  auditStatusText { get; set; }
+
+    public string? dataSource { get; set; }
+    public string? dataTimeId { get; set; }
+    public bool? delStatus { get; set; }
+
+    public string? createdTime { get; set; }
+    public string? creator { get; set; }
+    public string? modifiedTime { get; set; }
+    public string? modifier { get; set; }
+
+}
+
+/// <summary>
+/// 设备
+/// </summary>
+public class RepairOrderItem
+{
+    public string? id { get; set; }
+    public string? maintainNo { get; set; }
+    public string? workOrderNo { get; set; }
+
+    public string? devCode { get; set; }
+    public string? devName { get; set; }
+    public string? devModel { get; set; }
+
+    public string? maintainType { get; set; }
+    public string? factoryCode { get; set; }
+    public string? factoryName { get; set; }
+    public string? assignTo { get; set; }
+    public string? assignToName { get; set; }
+
+    public string? mainRepairUser { get; set; }
+    public string? assitRepairUsers { get; set; }
+
+    public string? acceptanceDate { get; set; }
+    public string? acceptanceOpinion { get; set; }
+    public string? acceptor { get; set; }
+
+    public DateTime? expectedRepairDate { get; set; }
+    public DateTime? completedRepairDate { get; set; }
+    public DateTime? repairStartTime { get; set; }
+    public DateTime? repairEndTime { get; set; }
+    public string? repairResult { get; set; }
+
+
+    public decimal? repairDuration { get; set; }
+    public string? urgent { get; set; }
+
+    public string? urgentText { get; set; }
+
+    public bool? auditBack { get; set; }
+    public string? auditStatus { get; set; }
+
+    public string? auditStatusText { get; set; }
+
+    public string? dataSource { get; set; }
+    public string? dataTimeId { get; set; }
+    public bool? delStatus { get; set; }
+
+    public DateTime? createdTime { get; set; }
+    public string? creator { get; set; }
+    public DateTime? modifiedTime { get; set; }
+    public string? modifier { get; set; }
+}
+
+public class DictRepair
+{
+    public List<DictItem> AuditStatus { get; set; } = new();
+
+    public List<DictItem> Urgent { get; set; } = new();
+
+    public List<DictItem> MaintainType { get; set; } = new();
+}
+
+
+public class RepairDetailDto : ObservableObject
+{
+    public string? id { get; set; }
+    public string? maintainNo { get; set; }
+    public string? workOrderNo { get; set; }
+
+    public string? devCode { get; set; }
+    public string? devName { get; set; }
+    public string? devModel { get; set; }
+
+    public string? maintainType { get; set; }
+    public string? factoryCode { get; set; }
+    public string? factoryName { get; set; }
+    public string? assignTo { get; set; }
+    public string? assignToName { get; set; }
+
+    public string? mainRepairUser { get; set; }
+    public string? assitRepairUsers { get; set; }
+
+    public string? acceptanceDate { get; set; }
+    public string? acceptanceOpinion { get; set; }
+    public string? acceptor { get; set; }
+
+    public string? expectedRepairDate { get; set; }
+    public string? completedRepairDate { get; set; }
+    public string? repairStartTime { get; set; }
+    public string? repairEndTime { get; set; }
+    public string? repairResult { get; set; }
+
+    public decimal? repairDuration { get; set; }
+    public string? urgent { get; set; }
+
+    public bool? auditBack { get; set; }
+    public string? auditStatus { get; set; }
+
+    public string? dataSource { get; set; }
+    public string? dataTimeId { get; set; }
+    public bool? delStatus { get; set; }
+
+    public string? createdTime { get; set; }
+    public string? creator { get; set; }
+    public string? modifiedTime { get; set; }
+    public string? modifier { get; set; }
+
+    public MaintainReportDomain? maintainReportDomain { get; set; }
+
+    public List<RepairAttachment>? maintainWorkOrderAttachmentDomainList { get; set; }
+    public List<MaintainWorkOrderItemDomain>? maintainWorkOrderItemDomainList { get; set; }
+
+
+}
+
+/// <summary>
+/// 维修报告
+/// </summary>
+public class MaintainReportDomain
+{
+    public string? id { get; set; }
+    public string? maintainNo { get; set; }
+    public string? devCode { get; set; }
+    public string? devName { get; set; }
+    public string? devModel { get; set; }
+    public string? devStatus { get; set; }
+
+    public string? workOrderId { get; set; }
+    public string? workOrderNo { get; set; }
+
+    public string? phenomena { get; set; }
+    public string? description { get; set; }
+    public string? memo { get; set; }
+    public string? urgent { get; set; }
+
+    public string? factoryCode { get; set; }
+    public string? factoryName { get; set; }
+    public string? workShopName { get; set; }
+
+    public string? expectedRepairDate { get; set; }
+    public string? createdTime { get; set; }
+    public string? creator { get; set; }
+    public string? modifiedTime { get; set; }
+    public string? modifier { get; set; }
+
+    public bool? auditBack { get; set; }
+    public string? auditStatus { get; set; }
+    public bool? delStatus { get; set; }
+    public string? dataSource { get; set; }
+    public string? dataTimeId { get; set; }
+
+    public List<RepairReportAttachment>? maintainReportAttachmentDomainList { get; set; }
+}
+
+/// <summary>
+/// 报告附件
+/// </summary>
+public class RepairReportAttachment
+{
+    public string? id { get; set; }
+    public string? devMaintainId { get; set; }
+    public string? attachmentName { get; set; }
+    public string? attachmentRealName { get; set; }
+    public string? attachmentExt { get; set; }
+    public string? attachmentFolder { get; set; }
+    public string? attachmentLocation { get; set; }
+    public string? attachmentUrl { get; set; }
+    public long? attachmentSize { get; set; }
+
+    public string? memo { get; set; }
+    public string? createdTime { get; set; }
+    public string? creator { get; set; }
+    public string? modifiedTime { get; set; }
+    public string? modifier { get; set; }
+    public bool? delStatus { get; set; }
+}
+
+/// <summary>
+/// 工单附件
+/// </summary>
+public class RepairAttachment
+{
+    public string? id { get; set; }
+    public string? workOrderId { get; set; }
+    public string? attachmentName { get; set; }
+    public string? attachmentRealName { get; set; }
+    public string? attachmentExt { get; set; }
+    public string? attachmentFolder { get; set; }
+    public string? attachmentLocation { get; set; }
+    public string? attachmentUrl { get; set; }
+    public long? attachmentSize { get; set; }
+
+    public string? memo { get; set; }
+    public string? createdTime { get; set; }
+    public string? creator { get; set; }
+    public string? modifiedTime { get; set; }
+    public string? modifier { get; set; }
+    public bool? delStatus { get; set; }
+}
+
+/// <summary>
+/// 工单项目明细
+/// </summary>
+public class MaintainWorkOrderItemDomain
+{
+    public int? index { get; set; }
+    public string? id { get; set; }
+    public string? workOrderId { get; set; }
+    public string? factoryCode { get; set; }
+    public string? faultName { get; set; }
+    public string? faultDescription { get; set; }
+    public string? faultCause { get; set; }
+    public string? faultPart { get; set; }
+    public string? repairMethod { get; set; }
+    public string? suggestions { get; set; }
+
+    public string? memo { get; set; }
+    public string? createdTime { get; set; }
+    public string? creator { get; set; }
+    public string? modifiedTime { get; set; }
+    public string? modifier { get; set; }
+    public bool? delStatus { get; set; }
+}
+
+public class RepairMaterial
+{
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
+    public string? model { get; set; }
+    public string? spec { get; set; }
+    public decimal? qty { get; set; }               // 生产/到货数量
+    public string? unit { get; set; }
+}
+
+public partial class RepairItem : ObservableObject
+{
+    public int? index { get; set; }
+    public string? id { get; set; }
+    public string? itemName { get; set; }
+    public string? itemCode { get; set; }
+    public string? maintainionStandard { get; set; }
+    public string? maintainionMode { get; set; }
+    public string? maintainionAttributeName { get; set; }
+    public string? maintainionAttribute { get; set; }
+    public string? maintainValue { get; set; }
+    public string? maintainResult { get; set; }
+    public string? maintainNo { get; set; }
+
+    public string? memo { get; set; }
+    public string? upperLimit { get; set; }
+    public string? lowerLimit { get; set; }
+    public string? standardValue { get; set; }
+    public string? unit { get; set; }
+}
+
+public partial class OrderRepairAttachmentItem : ObservableObject
+{
+    // 只保留这一个：使用 MVVM Toolkit 自动生成 Public LocalPath
+    [ObservableProperty]
+    [JsonIgnore]                 // 不序列化给后端
+    private string? localPath;
+
+    public bool IsImage { get; set; }   // 只要它为 true 才进缩略图
+
+    // 统一用 PascalCase 命名，别和小写混用
+    public string? AttachmentUrl { get; set; }
+    public string? AttachmentName { get; set; }
+    public string? AttachmentRealName { get; set; }
+    public string? AttachmentExt { get; set; }
+    public string? AttachmentFolder { get; set; }
+    public string? AttachmentLocation { get; set; }
+    public long AttachmentSize { get; set; }
+    public string? Id { get; set; }
+    public string? CreatedTime { get; set; }
+    public string? Memo { get; set; }
+    public bool IsUploaded { get; set; }
+    // 预览接口返回的直连 URL（短期有效）
+    private string? _previewUrl;
+    public string? PreviewUrl { get => _previewUrl; set => SetProperty(ref _previewUrl, value); }
+
+    // 供 XAML 绑定：优先显示 Preview → Local → 原地址
+    public string? DisplaySource => PreviewUrl ?? LocalPath ?? AttachmentUrl;
+
+    // 通知 UI 刷新 DisplaySource
+    public void RefreshDisplay() => OnPropertyChanged(nameof(DisplaySource));
+}
+
+public class RepairWorkflowNode
+{
+    public string? statusValue { get; set; }  // "0" | "1" | "2"
+    public string? statusName { get; set; }  // "新建"、"待检验" 等（仅展示用）
+    public string? statusTime { get; set; }  // "2025-01-02 12:34:56"
+}
+public class RepairWorkflowVmItem
+{
+    public string? StatusValue { get; set; }
+    public string? Title { get; set; }
+    public string? Time { get; set; }
+    public int StepNo { get; set; }
+
+    public bool IsCurrent { get; set; }
+    public bool IsCompleted { get; set; }
+    public bool IsActive { get; set; }   // 用于标题/连线变色
+    public bool IsLast { get; set; }   // 最后一个节点隐藏连线
+    public bool IsRowEnd { get; set; }   // 每行末尾（第 3、6 个）隐藏连线
+
+}

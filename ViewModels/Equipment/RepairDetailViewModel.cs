@@ -9,45 +9,42 @@ namespace IndustrialControlMAUI.ViewModels
     /// <summary>
     /// 质检单详情页 VM
     /// </summary>
-    public partial class InspectionDetailViewModel : ObservableObject, IQueryAttributable
+    public partial class RepairDetailViewModel : ObservableObject, IQueryAttributable
     {
         private readonly IEquipmentApi _api;
-        private readonly IAuthApi _authApi;
         private readonly IAttachmentApi _attachmentApi;
         private readonly CancellationTokenSource _cts = new();
 
-        public ObservableCollection<OrderInspectionAttachmentItem> Attachments { get; } = new();
-        public ObservableCollection<OrderInspectionAttachmentItem> ImageAttachments { get; } = new(); // 仅图片
+        public ObservableCollection<OrderRepairAttachmentItem> Attachments { get; } = new();
+        public ObservableCollection<OrderRepairAttachmentItem> ImageAttachments { get; } = new(); // 仅图片
 
-        public ObservableCollection<WorkflowVmItem> WorkflowSteps { get; } = new();
+        public ObservableCollection<RepairWorkflowVmItem> WorkflowSteps { get; } = new();
 
         [ObservableProperty] private bool isBusy;
-        [ObservableProperty] private InspectionDetailDto? detail;
-        [ObservableProperty]
-        private bool isInspectorDropdownOpen = false; // 检验员下拉列表框默认关闭
-        [ObservableProperty]
-        private double inspectorDropdownOffset = 40; // Entry 高度 + 间距
+        [ObservableProperty] private RepairDetailDto? detail;
+
 
         // 明细与附件集合（用于列表绑定）
-        public ObservableCollection<InspectionItem> Items { get; } = new();
+        public ObservableCollection<MaintainWorkOrderItemDomain> Items { get; } = new();
 
-        // 检验结果下拉（合格 / 不合格）
-        public ObservableCollection<StatusOption> InspectResultOptions { get; } = new();
 
+
+        // 可编辑开关（如需控制 Entry/Picker 的 IsEnabled）
+        [ObservableProperty] private bool isEditing = true;
 
         // 导航入参
         private string? _id;
         public int Index { get; set; }
 
-        public InspectionDetailViewModel(IEquipmentApi api, IAuthApi authApi, IAttachmentApi attachmentApi)
+        public RepairDetailViewModel(IEquipmentApi api, IAttachmentApi attachmentApi)
         {
             _api = api;
-            _authApi = authApi;
             _attachmentApi = attachmentApi;
         }
 
+
         /// <summary>
-        /// Shell 路由入参，例如：.../InspectionDetailPage?id=xxxx
+        /// Shell 路由入参，例如：.../RepairDetailPage?id=xxxx
         /// </summary>
         public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
@@ -65,7 +62,7 @@ namespace IndustrialControlMAUI.ViewModels
             IsBusy = true;
             try
             {
-                var resp = await _api.GetDetailAsync(_id!);
+                var resp = await _api.GetRepairDetailAsync(_id!);
                 if (resp?.result == null)
                 {
                     await ShowTip("未获取到详情数据");
@@ -80,7 +77,7 @@ namespace IndustrialControlMAUI.ViewModels
                 {
                     Items.Clear();
                     int i = 1;
-                    foreach (var it in Detail.devInspectTaskDetailList ?? new())
+                    foreach (var it in Detail.maintainWorkOrderItemDomainList ?? new())
                     {
                         it.index = i++; // 1,2,3...
                         Items.Add(it);
@@ -92,11 +89,11 @@ namespace IndustrialControlMAUI.ViewModels
                 {
                     Attachments.Clear();
 
-                    foreach (var at in (Detail.devInspectTaskAttachmentList ?? new List<InspectionAttachment>()))
+                    foreach (var at in (Detail.maintainWorkOrderAttachmentDomainList ?? new List<RepairAttachment>()))
                     {
                         if (string.IsNullOrWhiteSpace(at.attachmentUrl)) continue;
 
-                        var item = new OrderInspectionAttachmentItem
+                        var item = new OrderRepairAttachmentItem
                         {
                             AttachmentExt = at.attachmentExt ?? "",
                             AttachmentFolder = at.attachmentFolder ?? "",
@@ -169,13 +166,11 @@ namespace IndustrialControlMAUI.ViewModels
             );
         }
        
-
-
         /// <summary>
         /// 预览附件
         /// </summary>
         [RelayCommand]
-        private async Task PreviewAttachment(InspectionAttachment? att)
+        private async Task PreviewAttachment(RepairAttachment? att)
         {
             if (att is null || string.IsNullOrWhiteSpace(att.attachmentUrl))
             {
@@ -193,39 +188,14 @@ namespace IndustrialControlMAUI.ViewModels
             }
         }
 
-        
-
-        private static string? DetectContentType(string? ext)
-        {
-            switch (ext?.ToLowerInvariant())
-            {
-                case "jpg":
-                case "jpeg": return "image/jpeg";
-                case "png": return "image/png";
-                case "gif": return "image/gif";
-                case "bmp": return "image/bmp";
-                case "webp": return "image/webp";
-                case "pdf": return "application/pdf";
-                case "doc": return "application/msword";
-                case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-                case "xls": return "application/vnd.ms-excel";
-                case "xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-                case "txt": return "text/plain";
-                case "rar": return "application/x-rar-compressed";
-                case "zip": return "application/zip";
-                default: return null; // 让 HttpClient 自行处理
-            }
-        }
 
         private static bool IsImageExt(string? ext)
             => ext is "jpg" or "jpeg" or "png" or "gif" or "bmp" or "webp";
 
-        private static bool IsAllowedFile(string? ext)
-            => IsImageExt(ext) || ext is "pdf" or "doc" or "docx" or "xls" or "xlsx" or "txt" or "rar" or "zip";
-
+       
 
         [RelayCommand]
-        private async Task DownloadAttachment(OrderInspectionAttachmentItem? item)
+        private async Task DownloadAttachment(OrderRepairAttachmentItem? item)
         {
             if (item is null)
             {
@@ -271,46 +241,64 @@ namespace IndustrialControlMAUI.ViewModels
         {
             try
             {
-                var baseSteps = new List<WorkflowVmItem>
+                // ① 定义 6 个有序节点（按前端展示顺序）
+                //   statusValue 请按后端返回值对应好；下方是常见映射示例：
+                //   0:报修  1:待派工  2:待维修  3:维修中  4:维修完成  5:已验收
+                var baseSteps = new List<RepairWorkflowVmItem>
         {
-            new() { StatusValue = "0", Title = "待执行" },
-            new() { StatusValue = "1", Title = "执行中" },
-            new() { StatusValue = "2", Title = "已完成" },
+            new() { StatusValue = "0", Title = "待派工" },
+            new() { StatusValue = "1", Title = "待维修" },
+            new() { StatusValue = "2", Title = "维修中" },
+            new() { StatusValue = "3", Title = "维修完成" },
+            new() { StatusValue = "4", Title = "已验收" },
         };
 
-                var resp = await _api.GetWorkflowAsync(id, _cts.Token);
-                var list = resp?.result ?? new List<InspectWorkflowNode>();
+                var resp = await _api.GetRepairWorkflowAsync(id, _cts.Token);
+                var nodes = resp?.result ?? new List<RepairWorkflowNode>();
 
-                // 回填时间 & 找“当前”
+                // ② 回填时间 & 找“当前”（最后一个有时间的索引）
                 int currentIndex = -1;
                 for (int i = 0; i < baseSteps.Count; i++)
                 {
                     var s = baseSteps[i];
                     s.StepNo = i + 1;
-                    var hit = list.FirstOrDefault(x => string.Equals(x.statusValue, s.StatusValue, StringComparison.OrdinalIgnoreCase));
+                    s.IsLast = (i == baseSteps.Count - 1);
+                    s.IsRowEnd = ((i + 1) % 3 == 0);   // 每行 3 列：第 3、6 个为行尾，用于隐藏连线
+
+                    var hit = nodes.FirstOrDefault(x =>
+                        string.Equals(x.statusValue, s.StatusValue, StringComparison.OrdinalIgnoreCase));
+
                     if (hit != null && !string.IsNullOrWhiteSpace(hit.statusTime))
                     {
-                        s.Time = hit.statusTime.Split(' ')[0];
-                        currentIndex = i; // 最后一个有时间的就是“当前”
+                        // 仅取日期部分（若格式 "yyyy-MM-dd HH:mm:ss"）
+                        var t = hit.statusTime.Trim();
+                        var sp = t.Split(' ');
+                        s.Time = sp.Length > 0 ? sp[0] : t;
+
+                        currentIndex = i;   // 最后一个有时间的视作“当前”
                     }
                 }
 
-                // 标注 Completed/Current
+                // ③ 标注 Completed / Current / Active（Active = Completed 或 Current）
                 for (int i = 0; i < baseSteps.Count; i++)
                 {
-                    baseSteps[i].IsCurrent = (i == currentIndex);
-                    baseSteps[i].IsCompleted = (i < currentIndex) && !string.IsNullOrWhiteSpace(baseSteps[i].Time);
-                    baseSteps[i].IsLast = (i == baseSteps.Count - 1);
+                    var s = baseSteps[i];
+                    s.IsCurrent = (i == currentIndex);
+                    s.IsCompleted = (currentIndex >= 0) && (i < currentIndex) && !string.IsNullOrWhiteSpace(s.Time);
+                    s.IsActive = s.IsCurrent || s.IsCompleted;
                 }
 
+                // ④ 刷新绑定集合
                 WorkflowSteps.Clear();
-                foreach (var s in baseSteps) WorkflowSteps.Add(s);
+                foreach (var s in baseSteps)
+                    WorkflowSteps.Add(s);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("LoadWorkflowAsync error: " + ex.Message);
             }
         }
+
 
 
     }

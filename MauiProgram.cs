@@ -65,6 +65,8 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<ViewModels.InspectionSearchViewModel>();
             builder.Services.AddTransient<ViewModels.MaintenanceDetailViewModel>();
             builder.Services.AddTransient<ViewModels.MaintenanceSearchViewModel>();
+            builder.Services.AddTransient<ViewModels.RepairDetailViewModel>();
+            builder.Services.AddTransient<ViewModels.RepairSearchViewModel>();
 
             // ===== 注册 Pages（DI 创建）=====
             builder.Services.AddTransient<Pages.LoginPage>();
@@ -96,6 +98,8 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<Pages.InspectionDetailPage>();
             builder.Services.AddTransient<Pages.MaintenanceSearchPage>();
             builder.Services.AddTransient<Pages.MaintenanceDetailPage>();
+            builder.Services.AddTransient<Pages.RepairSearchPage>();
+            builder.Services.AddTransient<Pages.RepairDetailPage>();
 
             builder.Services.AddTransient<WarehouseLocationPickerPage>();
             builder.Services.AddTransient<QrScanPage>();

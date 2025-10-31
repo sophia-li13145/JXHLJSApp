@@ -51,6 +51,8 @@ namespace IndustrialControlMAUI.Pages
         private async void OnMaintenanceSearch(object? s, TappedEventArgs e)
           => await Shell.Current.GoToAsync(nameof(MaintenanceSearchPage));
 
+        private async void OnRepairSearch(object? s, TappedEventArgs e)
+          => await Shell.Current.GoToAsync(nameof(RepairSearchPage));
         // ✅ 退出登录
         private async void OnLogoutClicked(object? sender, EventArgs e)
         {

@@ -15,7 +15,7 @@
             <conv:StringToNullableDecimalConverter x:Key="DecConv" />
             <conv:DecParseOnlyConverter x:Key="DecParseOnlyConv" />
             <conv:DefectLevelToColorConverter x:Key="DefectLevelToColor"/>
-            <conv:IntGreaterThanZeroConverter x:Key="IntGT0" />
+            <conv:IntGreaterThanZeroConverter x:Key="IntGT0" /> 
             <conv:IndexConverter x:Key="IndexConverter" />
             <Style x:Key="PrimaryBtn" TargetType="Button">
                 <Setter Property="HeightRequest" Value="36" />
