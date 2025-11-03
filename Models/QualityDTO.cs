@@ -259,6 +259,12 @@ public class QualityAttachment
     public decimal? attachmentSize { get; set; }     // KB
     public string? attachmentFolder { get; set; }
     public string? createdTime { get; set; }
+    public string? name { get; set; }        // 前端显示名（通常就是文件名）
+    public int? percent { get; set; }     // 进度（完成100）
+    public string? qualityNo { get; set; }   // 质检单号
+    public string? status { get; set; }      // "done" / "uploading" / "error"
+    public string? uid { get; set; }         // 前端生成或服务端返回的 uid
+    public string? url { get; set; }         // 可直接访问的绝对地址（若有）
 }
 
 public partial class AttachmentItem
@@ -364,6 +370,13 @@ public partial class OrderQualityAttachmentItem : ObservableObject
 
     // 通知 UI 刷新 DisplaySource
     public void RefreshDisplay() => OnPropertyChanged(nameof(DisplaySource));
+
+    public string? Name { get; set; } = null;       // 默认用文件名
+    public int Percent { get; set; } = 100;
+    public string Status { get; set; } = "done";
+    public string? Uid { get; set; } = null;
+    public string? Url { get; set; } = null;        // 绝对可访问地址（若有）
+    public string? QualityNo { get; set; } = null;  // 质检单号（从 Detail.qualityNo 带过来）
 }
 
 public class UploadAttachmentResult

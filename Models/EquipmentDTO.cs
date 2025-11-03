@@ -671,6 +671,8 @@ public class RepairDetailDto : ObservableObject
     public string? devModel { get; set; }
 
     public string? maintainType { get; set; }
+
+    public string? maintainTypeText { get; set; }
     public string? factoryCode { get; set; }
     public string? factoryName { get; set; }
     public string? assignTo { get; set; }
@@ -691,6 +693,8 @@ public class RepairDetailDto : ObservableObject
 
     public decimal? repairDuration { get; set; }
     public string? urgent { get; set; }
+
+    public string? urgentText { get; set; }
 
     public bool? auditBack { get; set; }
     public string? auditStatus { get; set; }
@@ -754,7 +758,7 @@ public class MaintainReportDomain
 /// <summary>
 /// 报告附件
 /// </summary>
-public class RepairReportAttachment
+public class RepairReportAttachment : ObservableObject
 {
     public string? id { get; set; }
     public string? devMaintainId { get; set; }
@@ -764,7 +768,7 @@ public class RepairReportAttachment
     public string? attachmentFolder { get; set; }
     public string? attachmentLocation { get; set; }
     public string? attachmentUrl { get; set; }
-    public long? attachmentSize { get; set; }
+    public decimal? attachmentSize { get; set; }
 
     public string? memo { get; set; }
     public string? createdTime { get; set; }
@@ -787,7 +791,7 @@ public class RepairAttachment
     public string? attachmentFolder { get; set; }
     public string? attachmentLocation { get; set; }
     public string? attachmentUrl { get; set; }
-    public long? attachmentSize { get; set; }
+    public decimal? attachmentSize { get; set; }
 
     public string? memo { get; set; }
     public string? createdTime { get; set; }

@@ -219,7 +219,7 @@
                         <Label Grid.Row="4" Grid.Column="0" Text="指派给：" Style="{StaticResource FieldLabel}" />
                         <Label Grid.Row="4" Grid.Column="1" Text="{Binding Detail.assignTo}" Style="{StaticResource FieldValue}" />
                         <Label Grid.Row="4" Grid.Column="2" Text="维修内修：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="4" Grid.Column="3" Text="{Binding Detail.maintainType}" Style="{StaticResource FieldValue}" />
+                        <Label Grid.Row="4" Grid.Column="3" Text="{Binding Detail.maintainTypeText}" Style="{StaticResource FieldValue}" />
                         <Label Grid.Row="5" Grid.Column="0" Text="异常现象：" Style="{StaticResource FieldLabel}" />
                         <Label Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Detail.memo}" Style="{StaticResource FieldValue}" />
                         <Label Grid.Row="6" Grid.Column="0" Text="异常描述：" Style="{StaticResource FieldLabel}" />
@@ -232,7 +232,7 @@
                 <Label Text="异常提报图片" Style="{StaticResource SectionTitle}" HorizontalOptions="Start" />
                 <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="8" VerticalOptions="Start">
 
-                    <CollectionView ItemsSource="{Binding ImageAttachments}"
+                    <CollectionView ItemsSource="{Binding ErrorAttachments}"
                                      ItemsLayout="HorizontalList"
                                      HeightRequest="96"
                                      SelectionMode="None">  
@@ -243,13 +243,6 @@
                                             CornerRadius="8" HasShadow="False" BorderColor="#E5E7EB" Margin="0,0,8,0">
                                         <Image Aspect="AspectFill" Source="{Binding DisplaySource}" />
                                     </Frame>
-                                    <!-- 右上角删除 -->
-                                    <Button Text="×" FontSize="12" Padding="0"
-                                     WidthRequest="22" HeightRequest="22" CornerRadius="11"
-                                     BackgroundColor="#00000066" TextColor="White"
-                                     HorizontalOptions="End" VerticalOptions="Start" Margin="2"
-                                     Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.RemoveAttachmentCommand}"
-                                     CommandParameter="{Binding .}" /> 
                                 </Grid>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
@@ -292,7 +285,7 @@
                         <!-- 第4行：检验备注（整行） -->
                         <Label Grid.Row="4" Grid.Column="0" Text="维修时长：" Style="{StaticResource FieldLabel}" />
                         <Label Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3"
-                               Text="{Binding Detail.inspectMemo}" /> 
+                               Text="{Binding Detail.repairDuration}" /> 
                     </Grid>
                 </Frame>
 
@@ -317,7 +310,7 @@
                                 <!-- 右侧你的原 Frame 卡片，内容保持不变 -->
                                 <Frame Grid.Column="1" Style="{StaticResource Card}">
                                     <Grid
-                        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                         ColumnDefinitions="Auto,*"
                         RowSpacing="8" ColumnSpacing="5">
 
@@ -325,18 +318,18 @@
                                         <Label Grid.Row="0" Grid.Column="0" Text="故障名称：" Style="{StaticResource FieldLabel}" />
                                         <Label Grid.Row="0" Grid.Column="1" Text="{Binding faultName}" Style="{StaticResource FieldValue}" />
                                         <BoxView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="6" HeightRequest="1" BackgroundColor="#E5E7EB" />
-                                        <Label Grid.Row="1" Grid.Column="0" Text="故障描述：" Style="{StaticResource FieldLabel}" />
-                                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding faultDescription}" Style="{StaticResource FieldValue}" />
-                                        <Label Grid.Row="2" Grid.Column="0" Text="故障原因：" Style="{StaticResource FieldLabel}" />
-                                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding faultCause}" Style="{StaticResource FieldValue}" />
-                                        <Label Grid.Row="3" Grid.Column="0" Text="故障部位：" Style="{StaticResource FieldLabel}" />
-                                        <Label Grid.Row="3" Grid.Column="1" Text="{Binding faultPart}" Style="{StaticResource FieldValue}" />
-                                        <Label Grid.Row="4" Grid.Column="0" Text="维修操作方法：" Style="{StaticResource FieldLabel}" />
-                                        <Label Grid.Row="4" Grid.Column="1" Text="{Binding repairMethod}" Style="{StaticResource FieldValue}" />
-                                        <Label Grid.Row="5" Grid.Column="0" Text="预防建议：" Style="{StaticResource FieldLabel}" />
-                                        <Label Grid.Row="5" Grid.Column="1" Text="{Binding suggestions}" Style="{StaticResource FieldValue}" />
-                                        <Label Grid.Row="6" Grid.Column="0" Text="备注：" Style="{StaticResource FieldLabel}" />
-                                        <Label Grid.Row="6" Grid.Column="1" Text="{Binding memo}" Style="{StaticResource FieldValue}" />
+                                        <Label Grid.Row="2" Grid.Column="0" Text="故障描述：" Style="{StaticResource FieldLabel}" />
+                                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding faultDescription}" Style="{StaticResource FieldValue}" />
+                                        <Label Grid.Row="3" Grid.Column="0" Text="故障原因：" Style="{StaticResource FieldLabel}" />
+                                        <Label Grid.Row="3" Grid.Column="1" Text="{Binding faultCause}" Style="{StaticResource FieldValue}" />
+                                        <Label Grid.Row="4" Grid.Column="0" Text="故障部位：" Style="{StaticResource FieldLabel}" />
+                                        <Label Grid.Row="4" Grid.Column="1" Text="{Binding faultPart}" Style="{StaticResource FieldValue}" />
+                                        <Label Grid.Row="5" Grid.Column="0" Text="维修操作方法：" Style="{StaticResource FieldLabel}" />
+                                        <Label Grid.Row="5" Grid.Column="1" Text="{Binding repairMethod}" Style="{StaticResource FieldValue}" />
+                                        <Label Grid.Row="6" Grid.Column="0" Text="预防建议：" Style="{StaticResource FieldLabel}" />
+                                        <Label Grid.Row="6" Grid.Column="1" Text="{Binding suggestions}" Style="{StaticResource FieldValue}" />
+                                        <Label Grid.Row="7" Grid.Column="0" Text="备注：" Style="{StaticResource FieldLabel}" />
+                                        <Label Grid.Row="7" Grid.Column="1" Text="{Binding memo}" Style="{StaticResource FieldValue}" />
 
                                     </Grid>
                                 </Frame>
@@ -364,13 +357,6 @@
                    CornerRadius="8" HasShadow="False" BorderColor="#E5E7EB" Margin="0,0,8,0">
                                             <Image Aspect="AspectFill" Source="{Binding DisplaySource}" />
                                         </Frame>
-                                        <!-- 右上角删除 -->
-                                        <Button Text="×" FontSize="12" Padding="0"
-                    WidthRequest="22" HeightRequest="22" CornerRadius="11"
-                    BackgroundColor="#00000066" TextColor="White"
-                    HorizontalOptions="End" VerticalOptions="Start" Margin="2"
-                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.RemoveAttachmentCommand}"
-                    CommandParameter="{Binding .}" />
                                     </Grid>
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>

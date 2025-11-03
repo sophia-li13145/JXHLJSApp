@@ -15,6 +15,7 @@ namespace IndustrialControlMAUI.ViewModels
         private readonly IAttachmentApi _attachmentApi;
         private readonly CancellationTokenSource _cts = new();
 
+        public ObservableCollection<OrderRepairAttachmentItem> ErrorAttachments { get; } = new();
         public ObservableCollection<OrderRepairAttachmentItem> Attachments { get; } = new();
         public ObservableCollection<OrderRepairAttachmentItem> ImageAttachments { get; } = new(); // 仅图片
 
@@ -35,14 +36,37 @@ namespace IndustrialControlMAUI.ViewModels
         // 导航入参
         private string? _id;
         public int Index { get; set; }
+        private bool _dictsLoaded = false;
+        [ObservableProperty] private List<DictItem> repairStatusDict = new();
+        [ObservableProperty] private List<DictItem> urgentDict = new();
+        [ObservableProperty] private List<DictItem> repairTypeDict = new();
 
         public RepairDetailViewModel(IEquipmentApi api, IAttachmentApi attachmentApi)
         {
             _api = api;
             _attachmentApi = attachmentApi;
+            _ = EnsureDictsLoadedAsync();
         }
 
+        private async Task EnsureDictsLoadedAsync()
+        {
+            if (_dictsLoaded) return;
 
+            try
+            {
+                if (RepairStatusDict.Count > 0) return; // 已加载则跳过
+
+                var dicts = await _api.GetRepairDictsAsync();
+                RepairStatusDict = dicts.AuditStatus;
+                UrgentDict = dicts.Urgent;
+                RepairTypeDict = dicts.MaintainType;
+                 _dictsLoaded = true;
+            }
+            catch (Exception ex)
+            {
+                _dictsLoaded = true;
+            }
+        }
         /// <summary>
         /// Shell 路由入参，例如：.../RepairDetailPage?id=xxxx
         /// </summary>
@@ -58,6 +82,24 @@ namespace IndustrialControlMAUI.ViewModels
         [RelayCommand]
         private async Task LoadAsync()
         {
+            var urgentMap = UrgentDict?
+           .Where(d => !string.IsNullOrWhiteSpace(d.dictItemValue))
+           .GroupBy(d => d.dictItemValue!, StringComparer.OrdinalIgnoreCase)
+           .Select(g => g.First())
+           .ToDictionary(
+           k => k.dictItemValue!,
+           v => string.IsNullOrWhiteSpace(v.dictItemName) ? v.dictItemValue! : v.dictItemName!,
+           StringComparer.OrdinalIgnoreCase
+       ) ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var typeMap = RepairTypeDict?
+           .Where(d => !string.IsNullOrWhiteSpace(d.dictItemValue))
+           .GroupBy(d => d.dictItemValue!, StringComparer.OrdinalIgnoreCase)
+           .Select(g => g.First())
+           .ToDictionary(
+           k => k.dictItemValue!,
+           v => string.IsNullOrWhiteSpace(v.dictItemName) ? v.dictItemValue! : v.dictItemName!,
+           StringComparer.OrdinalIgnoreCase
+       ) ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (IsBusy || string.IsNullOrWhiteSpace(_id)) return;
             IsBusy = true;
             try
@@ -70,55 +112,90 @@ namespace IndustrialControlMAUI.ViewModels
                 }
 
                 Detail = resp.result;
-                await LoadWorkflowAsync(_id!);
+                Detail.urgentText = urgentMap.TryGetValue(Detail.urgent ?? "", out var uName)
+                        ? uName
+                        : Detail.urgent;
+                Detail.maintainTypeText = typeMap.TryGetValue(Detail.maintainType ?? "", out var sName)
+                        ? sName
+                        : Detail.maintainType;
+                //异常图片
+                ErrorAttachments.Clear();
 
-                // ===== 明细 =====
-                await MainThread.InvokeOnMainThreadAsync(() =>
+                foreach (var at in (Detail?.maintainReportDomain?.maintainReportAttachmentDomainList ?? new List<RepairReportAttachment>()))
                 {
-                    Items.Clear();
-                    int i = 1;
-                    foreach (var it in Detail.maintainWorkOrderItemDomainList ?? new())
+                    if (string.IsNullOrWhiteSpace(at.attachmentUrl)) continue;
+
+                    var error = new OrderRepairAttachmentItem
                     {
-                        it.index = i++; // 1,2,3...
-                        Items.Add(it);
-                    }
-                });
+                        AttachmentExt = at.attachmentExt ?? "",
+                        AttachmentFolder = at.attachmentFolder ?? "",
+                        AttachmentLocation = at.attachmentLocation ?? "",
+                        AttachmentName = at.attachmentName ?? "",
+                        AttachmentRealName = at.attachmentRealName ?? "",
+                        AttachmentSize = (long)at.attachmentSize,
+                        AttachmentUrl = at.attachmentUrl ?? "",
+                        Id = at.id ?? "",
+                        CreatedTime = at.createdTime ?? "",
+                        LocalPath = null,
+                        IsUploaded = true
+                    };
 
-                // ===== 附件 =====
-                await MainThread.InvokeOnMainThreadAsync(() =>
-                {
-                    Attachments.Clear();
+                    // === 关键：只要是图片，才入缩略图集合 ===
+                    error.IsImage = IsImageExt(error.AttachmentExt)
+                                   || IsImageExt(Path.GetExtension(error.AttachmentUrl));
 
-                    foreach (var at in (Detail.maintainWorkOrderAttachmentDomainList ?? new List<RepairAttachment>()))
+                    ErrorAttachments.Add(error);
+                    await LoadErrorPreviewThumbnailsAsync();
+                    await LoadWorkflowAsync(_id!);
+
+                    // ===== 明细 =====
+                    await MainThread.InvokeOnMainThreadAsync(() =>
                     {
-                        if (string.IsNullOrWhiteSpace(at.attachmentUrl)) continue;
-
-                        var item = new OrderRepairAttachmentItem
+                        Items.Clear();
+                        int i = 1;
+                        foreach (var it in Detail.maintainWorkOrderItemDomainList ?? new())
                         {
-                            AttachmentExt = at.attachmentExt ?? "",
-                            AttachmentFolder = at.attachmentFolder ?? "",
-                            AttachmentLocation = at.attachmentLocation ?? "",
-                            AttachmentName = at.attachmentName ?? "",
-                            AttachmentRealName = at.attachmentRealName ?? "",
-                            AttachmentSize = (long)at.attachmentSize,
-                            AttachmentUrl = at.attachmentUrl ?? "",
-                            Id = at.id ?? "",
-                            CreatedTime = at.createdTime ?? "",
-                            LocalPath = null,
-                            IsUploaded = true
-                        };
+                            it.index = i++; // 1,2,3...
+                            Items.Add(it);
+                        }
+                    });
 
-                        // === 关键：只要是图片，才入缩略图集合 ===
-                        item.IsImage = IsImageExt(item.AttachmentExt)
-                                       || IsImageExt(Path.GetExtension(item.AttachmentUrl));
+                    // ===== 附件 =====
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        Attachments.Clear();
 
-                        Attachments.Add(item);
-                        if (item.IsImage) ImageAttachments.Add(item);
-                    }
+                        foreach (var at in (Detail.maintainWorkOrderAttachmentDomainList ?? new List<RepairAttachment>()))
+                        {
+                            if (string.IsNullOrWhiteSpace(at.attachmentUrl)) continue;
 
-                    
-                });
-                await LoadPreviewThumbnailsAsync();
+                            var item = new OrderRepairAttachmentItem
+                            {
+                                AttachmentExt = at.attachmentExt ?? "",
+                                AttachmentFolder = at.attachmentFolder ?? "",
+                                AttachmentLocation = at.attachmentLocation ?? "",
+                                AttachmentName = at.attachmentName ?? "",
+                                AttachmentRealName = at.attachmentRealName ?? "",
+                                AttachmentSize = (long)at.attachmentSize,
+                                AttachmentUrl = at.attachmentUrl ?? "",
+                                Id = at.id ?? "",
+                                CreatedTime = at.createdTime ?? "",
+                                LocalPath = null,
+                                IsUploaded = true
+                            };
+
+                            // === 关键：只要是图片，才入缩略图集合 ===
+                            item.IsImage = IsImageExt(item.AttachmentExt)
+                                           || IsImageExt(Path.GetExtension(item.AttachmentUrl));
+
+                            Attachments.Add(item);
+                            if (item.IsImage) ImageAttachments.Add(item);
+                        }
+
+
+                    });
+                    await LoadPreviewThumbnailsAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -165,7 +242,44 @@ namespace IndustrialControlMAUI.ViewModels
                 })
             );
         }
-       
+
+        private async Task LoadErrorPreviewThumbnailsAsync()
+        {
+            // 只处理“图片且当前没有 PreviewUrl，但有 AttachmentUrl 的项”
+            var list = ErrorAttachments
+                .Where(a => (IsImageExt(a.AttachmentExt))
+                            && string.IsNullOrWhiteSpace(a.PreviewUrl) && !string.IsNullOrWhiteSpace(a.AttachmentUrl))
+                .ToList();
+            if (list.Count == 0) return;
+
+            // 并发控制：最多 4 条并发
+            var options = new ParallelOptions { MaxDegreeOfParallelism = 4, CancellationToken = _cts.Token };
+
+            await Task.Run(() =>
+                Parallel.ForEach(list, options, item =>
+                {
+                    try
+                    {
+                        // 预签名有效期：例如 10 分钟
+                        var resp = _attachmentApi.GetPreviewUrlAsync(item.AttachmentUrl!, 600, options.CancellationToken).GetAwaiter().GetResult();
+                        if (resp?.success == true && !string.IsNullOrWhiteSpace(resp.result))
+                        {
+                            MainThread.BeginInvokeOnMainThread(() =>
+                            {
+                                item.PreviewUrl = resp.result;
+                                item.LocalPath = null;  // 有了直连地址就不再用本地
+                                item.RefreshDisplay();
+                            });
+                        }
+                    }
+                    catch
+                    {
+                        // 忽略单条失败，必要时写日志
+                    }
+                })
+            );
+        }
+
         /// <summary>
         /// 预览附件
         /// </summary>

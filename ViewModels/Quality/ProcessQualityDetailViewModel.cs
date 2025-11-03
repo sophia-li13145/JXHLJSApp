@@ -16,9 +16,9 @@ namespace IndustrialControlMAUI.ViewModels
         private readonly IAuthApi _authApi;
         private readonly IAttachmentApi _attachmentApi;
         private readonly CancellationTokenSource _cts = new();
-        private const string FolderImage = "image";
-        private const string FolderFile = "file";
-        private const string LocationQuality = "processQuality";
+        private const string Folder = "quality";
+        private const string LocationFile = "table";
+        private const string LocationImage = "main";
         // ===== 上传限制 =====
         private const int MaxImageCount = 9;
         private const long MaxImageBytes = 2L * 1024 * 1024;   // 2MB
@@ -228,7 +228,13 @@ namespace IndustrialControlMAUI.ViewModels
                             Id = at.id ?? "",
                             CreatedTime = at.createdTime ?? "",
                             LocalPath = null,
-                            IsUploaded = true
+                            IsUploaded = true,
+                            Name = at.name ?? at.attachmentName ?? at.attachmentRealName ?? "",
+                            Percent = at.percent ?? 100,
+                            Status = string.IsNullOrWhiteSpace(at.status) ? "done" : at.status!,
+                            Uid = at.uid,
+                            Url = at.url ?? at.attachmentUrl,          // 如果返回了绝对地址，用 url；否则用相对 attachmentUrl
+                            QualityNo = Detail?.qualityNo
                         };
 
                         // === 关键：只要是图片，才入缩略图集合 ===
@@ -496,14 +502,14 @@ namespace IndustrialControlMAUI.ViewModels
                     if (isImg) ImageAttachments.Insert(0, localItem);
 
                     // 6) 真正上传文件（关键：multipart/form-data + file）
-                    var folder = isImg ? FolderImage : FolderFile;
+                    var attachmentLocation = isImg ? LocationImage : LocationFile;
                     var contentType = DetectContentType(ext);     // 见下方辅助函数
 
                     // 用临时文件重新打开流，避免上面 using 的 src 已被释放
                     await using var fs = File.OpenRead(tmpPath);
                     var resp = await _attachmentApi.UploadAttachmentAsync(
-                                attachmentFolder: folder,
-                                attachmentLocation: LocationQuality,
+                                attachmentFolder: Folder,
+                                attachmentLocation: attachmentLocation,
                                 fileStream: fs,
                                 fileName: f.FileName,
                                 contentType: contentType,
@@ -519,9 +525,13 @@ namespace IndustrialControlMAUI.ViewModels
                                                         ? localItem.AttachmentUrl
                                                         : resp.result.attachmentUrl;
                         localItem.AttachmentRealName = resp.result.attachmentRealName ?? localItem.AttachmentRealName;
-                        localItem.AttachmentFolder = resp.result.attachmentFolder ?? folder;
-                        localItem.AttachmentLocation = resp.result.attachmentLocation ?? LocationQuality;
+                        localItem.AttachmentFolder = resp.result.attachmentFolder ?? Folder;
+                        localItem.AttachmentLocation = resp.result.attachmentLocation ?? attachmentLocation;
                         localItem.AttachmentExt = resp.result.attachmentExt ?? ext;
+                        localItem.Name = string.IsNullOrWhiteSpace(localItem.Name) ? localItem.AttachmentName : localItem.Name;
+                        localItem.Percent = 100;
+                        localItem.Status = "done";
+                        localItem.QualityNo ??= Detail?.qualityNo;      // 从详情带过来
 
                         // 如果服务端给了 URL，就让图片改走网络地址展示；本地临时可清掉
                         if (!string.IsNullOrWhiteSpace(resp.result.attachmentUrl))
@@ -597,7 +607,12 @@ namespace IndustrialControlMAUI.ViewModels
                 attachmentSize = a.AttachmentSize,
                 attachmentUrl = a.AttachmentUrl,
                 createdTime = a.CreatedTime,
-                id = a.Id
+                id = a.Id,
+                name = string.IsNullOrWhiteSpace(a.Name) ? a.AttachmentName : a.Name,
+                qualityNo = string.IsNullOrWhiteSpace(a.QualityNo) ? Detail.qualityNo : a.QualityNo,
+                status = string.IsNullOrWhiteSpace(a.Status) ? (a.IsUploaded ? "done" : "uploading") : a.Status,
+                uid = string.IsNullOrWhiteSpace(a.Uid) ? Guid.NewGuid().ToString("N") : a.Uid,
+                url = string.IsNullOrWhiteSpace(a.Url) ? a.AttachmentUrl : a.Url
             }).ToList();
 
             // 2) 明细：Items 已经是服务器的明细模型（你加载时就是 Detail.orderQualityDetailList → Items）

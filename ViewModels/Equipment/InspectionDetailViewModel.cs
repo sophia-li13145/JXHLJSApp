@@ -192,37 +192,10 @@ namespace IndustrialControlMAUI.ViewModels
                 await ShowTip($"无法打开附件：{ex.Message}");
             }
         }
-
-        
-
-        private static string? DetectContentType(string? ext)
-        {
-            switch (ext?.ToLowerInvariant())
-            {
-                case "jpg":
-                case "jpeg": return "image/jpeg";
-                case "png": return "image/png";
-                case "gif": return "image/gif";
-                case "bmp": return "image/bmp";
-                case "webp": return "image/webp";
-                case "pdf": return "application/pdf";
-                case "doc": return "application/msword";
-                case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-                case "xls": return "application/vnd.ms-excel";
-                case "xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-                case "txt": return "text/plain";
-                case "rar": return "application/x-rar-compressed";
-                case "zip": return "application/zip";
-                default: return null; // 让 HttpClient 自行处理
-            }
-        }
+ 
 
         private static bool IsImageExt(string? ext)
             => ext is "jpg" or "jpeg" or "png" or "gif" or "bmp" or "webp";
-
-        private static bool IsAllowedFile(string? ext)
-            => IsImageExt(ext) || ext is "pdf" or "doc" or "docx" or "xls" or "xlsx" or "txt" or "rar" or "zip";
-
 
         [RelayCommand]
         private async Task DownloadAttachment(OrderInspectionAttachmentItem? item)
