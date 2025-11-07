@@ -34,7 +34,7 @@
       "confirm": "/pda/wmsMaterialOutstock/confirm",
       "judgeScanAll": "/pda/wmsMaterialOutstock/judgeOutstockDetailScanAll",
       "updateLocation": "/pda/wmsMaterialOutstock/updateLocation",
-      "updateQuantity": "/pda/wmsMaterialOutstock/updateQuantity"
+      "updateQuantity": "/pda/wmsMaterialOutstock/updateOutQuantity"
     },
     "workOrder": {
       "page": "/pda/pmsWorkOrder/pageWorkOrders",

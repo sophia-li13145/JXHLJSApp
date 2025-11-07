@@ -3,8 +3,14 @@
     x:Class="IndustrialControlMAUI.Pages.ManualReadingPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:conv="clr-namespace:IndustrialControlMAUI.Converters"
     Title="能源管理系统">
-
+    <!-- 局部样式：按钮/标题/分组标题 -->
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <conv:DecimalToStringConverter x:Key="DecConv" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
     <Grid x:Name="RootGrid"
           Padding="10"
           RowDefinitions="Auto,Auto,*"
@@ -35,13 +41,15 @@
             <Label Grid.Row="1" Grid.Column="1" Text="{Binding Form.IndicatorName}" />
 
             <Label Grid.Row="1" Grid.Column="2" Text="上次抄表数：" />
-            <Label Grid.Row="1" Grid.Column="3" Text="{Binding Form.LastReading}" />
+            <Label Grid.Row="1" Grid.Column="3"  Text="{Binding Form.LastReading, Converter={StaticResource DecConv}}" />
 
             <Label Grid.Row="2" Grid.Column="0" Text="本次抄表数：" />
-            <Entry Grid.Row="2" Grid.Column="1" Text="{Binding Form.CurrentReading, Mode=TwoWay}" Keyboard="Numeric" Placeholder="请输入" />
+            <Entry Grid.Row="2" Grid.Column="1" Text="{Binding Form.CurrentReading, Mode=TwoWay, Converter={StaticResource DecConv}}" Keyboard="Numeric" Placeholder="请输入" />
 
             <Label Grid.Row="2" Grid.Column="2" Text="消耗量：" />
-            <Label Grid.Row="2" Grid.Column="3" Text="{Binding Form.Consumption}" />
+            <Entry Grid.Row="2" Grid.Column="3"
+                   Text="{Binding Form.Consumption, Converter={StaticResource DecConv}}"
+                   IsReadOnly="True" />     
 
             <Label Grid.Row="3" Grid.Column="0" Text="能源单位：" />
             <Label Grid.Row="3" Grid.Column="1" Text="{Binding Form.Unit}" />

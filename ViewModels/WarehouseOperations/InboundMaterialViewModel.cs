@@ -21,6 +21,8 @@ namespace IndustrialControlMAUI.ViewModels
         [ObservableProperty] private string? arrivalNo;
         [ObservableProperty] private string? supplierName;
         [ObservableProperty] private string? createdTime;
+        private readonly SemaphoreSlim _scanLock = new(1, 1);
+        private int _scannedVersion;
 
         // 列表数据源
         public ObservableCollection<string> AvailableBins { get; } = new();
@@ -79,7 +81,7 @@ namespace IndustrialControlMAUI.ViewModels
             SwitchTab(true);
         }
 
-        private void SwitchTab(bool showPending)
+        public void SwitchTab(bool showPending)
         {
             IsPendingVisible = showPending;
             IsScannedVisible = !showPending;
@@ -118,34 +120,136 @@ namespace IndustrialControlMAUI.ViewModels
             }
         }
 
-        private async Task LoadScannedAsync()
+        // versionGuard 保留你之前的版本守卫参数
+        private async Task LoadScannedAsync(int versionGuard = 0)
         {
-            ScannedList.Clear();
-            if (string.IsNullOrWhiteSpace(InstockId)) return;
+            if (string.IsNullOrWhiteSpace(InstockId))
+            {
+                ScannedList.Clear();
+                return;
+            }
 
             var rows = await _api.GetInStockScanDetailAsync(InstockId!);
-            foreach (var r in rows)
-            {
-                ScannedList.Add(new OutScannedItem
-                {
-                    IsSelected = false,
-                    Barcode = r.Barcode ?? "",
-                    Name = r.MaterialName ?? "",
-                    Spec = r.Spec ?? "",
-                    Location = string.IsNullOrWhiteSpace(r.Location) ? "请选择" : r.Location!,
-                    Qty = r.Qty,
-                    ScanStatus = r.ScanStatus,
-                    WarehouseCode = r.WarehouseCode ?? "",
-                    DetailId = r.DetailId,
-                    Id = InstockId
-                });
+            if (versionGuard != 0 && versionGuard != Volatile.Read(ref _scannedVersion)) return;
 
-                if (!string.IsNullOrWhiteSpace(r.Location) && !AvailableBins.Contains(r.Location))
-                    AvailableBins.Add(r.Location);
+            // 接口无数据 => 清空并返回
+            if (rows is null || rows.Count == 0)
+            {
+                ScannedList.Clear();
+                return;
+            }
+
+            // 先在内存里聚合（注意库位/仓库取“最后一条非空”）
+            var grouped = rows
+                .GroupBy(r => (r.Barcode ?? string.Empty).Trim(), StringComparer.OrdinalIgnoreCase)
+                .Select(g =>
+                {
+                    var first = g.First();
+                    var qty = g.Sum(x => x.Qty);
+                    var loc = g.Select(x => (x.Location ?? "").Trim()).LastOrDefault(s => !string.IsNullOrEmpty(s)) ?? "请选择";
+                    var wh = g.Select(x => (x.WarehouseCode ?? "").Trim()).LastOrDefault(s => !string.IsNullOrEmpty(s)) ?? "";
+                    var pass = g.Any(x => x.ScanStatus);
+
+                    return new OutScannedItem
+                    {
+                        Barcode = (first.Barcode ?? "").Trim(),
+                        Name = first.MaterialName ?? "",
+                        Spec = first.Spec ?? "",
+                        Qty = qty,
+                        Location = string.IsNullOrWhiteSpace(loc) ? "请选择" : loc,
+                        WarehouseCode = wh,
+                        ScanStatus = pass,
+                        DetailId = first.DetailId,
+                        Id = InstockId,
+                        IsSelected = false
+                    };
+                })
+                .ToList();
+
+            // 关键：增量应用，避免闪现
+            ApplyScannedDiff(grouped);
+        }
+
+        // === 新增：本地去重合并，仅按条码维度保持“一条” ===
+        private void UpsertScannedLocal(string barcode)
+        {
+            // 只要列表里已经有这条码 → 不新增、不替换，只保持选中
+            var exist = ScannedList.FirstOrDefault(x =>
+                string.Equals(x.Barcode, barcode, StringComparison.OrdinalIgnoreCase));
+            if (exist != null)
+            {
+                // 这里不强行改数量，避免和服务端不一致
+                exist.IsSelected = true;
+                SelectedScanItem = exist;
+                SwitchTab(false);
+                return;
+            }
+
+            // 本地还没有：先用一个占位对象“乐观加入”一条（不设置数量/库位等）
+            var placeholder = new OutScannedItem
+            {
+                Barcode = barcode,
+                Name = "",          // 等服务端回来再填
+                Spec = "",
+                Qty = 0,            // 等服务端回来再填
+                Location = "请选择",
+                WarehouseCode = "",
+                ScanStatus = true,  // 已扫通过的预期态，等刷新校正
+                DetailId = "",
+                Id = InstockId ?? "",
+                IsSelected = true
+            };
+            ScannedList.Add(placeholder);
+            SelectedScanItem = placeholder;
+            SwitchTab(false);
+        }
+
+
+        private void ApplyScannedDiff(List<OutScannedItem> newItems)
+        {
+            // 旧数据映射：按条码快速查找
+            var oldMap = ScannedList.ToDictionary(x => x.Barcode ?? "", StringComparer.OrdinalIgnoreCase);
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // 先更新 / 新增（保持原有顺序，不重排）
+            foreach (var it in newItems)
+            {
+                var key = it.Barcode ?? "";
+                if (oldMap.TryGetValue(key, out var exist))
+                {
+                    if (exist.Qty != it.Qty) exist.Qty = it.Qty;
+                    if (!string.Equals(exist.Location, it.Location, StringComparison.Ordinal))
+                        exist.Location = it.Location;
+                    if (!string.Equals(exist.WarehouseCode, it.WarehouseCode, StringComparison.Ordinal))
+                        exist.WarehouseCode = it.WarehouseCode;
+                    if (exist.ScanStatus != it.ScanStatus) exist.ScanStatus = it.ScanStatus;
+
+                    // 保持当前选中不丢
+                    if (exist.IsSelected) SelectedScanItem = exist;
+                }
+                else
+                {
+                    // 新条目：追加在末尾（稳定插入，不触发重排）
+                    ScannedList.Add(it);
+                }
+
+                // 下拉库位聚合
+                if (!string.IsNullOrWhiteSpace(it.Location) && it.Location != "请选择" && !AvailableBins.Contains(it.Location))
+                    AvailableBins.Add(it.Location);
+
+                seen.Add(key);
+            }
+
+            // 删除“新结果里不存在的旧项”
+            for (int i = ScannedList.Count - 1; i >= 0; i--)
+            {
+                var bc = ScannedList[i].Barcode ?? "";
+                if (!seen.Contains(bc))
+                    ScannedList.RemoveAt(i);
             }
         }
 
-        // InboundMaterialViewModel.cs
+
 
         [RelayCommand]
         private async Task PassScan()
@@ -165,6 +269,7 @@ namespace IndustrialControlMAUI.ViewModels
             await LoadPendingAsync();
             await LoadScannedAsync();
             await ShowTip("已确认通过。");
+            SwitchTab(false);
         }
 
         [RelayCommand]
@@ -183,48 +288,49 @@ namespace IndustrialControlMAUI.ViewModels
             await LoadPendingAsync();
             await LoadScannedAsync();
             await ShowTip("已取消扫描。");
+            SwitchTab(false);
         }
-
-
 
         public async Task HandleScannedAsync(string data, string symbology)
         {
             var barcode = (data ?? string.Empty).Trim();
-            if (string.IsNullOrWhiteSpace(barcode))
+            if (string.IsNullOrWhiteSpace(barcode)) { await ShowTip("无效条码。"); return; }
+            if (string.IsNullOrWhiteSpace(InstockId)) { await ShowTip("缺少 InstockId，无法入库。请从查询页进入。"); return; }
+
+            // ✅ 关键：先本地“只保留一条”以避免 UI 出现两条
+            UpsertScannedLocal(barcode);
+
+            await _scanLock.WaitAsync(); // 串行化一次完整“扫码→刷新”
+            try
             {
-                await ShowTip("无效条码。");
-                return;
+                var resp = await _api.InStockByBarcodeAsync(InstockId!, barcode);
+                if (!resp.Succeeded)
+                {
+                    await ShowTip(string.IsNullOrWhiteSpace(resp.Message) ? "入库失败，请重试或检查条码。" : resp.Message!);
+                    return;
+                }
+
+                // 每次刷新前 bump 版本
+                var ver = Interlocked.Increment(ref _scannedVersion);
+
+                // 待入库刷新
+                await LoadPendingAsync();
+
+                // 带版本的已扫描刷新（里面是差量 Apply，不会清表重绑）
+                await LoadScannedAsync(ver);
+
+                // 选中刚才那条
+                var hit = ScannedList.FirstOrDefault(x =>
+                    string.Equals(x.Barcode, barcode, StringComparison.OrdinalIgnoreCase));
+                if (hit != null) { hit.IsSelected = true; SelectedScanItem = hit; SwitchTab(false); }
             }
-
-            if (string.IsNullOrWhiteSpace(InstockId))
+            finally
             {
-                await ShowTip("缺少 InstockId，无法入库。请从查询页进入。");
-                return;
-            }
-
-            // 调用扫码入库接口
-            var resp = await _api.InStockByBarcodeAsync(InstockId!, barcode);
-
-            if (!resp.Succeeded)
-            {
-                await ShowTip(string.IsNullOrWhiteSpace(resp.Message) ? "入库失败，请重试或检查条码。" : resp.Message!);
-                return;
-            }
-
-            // 成功 → 刷新“待入库明细”和“已扫描明细”
-            await LoadPendingAsync();
-            await LoadScannedAsync();
-
-            // UI 友好：尝试高亮刚扫的那一条
-            var hit = ScannedList.FirstOrDefault(x => string.Equals(x.Barcode, barcode, StringComparison.OrdinalIgnoreCase));
-            if (hit != null)
-            {
-                hit.IsSelected = true;
-                SelectedScanItem = hit;
-                // 切到“已扫描”页签更直观（可选）
-                // SwitchTab(false);
+                _scanLock.Release();
             }
         }
+
+
 
 
         private Task ShowTip(string message) =>
@@ -249,7 +355,6 @@ namespace IndustrialControlMAUI.ViewModels
             }
         }
 
-        // InboundMaterialViewModel.cs
 
 
         public async Task<bool> ConfirmInboundAsync()
@@ -353,7 +458,7 @@ namespace IndustrialControlMAUI.ViewModels
             await LoadScannedAsync();   // 刷新“已扫描明细”
 
             var hit = ScannedList.FirstOrDefault(x => string.Equals(x.Barcode, keepBarcode, StringComparison.OrdinalIgnoreCase));
-            if (hit != null) { hit.IsSelected = true; SelectedScanItem = hit; }
+            if (hit != null) { hit.IsSelected = true; SelectedScanItem = hit; SwitchTab(false); }
 
             return true;
         }

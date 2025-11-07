@@ -1,4 +1,6 @@
-﻿using IndustrialControlMAUI.Models;
+﻿using AndroidX.Annotations;
+using IndustrialControlMAUI.Models;
+using IndustrialControlMAUI.Tools;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -32,12 +34,15 @@ namespace IndustrialControlMAUI.Services
         Task<List<MeterPointItem>> GetMeterPointsByMeterCodeAsync(string meterCode, CancellationToken ct = default);
 
         Task<LastReadingResult?> GetLastReadingAsync(string meterCode, string meterPointCode, CancellationToken ct = default);
+
+        Task<bool> SaveMeterReadingAsync(MeterSaveReq req, CancellationToken ct = default);
     }
 
     // ===================== 实现 =====================
     public class EnergyApi : IEnergyApi
     {
         private readonly HttpClient _http;
+        private readonly AuthState _auth;
         private readonly string _meterPageEndpoint;   // /pda/emMeter/queryMeterPageList
         private readonly string _dictEndpoint;        // /pda/emMeter/queryDictList
         private readonly string _workshopEndpoint;    // /pda/common/queryWorkShopList
@@ -45,8 +50,9 @@ namespace IndustrialControlMAUI.Services
         private readonly string _productLineEndpoint;
         private readonly string _pointsByMeterEndpoint;
         private readonly string _lastReadingMeterEndpoint;
+        private readonly string _saveReadingEndpoint;
 
-        public EnergyApi(HttpClient http, IConfigLoader configLoader)
+        public EnergyApi(HttpClient http, IConfigLoader configLoader, AuthState auth)
         {
             _http = http;
 
@@ -76,6 +82,10 @@ namespace IndustrialControlMAUI.Services
             _lastReadingMeterEndpoint = NormalizeRelative(
             configLoader.GetApiPath("energy.lastReadingMeter", "/pda/emMeter/queryLastReadingMeter"),
             servicePath);
+            _saveReadingEndpoint = NormalizeRelative(
+            configLoader.GetApiPath("energy.saveReading", "/pda/emMeter/save"),
+            servicePath);
+            _auth = auth;
         }
 
         // ===== 公共工具 =====
@@ -152,16 +162,16 @@ namespace IndustrialControlMAUI.Services
             var full = BuildFullUrl(_http.BaseAddress, url);
 
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var httpRes = await _http.SendAsync(req, ct);
-            var body = await httpRes.Content.ReadAsStringAsync(ct);
+            using var res = await _http.SendAsync(req, ct);
+            var body = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
 
-            if (!httpRes.IsSuccessStatusCode)
+            if (!res.IsSuccessStatusCode)
             {
                 return new PageResponeResult<MeterRecordDto>
                 {
                     success = false,
-                    code = (int)httpRes.StatusCode,
-                    message = $"HTTP {(int)httpRes.StatusCode}"
+                    code = (int)res.StatusCode,
+                    message = $"HTTP {(int)res.StatusCode}"
                 };
             }
 
@@ -174,7 +184,7 @@ namespace IndustrialControlMAUI.Services
             var full = BuildFullUrl(_http.BaseAddress, _dictEndpoint);
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
             using var res = await _http.SendAsync(req, ct);
-            var json = await res.Content.ReadAsStringAsync(ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
 
             if (!res.IsSuccessStatusCode) return new();
 
@@ -196,7 +206,7 @@ namespace IndustrialControlMAUI.Services
 
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
             using var res = await _http.SendAsync(req, ct);
-            var json = await res.Content.ReadAsStringAsync(ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
 
             if (!res.IsSuccessStatusCode) return new();
 
@@ -216,7 +226,7 @@ namespace IndustrialControlMAUI.Services
 
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
             using var res = await _http.SendAsync(req, ct);
-            var json = await res.Content.ReadAsStringAsync(ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
 
             if (!res.IsSuccessStatusCode) return new();
 
@@ -224,7 +234,8 @@ namespace IndustrialControlMAUI.Services
             return dto?.result?.Select(u => new IdNameOption
             {
                 Id = u.id,
-                Name = string.IsNullOrWhiteSpace(u.realname) ? (u.username ?? "") : u.realname!
+                Name = string.IsNullOrWhiteSpace(u.realname) ? (u.username ?? "") : u.realname!,
+                UserName = u.username!,
             }).ToList() ?? new List<IdNameOption>();
         }
 
@@ -236,7 +247,7 @@ namespace IndustrialControlMAUI.Services
 
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
             using var res = await _http.SendAsync(req, ct);
-            var json = await res.Content.ReadAsStringAsync(ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
             if (!res.IsSuccessStatusCode) return new();
 
             var dto = JsonSerializer.Deserialize<ProductLineResponse>(json, _json);
@@ -258,7 +269,7 @@ namespace IndustrialControlMAUI.Services
 
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
             using var res = await _http.SendAsync(req, ct);
-            var json = await res.Content.ReadAsStringAsync(ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
             if (!res.IsSuccessStatusCode) return new();
 
             var dto = JsonSerializer.Deserialize<MeterPointResp>(json, _json);
@@ -280,9 +291,24 @@ namespace IndustrialControlMAUI.Services
             using var res = await _http.SendAsync(req, ct);
             if (!res.IsSuccessStatusCode) return null;
 
-            var json = await res.Content.ReadAsStringAsync(ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
             var dto = JsonSerializer.Deserialize<ApiResp<LastReadingResult>>(json, _json);
             return dto?.success == true ? dto.result : null;
+        }
+
+        public async Task<bool> SaveMeterReadingAsync(MeterSaveReq req, CancellationToken ct = default)
+        {
+            var full = BuildFullUrl(_http.BaseAddress, _saveReadingEndpoint);
+            using var httpReq = new HttpRequestMessage(HttpMethod.Post, new Uri(full, UriKind.Absolute))
+            {
+                Content = new StringContent(JsonSerializer.Serialize(req, _json), System.Text.Encoding.UTF8, "application/json")
+            };
+            using var res = await _http.SendAsync(httpReq, ct);
+            if (!res.IsSuccessStatusCode) return false;
+
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+            var r = JsonSerializer.Deserialize<ApiResp<bool>>(json, _json);
+            return r?.success == true && r.result;
         }
     }
 }

@@ -17,6 +17,9 @@ namespace IndustrialControlMAUI.ViewModels
 
         private readonly IMoldApi _api;
         private readonly IServiceProvider _sp;
+        // 串行化“扫码→接口→更新”
+        private readonly SemaphoreSlim _scanLock = new(1, 1);
+
         public Func<Task<SharedLocationVM?>>? PickLocationAsync { get; set; }
 
 
@@ -80,13 +83,18 @@ namespace IndustrialControlMAUI.ViewModels
                     instockQty = 1,
                     instockWarehouse = mapped.WarehouseName,
                     instockWarehouseCode = mapped.WarehouseCode,
-                    location = mapped.Location,    
-                    materialCode = r.MoldCode,  
+                    location = mapped.Location,
+                    materialCode = r.MoldCode,
                     materialName = r.MoldCode,
                     model = r.MoldModel
                 });
 
+                // ✅ 新增：同步更新本地行对象（触发 UI）
+                r.Location = mapped.Location ?? "";
+                r.WarehouseCode = mapped.WarehouseCode ?? "";
+                r.WarehouseName = mapped.WarehouseName ?? "";
             }
+
 
             var resp = await _api.ConfirmInStockByListAsync(req);
             if (!resp.Succeeded)
@@ -140,41 +148,99 @@ namespace IndustrialControlMAUI.ViewModels
                 return;
             }
 
-            var resp = await _api.InStockScanQueryAsync(code);
-            if (resp is null)
+            // ✅ 先本地 Upsert，只保留一条（避免 UI 出现两条再合一的“闪一下”）
+            var row = UpsertLocalByMoldCode(code);
+
+            await _scanLock.WaitAsync();
+            try
             {
-                await ShowTip("接口无响应。");
-                return;
+                var resp = await _api.InStockScanQueryAsync(code);
+                if (resp is null)
+                {
+                    row.UseStatusText = "查询失败";
+                    await ShowTip("接口无响应。");
+                    return;
+                }
+                if (resp.success != true || resp.result is null)
+                {
+                    row.UseStatusText = "未找到";
+                    await ShowTip(string.IsNullOrWhiteSpace(resp.message) ? "未查询到该模具信息" : resp.message!);
+                    return;
+                }
+
+                var isUsing = resp.result.usageStatus == true; // true=使用中，false=在库/未使用
+                var updated = new MoldScanRow
+                {
+                    // 注意：这里不创建新对象塞进列表，而是“只更新字段”
+                    MoldCode = resp.result.moldCode ?? code,
+                    MoldModel = resp.result.moldModel ?? "",
+                    UseStatusText = isUsing ? "使用中" : "未使用",
+                    WorkOrderNo = isUsing ? (resp.result.workOrderNo ?? "") : "",
+                    OutstockDate = ToYmd(resp.result.outstockDate),
+                    Location = resp.result.location ?? "",
+                    WarehouseName = resp.result.warehouseName ?? "",
+                    WarehouseCode = resp.result.warehouseCode ?? "",
+                    IsSelected = true
+                };
+
+                // ✅ 关键：不 Remove/Insert，只更新同一个对象的字段，UI 不会闪
+                ApplyRow(row, updated);
+
+                // 维持当前选中
+                row.IsSelected = true;
+                SelectedRow = row;
             }
-            if (resp.success != true || resp.result is null)
+            finally
             {
-                await ShowTip(string.IsNullOrWhiteSpace(resp.message) ? "未查询到该模具信息" : resp.message!);
-                return;
+                _scanLock.Release();
             }
-
-            // 不再分支 return；统一加入列表
-            var isUsing = resp.result.usageStatus == true; // true=使用中，false=在库/未使用
-            var row = new MoldScanRow
-            {
-                IsSelected = false,
-                MoldCode = resp.result.moldCode ?? "",
-                MoldModel = resp.result.moldModel ?? "",
-                UseStatusText = isUsing ? "使用中" : "未使用",           // 你也可改成 "未使用"
-                WorkOrderNo = isUsing ? (resp.result.workOrderNo ?? "") : "", // 仅使用中才显示工单号
-                OutstockDate = ToYmd(resp.result.outstockDate),
-                Location = resp.result.location ?? "",
-                WarehouseName = resp.result.warehouseName ?? "",
-                WarehouseCode = resp.result.warehouseCode ?? ""
-            };
-
-            // 去重：同一模具编号只保留最新一条
-            var old = MoldStatusList.FirstOrDefault(x =>
-                string.Equals(x.MoldCode, row.MoldCode, StringComparison.OrdinalIgnoreCase));
-            if (old != null) MoldStatusList.Remove(old);
-
-            MoldStatusList.Insert(0, row);
-            SelectedRow = row;
         }
+
+        // 本地根据 MoldCode 做 Upsert：有就用旧的，没有就占位插入一条（不重复）
+        private MoldScanRow UpsertLocalByMoldCode(string moldCode)
+        {
+            var exist = MoldStatusList.FirstOrDefault(x =>
+                string.Equals(x.MoldCode, moldCode, StringComparison.OrdinalIgnoreCase));
+
+            if (exist != null)
+            {
+                exist.IsSelected = true;
+                SelectedRow = exist;
+                return exist;
+            }
+
+            // 占位行：接口回来后再更新各字段（不再“删旧插新”）
+            var placeholder = new MoldScanRow
+            {
+                IsSelected = true,
+                MoldCode = moldCode,
+                MoldModel = "",
+                UseStatusText = "查询中…",
+                WorkOrderNo = "",
+                OutstockDate = "",
+                Location = "",
+                WarehouseName = "",
+                WarehouseCode = ""
+            };
+            // 稳定插入到顶部（只插一次）
+            MoldStatusList.Insert(0, placeholder);
+            SelectedRow = placeholder;
+            return placeholder;
+        }
+
+        // 只更新字段，不替换对象（避免 UI “删除→新增”导致的闪一下）
+        private static void ApplyRow(MoldScanRow target, MoldScanRow src)
+        {
+            if (!string.Equals(target.MoldModel, src.MoldModel, StringComparison.Ordinal)) target.MoldModel = src.MoldModel;
+            if (!string.Equals(target.UseStatusText, src.UseStatusText, StringComparison.Ordinal)) target.UseStatusText = src.UseStatusText;
+            if (!string.Equals(target.WorkOrderNo, src.WorkOrderNo, StringComparison.Ordinal)) target.WorkOrderNo = src.WorkOrderNo;
+            if (!string.Equals(target.OutstockDate, src.OutstockDate, StringComparison.Ordinal)) target.OutstockDate = src.OutstockDate;
+            if (!string.Equals(target.Location, src.Location, StringComparison.Ordinal)) target.Location = src.Location;
+            if (!string.Equals(target.WarehouseName, src.WarehouseName, StringComparison.Ordinal)) target.WarehouseName = src.WarehouseName;
+            if (!string.Equals(target.WarehouseCode, src.WarehouseCode, StringComparison.Ordinal)) target.WarehouseCode = src.WarehouseCode;
+        }
+
+
         private static string ToYmd(string? s)
         {
             if (string.IsNullOrWhiteSpace(s)) return "";

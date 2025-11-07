@@ -20,6 +20,7 @@ public partial class OutboundMaterialPage : ContentPage
     public string? Memo { get; set; }
     private readonly IDialogService _dialogs;
     private readonly IServiceProvider _sp;
+    private bool _loadedOnce = false;
 
     public OutboundMaterialPage(IServiceProvider sp, OutboundMaterialViewModel vm, IDialogService dialogs)
     {
@@ -53,6 +54,9 @@ public partial class OutboundMaterialPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        // 防止重复初始化
+        if (_loadedOnce) return;
+        _loadedOnce = true;
 
         // ✅ 用搜索页带过来的基础信息初始化页面，并拉取两张表
         if (!string.IsNullOrWhiteSpace(OutstockId))
@@ -137,21 +141,23 @@ public partial class OutboundMaterialPage : ContentPage
 
     private async void OnBinTapped(object? sender, TappedEventArgs e)
     {
-        // 1) 先拿到行对象并强转为 OutScannedItem
+        // 1) 取到行对象
         if ((sender as BindableObject)?.BindingContext is not IndustrialControlMAUI.ViewModels.OutScannedItem item)
             return;
 
-        // 2) 未扫描通过则提示并返回
-        if (!item.ScanStatus)   // 注意这里用 ! 而不是 =
+        // 2) 未扫描通过禁止修改
+        if (!item.ScanStatus)
         {
             await DisplayAlert("提示", "该行未扫描通过，不能修改库位。", "确定");
             return;
         }
-        // 用 B 方案的 ShowAsync（不需要 ServiceHelper）
-        SharedLocationVM? picked = await WarehouseLocationPickerPage.ShowAsync(_sp, this);
+
+        // 3) 打开库位选择页（统一用 ShowAsync）
+        var picked = await WarehouseLocationPickerPage.ShowAsync(_sp, this);
         if (picked is null) return;
 
-        var mapped = new BinInfo
+        // 4) 映射为后端需要的结构
+        var bin = new BinInfo
         {
             WarehouseCode = picked.WarehouseCode,
             WarehouseName = picked.WarehouseName,
@@ -163,9 +169,31 @@ public partial class OutboundMaterialPage : ContentPage
             InStock = string.Equals(picked.InventoryStatus, "instock", StringComparison.OrdinalIgnoreCase)
         };
 
-        await _vm.UpdateRowLocationAsync(item, mapped);
-        _vm.ShowScannedCommand.Execute(null);
+        // 5) 先调接口保存（让 VM 负责请求）
+        var ok = await _vm.UpdateRowLocationAsync(item, bin);
+        if (!ok)
+        {
+            await DisplayAlert("提示", "库位更新失败，请重试。", "确定");
+            return;
+        }
+
+        // 6) ✅ 本地行对象立刻同步（触发 UI 刷新）
+        item.Location = string.IsNullOrWhiteSpace(bin.Location) ? "请选择" : bin.Location!;
+        item.WarehouseCode = bin.WarehouseCode ?? "";
+
+        // 7) （兜底，可选）若模板或转换器未触发刷新，则替换集合项强制刷新
+        var target = _vm.ScannedList.FirstOrDefault(x =>
+        string.Equals(x.DetailId, item.DetailId, StringComparison.OrdinalIgnoreCase));
+        if (target != null)
+        {
+            target.Location = item.Location;
+            target.WarehouseCode = item.WarehouseCode;
+        }
+
+        // 8) （可选）切回“已扫描”页签
+        _vm.SwitchTab(false);
     }
+
 
     private async void OnQtyCompleted(object sender, EventArgs e)
     {

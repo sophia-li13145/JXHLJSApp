@@ -1,4 +1,5 @@
 ﻿using IndustrialControlMAUI.Models;
+using IndustrialControlMAUI.Tools;
 using IndustrialControlMAUI.ViewModels;
 using Serilog;
 using System.Net.Http.Headers;
@@ -11,6 +12,7 @@ namespace IndustrialControlMAUI.Services;
 public sealed class OutboundMaterialService : IOutboundMaterialService
 {
     public readonly HttpClient _http;
+    private readonly AuthState _auth;
     public readonly string _outboundListEndpoint;
     public readonly string _detailEndpoint;
     public readonly string _scanDetailEndpoint;
@@ -27,10 +29,10 @@ public sealed class OutboundMaterialService : IOutboundMaterialService
         PropertyNameCaseInsensitive = true
     };
 
-    public OutboundMaterialService(HttpClient http, IConfigLoader configLoader)
+    public OutboundMaterialService(HttpClient http, IConfigLoader configLoader, AuthState auth)
     {
         _http = http;
-
+        _auth = auth;
         // 统一设置超时
         if (_http.Timeout == System.Threading.Timeout.InfiniteTimeSpan)
             _http.Timeout = TimeSpan.FromSeconds(15);
@@ -84,7 +86,7 @@ public sealed class OutboundMaterialService : IOutboundMaterialService
     servicePath);
 
         _updateQuantityEndpoint = NormalizeRelative(
-            configLoader.GetApiPath("outbound.updateQuantity", "/pda/wmsMaterialOutstock/updateQuantity"),
+            configLoader.GetApiPath("outbound.updateQuantity", "/pda/wmsMaterialOutstock/updateOutQuantity"),
             servicePath);
     }
 
@@ -299,8 +301,8 @@ public sealed class OutboundMaterialService : IOutboundMaterialService
         if (orderTypeList is { Length: > 0 })
             pairs.Add(new("orderTypeList", string.Join(",", orderTypeList)));
 
-        using var form = new FormUrlEncodedContent(pairs);
-        var qs = await form.ReadAsStringAsync(ct).ConfigureAwait(false);
+        using var res = new FormUrlEncodedContent(pairs);
+        var qs = await PeekAsync(res, 2048, ct).ConfigureAwait(false);
         var url = _outboundListEndpoint + "?" + qs;
 
         var dto = await GetJsonAsync<GetOutStockPageResp>(url, ct).ConfigureAwait(false);

@@ -1,11 +1,14 @@
 ﻿using GoogleGson;
 using IndustrialControlMAUI.Models;
+using IndustrialControlMAUI.Tools;
+using Org.Apache.Http.Authentication;
 using System.Collections.Generic;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AuthState = IndustrialControlMAUI.Tools.AuthState;
 
 namespace IndustrialControlMAUI.Services
 {
@@ -90,6 +93,7 @@ namespace IndustrialControlMAUI.Services
     public class WorkOrderApi : IWorkOrderApi
     {
         private readonly HttpClient _http;
+        private readonly AuthState _auth;
         private readonly string _pageEndpoint;
         private readonly string _workflowEndpoint;
         private readonly string _processTasksEndpoint;
@@ -114,9 +118,10 @@ namespace IndustrialControlMAUI.Services
 
         private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
-        public WorkOrderApi(HttpClient http, IConfigLoader configLoader)
+        public WorkOrderApi(HttpClient http, IConfigLoader configLoader, AuthState auth)
         {
             _http = http;
+            _auth = auth;
             if (_http.Timeout == System.Threading.Timeout.InfiniteTimeSpan)
                 _http.Timeout = TimeSpan.FromSeconds(15);
 
@@ -233,11 +238,11 @@ namespace IndustrialControlMAUI.Services
             var full = BuildFullUrl(_http.BaseAddress, url);
 
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var httpResp = await _http.SendAsync(req, ct);
-            var json = await httpResp.Content.ReadAsStringAsync(ct);
+            using var res = await _http.SendAsync(req, ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
 
-            if (!httpResp.IsSuccessStatusCode)
-                return new WorkOrderPageResult { success = false, message = $"HTTP {(int)httpResp.StatusCode}" };
+            if (!res.IsSuccessStatusCode)
+                return new WorkOrderPageResult { success = false, message = $"HTTP {(int)res.StatusCode}" };
 
             return JsonSerializer.Deserialize<WorkOrderPageResult>(json,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new WorkOrderPageResult();
@@ -249,11 +254,11 @@ namespace IndustrialControlMAUI.Services
             var full = BuildFullUrl(_http.BaseAddress, url);
 
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var httpResp = await _http.SendAsync(req, ct);
-            var json = await httpResp.Content.ReadAsStringAsync(ct);
+            using var res = await _http.SendAsync(req, ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
 
-            if (!httpResp.IsSuccessStatusCode)
-                return new WorkflowResp { success = false, message = $"HTTP {(int)httpResp.StatusCode}" };
+            if (!res.IsSuccessStatusCode)
+                return new WorkflowResp { success = false, message = $"HTTP {(int)res.StatusCode}" };
 
             return JsonSerializer.Deserialize<WorkflowResp>(json,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new WorkflowResp();
@@ -320,11 +325,11 @@ namespace IndustrialControlMAUI.Services
             var full = BuildFullUrl(_http.BaseAddress, url);
 
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var httpResp = await _http.SendAsync(req, ct);
-            var json = await httpResp.Content.ReadAsStringAsync(ct);
+            using var res = await _http.SendAsync(req, ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
 
-            if (!httpResp.IsSuccessStatusCode)
-                return new PageResp<ProcessTask> { success = false, message = $"HTTP {(int)httpResp.StatusCode}" };
+            if (!res.IsSuccessStatusCode)
+                return new PageResp<ProcessTask> { success = false, message = $"HTTP {(int)res.StatusCode}" };
 
             return JsonSerializer.Deserialize<PageResp<ProcessTask>>(json,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
@@ -338,7 +343,7 @@ namespace IndustrialControlMAUI.Services
 
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
             using var res = await _http.SendAsync(req, ct);
-            var json = await res.Content.ReadAsStringAsync(ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
 
             var dto = JsonSerializer.Deserialize<DictResponse>(json,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -449,7 +454,7 @@ namespace IndustrialControlMAUI.Services
             { Content = new StringContent(body, Encoding.UTF8, "application/json") };
 
             using var res = await _http.SendAsync(msg, ct);
-            var txt = await res.Content.ReadAsStringAsync(ct);
+            var txt = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
 
             var dto = JsonSerializer.Deserialize<ConfirmResp>(
                 txt, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -613,11 +618,11 @@ namespace IndustrialControlMAUI.Services
             var full = BuildFullUrl(_http.BaseAddress, url);
 
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var httpResp = await _http.SendAsync(req, ct);
-            var json = await httpResp.Content.ReadAsStringAsync(ct);
+            using var res = await _http.SendAsync(req, ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
 
-            if (!httpResp.IsSuccessStatusCode)
-                return new PageResp<MaterialAuRecord> { success = false, message = $"HTTP {(int)httpResp.StatusCode}" };
+            if (!res.IsSuccessStatusCode)
+                return new PageResp<MaterialAuRecord> { success = false, message = $"HTTP {(int)res.StatusCode}" };
 
             // 大小写不敏感，兼容后端返回
             return JsonSerializer.Deserialize<PageResp<MaterialAuRecord>>(json,
@@ -669,11 +674,11 @@ namespace IndustrialControlMAUI.Services
             var full = BuildFullUrl(_http.BaseAddress, url);
 
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var httpResp = await _http.SendAsync(req, ct);
-            var json = await httpResp.Content.ReadAsStringAsync(ct);
+            using var res = await _http.SendAsync(req, ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
 
-            if (!httpResp.IsSuccessStatusCode)
-                return new PageResp<OutputAuRecord> { success = false, message = $"HTTP {(int)httpResp.StatusCode}" };
+            if (!res.IsSuccessStatusCode)
+                return new PageResp<OutputAuRecord> { success = false, message = $"HTTP {(int)res.StatusCode}" };
 
             // 大小写不敏感，兼容后端返回
             return JsonSerializer.Deserialize<PageResp<OutputAuRecord>>(json,

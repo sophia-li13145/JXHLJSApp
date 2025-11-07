@@ -1,4 +1,5 @@
 ﻿using IndustrialControlMAUI.Models;
+using IndustrialControlMAUI.Tools;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -29,6 +30,7 @@ namespace IndustrialControlMAUI.Services
     public class MoldApi : IMoldApi
     {
         private readonly HttpClient _http;
+        private readonly AuthState _auth;
 
         // 统一由 appconfig.json 管理的端点路径（相对服务路径）
         private readonly string _inStockScanQueryEndpoint;
@@ -37,7 +39,7 @@ namespace IndustrialControlMAUI.Services
         private readonly string _outStockConfirmEndpoint;
         private readonly string _queryForWorkOrderEndpoint;
 
-        public MoldApi(HttpClient http, IConfigLoader configLoader)
+        public MoldApi(HttpClient http, IConfigLoader configLoader, AuthState auth)
         {
             _http = http;
 
@@ -76,6 +78,7 @@ namespace IndustrialControlMAUI.Services
             _outStockConfirmEndpoint = NormalizeRelative(
                 configLoader.GetApiPath("mold.outStock", "/pda/mold/outStock"),
                 servicePath);
+            _auth = auth;
         }
 
         // ========== 手动拼接工具：BaseAddress.AbsoluteUri + 相对端点 ==========
@@ -143,7 +146,7 @@ namespace IndustrialControlMAUI.Services
             req.Headers.Accept.ParseAdd("application/json");
 
             using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
-            var json = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct).ConfigureAwait(false);
 
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
@@ -180,7 +183,7 @@ namespace IndustrialControlMAUI.Services
             { Content = new StringContent(body, Encoding.UTF8, "application/json") };
 
             using var res = await _http.SendAsync(msg, ct);
-            var txt = await res.Content.ReadAsStringAsync(ct);
+            var txt = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
 
             var dto = JsonSerializer.Deserialize<ConfirmResp>(
                 txt, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -269,7 +272,7 @@ namespace IndustrialControlMAUI.Services
                 throw new HttpRequestException($"GET {requestUrl} -> {(int)res.StatusCode}. Head: {head}");
             }
 
-            var txt = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            var txt = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct).ConfigureAwait(false);
             return JsonSerializer.Deserialize<QueryForWorkOrderResp>(txt,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
@@ -295,7 +298,7 @@ namespace IndustrialControlMAUI.Services
             req.Headers.Accept.ParseAdd("application/json");
 
             using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
-            var json = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct).ConfigureAwait(false);
 
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
@@ -335,7 +338,7 @@ namespace IndustrialControlMAUI.Services
             };
 
             using var res = await _http.SendAsync(http, ct).ConfigureAwait(false);
-            var txt = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            var txt = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct).ConfigureAwait(false);
 
             if (!res.IsSuccessStatusCode)
                 return new SimpleOk(false, $"HTTP {(int)res.StatusCode}: {txt}");

@@ -7,6 +7,7 @@ public partial class OutboundMoldPage : ContentPage
     public readonly OutboundMoldViewModel _vm;
     public string? WorkOrderNo { get; set; }
     CancellationTokenSource? _lifecycleCts;
+    private bool _loadedOnce = false;
     public OutboundMoldPage(OutboundMoldViewModel vm)
     {
         _vm = vm;
@@ -17,6 +18,9 @@ public partial class OutboundMoldPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        // ∑¿÷π÷ÿ∏¥≥ı ºªØ
+        if (_loadedOnce) return;
+        _loadedOnce = true;
         _lifecycleCts = new CancellationTokenSource();
         if (BindingContext is OutboundMoldViewModel vm)
             vm.SetLifecycleToken(_lifecycleCts.Token);

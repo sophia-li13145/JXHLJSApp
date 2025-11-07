@@ -100,14 +100,11 @@ public partial class InboundProductionPage : ContentPage
 
     protected override void OnDisappearing()
     {
-        // 退出页面即注销（防止多个程序/页面抢处理）
-        //_scanSvc.Scanned -= OnScanned;
-        //_scanSvc.StopListening();
 
         base.OnDisappearing();
     }
 
-    // 新增：扫码按钮事件
+    // 扫码按钮事件
     private async void OnScanClicked(object sender, EventArgs e)
     {
         var tcs = new TaskCompletionSource<string>();
@@ -118,19 +115,12 @@ public partial class InboundProductionPage : ContentPage
         if (string.IsNullOrWhiteSpace(result))
             return;
 
-        // 回填到输入框
-        ScanEntry.Text = result.Trim();
+        // ✅ 直接交给 VM，避免回填 Entry.Text 导致 Completed/事件再次触发
+        await _vm.HandleScannedAsync(result.Trim(), "CAMERA");
 
-        // 同步到 ViewModel
-        if (BindingContext is InboundProductionViewModel vm)
-        {
-            // 交给 VM 统一处理（第二个参数随意标记来源）
-            await _vm.HandleScannedAsync(ScanEntry.Text!, "KEYBOARD");
-
-            // 清空并继续聚焦，方便下一次输入/扫码
-            ScanEntry.Text = string.Empty;
-            ScanEntry.Focus();
-        }
+        // 体验：清空并聚焦输入框
+        ScanEntry.Text = string.Empty;
+        ScanEntry.Focus();
     }
 
 
@@ -157,35 +147,42 @@ public partial class InboundProductionPage : ContentPage
 
     private async void OnBinTapped(object? sender, TappedEventArgs e)
     {
-        // 1) 先拿到行对象并强转为 OutScannedItem
-        if ((sender as BindableObject)?.BindingContext is not IndustrialControlMAUI.ViewModels.OutScannedItem item)
-            return;
+        // ① 一定要从 sender 的 BindingContext 拿当前行
+        if ((sender as BindableObject)?.BindingContext is not OutScannedItem item) return;
 
-        // 2) 未扫描通过则提示并返回
-        if (!item.ScanStatus)   // 注意这里用 ! 而不是 =
-        {
-            await DisplayAlert("提示", "该行未扫描通过，不能修改库位。", "确定");
-            return;
-        }
-        // 用 B 方案的 ShowAsync（不需要 ServiceHelper）
-        SharedLocationVM? picked = await WarehouseLocationPickerPage.ShowAsync(_sp, this);
+        // ② 打开选择页
+        var picked = await WarehouseLocationPickerPage.ShowAsync(_sp, this);
         if (picked is null) return;
 
-        var mapped = new BinInfo
+        // ③ 映射
+        var bin = new BinInfo
         {
             WarehouseCode = picked.WarehouseCode,
             WarehouseName = picked.WarehouseName,
             ZoneCode = picked.Zone,
             RackCode = picked.Rack,
             LayerCode = picked.Layer,
-            Location = picked.Location,
-            InventoryStatus = picked.InventoryStatus,
-            InStock = string.Equals(picked.InventoryStatus, "instock", StringComparison.OrdinalIgnoreCase)
+            Location = picked.Location
         };
 
-        await _vm.UpdateRowLocationAsync(item, mapped);
+        // ④ 后端保存
+        var ok = await _vm.UpdateRowLocationAsync(item, bin);
+        if (!ok) { await DisplayAlert("提示", "库位更新失败", "确定"); return; }
 
+        // ⑤ 本地行对象立刻更新（触发 UI）
+        item.Location = string.IsNullOrWhiteSpace(bin.Location) ? "请选择" : bin.Location!;
+        item.WarehouseCode = bin.WarehouseCode ?? "";
+
+        var target = _vm.ScannedList.FirstOrDefault(x =>
+        string.Equals(x.DetailId, item.DetailId, StringComparison.OrdinalIgnoreCase));
+        if (target != null)
+        {
+            target.Location = item.Location;
+            target.WarehouseCode = item.WarehouseCode;
+        }
     }
+
+
 
     private async void OnQtyCompleted(object sender, EventArgs e)
     {

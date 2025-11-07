@@ -79,12 +79,11 @@ public partial class OutboundFinishedSearchViewModel : ObservableObject
     {
         ["outstockId"] = o.outstockId,
         ["outstockNo"] = o.outstockNo,
-        ["orderType"] = o.orderType,
-        ["orderTypeName"] = o.orderTypeName,
-        ["requisitionMaterialNo"] = o.requisitionMaterialNo,
-        ["returnNo"] = o.returnNo,
         ["deliveryNo"] = o.deliveryNo,
-        ["createdTime"] = o.createdTime
+        ["deliveryMemo"] = o.deliveryMemo,
+        ["customer"] = o.customer,
+        ["saleNo"] = o.saleNo,
+        ["expectedDeliveryTime"] = o.expectedDeliveryTime
     });
 
     }

@@ -79,6 +79,8 @@ namespace IndustrialControlMAUI.Models
     {
         public string? Id { get; set; }
         public string Name { get; set; } = "";
+
+        public string UserName { get; set; } = "";
         public override string ToString() => Name;
     }
 
@@ -88,31 +90,25 @@ namespace IndustrialControlMAUI.Models
         [ObservableProperty] private string meterCode = "";
         [ObservableProperty] private string energyType = "";
         [ObservableProperty] private string indicatorName = "";
-        [ObservableProperty] private string lastReading = "0";     // 上次
-        [ObservableProperty] private string currentReading = "";   // 本次（用户输入）
-        [ObservableProperty] private string consumption = "";      // 消耗量（只读）
+        [ObservableProperty] private decimal? lastReading = 0;     // 上次
+        [ObservableProperty] private decimal? currentReading = 0;   // 本次（用户输入）
+        [ObservableProperty] private decimal? consumption = 0;      // 消耗量（只读）
         [ObservableProperty] private string unit = "kWh";
         [ObservableProperty] private string pointName = "";
         [ObservableProperty] private DateTime readingTime = DateTime.Now;
+        [ObservableProperty] private string lastReadingTime = "";
         [ObservableProperty] private string readerName = "";
         [ObservableProperty] private string remark = "";
         [ObservableProperty] private string workshopName = "";
         [ObservableProperty] private string lineName = "";
 
-        partial void OnCurrentReadingChanged(string value) => Recalc();
-        partial void OnLastReadingChanged(string value) => Recalc();
+        partial void OnCurrentReadingChanged(decimal? value) => Recalc();
+        partial void OnLastReadingChanged(decimal? value) => Recalc();
 
         private void Recalc()
         {
-            if (decimal.TryParse(CurrentReading, NumberStyles.Any, CultureInfo.InvariantCulture, out var cur) &&
-                decimal.TryParse(LastReading, NumberStyles.Any, CultureInfo.InvariantCulture, out var last))
-            {
-                Consumption = (cur - last).ToString("G29", CultureInfo.InvariantCulture);
-            }
-            else
-            {
-                Consumption = "";
-            }
+
+                Consumption = currentReading - lastReading;
         }
     }
 
@@ -204,5 +200,20 @@ namespace IndustrialControlMAUI.Models
         public decimal? lastMeterReading { get; set; }
         public string? lastMeterReadingTime { get; set; }
     }
+
+    public class MeterSaveReq
+    {
+        public decimal? consumption { get; set; }            // 消耗量(本次-上次)
+        public string? energyType { get; set; }             // electric/water/gas/compressed_air
+        public decimal? lastMeterReading { get; set; }       // 上次抄表数
+        public string? lastMeterReadingTime { get; set; }   // 上次抄表时间(可空)
+        public string? memo { get; set; }                   // 备注
+        public string? meterCode { get; set; }              // 仪表编码
+        public string? meterPointCode { get; set; }         // 点位编码
+        public string? meterReader { get; set; }            // 抄表人
+        public decimal? meterReading { get; set; }           // 本次抄表数
+        public string? meterReadingTime { get; set; }       // 本次抄表时间（yyyy-MM-dd HH:mm:ss）
+    }
+
 }
 

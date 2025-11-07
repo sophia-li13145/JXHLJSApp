@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using IndustrialControlMAUI.Models;
 using IndustrialControlMAUI.Services;
 using System.Collections.ObjectModel;
+using static Android.App.DownloadManager;
 
 namespace IndustrialControlMAUI.ViewModels
 {
@@ -60,7 +61,7 @@ namespace IndustrialControlMAUI.ViewModels
             LineOptions.Clear();
             foreach (var l in lines) LineOptions.Add(l);
             SelectedLine = LineOptions.FirstOrDefault();
-
+            _ = Query();
             _inited = true;
         }
 

@@ -96,7 +96,7 @@
             </Grid>
 
             <!-- 待入库明细表头 -->
-            <Grid Grid.Row="1" ColumnDefinitions="70,70,40,70,60,*,*" BackgroundColor="#F2F2F2" IsVisible="{Binding IsPendingVisible}" Padding="8">
+            <Grid Grid.Row="1" ColumnDefinitions="70,60,40,60,80,*,*" BackgroundColor="#F2F2F2" IsVisible="{Binding IsPendingVisible}" Padding="8">
                 <Label Text="物料名称" FontAttributes="Bold" />
                 <Label Grid.Column="1" Text="物料编码" FontAttributes="Bold" />
                 <Label Grid.Column="2" Text="规格" FontAttributes="Bold" />
@@ -113,7 +113,7 @@
                             SelectionMode="Single">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Grid ColumnDefinitions="70,70,40,70,60,*,*" Padding="8" BackgroundColor="White">
+                        <Grid ColumnDefinitions="70,60,40,60,80,*,*" Padding="8" BackgroundColor="White">
                             <VisualStateManager.VisualStateGroups>
                                 <VisualStateGroup Name="CommonStates">
                                     <VisualState Name="Normal">
@@ -152,6 +152,7 @@
             <!-- 扫描明细列表 -->
             <CollectionView Grid.Row="2"
                 ItemsSource="{Binding ScannedList}"
+                ItemsUpdatingScrollMode="KeepScrollOffset"
                 IsVisible="{Binding IsScannedVisible}"
                 SelectionMode="Single"
                 SelectedItem="{Binding SelectedScanItem, Mode=TwoWay}">

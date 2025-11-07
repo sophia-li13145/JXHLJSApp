@@ -14,6 +14,9 @@ namespace IndustrialControlMAUI.ViewModels
     public partial class OutboundMoldViewModel : ObservableObject, IQueryAttributable
     {
         private readonly IMoldApi _api;
+        // 串行化“扫码 → 接口 → 更新”，防止连续快扫导致乱序覆盖和 UI 抖动
+        private readonly SemaphoreSlim _scanLock = new(1, 1);
+
 
         #region 构造 & 注入
         public OutboundMoldViewModel(IMoldApi api)
@@ -119,23 +122,27 @@ namespace IndustrialControlMAUI.ViewModels
             var code = (ScanCode ?? string.Empty).Trim();
             if (string.IsNullOrWhiteSpace(code)) return;
 
-
             if (string.IsNullOrWhiteSpace(WorkOrderNo))
             {
                 await Application.Current.MainPage.DisplayAlert("提示", "缺少工单号，无法校验该模具编码。", "知道了");
                 return;
             }
 
+            // ✅ 先本地占位一条，保证“始终只看到一条”，避免 UI 出现两条再合并的闪动
+            var row = UpsertLocalByMoldCode(code);
+
+            await _scanLock.WaitAsync();
             try
             {
                 var resp = await _api.OutStockScanQueryAsync(code, WorkOrderNo, _lifecycleToken);
                 var ok = resp?.success == true && resp.result != null;
                 if (!ok)
                 {
+                    // 查询失败/无数据：占位行给出提示性状态
+                    ApplyRow(row, moldModel: "", outQty: 0, location: "未找到", whName: "", whCode: "");
                     await Application.Current.MainPage.DisplayAlert("提示", $"未查询到该模具编码：{code}", "知道了");
                     return;
                 }
-
 
                 var r = resp!.result!;
                 var moldCode = (r.moldCode ?? string.Empty).Trim();
@@ -143,63 +150,49 @@ namespace IndustrialControlMAUI.ViewModels
                 var location = (r.location ?? string.Empty).Trim();
                 var warehouseCode = (r.warehouseCode ?? string.Empty).Trim();
                 var warehouseName = (r.warehouseName ?? string.Empty).Trim();
-                var isOut = r.izOutStock??false;
+                var isOut = r.izOutStock ?? false;
 
                 if (isOut)
                 {
+                    ApplyRow(row, moldModel, row.OutQty, location, warehouseName, warehouseCode);
                     await Application.Current.MainPage.DisplayAlert("已出库", $"模具[{moldCode}] 已完成出库，不能重复出库。", "知道了");
                     return;
                 }
 
-                // 校验型号是否在当前工单的分组中
+                // 校验型号是否在本工单需求列表
                 var grp = MoldGroups.FirstOrDefault(g =>
                     string.Equals(g.ModelCode?.Trim(), moldModel, StringComparison.OrdinalIgnoreCase));
-
                 if (grp == null)
                 {
+                    ApplyRow(row, moldModel, row.OutQty, location, warehouseName, warehouseCode);
                     await Application.Current.MainPage.DisplayAlert("不在列表", $"模具型号 [{moldModel}] 不在当前工单的需求列表中。", "知道了");
                     return;
                 }
 
-                // 加入扫描列表（或数量+1）
-                AddOrIncreaseScanned(moldCode, moldModel, location, warehouseCode, warehouseName);
+                // ✅ 不新增第二条：直接把“占位行”更新为真实数据
+                // 数量策略：同码多次扫码就 +1；首次则 1
+                var newQty = row.OutQty <= 0 ? 1 : row.OutQty + 1;
+                ApplyRow(row, moldModel, newQty, location, warehouseName, warehouseCode);
 
-                // 清空输入，准备下一次
+                // 保持选中与顺手体验
+                row.IsSelected = true;
+                SelectedScanItem = row;
+
+                // 清空输入准备下一个
                 ScanCode = string.Empty;
             }
             catch (Exception ex)
             {
+                ApplyRow(row, row.MoldModel ?? "", row.OutQty, "查询失败", row.OutstockWarehouse, row.OutstockWarehouseCode);
                 await Application.Current.MainPage.DisplayAlert("错误", $"扫描校验失败：{ex.Message}", "好的");
             }
-        }
-
-        // 原方法保留，但增加 location 参数（旧调用点不再使用）
-        private void AddOrIncreaseScanned(string moldCode, string modelCode, string? location = null, string? warehouseCode = null, string? warehouseName = null)
-        {
-            var exist = ScannedList.FirstOrDefault(x =>
-                string.Equals(x.MoldCode, moldCode, StringComparison.OrdinalIgnoreCase));
-
-            if (exist != null)
+            finally
             {
-                exist.OutQty += 1;
-                // 若后端返回了库位，补上
-                if (!string.IsNullOrWhiteSpace(location) && string.IsNullOrWhiteSpace(exist.Location))
-                    exist.Location = location;
-                return;
+                _scanLock.Release();
             }
-
-            ScannedList.Add(new ScannedRow
-            {
-                Index = ScannedList.Count + 1,
-                MoldCode = moldCode,
-                MoldModel = modelCode,
-                OutQty = 1,
-                Location = location ?? string.Empty,
-                OutstockWarehouse = warehouseName ?? string.Empty,
-                OutstockWarehouseCode = warehouseCode ?? string.Empty,
-                IsSelected = false
-            });
         }
+
+
        
         #endregion
 
@@ -305,6 +298,47 @@ namespace IndustrialControlMAUI.ViewModels
                 MainThread.BeginInvokeOnMainThread(async () => await LoadAsync(no));
             }
         }
+        // 先在本地按 MoldCode 做 Upsert：存在就复用并选中；不存在就占位插入一条
+        private ScannedRow UpsertLocalByMoldCode(string moldCode)
+        {
+            var exist = ScannedList.FirstOrDefault(x =>
+                string.Equals(x.MoldCode, moldCode, StringComparison.OrdinalIgnoreCase));
+
+            if (exist != null)
+            {
+                exist.IsSelected = true;
+                SelectedScanItem = exist;
+                return exist;
+            }
+
+            // 占位行：接口回来后只“更新字段”，不删除/再新增 —— 避免“闪一下”
+            var placeholder = new ScannedRow
+            {
+                IsSelected = true,
+                Index = ScannedList.Count + 1,
+                MoldCode = moldCode,
+                MoldModel = "",
+                OutQty = 0,               // 等接口回来再确定
+                Location = "查询中…",       // 友好占位
+                OutstockWarehouse = "",
+                OutstockWarehouseCode = ""
+            };
+            ScannedList.Add(placeholder);
+            SelectedScanItem = placeholder;
+            return placeholder;
+        }
+
+        // 只更新字段，不替换对象（避免 UI 的“删除→新增”造成闪烁）
+        private static void ApplyRow(ScannedRow target, string moldModel, int outQty,
+                                     string? location, string? whName, string? whCode)
+        {
+            if (!string.Equals(target.MoldModel, moldModel, StringComparison.Ordinal)) target.MoldModel = moldModel;
+            if (target.OutQty != outQty) target.OutQty = outQty;
+            if (!string.Equals(target.Location, location ?? "", StringComparison.Ordinal)) target.Location = location ?? "";
+            if (!string.Equals(target.OutstockWarehouse, whName ?? "", StringComparison.Ordinal)) target.OutstockWarehouse = whName ?? "";
+            if (!string.Equals(target.OutstockWarehouseCode, whCode ?? "", StringComparison.Ordinal)) target.OutstockWarehouseCode = whCode ?? "";
+        }
+
     }
 
     #region 分组子VM

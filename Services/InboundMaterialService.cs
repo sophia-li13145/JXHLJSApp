@@ -1,4 +1,5 @@
 ﻿using IndustrialControlMAUI.Models;
+using IndustrialControlMAUI.Tools;
 using IndustrialControlMAUI.ViewModels;
 using Serilog;
 using System.Net.Http.Headers;
@@ -11,7 +12,7 @@ namespace IndustrialControlMAUI.Services;
 public sealed class InboundMaterialService : IInboundMaterialService
 {
     private readonly HttpClient _http;
-
+    private readonly AuthState _auth;
     // endpoints（与你原始文件一致）
     public readonly string _inboundListEndpoint;
     public readonly string _detailEndpoint;
@@ -32,10 +33,10 @@ public sealed class InboundMaterialService : IInboundMaterialService
         PropertyNameCaseInsensitive = true
     };
 
-    public InboundMaterialService(HttpClient http, IConfigLoader configLoader)
+    public InboundMaterialService(HttpClient http, IConfigLoader configLoader, AuthState auth)
     {
         _http = http;
-
+        _auth = auth;
         // 读取一次配置（如需其它字段）
         JsonNode cfg = configLoader.Load();
 
@@ -75,6 +76,7 @@ public sealed class InboundMaterialService : IInboundMaterialService
         _updateQuantityEndpoint = NormalizeRelative(
             configLoader.GetApiPath("inbound.updateQuantity", "/pda/wmsMaterialInstock/updateQuantity"),
             servicePath);
+      
     }
 
     /// <summary>
@@ -174,10 +176,9 @@ public sealed class InboundMaterialService : IInboundMaterialService
             throw new InvalidDataException($"期望 JSON，实际返回 Content-Type: {mt}");
     }
 
-    public static async Task<T?> ReadJsonAsync<T>(HttpResponseMessage res, CancellationToken ct)
+    public static async Task<T?> ReadJsonAsync<T>(HttpResponseMessage res, AuthState auth, CancellationToken ct)
     {
-        res.EnsureSuccessStatusCode();
-        var json = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, auth, ct).ConfigureAwait(false);
         return JsonSerializer.Deserialize<T>(json, JsonOpt);
     }
 
@@ -225,7 +226,7 @@ public sealed class InboundMaterialService : IInboundMaterialService
         }
 
         EnsureJson(res);
-        return await ReadJsonAsync<T>(res, ct).ConfigureAwait(false);
+        return await ReadJsonAsync<T>(res,_auth, ct).ConfigureAwait(false);
     }
 
     private static string BuildFullUrl(Uri? baseAddress, string url)
@@ -268,7 +269,7 @@ public sealed class InboundMaterialService : IInboundMaterialService
         }
 
         EnsureJson(res);
-        return await ReadJsonAsync<TResp>(res, ct).ConfigureAwait(false);
+        return await ReadJsonAsync<TResp>(res,_auth, ct).ConfigureAwait(false);
     }
 
 

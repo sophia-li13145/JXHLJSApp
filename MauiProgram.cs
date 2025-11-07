@@ -2,6 +2,7 @@
 using IndustrialControl.ViewModels.Energy;
 using IndustrialControlMAUI.Pages;
 using IndustrialControlMAUI.Services;
+using IndustrialControlMAUI.Tools;
 using IndustrialControlMAUI.ViewModels;
 using Microsoft.Extensions.Logging;
 using ZXing.Net.Maui;
@@ -32,7 +33,8 @@ namespace IndustrialControlMAUI
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();
             builder.Services.AddSingleton<LogService>();
             builder.Services.AddSingleton<IDialogService, DialogService>();
-
+            builder.Services.AddSingleton<AuthState>();
+            builder.Services.AddTransient<TokenExpiredHandler>();
 
             // 扫码服务
             builder.Services.AddSingleton<ScanService>();
@@ -116,26 +118,36 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<AuthHeaderHandler>();
 
             builder.Services.AddHttpClient<IWorkOrderApi, WorkOrderApi>(ConfigureBaseAddress)
-                .AddHttpMessageHandler<AuthHeaderHandler>();
+                .AddHttpMessageHandler<AuthHeaderHandler>()
+                .AddHttpMessageHandler<TokenExpiredHandler>();
 
             builder.Services.AddHttpClient<IInboundMaterialService, InboundMaterialService>(ConfigureBaseAddress)
-                .AddHttpMessageHandler<AuthHeaderHandler>();
+                .AddHttpMessageHandler<AuthHeaderHandler>()
+                .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient<IOutboundMaterialService, OutboundMaterialService>(ConfigureBaseAddress)
-               .AddHttpMessageHandler<AuthHeaderHandler>();
+               .AddHttpMessageHandler<AuthHeaderHandler>()
+               .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient<IMoldApi, MoldApi>(ConfigureBaseAddress)
-             .AddHttpMessageHandler<AuthHeaderHandler>();
+             .AddHttpMessageHandler<AuthHeaderHandler>()
+             .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient<IWarehouseService, WarehouseService>(ConfigureBaseAddress)
-            .AddHttpMessageHandler<AuthHeaderHandler>();
+            .AddHttpMessageHandler<AuthHeaderHandler>()
+           .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient<IQualityApi, QualityApi>(ConfigureBaseAddress)
-            .AddHttpMessageHandler<AuthHeaderHandler>();
+            .AddHttpMessageHandler<AuthHeaderHandler>()
+            .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient<IAuthApi, AuthApi>(ConfigureBaseAddress)
-           .AddHttpMessageHandler<AuthHeaderHandler>();
+           .AddHttpMessageHandler<AuthHeaderHandler>()
+           .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient<IEquipmentApi, EquipmentApi>(ConfigureBaseAddress)
-          .AddHttpMessageHandler<AuthHeaderHandler>();
+          .AddHttpMessageHandler<AuthHeaderHandler>()
+          .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient<IAttachmentApi, AttachmentApi>(ConfigureBaseAddress)
-          .AddHttpMessageHandler<AuthHeaderHandler>();
+          .AddHttpMessageHandler<AuthHeaderHandler>()
+          .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient<IEnergyApi, EnergyApi>(ConfigureBaseAddress)
-          .AddHttpMessageHandler<AuthHeaderHandler>();
+          .AddHttpMessageHandler<AuthHeaderHandler>()
+          .AddHttpMessageHandler<TokenExpiredHandler>();
 
             var app = builder.Build();
             App.Services = app.Services;

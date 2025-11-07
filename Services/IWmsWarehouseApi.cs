@@ -1,5 +1,6 @@
 ﻿
 using IndustrialControlMAUI.Models;
+using IndustrialControlMAUI.Tools;
 using Serilog;
 using System.Net.Http.Headers;
 using System.Reflection;
@@ -19,6 +20,7 @@ public interface IWarehouseService
 public sealed class WarehouseService : IWarehouseService
 {
     private readonly HttpClient _http;
+    private readonly AuthState _auth;
     private readonly string _queryAllEndpoint;
     private readonly string _queryByCodeEndpoint;
     private static readonly SemaphoreSlim _httpGate = new(1, 1);
@@ -31,7 +33,7 @@ public sealed class WarehouseService : IWarehouseService
         NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
     };
 
-    public WarehouseService(HttpClient http, IConfigLoader configLoader)
+    public WarehouseService(HttpClient http, IConfigLoader configLoader, AuthState auth)
     {
         _http = http;
         JsonNode cfg = configLoader.Load();
@@ -47,6 +49,7 @@ public sealed class WarehouseService : IWarehouseService
 
         _queryAllEndpoint = NormalizeRelative(configLoader.GetApiPath("warehouse.queryAll", "/pda/wmsWarehouse/queryAllWarehouse"), servicePath);
         _queryByCodeEndpoint = NormalizeRelative(configLoader.GetApiPath("warehouse.queryByCode", "/pda/wmsWarehouse/queryLocationByWarehouseCode"), servicePath);
+        _auth = auth;
     }
 
 
@@ -326,19 +329,22 @@ public sealed class WarehouseService : IWarehouseService
             throw new InvalidOperationException($"Content-Type 不是 JSON：{ct}");
     }
 
-    public static async Task<T?> ReadJsonAsync<T>(HttpResponseMessage res, CancellationToken ct)
+    public static async Task<T?> ReadJsonAsync<T>(HttpResponseMessage res, AuthState auth, CancellationToken ct)
     {
         res.EnsureSuccessStatusCode();
-        var json = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, auth, ct).ConfigureAwait(false);
         return JsonSerializer.Deserialize<T>(json, JsonOpt);
     }
 
 
-    private static async Task<string> PeekAsync(HttpContent c, int max, CancellationToken ct)
+    private static async Task<string> PeekAsync(HttpContent content, int limit, CancellationToken ct)
     {
-        var s = await c.ReadAsStringAsync(ct).ConfigureAwait(false);
-        return s.Length > max ? s.Substring(0, max) : s;
+        await using var s = await content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var buf = new byte[limit];
+        var n = await s.ReadAsync(buf.AsMemory(0, buf.Length), ct).ConfigureAwait(false);
+        return Encoding.UTF8.GetString(buf, 0, n);
     }
+
 
     private static async Task<string> ReadBodyAsStringAsync(HttpResponseMessage res, CancellationToken ct)
     {

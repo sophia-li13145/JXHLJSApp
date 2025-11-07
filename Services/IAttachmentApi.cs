@@ -1,4 +1,5 @@
 ﻿using IndustrialControlMAUI.Models;
+using IndustrialControlMAUI.Tools;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -28,14 +29,16 @@ namespace IndustrialControlMAUI.Services
     public class AttachmentApi : IAttachmentApi
     {
         private readonly HttpClient _http;
-        private readonly string _uploadAttachmentPath;
+        private readonly AuthState _auth;
+       private readonly string _uploadAttachmentPath;
         private readonly string _previewImagePath;
 
         private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
-        public AttachmentApi(HttpClient http, IConfigLoader configLoader)
+        public AttachmentApi(HttpClient http, IConfigLoader configLoader, AuthState auth)
         {
             _http = http;
+            _auth = auth;
             if (_http.Timeout == System.Threading.Timeout.InfiniteTimeSpan)
                 _http.Timeout = TimeSpan.FromSeconds(15);
 
@@ -136,12 +139,12 @@ namespace IndustrialControlMAUI.Services
                 form.Add(new StringContent(attachmentSize.Value.ToString()), "attachmentSize");
 
             using var req = new HttpRequestMessage(HttpMethod.Post, url) { Content = form };
-            using var resp = await _http.SendAsync(req, ct);
+            using var res = await _http.SendAsync(req, ct);
 
-            var json = await resp.Content.ReadAsStringAsync(ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
             // 如果服务端会返回 4xx/5xx + JSON 错误体，先别急着 EnsureSuccessStatusCode，以便保留服务端错误信息
-            if (!resp.IsSuccessStatusCode)
-                throw new HttpRequestException($"Upload failed: {(int)resp.StatusCode} {json}");
+            if (!res.IsSuccessStatusCode)
+                throw new HttpRequestException($"Upload failed: {(int)res.StatusCode} {json}");
 
             return JsonSerializer.Deserialize<ApiResp<UploadAttachmentResult>>(json,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
@@ -161,8 +164,8 @@ namespace IndustrialControlMAUI.Services
             var url = $"{baseUrl}?{qb}";
 
             using var req = new HttpRequestMessage(HttpMethod.Get, url);
-            using var resp = await _http.SendAsync(req, ct);
-            var json = await resp.Content.ReadAsStringAsync(ct);
+            using var res = await _http.SendAsync(req, ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
 
             return JsonSerializer.Deserialize<ApiResp<string>>(json, new JsonSerializerOptions
             {
