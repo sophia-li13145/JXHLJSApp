@@ -327,7 +327,7 @@
                 </Frame>
 
                 <!-- 点检任务执行 -->
-                <!--<Frame Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}">
+                <Frame Grid.Row="0" Grid.Column="1" Style="{StaticResource Card}">
                     <VerticalStackLayout HorizontalOptions="Center">
                         <Border HeightRequest="64" WidthRequest="64"
                                 BackgroundColor="#FF7043"
@@ -341,9 +341,9 @@
                                HorizontalTextAlignment="Center" TextColor="#333"/>
                     </VerticalStackLayout>
                     <Frame.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnFQC"/>
+                        <TapGestureRecognizer Tapped="OnInSpectionRunSearch"/>
                     </Frame.GestureRecognizers>
-                </Frame>-->
+                </Frame>
                 <Frame Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}">
                     <VerticalStackLayout HorizontalOptions="Center">
                         <Border HeightRequest="64" WidthRequest="64"

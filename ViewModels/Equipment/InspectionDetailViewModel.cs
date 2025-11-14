@@ -22,7 +22,7 @@ namespace IndustrialControlMAUI.ViewModels
         public ObservableCollection<WorkflowVmItem> WorkflowSteps { get; } = new();
 
         [ObservableProperty] private bool isBusy;
-        [ObservableProperty] private InspectionDetailDto? detail;
+        [ObservableProperty] private InspectDetailDto? detail;
         [ObservableProperty]
         private bool isInspectorDropdownOpen = false; // 检验员下拉列表框默认关闭
         [ObservableProperty]

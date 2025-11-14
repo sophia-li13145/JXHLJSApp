@@ -156,7 +156,7 @@ namespace IndustrialControlMAUI.ViewModels
         private async Task GoDetailAsync(InspectionOrderItem? item)
         {
             if (item is null) return;
-            await Shell.Current.GoToAsync(nameof(InspectionDetailPage) + $"?id={Uri.EscapeDataString(item.Id)}");
+            await Shell.Current.GoToAsync(nameof(InspectionRunDetailPage) + $"?id={Uri.EscapeDataString(item.Id)}");
         }
         /// <summary>
         /// 安全解析日期字符串（空或格式不对返回 null）

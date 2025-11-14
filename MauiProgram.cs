@@ -67,6 +67,8 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<ViewModels.FinishedQualitySearchViewModel>();
             builder.Services.AddTransient<ViewModels.InspectionDetailViewModel>();
             builder.Services.AddTransient<ViewModels.InspectionSearchViewModel>();
+            builder.Services.AddTransient<ViewModels.InspectionRunDetailViewModel>();
+            builder.Services.AddTransient<ViewModels.InspectionRunSearchViewModel>();
             builder.Services.AddTransient<ViewModels.MaintenanceDetailViewModel>();
             builder.Services.AddTransient<ViewModels.MaintenanceSearchViewModel>();
             builder.Services.AddTransient<ViewModels.RepairDetailViewModel>();
@@ -102,6 +104,8 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<Pages.FinishedQualityDetailPage>();
             builder.Services.AddTransient<Pages.InspectionSearchPage>();
             builder.Services.AddTransient<Pages.InspectionDetailPage>();
+            builder.Services.AddTransient<Pages.InspectionRunSearchPage>();
+            builder.Services.AddTransient<Pages.InspectionRunDetailPage>();
             builder.Services.AddTransient<Pages.MaintenanceSearchPage>();
             builder.Services.AddTransient<Pages.MaintenanceDetailPage>();
             builder.Services.AddTransient<Pages.RepairSearchPage>();

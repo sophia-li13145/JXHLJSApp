@@ -55,7 +55,7 @@ public partial class OutboundMaterialSearchViewModel : ObservableObject
             });
 
             if (list == null || !list.Any())
-                await Shell.Current.DisplayAlert("提示", "未查询到任何入库单", "确定");
+                await Shell.Current.DisplayAlert("提示", "未查询到任何出库单", "确定");
         }
         catch (Exception ex)
         {

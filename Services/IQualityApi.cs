@@ -51,12 +51,15 @@ namespace IndustrialControlMAUI.Services
         private readonly string _executeCompletePath;
         private readonly string _defectPagePath;
         private readonly string _deleteAttPath;
+        private readonly IAttachmentApi _attachmentApi;
 
         private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
-        public QualityApi(HttpClient http, IConfigLoader configLoader, AuthState auth)
+        public QualityApi(HttpClient http, IConfigLoader configLoader, AuthState auth, IAttachmentApi attachmentApi)
         {
             _http = http;
+            _auth = auth;
+            _attachmentApi = attachmentApi;
             if (_http.Timeout == System.Threading.Timeout.InfiniteTimeSpan)
                 _http.Timeout = TimeSpan.FromSeconds(15);
 
@@ -305,27 +308,13 @@ namespace IndustrialControlMAUI.Services
             return System.Text.Json.JsonSerializer.Deserialize<ApiResp<DefectPage>>(body, _json)
                    ?? new ApiResp<DefectPage> { success = false, message = "Empty body" };
         }
-       
 
         public async Task<ApiResp<bool>> DeleteAttachmentAsync(string id, CancellationToken ct = default)
-        {
-            var url = BuildFullUrl(_http.BaseAddress, _deleteAttPath);
-            var reqObj = new DeleteAttachmentReq { id = id };
-            var json = JsonSerializer.Serialize(reqObj, _json);
-            using var req = new HttpRequestMessage(HttpMethod.Post, new Uri(url, UriKind.Absolute))
-            {
-                Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
-            };
-            using var res = await _http.SendAsync(req, ct);
-            var body = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+        { 
+        return await _attachmentApi.DeleteAttachmentAsync(id, _deleteAttPath, ct);
+         }
 
-            if (!res.IsSuccessStatusCode)
-                return new ApiResp<bool> { success = false, code = (int)res.StatusCode, message = $"HTTP {(int)res.StatusCode}" };
-
-            return JsonSerializer.Deserialize<ApiResp<bool>>(body, _json)
-                   ?? new ApiResp<bool> { success = false, message = "Empty body" };
         }
-    }
 
 
 

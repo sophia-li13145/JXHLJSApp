@@ -50,6 +50,8 @@ namespace IndustrialControlMAUI.Pages
 
         private async void OnInSpectionSearch(object? s, TappedEventArgs e)
            => await Shell.Current.GoToAsync(nameof(InspectionSearchPage));
+        private async void OnInSpectionRunSearch(object? s, TappedEventArgs e)
+           => await Shell.Current.GoToAsync(nameof(InspectionRunSearchPage));
 
         private async void OnMaintenanceSearch(object? s, TappedEventArgs e)
           => await Shell.Current.GoToAsync(nameof(MaintenanceSearchPage));

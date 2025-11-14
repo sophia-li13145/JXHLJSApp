@@ -283,7 +283,7 @@
                         <!-- 第4行：检验备注（整行） -->
                         <Label Grid.Row="4" Grid.Column="0" Text="维修时长：" Style="{StaticResource FieldLabel}" />
                         <Label Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3"
-                               Text="{Binding Detail.repairDuration, StringFormat='{0:G29}'}" /> 
+                               Text="{Binding Detail.repairDuration, StringFormat='{}{0:G29}小时'}" />
                     </Grid>
                 </Frame>
 

@@ -22,7 +22,7 @@ namespace IndustrialControlMAUI.Services
                 CancellationToken ct = default);
 
         Task<ApiResp<string>> GetPreviewUrlAsync(string attachmentUrl, long? expires = null, CancellationToken ct = default);
-      
+        Task<ApiResp<bool>> DeleteAttachmentAsync(string id, string atturl, CancellationToken ct = default);
     }
 
     // ===================== 实现 =====================
@@ -174,7 +174,24 @@ namespace IndustrialControlMAUI.Services
             }) ?? new ApiResp<string>();
         }
 
-       
+        public async Task<ApiResp<bool>> DeleteAttachmentAsync(string id,string atturl, CancellationToken ct = default)
+        {
+            var url = BuildFullUrl(_http.BaseAddress, atturl);
+            var reqObj = new DeleteAttachmentReq { id = id };
+            var json = JsonSerializer.Serialize(reqObj, _json);
+            using var req = new HttpRequestMessage(HttpMethod.Post, new Uri(url, UriKind.Absolute))
+            {
+                Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
+            };
+            using var res = await _http.SendAsync(req, ct);
+            var body = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+
+            if (!res.IsSuccessStatusCode)
+                return new ApiResp<bool> { success = false, code = (int)res.StatusCode, message = $"HTTP {(int)res.StatusCode}" };
+
+            return JsonSerializer.Deserialize<ApiResp<bool>>(body, _json)
+                   ?? new ApiResp<bool> { success = false, message = "Empty body" };
+        }
     }
 
 

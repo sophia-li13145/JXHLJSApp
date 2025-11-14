@@ -12,7 +12,7 @@ namespace IndustrialControlMAUI.ViewModels
     /// </summary>
     public partial class InspectionRunDetailViewModel : ObservableObject, IQueryAttributable
     {
-        private readonly IQualityApi _api;
+        private readonly IEquipmentApi _api;
         private readonly IAuthApi _authApi;
         private readonly IAttachmentApi _attachmentApi;
         private readonly CancellationTokenSource _cts = new();
@@ -26,13 +26,12 @@ namespace IndustrialControlMAUI.ViewModels
         private const long MaxImageBytes = 2L * 1024 * 1024;   // 2MB
         private const long MaxFileBytes = 20L * 1024 * 1024;   // 20MB
 
-        public ObservableCollection<OrderQualityAttachmentItem> Attachments { get; } = new();
-        public ObservableCollection<OrderQualityAttachmentItem> ImageAttachments { get; } = new(); // 仅图片
-        public ObservableCollection<QualityItem> Items { get; } = new();                           // 明细
+        public ObservableCollection<OrderInspectionAttachmentItem> Attachments { get; } = new();
+        public ObservableCollection<OrderInspectionAttachmentItem> ImageAttachments { get; } = new(); // 仅图片
+        public ObservableCollection<InspectionItem> Items { get; } = new();                    // 明细
         public ObservableCollection<StatusOption> InspectResultOptions { get; } = new();           // 合格/不合格
 
         [ObservableProperty] private bool isBusy;
-        [ObservableProperty] private QualityDetailDto? detail;
 
         // ==== 检验员输入 + 下拉 ====
         [ObservableProperty] private bool isInspectorDropdownOpen;    // 默认关闭
@@ -66,12 +65,12 @@ namespace IndustrialControlMAUI.ViewModels
                     if (Detail != null)
                         Detail.inspectResult = value?.Value ?? value?.Text;
 
-                    OnPropertyChanged(nameof(IsQualifiedSelected));
+                    OnPropertyChanged(nameof(IsInspectionSelected));
                     OnPropertyChanged(nameof(IsUnqualifiedSelected));
                 }
             }
         }
-        public bool IsQualifiedSelected => string.Equals(SelectedInspectResult?.Value, "合格");
+        public bool IsInspectionSelected => string.Equals(SelectedInspectResult?.Value, "合格");
         public bool IsUnqualifiedSelected => string.Equals(SelectedInspectResult?.Value, "不合格");
 
         // 可编辑开关
@@ -82,7 +81,13 @@ namespace IndustrialControlMAUI.ViewModels
         public int Index { get; set; }
         public IReadOnlyList<string> InspectResultTextList { get; } = new[] { "合格", "不合格" };
 
-        public InspectionRunDetailViewModel(IQualityApi api, IAuthApi authApi, IAttachmentApi attachmentApi)
+
+        public ObservableCollection<WorkflowVmItem> WorkflowSteps { get; } = new();
+
+        [ObservableProperty] private InspectDetailDto? detail;
+
+
+        public InspectionRunDetailViewModel(IEquipmentApi api, IAuthApi authApi, IAttachmentApi attachmentApi)
         {
             _api = api;
             _authApi = authApi;
@@ -91,6 +96,9 @@ namespace IndustrialControlMAUI.ViewModels
             // 默认选项（也可以从字典接口加载）
             InspectResultOptions.Add(new StatusOption { Text = "合格", Value = "合格" });
             InspectResultOptions.Add(new StatusOption { Text = "不合格", Value = "不合格" });
+
+            InspectorSuggestions = new ObservableCollection<UserInfoDto>();
+            AllUsers = new List<UserInfoDto>();
         }
 
         public void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -118,33 +126,35 @@ namespace IndustrialControlMAUI.ViewModels
                 }
 
                 Detail = resp.result;
+                // —— 只在这里手动触发一次计算，保证初值显示一致 ——
                 Detail?.Recalc();
+
+                IsEditing = !IsCompletedStatus(Detail?.inspectStatus);
 
                 await LoadInspectorsAsync();
 
-                // 明细
+                // ===== 明细 =====
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
                     Items.Clear();
                     int i = 1;
-                    foreach (var it in Detail.orderQualityDetailList ?? new())
+                    foreach (var it in Detail.devInspectTaskDetailList ?? new())
                     {
-                        it.index = i++;
+                        it.index = i++; // 1,2,3...
                         Items.Add(it);
                     }
                 });
 
-                // 附件
+                // ===== 附件 =====
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
                     Attachments.Clear();
-                    ImageAttachments.Clear();
 
-                    foreach (var at in (Detail.orderQualityAttachmentList ?? new List<QualityAttachment>()))
+                    foreach (var at in (Detail.devInspectTaskAttachmentList ?? new List<InspectionAttachment>()))
                     {
                         if (string.IsNullOrWhiteSpace(at.attachmentUrl)) continue;
 
-                        var item = new OrderQualityAttachmentItem
+                        var item = new OrderInspectionAttachmentItem
                         {
                             AttachmentExt = at.attachmentExt ?? "",
                             AttachmentFolder = at.attachmentFolder ?? "",
@@ -156,29 +166,16 @@ namespace IndustrialControlMAUI.ViewModels
                             Id = at.id ?? "",
                             CreatedTime = at.createdTime ?? "",
                             LocalPath = null,
-                            IsUploaded = true,
-                            Name = at.name ?? at.attachmentName ?? at.attachmentRealName ?? "",
-                            Percent = at.percent ?? 100,
-                            Status = string.IsNullOrWhiteSpace(at.status) ? "done" : at.status!,
-                            Uid = at.uid,
-                            Url = at.url ?? at.attachmentUrl,
-                            QualityNo = Detail?.qualityNo
+                            IsUploaded = true
                         };
 
-                        if (item.AttachmentLocation == LocationFile) Attachments.Add(item);
-                        if (item.AttachmentLocation == LocationImage) ImageAttachments.Add(item);
+                        if (item.AttachmentLocation == "fujian") Attachments.Add(item);
+                        if (item.AttachmentLocation == "image") ImageAttachments.Add(item);
                     }
+
+
                 });
-
                 await LoadPreviewThumbnailsAsync();
-
-                // 设置下拉选中项
-                SelectedInspectResult = InspectResultOptions
-                    .FirstOrDefault(o =>
-                        string.Equals(o.Value, Detail.inspectResult, StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(o.Text, Detail.inspectResult, StringComparison.OrdinalIgnoreCase));
-
-                IsInspectorDropdownOpen = false;
             }
             catch (Exception ex)
             {
@@ -259,43 +256,10 @@ namespace IndustrialControlMAUI.ViewModels
 
         // ======= 一键合格 =======
         [RelayCommand]
-        private void SetAllQualified()
+        private void SetAllInspection()
         {
             foreach (var item in Items)
                 item.inspectResult = "合格";
-        }
-
-        // ======= 缺陷选择弹窗 =======
-        [RelayCommand]
-        private async Task OpenDefectPicker(QualityItem? row)
-        {
-            if (row == null) return;
-
-            var preselectedCodes = row.SelectedDefects.Select(x => x.Name).ToList();
-            var picked = await DefectPickerPopup.ShowAsync(_api, preselectedCodes);
-            if (picked == null) return;
-
-            Color[] palette =
-            {
-                Color.FromArgb("#DCEBFF"),
-                Color.FromArgb("#FFF4B0"),
-                Color.FromArgb("#FFDCDC"),
-                Color.FromArgb("#E3FFE3"),
-                Color.FromArgb("#EDE3FF"),
-            };
-
-            row.SelectedDefects.Clear();
-            int i = 0;
-            foreach (var d in picked)
-            {
-                row.SelectedDefects.Add(new DefectChip
-                {
-                    Name = d.DefectName ?? d.DefectCode ?? "",
-                    ColorHex = palette[i++ % palette.Length]
-                });
-            }
-
-            row.defect = string.Join(",", row.SelectedDefects.Select(x => x.Name));
         }
 
         // ======= 保存/完成 =======
@@ -344,8 +308,13 @@ namespace IndustrialControlMAUI.ViewModels
                 if (resp?.success == true && resp.result == true)
                 {
                     await ShowTip("已完成点检。");
-                    // 可选：返回上一页
-                    // await Shell.Current.GoToAsync("..");
+                    // 本地立即反映完成态，防止用户回退前误操作
+                    Detail.inspectStatus = "2";
+                    IsEditing = false;
+
+                    // 直接返回，触发搜索页 OnAppearing -> 自动刷新
+                    await Shell.Current.GoToAsync("..");
+                    return;
                 }
                 else
                 {
@@ -417,7 +386,7 @@ namespace IndustrialControlMAUI.ViewModels
                     }
 
                     // 4) 本地项（先显示）
-                    var localItem = new OrderQualityAttachmentItem
+                    var localItem = new OrderInspectionAttachmentItem
                     {
                         AttachmentName = f.FileName,
                         AttachmentExt = ext,
@@ -453,7 +422,6 @@ namespace IndustrialControlMAUI.ViewModels
                         localItem.Name = string.IsNullOrWhiteSpace(localItem.Name) ? localItem.AttachmentName : localItem.Name;
                         localItem.Percent = 100;
                         localItem.Status = "done";
-                        localItem.QualityNo ??= Detail?.qualityNo;
 
                         if (!string.IsNullOrWhiteSpace(resp.result.attachmentUrl))
                             localItem.LocalPath = null;
@@ -537,7 +505,7 @@ namespace IndustrialControlMAUI.ViewModels
                 .Select(g => g.First())
                 .ToList();
 
-            Detail.orderQualityAttachmentList = allAttachments.Select(a => new QualityAttachment
+            Detail.devInspectTaskAttachmentList = allAttachments.Select(a => new InspectionAttachment
             {
                 attachmentExt = a.AttachmentExt,
                 attachmentFolder = a.AttachmentFolder,
@@ -548,21 +516,17 @@ namespace IndustrialControlMAUI.ViewModels
                 attachmentUrl = a.AttachmentUrl,
                 createdTime = a.CreatedTime,
                 id = a.Id,
-                name = string.IsNullOrWhiteSpace(a.Name) ? a.AttachmentName : a.Name,
-                qualityNo = string.IsNullOrWhiteSpace(a.QualityNo) ? Detail.qualityNo : a.QualityNo,
                 status = string.IsNullOrWhiteSpace(a.Status) ? (a.IsUploaded ? "done" : "uploading") : a.Status,
                 uid = string.IsNullOrWhiteSpace(a.Uid) ? Guid.NewGuid().ToString("N") : a.Uid,
                 url = string.IsNullOrWhiteSpace(a.Url) ? a.AttachmentUrl : a.Url
             }).ToList();
 
-            Detail.orderQualityDetailList = Items?.ToList() ?? new List<QualityItem>();
+            Detail.devInspectTaskDetailList = Items?.ToList() ?? new List<InspectionItem>();
 
-            foreach (var it in Detail.orderQualityDetailList ?? new())
-                it.defect = string.Join(",", it.SelectedDefects.Select(d => d.Name));
         }
 
         [RelayCommand]
-        private async Task DownloadAttachment(OrderQualityAttachmentItem? item)
+        private async Task DownloadAttachment(OrderInspectionAttachmentItem? item)
         {
             if (item is null) { await ShowTip("无效的附件。"); return; }
 
@@ -589,7 +553,7 @@ namespace IndustrialControlMAUI.ViewModels
         }
 
         [RelayCommand]
-        private async Task DeleteAttachmentAsync(OrderQualityAttachmentItem? item)
+        private async Task DeleteAttachmentAsync(OrderInspectionAttachmentItem? item)
         {
             if (item is null) return;
 
@@ -609,7 +573,7 @@ namespace IndustrialControlMAUI.ViewModels
 
             try
             {
-                var resp = await _api.DeleteAttachmentAsync(item.Id, _cts?.Token ?? CancellationToken.None);
+                var resp = await _api.DeleteInspectAttachmentAsync(item.Id, _cts?.Token ?? CancellationToken.None);
                 if (resp?.success == true && resp.result)
                 {
                     Attachments.Remove(item);
@@ -629,5 +593,8 @@ namespace IndustrialControlMAUI.ViewModels
 
         private static Task ShowTip(string msg) =>
             Application.Current?.MainPage?.DisplayAlert("提示", msg, "OK") ?? Task.CompletedTask;
+
+        private static bool IsCompletedStatus(string? s)
+   => string.Equals(s, "2", StringComparison.OrdinalIgnoreCase);
     }
 }

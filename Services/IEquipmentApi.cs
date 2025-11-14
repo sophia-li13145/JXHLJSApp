@@ -2,9 +2,6 @@
 using IndustrialControlMAUI.Tools;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Web;
-
 namespace IndustrialControlMAUI.Services
 {
     // ===================== 接口定义 =====================
@@ -19,11 +16,13 @@ namespace IndustrialControlMAUI.Services
          string? inspectStatus,
          bool searchCount,
          CancellationToken ct = default);
-        Task<DictInspection> GetInspectionDictsAsync(CancellationToken ct = default);
-        Task<ApiResp<InspectionDetailDto>?> GetDetailAsync(string id, CancellationToken ct = default);
 
+        Task<DictInspection> GetInspectionDictsAsync(CancellationToken ct = default);
+        Task<ApiResp<InspectDetailDto>?> GetDetailAsync(string id, CancellationToken ct = default);
         Task<ApiResp<List<InspectWorkflowNode>>> GetWorkflowAsync(string id, CancellationToken ct = default);
+        Task<ApiResp<bool>> DeleteInspectAttachmentAsync(string id, CancellationToken ct = default);
         //--------------------------------------------
+
         Task<PageResponeResult<MaintenanceRecordDto>> MainPageQueryAsync(
             int pageNo,
             int pageSize,
@@ -33,9 +32,9 @@ namespace IndustrialControlMAUI.Services
             string? upkeepStatus,
             bool searchCount,
             CancellationToken ct = default);
+
         Task<DictMaintenance> GetMainDictsAsync(CancellationToken ct = default);
         Task<ApiResp<MaintenanceDetailDto>?> GetMainDetailAsync(string id, CancellationToken ct = default);
-       
         Task<ApiResp<List<MaintenanceWorkflowNode>>> GetMainWorkflowAsync(string id, CancellationToken ct = default);
 
         Task<PageResponeResult<RepairRecordDto>> RepairPageQueryAsync(
@@ -47,11 +46,18 @@ namespace IndustrialControlMAUI.Services
            string? auditStatus,
            bool searchCount,
            CancellationToken ct = default);
+        Task<ApiResp<bool>> DeleteMainAttachmentAsync(string id, CancellationToken ct = default);
         Task<DictRepair> GetRepairDictsAsync(CancellationToken ct = default);
         Task<ApiResp<RepairDetailDto>?> GetRepairDetailAsync(string id, CancellationToken ct = default);
-
         Task<ApiResp<List<RepairWorkflowNode>>> GetRepairWorkflowAsync(string id, CancellationToken ct = default);
 
+        Task<ApiResp<bool?>> ExecuteSaveAsync(InspectDetailDto payload, CancellationToken ct = default);
+        Task<ApiResp<bool?>> ExecuteCompleteInspectionAsync(InspectDetailDto payload, CancellationToken ct = default);
+        Task<ApiResp<bool?>> ExecuteMainSaveAsync(MainDetailDto payload, CancellationToken ct = default);
+        Task<ApiResp<bool?>> ExecuteMainCompleteInspectionAsync(MainDetailDto payload, CancellationToken ct = default);
+        Task<ApiResp<bool?>> ExecuteRepairSaveAsync(RepairParaDetailDto payload, CancellationToken ct = default);
+        Task<ApiResp<bool?>> ExecuteRepairCompleteInspectionAsync(RepairParaDetailDto payload, CancellationToken ct = default);
+        Task<ApiResp<bool>> DeleteRepairAttachmentAsync(string id, CancellationToken ct = default);
     }
 
 
@@ -60,25 +66,41 @@ namespace IndustrialControlMAUI.Services
     {
         private readonly HttpClient _http;
         private readonly AuthState _auth;
+        private readonly IAttachmentApi _attachmentApi;
         private readonly string _pageEndpoint;
         private readonly string _dictEndpoint;
         private readonly string _detailsEndpoint;
         private readonly string _workflowPath;
+        private readonly string _executeSavePath;
+        private readonly string _executeCompletePath;
+        private readonly string _deleteAttPath;
+
         private readonly string _mainPageEndpoint;
         private readonly string _dictMainEndpoint;
         private readonly string _mainDetailsEndpoint;
         private readonly string _mainWorkflowPath;
+        private readonly string _mainexecuteSavePath;
+        private readonly string _mainexecuteCompletePath;
+        private readonly string _maindeleteAttPath;
+
         private readonly string _repPageEndpoint;
         private readonly string _dictRepEndpoint;
         private readonly string _repDetailsEndpoint;
         private readonly string _repWorkflowPath;
+        private readonly string _repexecuteSavePath;
+        private readonly string _repexecuteCompletePath;
+        private readonly string _repdeleteAttPath;
 
+        private static readonly JsonSerializerOptions _json = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
 
-        private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
-
-        public EquipmentApi(HttpClient http, IConfigLoader configLoader, AuthState auth)
+        public EquipmentApi(HttpClient http, IConfigLoader configLoader, AuthState auth,IAttachmentApi attachmentApi)
         {
             _http = http;
+            _auth = auth;
+            _attachmentApi = attachmentApi;
             if (_http.Timeout == System.Threading.Timeout.InfiniteTimeSpan)
                 _http.Timeout = TimeSpan.FromSeconds(15);
 
@@ -89,36 +111,61 @@ namespace IndustrialControlMAUI.Services
             var servicePath = _http.BaseAddress.AbsolutePath?.TrimEnd('/') ?? "/normalService";
             _http.DefaultRequestHeaders.Accept.Clear();
             _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            // === 巡检 ===
             _pageEndpoint = NormalizeRelative(
-                configLoader.GetApiPath("quality.page", "/pda/dev/inspectTask/pageQuery"), servicePath);
+                configLoader.GetApiPath("equipment.page", "/pda/dev/inspectTask/pageQuery"), servicePath);
             _dictEndpoint = NormalizeRelative(
-               configLoader.GetApiPath("quality.dictList", "/pda/dev/inspectTask/getDictList"), servicePath);
+               configLoader.GetApiPath("equipment.dictList", "/pda/dev/inspectTask/getDictList"), servicePath);
             _detailsEndpoint = NormalizeRelative(
-               configLoader.GetApiPath("quality.detailList", "/pda/dev/inspectTask/detail"), servicePath);
+               configLoader.GetApiPath("equipment.detailList", "/pda/dev/inspectTask/detail"), servicePath);
             _workflowPath = NormalizeRelative(
-            configLoader.GetApiPath("quality.workflow", "/pda/dev/inspectTask/getWorkflow"),
-            servicePath);
+                configLoader.GetApiPath("equipment.workflow", "/pda/dev/inspectTask/getWorkflow"),
+                servicePath);
+            _executeSavePath = NormalizeRelative(
+                configLoader.GetApiPath("equipment.inspectexecuteSave", "/pda/dev/inspectTask/executeSave"), servicePath);
+            _executeCompletePath = NormalizeRelative(
+                configLoader.GetApiPath("equipment.inspectexecuteComplete", "/pda/dev/inspectTask/executeCompleteInspection"), servicePath);
+            _deleteAttPath = NormalizeRelative(
+   configLoader.GetApiPath("equipment.deleteAtt", "/pda/dev/inspectTask/deleteAttachment"),
+   servicePath);
+            // === 保养 ===
             _mainPageEndpoint = NormalizeRelative(
-                configLoader.GetApiPath("quality.mainpage", "/pda/dev/upkeepTask/pageQuery"), servicePath);
+                configLoader.GetApiPath("equipment.mainpage", "/pda/dev/upkeepTask/pageQuery"), servicePath);
             _dictMainEndpoint = NormalizeRelative(
-               configLoader.GetApiPath("quality.maindictList", "/pda/dev/upkeepTask/getDictList"), servicePath);
+               configLoader.GetApiPath("equipment.maindictList", "/pda/dev/upkeepTask/getDictList"), servicePath);
             _mainDetailsEndpoint = NormalizeRelative(
-               configLoader.GetApiPath("quality.maindetailList", "/pda/dev/upkeepTask/detail"), servicePath);
+               configLoader.GetApiPath("equipment.maindetailList", "/pda/dev/upkeepTask/detail"), servicePath);
             _mainWorkflowPath = NormalizeRelative(
-            configLoader.GetApiPath("quality.mainworkflow", "/pda/dev/upkeepTask/getWorkflow"),
-            servicePath);
+                configLoader.GetApiPath("equipment.mainworkflow", "/pda/dev/upkeepTask/getWorkflow"),
+                servicePath);
+            _mainexecuteSavePath = NormalizeRelative(
+                configLoader.GetApiPath("equipment.mainexecuteSave", "/pda/dev/upkeepTask/executeSave"), servicePath);
+            _mainexecuteCompletePath = NormalizeRelative(
+                configLoader.GetApiPath("equipment.mainexecuteComplete", "/pda/dev/upkeepTask/executeCompleteUpkeep"), servicePath);
+            _maindeleteAttPath = NormalizeRelative(
+   configLoader.GetApiPath("equipment.maindeleteAtt", "/pda/dev/upkeepTask/deleteAttachment"),
+   servicePath);
+            // === 维修 ===
             _repPageEndpoint = NormalizeRelative(
-               configLoader.GetApiPath("quality.reppage", "/pda/dev/maintainWorkOrder/pageQuery"), servicePath);
+               configLoader.GetApiPath("equipment.reppage", "/pda/dev/maintainWorkOrder/pageQuery"), servicePath);
             _dictRepEndpoint = NormalizeRelative(
-               configLoader.GetApiPath("quality.repdictList", "/pda/dev/maintainWorkOrder/getDictList"), servicePath);
+               configLoader.GetApiPath("equipment.repdictList", "/pda/dev/maintainWorkOrder/getDictList"), servicePath);
             _repDetailsEndpoint = NormalizeRelative(
-               configLoader.GetApiPath("quality.repdetailList", "/pda/dev/maintainWorkOrder/detail"), servicePath);
+               configLoader.GetApiPath("equipment.repdetailList", "/pda/dev/maintainWorkOrder/detail"), servicePath);
             _repWorkflowPath = NormalizeRelative(
-            configLoader.GetApiPath("quality.repworkflow", "/pda/dev/maintainWorkOrder/getWorkflow"),
-            servicePath);
-            _auth = auth;
+                configLoader.GetApiPath("equipment.repworkflow", "/pda/dev/maintainWorkOrder/getWorkflow"),
+                servicePath);
+            _repexecuteSavePath = NormalizeRelative(
+                configLoader.GetApiPath("equipment.repexecuteSave", "/pda/dev/maintainWorkOrder/executeSave"), servicePath);
+            _repexecuteCompletePath = NormalizeRelative(
+                configLoader.GetApiPath("equipment.repexecuteComplete", "/pda/dev/maintainWorkOrder/executeComplete"), servicePath);
+            _repdeleteAttPath = NormalizeRelative(
+        configLoader.GetApiPath("equipment.repdeleteAtt", "/pda/dev/maintainWorkOrder/deleteAttachment"),
+        servicePath);
         }
-        // ===== 公共工具 =====
+
+        // ===================== 公共工具 =====================
         private static string BuildFullUrl(Uri? baseAddress, string url)
         {
             if (string.IsNullOrWhiteSpace(url))
@@ -164,7 +211,107 @@ namespace IndustrialControlMAUI.Services
             return ep;
         }
 
-        // ===== 方法实现 =====
+        // ========== 抽取的通用方法：分页查询 ==========
+        private async Task<PageResponeResult<T>> GetPageAsync<T>(
+            string endpoint,
+            IDictionary<string, string> queryParams,
+            CancellationToken ct)
+        {
+            var url = endpoint + "?" + BuildQuery(queryParams);
+            var full = BuildFullUrl(_http.BaseAddress, url);
+
+            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
+            using var res = await _http.SendAsync(req, ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+
+            if (!res.IsSuccessStatusCode)
+            {
+                return new PageResponeResult<T>
+                {
+                    success = false,
+                    code = (int)res.StatusCode,
+                    message = $"HTTP {(int)res.StatusCode}"
+                };
+            }
+
+            return JsonSerializer.Deserialize<PageResponeResult<T>>(json, _json)
+                   ?? new PageResponeResult<T> { success = false, message = "Empty body" };
+        }
+
+        // ========== 抽取的通用方法：字典查询 ==========
+        private async Task<List<DictField>> GetDictFieldsAsync(string endpoint, CancellationToken ct)
+        {
+            var full = BuildFullUrl(_http.BaseAddress, endpoint);
+
+            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
+            using var res = await _http.SendAsync(req, ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+
+            var dto = JsonSerializer.Deserialize<DictResponse>(json, _json);
+            return dto?.result ?? new List<DictField>();
+        }
+
+        // ========== 抽取的通用方法：GET ?id=xxx ==========
+        private async Task<ApiResp<T>?> GetApiRespByIdAsync<T>(
+            string endpoint,
+            string id,
+            CancellationToken ct)
+        {
+            var full = BuildFullUrl(_http.BaseAddress, endpoint) +
+                       "?id=" + Uri.EscapeDataString(id ?? string.Empty);
+
+            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
+            using var res = await _http.SendAsync(req, ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+
+            if (!res.IsSuccessStatusCode)
+            {
+                return new ApiResp<T>
+                {
+                    success = false,
+                    code = (int)res.StatusCode,
+                    message = $"HTTP {(int)res.StatusCode}"
+                };
+            }
+
+            return JsonSerializer.Deserialize<ApiResp<T>>(json, _json)
+                   ?? new ApiResp<T> { success = false, message = "Empty body" };
+        }
+
+        // ========== 抽取的通用方法：POST JSON ==========
+        private async Task<ApiResp<TResp>?> PostJsonAsync<TPayload, TResp>(
+            string endpoint,
+            TPayload payload,
+            CancellationToken ct)
+        {
+            var url = BuildFullUrl(_http.BaseAddress, endpoint);
+            var json = JsonSerializer.Serialize(payload, _json);
+
+            using var req = new HttpRequestMessage(HttpMethod.Post, new Uri(url, UriKind.Absolute))
+            {
+                Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
+            };
+
+            using var res = await _http.SendAsync(req, ct);
+            var body = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+
+            if (!res.IsSuccessStatusCode)
+            {
+                return new ApiResp<TResp>
+                {
+                    success = false,
+                    code = (int)res.StatusCode,
+                    message = $"HTTP {(int)res.StatusCode}"
+                };
+            }
+
+            return JsonSerializer.Deserialize<ApiResp<TResp>>(body, _json)
+                   ?? new ApiResp<TResp> { success = false, message = "Empty body" };
+        }
+
+        // ===================== 具体业务方法实现 =====================
+
+        // ---------- 巡检列表 ----------
         public async Task<PageResponeResult<InspectionRecordDto>> PageQueryAsync(
              int pageNo,
              int pageSize,
@@ -175,112 +322,44 @@ namespace IndustrialControlMAUI.Services
              bool searchCount,
              CancellationToken ct = default)
         {
-            // 1) 组装查询参数（仅在有值时加入）
             var p = new Dictionary<string, string>
             {
                 ["pageNo"] = pageNo.ToString(),
                 ["pageSize"] = pageSize.ToString(),
                 ["searchCount"] = searchCount ? "true" : "false"
             };
-            if (!string.IsNullOrWhiteSpace(inspectNo)) p["inspectNo"] = inspectNo!.Trim();
-            if (!string.IsNullOrWhiteSpace(createdTimeBegin)) p["planInspectTimeBegin"] = createdTimeBegin!;
-            if (!string.IsNullOrWhiteSpace(createdTimeEnd)) p["planInspectTimeEnd"] = createdTimeEnd!;
-            if (!string.IsNullOrWhiteSpace(inspectStatus)) p["inspectStatus"] = inspectStatus!;
+            if (!string.IsNullOrWhiteSpace(inspectNo)) p["inspectNo"] = inspectNo.Trim();
+            if (!string.IsNullOrWhiteSpace(createdTimeBegin)) p["planInspectTimeBegin"] = createdTimeBegin;
+            if (!string.IsNullOrWhiteSpace(createdTimeEnd)) p["planInspectTimeEnd"] = createdTimeEnd;
+            if (!string.IsNullOrWhiteSpace(inspectStatus)) p["inspectStatus"] = inspectStatus;
 
-            // 2) 拼接 URL（与现有工具方法保持一致）
-            var url = _pageEndpoint + "?" + BuildQuery(p);                  // BuildQuery 会做 UrlEncode
-            var full = BuildFullUrl(_http.BaseAddress, url);
-
-            // 3) 发送 GET
-            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var res = await _http.SendAsync(req, ct);
-            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
-
-            // 4) 非 2xx -> 返回一个失败的包装
-            if (!res.IsSuccessStatusCode)
-            {
-                return new PageResponeResult<InspectionRecordDto>
-                {
-                    success = false,
-                    code = (int)res.StatusCode,
-                    message = $"HTTP {(int)res.StatusCode}"
-                };
-            }
-
-            // 5) 反序列化（大小写不敏感）
-            return JsonSerializer.Deserialize<PageResponeResult<InspectionRecordDto>>(
-                       json,
-                       new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                   ) ?? new PageResponeResult<InspectionRecordDto> { success = false, message = "Empty body" };
+            return await GetPageAsync<InspectionRecordDto>(_pageEndpoint, p, ct);
         }
 
-
+        // ---------- 巡检字典 ----------
         public async Task<DictInspection> GetInspectionDictsAsync(CancellationToken ct = default)
         {
-            var full = BuildFullUrl(_http.BaseAddress, _dictEndpoint);
+            var all = await GetDictFieldsAsync(_dictEndpoint, ct);
 
-            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var res = await _http.SendAsync(req, ct);
-            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
-
-            var dto = JsonSerializer.Deserialize<DictResponse>(json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            var all = dto?.result ?? new List<DictField>();
             var inspectStatus = all.FirstOrDefault(f =>
-       string.Equals(f.field, "inspectStatus", StringComparison.OrdinalIgnoreCase))
-       ?.dictItems ?? new List<DictItem>();
+                string.Equals(f.field, "inspectStatus", StringComparison.OrdinalIgnoreCase))
+                ?.dictItems ?? new List<DictItem>();
 
-            return new DictInspection { InspectStatus = inspectStatus };
-        }
-        // Services/InspectionApi.cs 追加方法（沿用你 BuildQuery/BuildFullUrl 风格）
-        public async Task<ApiResp<InspectionDetailDto>?> GetDetailAsync(string id, CancellationToken ct = default)
-        {
-            var url = _detailsEndpoint + "?id=" + Uri.EscapeDataString(id ?? "");
-            var full = BuildFullUrl(_http.BaseAddress, url);
-            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var res = await _http.SendAsync(req, ct);
-            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
-
-            if (!res.IsSuccessStatusCode)
+            return new DictInspection
             {
-                return new ApiResp<InspectionDetailDto>
-                {
-                    success = false,
-                    code = (int)res.StatusCode,
-                    message = $"HTTP {(int)res.StatusCode}"
-                };
-            }
-
-            return JsonSerializer.Deserialize<ApiResp<InspectionDetailDto>>(
-                json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            ) ?? new ApiResp<InspectionDetailDto> { success = false, message = "Empty body" };
+                InspectStatus = inspectStatus
+            };
         }
 
-        
-        public async Task<ApiResp<List<InspectWorkflowNode>>> GetWorkflowAsync(string id, CancellationToken ct = default)
-        {
-            var url = BuildFullUrl(_http.BaseAddress, _workflowPath) + "?id=" + Uri.EscapeDataString(id ?? "");
-            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url, UriKind.Absolute));
-            using var res = await _http.SendAsync(req, ct);
-            var body = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+        // ---------- 巡检详情 ----------
+        public Task<ApiResp<InspectDetailDto>?> GetDetailAsync(string id, CancellationToken ct = default)
+            => GetApiRespByIdAsync<InspectDetailDto>(_detailsEndpoint, id, ct);
 
-            if (!res.IsSuccessStatusCode)
-                return new ApiResp<List<InspectWorkflowNode>>
-                {
-                    success = false,
-                    code = (int)res.StatusCode,
-                    message = $"HTTP {(int)res.StatusCode}"
-                };
+        // ---------- 巡检流程 ----------
+        public Task<ApiResp<List<InspectWorkflowNode>>> GetWorkflowAsync(string id, CancellationToken ct = default)
+            => GetApiRespByIdAsync<List<InspectWorkflowNode>>(_workflowPath, id, ct)!;
 
-            return System.Text.Json.JsonSerializer.Deserialize<ApiResp<List<InspectWorkflowNode>>>(
-                       body,
-                       new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                   ) ?? new ApiResp<List<InspectWorkflowNode>> { success = false, message = "Empty body" };
-        }
-
-
+        // ---------- 保养列表 ----------
         public async Task<PageResponeResult<MaintenanceRecordDto>> MainPageQueryAsync(
              int pageNo,
              int pageSize,
@@ -291,115 +370,49 @@ namespace IndustrialControlMAUI.Services
              bool searchCount,
              CancellationToken ct = default)
         {
-            // 1) 组装查询参数（仅在有值时加入）
             var p = new Dictionary<string, string>
             {
                 ["pageNo"] = pageNo.ToString(),
                 ["pageSize"] = pageSize.ToString(),
                 ["searchCount"] = searchCount ? "true" : "false"
             };
-            if (!string.IsNullOrWhiteSpace(upkeepNo)) p["upkeepNo"] = upkeepNo!.Trim();
-            if (!string.IsNullOrWhiteSpace(planUpkeepTimeBegin)) p["planUpkeepTimeBegin"] = planUpkeepTimeBegin!;
-            if (!string.IsNullOrWhiteSpace(planUpkeepTimeEnd)) p["planUpkeepTimeEnd"] = planUpkeepTimeEnd!;
-            if (!string.IsNullOrWhiteSpace(upkeepStatus)) p["upkeepStatus"] = upkeepStatus!;
+            if (!string.IsNullOrWhiteSpace(upkeepNo)) p["upkeepNo"] = upkeepNo.Trim();
+            if (!string.IsNullOrWhiteSpace(planUpkeepTimeBegin)) p["planUpkeepTimeBegin"] = planUpkeepTimeBegin;
+            if (!string.IsNullOrWhiteSpace(planUpkeepTimeEnd)) p["planUpkeepTimeEnd"] = planUpkeepTimeEnd;
+            if (!string.IsNullOrWhiteSpace(upkeepStatus)) p["upkeepStatus"] = upkeepStatus;
 
-            // 2) 拼接 URL（与现有工具方法保持一致）
-            var url = _mainPageEndpoint + "?" + BuildQuery(p);                  // BuildQuery 会做 UrlEncode
-            var full = BuildFullUrl(_http.BaseAddress, url);
-
-            // 3) 发送 GET
-            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var res = await _http.SendAsync(req, ct);
-            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
-
-            // 4) 非 2xx -> 返回一个失败的包装
-            if (!res.IsSuccessStatusCode)
-            {
-                return new PageResponeResult<MaintenanceRecordDto>
-                {
-                    success = false,
-                    code = (int)res.StatusCode,
-                    message = $"HTTP {(int)res.StatusCode}"
-                };
-            }
-
-            // 5) 反序列化（大小写不敏感）
-            return JsonSerializer.Deserialize<PageResponeResult<MaintenanceRecordDto>>(
-                       json,
-                       new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                   ) ?? new PageResponeResult<MaintenanceRecordDto> { success = false, message = "Empty body" };
+            return await GetPageAsync<MaintenanceRecordDto>(_mainPageEndpoint, p, ct);
         }
 
-
+        // ---------- 保养字典 ----------
         public async Task<DictMaintenance> GetMainDictsAsync(CancellationToken ct = default)
         {
-            var full = BuildFullUrl(_http.BaseAddress, _dictMainEndpoint);
+            var all = await GetDictFieldsAsync(_dictMainEndpoint, ct);
 
-            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var res = await _http.SendAsync(req, ct);
-            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
-
-            var dto = JsonSerializer.Deserialize<DictResponse>(json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            var all = dto?.result ?? new List<DictField>();
             var maintenanceStatus = all.FirstOrDefault(f =>
-       string.Equals(f.field, "upkeepStatus", StringComparison.OrdinalIgnoreCase))
-       ?.dictItems ?? new List<DictItem>();
-            var maintenancResult = all.FirstOrDefault(f =>
-       string.Equals(f.field, "upkeepResult", StringComparison.OrdinalIgnoreCase))
-       ?.dictItems ?? new List<DictItem>();
+                string.Equals(f.field, "upkeepStatus", StringComparison.OrdinalIgnoreCase))
+                ?.dictItems ?? new List<DictItem>();
 
-            return new DictMaintenance { MaintenanceStatus = maintenanceStatus,MaintenanceResult = maintenancResult };
-        }
+            var maintenanceResult = all.FirstOrDefault(f =>
+                string.Equals(f.field, "upkeepResult", StringComparison.OrdinalIgnoreCase))
+                ?.dictItems ?? new List<DictItem>();
 
-
-        public async Task<ApiResp<MaintenanceDetailDto>?> GetMainDetailAsync(string id, CancellationToken ct = default)
-        {
-            var url = _mainDetailsEndpoint + "?id=" + Uri.EscapeDataString(id ?? "");
-            var full = BuildFullUrl(_http.BaseAddress, url);
-            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var res = await _http.SendAsync(req, ct);
-            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
-
-            if (!res.IsSuccessStatusCode)
+            return new DictMaintenance
             {
-                return new ApiResp<MaintenanceDetailDto>
-                {
-                    success = false,
-                    code = (int)res.StatusCode,
-                    message = $"HTTP {(int)res.StatusCode}"
-                };
-            }
-
-            return JsonSerializer.Deserialize<ApiResp<MaintenanceDetailDto>>(
-                json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            ) ?? new ApiResp<MaintenanceDetailDto> { success = false, message = "Empty body" };
+                MaintenanceStatus = maintenanceStatus,
+                MaintenanceResult = maintenanceResult
+            };
         }
 
+        // ---------- 保养详情 ----------
+        public Task<ApiResp<MaintenanceDetailDto>?> GetMainDetailAsync(string id, CancellationToken ct = default)
+            => GetApiRespByIdAsync<MaintenanceDetailDto>(_mainDetailsEndpoint, id, ct);
 
-        public async Task<ApiResp<List<MaintenanceWorkflowNode>>> GetMainWorkflowAsync(string id, CancellationToken ct = default)
-        {
-            var url = BuildFullUrl(_http.BaseAddress, _mainWorkflowPath) + "?id=" + Uri.EscapeDataString(id ?? "");
-            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url, UriKind.Absolute));
-            using var res = await _http.SendAsync(req, ct);
-            var body = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+        // ---------- 保养流程 ----------
+        public Task<ApiResp<List<MaintenanceWorkflowNode>>> GetMainWorkflowAsync(string id, CancellationToken ct = default)
+            => GetApiRespByIdAsync<List<MaintenanceWorkflowNode>>(_mainWorkflowPath, id, ct)!;
 
-            if (!res.IsSuccessStatusCode)
-                return new ApiResp<List<MaintenanceWorkflowNode>>
-                {
-                    success = false,
-                    code = (int)res.StatusCode,
-                    message = $"HTTP {(int)res.StatusCode}"
-                };
-
-            return System.Text.Json.JsonSerializer.Deserialize<ApiResp<List<MaintenanceWorkflowNode>>>(
-                       body,
-                       new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                   ) ?? new ApiResp<List<MaintenanceWorkflowNode>> { success = false, message = "Empty body" };
-        }
-
+        // ---------- 维修列表 ----------
         public async Task<PageResponeResult<RepairRecordDto>> RepairPageQueryAsync(
            int pageNo,
            int pageSize,
@@ -410,116 +423,90 @@ namespace IndustrialControlMAUI.Services
            bool searchCount,
            CancellationToken ct = default)
         {
-            // 1) 组装查询参数（仅在有值时加入）
             var p = new Dictionary<string, string>
             {
                 ["pageNo"] = pageNo.ToString(),
                 ["pageSize"] = pageSize.ToString(),
                 ["searchCount"] = searchCount ? "true" : "false"
             };
-            if (!string.IsNullOrWhiteSpace(workOrderNo)) p["workOrderNo"] = workOrderNo!.Trim();
-            if (!string.IsNullOrWhiteSpace(submitTimeBegin)) p["submitTimeBegin"] = submitTimeBegin!;
-            if (!string.IsNullOrWhiteSpace(submitTimeEnd)) p["submitTimeEnd"] = submitTimeEnd!;
-            if (!string.IsNullOrWhiteSpace(auditStatus)) p["auditStatus"] = auditStatus!;
+            if (!string.IsNullOrWhiteSpace(workOrderNo)) p["workOrderNo"] = workOrderNo.Trim();
+            if (!string.IsNullOrWhiteSpace(submitTimeBegin)) p["submitTimeBegin"] = submitTimeBegin;
+            if (!string.IsNullOrWhiteSpace(submitTimeEnd)) p["submitTimeEnd"] = submitTimeEnd;
+            if (!string.IsNullOrWhiteSpace(auditStatus)) p["auditStatus"] = auditStatus;
 
-            // 2) 拼接 URL（与现有工具方法保持一致）
-            var url = _repPageEndpoint + "?" + BuildQuery(p);                  // BuildQuery 会做 UrlEncode
-            var full = BuildFullUrl(_http.BaseAddress, url);
-
-            // 3) 发送 GET
-            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var res = await _http.SendAsync(req, ct);
-            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
-
-            // 4) 非 2xx -> 返回一个失败的包装
-            if (!res.IsSuccessStatusCode)
-            {
-                return new PageResponeResult<RepairRecordDto>
-                {
-                    success = false,
-                    code = (int)res.StatusCode,
-                    message = $"HTTP {(int)res.StatusCode}"
-                };
-            }
-
-            // 5) 反序列化（大小写不敏感）
-            return JsonSerializer.Deserialize<PageResponeResult<RepairRecordDto>>(
-                       json,
-                       new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                   ) ?? new PageResponeResult<RepairRecordDto> { success = false, message = "Empty body" };
+            return await GetPageAsync<RepairRecordDto>(_repPageEndpoint, p, ct);
         }
 
-
+        // ---------- 维修字典 ----------
         public async Task<DictRepair> GetRepairDictsAsync(CancellationToken ct = default)
         {
-            var full = BuildFullUrl(_http.BaseAddress, _dictRepEndpoint);
+            var all = await GetDictFieldsAsync(_dictRepEndpoint, ct);
 
-            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var res = await _http.SendAsync(req, ct);
-            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
-
-            var dto = JsonSerializer.Deserialize<DictResponse>(json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            var all = dto?.result ?? new List<DictField>();
             var auditStatus = all.FirstOrDefault(f =>
-       string.Equals(f.field, "auditStatus", StringComparison.OrdinalIgnoreCase))
-       ?.dictItems ?? new List<DictItem>();
+                string.Equals(f.field, "auditStatus", StringComparison.OrdinalIgnoreCase))
+                ?.dictItems ?? new List<DictItem>();
+
             var urgent = all.FirstOrDefault(f =>
-      string.Equals(f.field, "urgent", StringComparison.OrdinalIgnoreCase))
-      ?.dictItems ?? new List<DictItem>();
+                string.Equals(f.field, "urgent", StringComparison.OrdinalIgnoreCase))
+                ?.dictItems ?? new List<DictItem>();
+
             var maintainType = all.FirstOrDefault(f =>
-      string.Equals(f.field, "maintainType", StringComparison.OrdinalIgnoreCase))
-      ?.dictItems ?? new List<DictItem>();
+                string.Equals(f.field, "maintainType", StringComparison.OrdinalIgnoreCase))
+                ?.dictItems ?? new List<DictItem>();
 
-            return new DictRepair { AuditStatus = auditStatus, Urgent = urgent , MaintainType = maintainType };
-        }
-
-
-        public async Task<ApiResp<RepairDetailDto>?> GetRepairDetailAsync(string id, CancellationToken ct = default)
-        {
-            var url = _repDetailsEndpoint + "?id=" + Uri.EscapeDataString(id ?? "");
-            var full = BuildFullUrl(_http.BaseAddress, url);
-            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
-            using var res = await _http.SendAsync(req, ct);
-            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
-
-            if (!res.IsSuccessStatusCode)
+            return new DictRepair
             {
-                return new ApiResp<RepairDetailDto>
-                {
-                    success = false,
-                    code = (int)res.StatusCode,
-                    message = $"HTTP {(int)res.StatusCode}"
-                };
-            }
-
-            return JsonSerializer.Deserialize<ApiResp<RepairDetailDto>>(
-                json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            ) ?? new ApiResp<RepairDetailDto> { success = false, message = "Empty body" };
+                AuditStatus = auditStatus,
+                Urgent = urgent,
+                MaintainType = maintainType
+            };
         }
 
+        // ---------- 维修详情 ----------
+        public Task<ApiResp<RepairDetailDto>?> GetRepairDetailAsync(string id, CancellationToken ct = default)
+            => GetApiRespByIdAsync<RepairDetailDto>(_repDetailsEndpoint, id, ct);
 
-        public async Task<ApiResp<List<RepairWorkflowNode>>> GetRepairWorkflowAsync(string id, CancellationToken ct = default)
+        // ---------- 维修流程 ----------
+        public Task<ApiResp<List<RepairWorkflowNode>>> GetRepairWorkflowAsync(string id, CancellationToken ct = default)
+            => GetApiRespByIdAsync<List<RepairWorkflowNode>>(_repWorkflowPath, id, ct)!;
+
+        // ---------- 巡检执行保存 ----------
+        public Task<ApiResp<bool?>> ExecuteSaveAsync(InspectDetailDto payload, CancellationToken ct = default)
+            => PostJsonAsync<InspectDetailDto, bool?>(_executeSavePath, payload, ct)!;
+
+        // ---------- 巡检执行完成 ----------
+        public Task<ApiResp<bool?>> ExecuteCompleteInspectionAsync(InspectDetailDto payload, CancellationToken ct = default)
+            => PostJsonAsync<InspectDetailDto, bool?>(_executeCompletePath, payload, ct)!;
+
+        // ---------- 维护执行保存 ----------
+        public Task<ApiResp<bool?>> ExecuteMainSaveAsync(MainDetailDto payload, CancellationToken ct = default)
+            => PostJsonAsync<MainDetailDto, bool?>(_mainexecuteSavePath, payload, ct)!;
+
+        // ---------- 维护执行完成 ----------
+        public Task<ApiResp<bool?>> ExecuteMainCompleteInspectionAsync(MainDetailDto payload, CancellationToken ct = default)
+            => PostJsonAsync<MainDetailDto, bool?>(_mainexecuteCompletePath, payload, ct)!;
+
+        // ---------- 维修执行保存 ----------
+        public Task<ApiResp<bool?>> ExecuteRepairSaveAsync(RepairParaDetailDto payload, CancellationToken ct = default)
+            => PostJsonAsync<RepairParaDetailDto, bool?>(_repexecuteSavePath, payload, ct)!;
+
+        // ---------- 维修执行完成 ----------
+        public Task<ApiResp<bool?>> ExecuteRepairCompleteInspectionAsync(RepairParaDetailDto payload, CancellationToken ct = default)
+            => PostJsonAsync<RepairParaDetailDto, bool?>(_repexecuteCompletePath, payload, ct)!;
+
+        public async Task<ApiResp<bool>> DeleteInspectAttachmentAsync(string id, CancellationToken ct = default)
         {
-            var url = BuildFullUrl(_http.BaseAddress, _repWorkflowPath) + "?id=" + Uri.EscapeDataString(id ?? "");
-            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url, UriKind.Absolute));
-            using var res = await _http.SendAsync(req, ct);
-            var body = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
-
-            if (!res.IsSuccessStatusCode)
-                return new ApiResp<List<RepairWorkflowNode>>
-                {
-                    success = false,
-                    code = (int)res.StatusCode,
-                    message = $"HTTP {(int)res.StatusCode}"
-                };
-
-            return System.Text.Json.JsonSerializer.Deserialize<ApiResp<List<RepairWorkflowNode>>>(
-                       body,
-                       new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                   ) ?? new ApiResp<List<RepairWorkflowNode>> { success = false, message = "Empty body" };
+            return await _attachmentApi.DeleteAttachmentAsync(id, _deleteAttPath, ct);
+        }
+        public async Task<ApiResp<bool>> DeleteMainAttachmentAsync(string id, CancellationToken ct = default)
+        {
+            return await _attachmentApi.DeleteAttachmentAsync(id, _maindeleteAttPath, ct);
+        }
+        public async Task<ApiResp<bool>> DeleteRepairAttachmentAsync(string id, CancellationToken ct = default)
+        {
+            return await _attachmentApi.DeleteAttachmentAsync(id, _repdeleteAttPath, ct);
         }
     }
+
 }
+
