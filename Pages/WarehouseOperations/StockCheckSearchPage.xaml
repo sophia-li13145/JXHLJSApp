@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="IndustrialControlMAUI.Pages.StockCheckSearchPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Name="Page"
+    Shell.NavBarIsVisible="True"
+    Title="库存盘点">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="12" Padding="12">
+            <!-- 查询区域 -->
+            <Grid ColumnDefinitions="*,40,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+                <Entry x:Name="OrderEntry"
+           Grid.Row="0" Grid.Column="0"
+           Placeholder="请扫描输入盘点单"
+           Text="{Binding SearchCheckNo}" />
+                <ImageButton Grid.Row="0" Grid.Column="1"
+                Source="scan_button.png"      
+                WidthRequest="36"
+                 HeightRequest="36"
+                 BackgroundColor="Transparent"
+                 Padding="0"
+                 Aspect="AspectFit"
+                 Clicked="OnScanClicked"  />
+                <Button Grid.Row="0" Grid.Column="2"
+            Text="查询"
+            Command="{Binding SearchCommand}" />
+
+                <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="8">
+                    <Label Grid.Column="0" Text="开始：" VerticalTextAlignment="Center"/>
+                    <DatePicker Grid.Column="1" Date="{Binding StartDate}" />
+                    <Label Grid.Column="2" Text="结束：" VerticalTextAlignment="Center"/>
+                    <DatePicker Grid.Column="3" Date="{Binding EndDate}" />
+                </Grid>
+            </Grid>
+            <!-- 灵活盘点按钮 -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="1"
+                        Text="灵活盘点"
+                        Command="{Binding OpenFlexibleCheckCommand}" />
+            </Grid>
+
+            <!-- 结果列表 -->
+            <CollectionView ItemsSource="{Binding Orders}"
+                            SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Padding="10"
+                               HasShadow="False"
+                               BackgroundColor="White"
+                               BorderColor="#E5E7EB"
+                               CornerRadius="6"
+                               Margin="0,6">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer
+        Command="{Binding BindingContext.GoFlexibleCommand, Source={x:Reference Page}}"
+        CommandParameter="{Binding .}" />
+                            </Frame.GestureRecognizers>
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto"
+                                  ColumnDefinitions="90,*"
+                                  RowSpacing="6">
+
+                                <Label Grid.Row="0" Grid.Column="0"
+                                       Text="盘点单号：" FontAttributes="Bold" />
+                                <Label Grid.Row="0" Grid.Column="1"
+                                       Text="{Binding checkNo}" />
+
+                                <Label Grid.Row="1" Grid.Column="0"
+                                       Text="仓库名称：" FontAttributes="Bold" />
+                                <Label Grid.Row="1" Grid.Column="1"
+                                       Text="{Binding warehouseName}" />
+
+                                <Label Grid.Row="2" Grid.Column="0"
+                                       Text="状态：" FontAttributes="Bold" />
+                                <Label Grid.Row="2" Grid.Column="1"
+                                       Text="{Binding AuditStatusText}" />
+
+                                <Label Grid.Row="3" Grid.Column="0"
+                                       Text="创建日期：" FontAttributes="Bold" />
+                                <Label Grid.Row="3" Grid.Column="1"
+                                       Text="{Binding createdTime}" />
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

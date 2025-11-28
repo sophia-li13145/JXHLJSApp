@@ -176,6 +176,9 @@
 		<Compile Update="Pages\Quality\ProcessQualityDetailPage.xaml.cs">
 		  <DependentUpon>ProcessQualityDetailPage.xaml</DependentUpon>
 		</Compile>
+		<Compile Update="Pages\WarehouseOperations\InventorySearchPage.xaml.cs">
+		  <DependentUpon>InventorySearchPage.xaml</DependentUpon>
+		</Compile>
 		<Compile Update="Pages\WarehouseOperations\OutboundFinishedSearchPage.xaml.cs">
 			<DependentUpon>OutboundFinishedSearchPage.xaml</DependentUpon>
 		</Compile>
@@ -293,8 +296,14 @@
 		<MauiXaml Update="Pages\HomePage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
+		<MauiXaml Update="Pages\WarehouseOperations\FlexibleStockCheckPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
 		<MauiXaml Update="Pages\WarehouseOperations\InboundMaterialPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\WarehouseOperations\InventorySearchPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Pages\WarehouseOperations\OutboundFinishedSearchPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
@@ -321,6 +330,9 @@
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Pages\ProductionOperations\MaterialInputPopupPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\WarehouseOperations\StockCheckSearchPage.xaml">
 		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 	</ItemGroup>

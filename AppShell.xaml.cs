@@ -1,4 +1,6 @@
-﻿namespace IndustrialControlMAUI;
+﻿using IndustrialControlMAUI.Pages;
+
+namespace IndustrialControlMAUI;
 
 public partial class AppShell : Shell
 {
@@ -51,6 +53,10 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(nameof(Pages.ExceptionSubmissionPage), typeof(Pages.ExceptionSubmissionPage));
         Routing.RegisterRoute(nameof(Pages.ExceptionSubmissionSearchPage), typeof(Pages.ExceptionSubmissionSearchPage));
         Routing.RegisterRoute(nameof(Pages.EditExceptionSubmissionPage), typeof(Pages.EditExceptionSubmissionPage));
+        Routing.RegisterRoute(nameof(Pages.InventorySearchPage), typeof(Pages.InventorySearchPage));
+        Routing.RegisterRoute(nameof(FlexibleStockCheckPage), typeof(FlexibleStockCheckPage));
+        Routing.RegisterRoute(nameof(StockCheckSearchPage), typeof(StockCheckSearchPage));
+
     }
 
     /// <summary>根据是否登录重建 TabBar 并跳转到对应根。</summary>

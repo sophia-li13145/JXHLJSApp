@@ -133,7 +133,8 @@ namespace IndustrialControlMAUI.ViewModels
                         CreateDate = createdAt?.ToString("yyyy-MM-dd") ?? (r.createdTime ?? ""),
                         BomCode = r.bomCode,                 // e.g. "BOM00000006"
                         RouteName = r.routeName,             // e.g. "午餐肉罐头测试工序调整"
-                        WorkShopName = r.workShopName        // e.g. "制造二组"
+                        WorkShopName = r.workShopName,       // e.g. "制造二组"
+                        PlanStartText = r.schemeStartDate
                     });
                 }
             }
@@ -175,24 +176,7 @@ namespace IndustrialControlMAUI.ViewModels
         private async Task GoExecuteAsync(WorkOrderDto? item)
         {
             if (item is null) return;
-
-            // 基础信息列表（显示在执行页“工单基础信息表格”）
-            var baseInfos = new List<BaseInfoItem>
-    {
-        new() { Key = "工单编号",   Value = item.OrderNo },
-        new() { Key = "状态",       Value = item.Status },
-        new() { Key = "优先级",     Value = item.Urgent },
-        new() { Key = "生产数量",   Value = item.CurQty?.ToString() ?? "" },
-        new() { Key = "创建日期",   Value = item.CreateDate },
-        new() { Key = "物料编码",   Value = item.MaterialCode },
-        new() { Key = "物料名称",   Value = item.MaterialName },
-        new() { Key = "产线",       Value = item.LineName },
-        new() { Key = "BOM编号",    Value = item.BomCode ?? "" },
-        new() { Key = "工艺路线",   Value = item.RouteName ?? "" },
-        new() { Key = "车间",       Value = item.WorkShopName ?? "" },
-    };
-
-            var baseInfoJson = JsonSerializer.Serialize(baseInfos);
+            var baseInfoJson = JsonSerializer.Serialize(item);
 
             // 跳到执行页（把 orderId/orderNo/baseInfo 都带上）
             await Shell.Current.GoToAsync(nameof(Pages.MoldOutboundExecutePage), new Dictionary<string, object?>

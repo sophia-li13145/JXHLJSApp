@@ -7,10 +7,9 @@ namespace IndustrialControlMAUI.Pages;
 
 public partial class WorkOrderSearchPage : ContentPage
 {
-    private readonly ScanService _scanSvc;
     private readonly WorkOrderSearchViewModel _vm;
 
-    public WorkOrderSearchPage(WorkOrderSearchViewModel vm, ScanService scanSvc)
+    public WorkOrderSearchPage(WorkOrderSearchViewModel vm)
     {
         InitializeComponent();
         BindingContext = vm;
@@ -55,31 +54,5 @@ public partial class WorkOrderSearchPage : ContentPage
     }
 
 
-    // 点整张卡片跳转（推荐）
 
-    private async void OnOrderTapped(object sender, TappedEventArgs e)
-    {
-        try
-        {
-            if (e.Parameter is not WorkOrderDto item) return;
-
-            var json = JsonSerializer.Serialize(item);
-
-            await Shell.Current.GoToAsync(
-                nameof(MoldOutboundExecutePage),
-                new Dictionary<string, object?>
-                {
-                    // 执行页用 IQueryAttributable 接收：key 必须叫 "orderDto"
-                    ["orderDto"] = json
-                });
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlert("导航失败", ex.Message, "确定");
-        }
-    }
-
-
-    private async void OnScanHintClicked(object sender, EventArgs e)
-            => await DisplayAlert("提示", "此按钮预留摄像头扫码；硬件扫描直接扣扳机。", "确定");
 }

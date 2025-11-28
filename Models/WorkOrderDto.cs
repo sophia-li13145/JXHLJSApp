@@ -24,6 +24,7 @@ public class WorkOrderDto
     public string? BomCode { get; set; }
     public string? RouteName { get; set; }
     public string? WorkShopName { get; set; }
+    public string? PlanStartText { get; set; }
 }
 public enum TaskRunState { NotStarted, Running, Paused, Finished }
 public class WorkOrderSummary
@@ -162,6 +163,7 @@ public class WorkOrderRecord
     public string? commitedTime { get; set; }
     public string? bomCode { get; set; }
     public string? routeName { get; set; }
+
 }
 
 public class DictResponse
@@ -203,9 +205,9 @@ public sealed class WorkflowItem
 
 public sealed class PageResp<T>
 {
-    public bool success { get; set; }
+    public bool? success { get; set; }
     public string? message { get; set; }
-    public int code { get; set; }
+    public int? code { get; set; }
     public PageResult<T>? result { get; set; }
 }
 
@@ -555,4 +557,257 @@ public class EditWorkProcessTaskMaterialInputReq
     public string? memo { get; set; }                     // 备注
     public decimal? qty { get; set; }                     // 数量
     public string? rawMaterialProductionDate { get; set; } // 原料生产日期（"yyyy-MM-dd" 或 "yyyy-MM-dd HH:mm:ss"）
+}
+public class WorkOrderDomainResp
+{
+    public bool success { get; set; }
+    public string? message { get; set; }
+    public int code { get; set; }
+    public WorkOrderDomainResult? result { get; set; }
+}
+
+public class WorkOrderDomainResult
+{
+    public string? id { get; set; }
+    public List<PlanChildProductSchemeDetail> planChildProductSchemeDetailList { get; set; } = new();
+}
+
+public class PlanChildProductSchemeDetail
+{
+    public string? id { get; set; }
+    public string? schemeNo { get; set; }
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
+    public PlanProcessRoute? planProcessRoute { get; set; }
+}
+
+public class PlanProcessRoute
+{
+    public string? routeCode { get; set; }
+    public string? routeName { get; set; }
+    public List<RouteDetail> routeDetailList { get; set; } = new();
+}
+
+public class RouteDetail
+{
+    public string? id { get; set; }
+    public string? processCode { get; set; }
+    public string? processName { get; set; }
+    public int? sortNumber { get; set; }
+}
+/// <summary>
+/// 库存明细记录（对应 /pda/wmsInstock/pageQuery 返回的 records）
+/// </summary>
+public class InventoryRecord
+{
+    public int index { get; set; }
+    public string? id { get; set; }
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
+    public string? factoryCode { get; set; }
+    public string? factoryName { get; set; }
+
+    public string? spec { get; set; }
+    public string? model { get; set; }
+
+    public string? warehouseCode { get; set; }
+    public string? warehouseName { get; set; }
+    public string? location { get; set; }
+
+    public string? stockBatch { get; set; }
+    public string? productionBatch { get; set; }
+
+    public string? supplierCode { get; set; }
+    public string? supplierName { get; set; }
+    public string? manufacturerName { get; set; }
+
+    public string? productionDate { get; set; } // 或 DateTime?，看后端
+    public int? shelfLife { get; set; }         // ★ 必须可空
+    public string? shelfLifeUnit { get; set; }
+
+    public decimal instockQty { get; set; }
+    public decimal pendingQuantity { get; set; }
+    public decimal availableQuantity { get; set; }
+
+    public decimal? safeStock { get; set; }     // ★ 必须可空
+
+    public string? unit { get; set; }
+
+    public bool isDeliverInspect { get; set; }
+    public string? inspectResult { get; set; }
+
+    public string? dataBelong { get; set; }
+    public string? consignor { get; set; }
+}
+
+public class StockCheckOrderItem
+{
+    public string? id { get; set; }
+    public string? checkNo { get; set; }
+    public string? warehouseCode { get; set; }
+    public string? warehouseName { get; set; }
+    public string? auditStatus { get; set; }
+    public string? createdTime { get; set; }
+    public string? modifiedTime { get; set; }
+    public string? memo { get; set; }
+    public string? creator { get; set; }
+
+    // UI 用的状态名称
+    public string AuditStatusText =>
+        auditStatus switch
+        {
+            "0" => "待执行",
+            "1" => "执行中",
+            "2" => "已完成",
+            _ => "未知"
+        };
+}
+/// <summary>
+/// 库存盘点明细
+/// 对应 /pda/wmsInstockCheck/pageQueryDetails 的 records
+/// </summary>
+public class StockCheckDetailItem
+{
+    public bool IsSelected { get; set; }
+
+    public string? id { get; set; }
+
+    public string? checkNo { get; set; }
+
+    public string? location { get; set; }
+
+    public string? stockBatch { get; set; }
+
+    public string? materialCode { get; set; }
+
+    public string? materialName { get; set; }
+
+    public string? spec { get; set; }
+
+    public string? model { get; set; }
+
+    public decimal? instockQty { get; set; }
+
+    public decimal? checkQty { get; set; }
+
+    public decimal? profitLossQty { get; set; }
+
+    public string? unit { get; set; }
+
+    public string? memo { get; set; }
+
+    /// <summary>列表序号（前端自己编号）</summary>
+    public int index { get; set; }
+
+    /// <summary>是否有差异，用于卡片变绿</summary>
+    public bool HasDiff => profitLossQty != 0;
+    public string? dataBelong { get; set; }   // 后端字段，有就映射上
+    public string? headerId { get; set; }     // 如果后端返回主表 id，可用这个；没有也没关系
+    public string? warehouseCode { get; set; }
+    public string? warehouseName { get; set; }
+    public string? productionBatch { get; set; }
+    public string? productionDate { get; set; }
+    public int? shelfLife { get; set; }
+    public string? shelfLifeUnit { get; set; }
+    public string? supplierCode { get; set; }
+    public string? supplierName { get; set; }
+    public string? materialClass { get; set; }
+    public string? materialClassName { get; set; }
+    public string? materialType { get; set; }
+    public string? materialTypeName { get; set; }
+    public string? manufacturerName { get; set; }
+    public string? consignor { get; set; }
+    public string? inspectResult { get; set; }
+    public bool? isDeliverInspect { get; set; }
+
+
+}
+
+/// <summary>
+/// 盘点保存请求体（对应 /pda/wmsInstockCheck/edit）
+/// </summary>
+public class StockCheckEditReq
+{
+    /// <summary>盘点单主表 id</summary>
+    public string? id { get; set; }
+
+    /// <summary>主表备注（可不填）</summary>
+    public string? memo { get; set; }
+
+    /// <summary>保存/提交 标记（具体值按后端约定，可为 null）</summary>
+    public string? saveOrHand { get; set; }
+
+    /// <summary>明细列表</summary>
+    public List<StockCheckEditDetailReq> wmsInstockCheckDetailList { get; set; } = new();
+}
+
+/// <summary>
+/// 盘点明细编辑项
+/// </summary>
+public class StockCheckEditDetailReq
+{
+    /// <summary>明细 id（必填）</summary>
+    public string? id { get; set; }
+
+    /// <summary>盘点数量</summary>
+    public decimal checkQty { get; set; }
+
+    /// <summary>盈亏数量 = 盘点数量 - 账存数量</summary>
+    public decimal? profitLossQty { get; set; }
+
+    /// <summary>数据归属（如果后端有要求就带上，没要求可以为 null）</summary>
+    public string? dataBelong { get; set; }
+
+    /// <summary>明细备注</summary>
+    public string? memo { get; set; }
+}
+
+/// <summary>
+/// 灵活盘点结存请求体（/pda/wmsInstockCheck/add）
+/// </summary>
+public class FlexibleStockCheckAddReq
+{
+    public string? memo { get; set; }
+    public string? saveOrHand { get; set; }
+    public string? warehouseCode { get; set; }
+    public string? warehouseName { get; set; }
+
+    public List<FlexibleStockCheckAddDetailReq> wmsInstockCheckDetailList { get; set; }
+        = new();
+}
+
+/// <summary>
+/// 灵活盘点结存明细
+/// 字段基本照接口示例来，模型里没有的字段可以删掉
+/// </summary>
+public class FlexibleStockCheckAddDetailReq
+{
+    public decimal? checkQty { get; set; }
+    public string? consignor { get; set; }
+    public string? dataBelong { get; set; }
+    public string? inspectResult { get; set; }
+    public decimal? instockQty { get; set; }
+    public bool? isDeliverInspect { get; set; }
+    public string? location { get; set; }
+    public string? manufacturerName { get; set; }
+    public string? materialClass { get; set; }
+    public string? materialClassName { get; set; }
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
+    public string? materialType { get; set; }
+    public string? materialTypeName { get; set; }
+    public string? memo { get; set; }
+    public string? model { get; set; }
+    public string? productionBatch { get; set; }
+    public string? productionDate { get; set; }
+    public decimal? profitLossQty { get; set; }
+    public int? shelfLife { get; set; }
+    public string? shelfLifeUnit { get; set; }
+    public string? spec { get; set; }
+    public string? stockBatch { get; set; }
+    public string? supplierCode { get; set; }
+    public string? supplierName { get; set; }
+    public string? unit { get; set; }
+    public string? warehouseCode { get; set; }
+    public string? warehouseName { get; set; }
 }

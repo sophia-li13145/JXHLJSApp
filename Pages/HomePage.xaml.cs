@@ -14,10 +14,11 @@ namespace IndustrialControlMAUI.Pages
             => await Shell.Current.GoToAsync(nameof(InboundProductionSearchPage));
         async void GotoProcParam(object? s, TappedEventArgs e)
             => await Shell.Current.GoToAsync(nameof(InboundProductionPage));
-        async void GotoOrderQuery(object? s, TappedEventArgs e)
-            => await Shell.Current.GoToAsync(nameof(WorkOrderSearchPage));
         private async void OnInProcess(object? s, TappedEventArgs e)
             => await Shell.Current.GoToAsync(nameof(ProcessTaskSearchPage));             //工序任务执行
+        private async void OnWorkOrder(object? s, TappedEventArgs e)
+            => await Shell.Current.GoToAsync(nameof(WorkOrderSearchPage));
+        
 
         // —— 仓储作业（与你发来的函数一一对应）——
         private async void OnInMat(object? s, TappedEventArgs e)
@@ -32,6 +33,12 @@ namespace IndustrialControlMAUI.Pages
             => await Shell.Current.GoToAsync(nameof(OutboundMoldSearchPage));      // 模具出库管理
         private async void OnMoldIn(object? s, TappedEventArgs e)
             => await Shell.Current.GoToAsync(nameof(InboundMoldPage));             // 模具入库管理
+
+        private async void OnInventorySearch(object? s, TappedEventArgs e)
+           => await Shell.Current.GoToAsync(nameof(InventorySearchPage));             // 库存查询
+
+        private async void OnStockCheck(object? s, TappedEventArgs e)
+          => await Shell.Current.GoToAsync(nameof(StockCheckSearchPage));             // 库存盘点
 
         private async void OnIPQC(object? s, TappedEventArgs e)
             => await Shell.Current.GoToAsync(nameof(ProcessQualitySearchPage));      

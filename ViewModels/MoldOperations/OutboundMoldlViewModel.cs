@@ -138,9 +138,7 @@ namespace IndustrialControlMAUI.ViewModels
                 var ok = resp?.success == true && resp.result != null;
                 if (!ok)
                 {
-                    // 查询失败/无数据：占位行给出提示性状态
-                    ApplyRow(row, moldModel: "", outQty: 0, location: "未找到", whName: "", whCode: "");
-                    await Application.Current.MainPage.DisplayAlert("提示", $"未查询到该模具编码：{code}", "知道了");
+                    await Application.Current.MainPage.DisplayAlert("提示", resp.message, "知道了");
                     return;
                 }
 
@@ -154,7 +152,7 @@ namespace IndustrialControlMAUI.ViewModels
 
                 if (isOut)
                 {
-                    ApplyRow(row, moldModel, row.OutQty, location, warehouseName, warehouseCode);
+                   // ApplyRow(row, moldModel, row.OutQty, location, warehouseName, warehouseCode);
                     await Application.Current.MainPage.DisplayAlert("已出库", $"模具[{moldCode}] 已完成出库，不能重复出库。", "知道了");
                     return;
                 }
@@ -164,7 +162,6 @@ namespace IndustrialControlMAUI.ViewModels
                     string.Equals(g.ModelCode?.Trim(), moldModel, StringComparison.OrdinalIgnoreCase));
                 if (grp == null)
                 {
-                    ApplyRow(row, moldModel, row.OutQty, location, warehouseName, warehouseCode);
                     await Application.Current.MainPage.DisplayAlert("不在列表", $"模具型号 [{moldModel}] 不在当前工单的需求列表中。", "知道了");
                     return;
                 }

@@ -52,7 +52,7 @@
             <Label Text="仓储作业" Style="{StaticResource SectionTitle}"/>
 
             <Grid ColumnDefinitions="*,*"
-                  RowDefinitions="Auto,Auto,Auto"
+                  RowDefinitions="Auto,Auto,Auto,Auto"
                   Padding="8,0,8,24">
 
                 <!-- 物料入库 -->
@@ -169,6 +169,44 @@
                     </Frame.GestureRecognizers>
                 </Frame>
 
+                <!-- 库存查询 -->
+                <Frame Grid.Row="3" Grid.Column="0" Style="{StaticResource Card}">
+                    <VerticalStackLayout HorizontalOptions="Center">
+                        <Border HeightRequest="64" WidthRequest="64"
+                BackgroundColor="#9E9E9E"
+                StrokeShape="RoundRectangle 32">
+                            <Image Source="wrench_24_filled.svg"
+                   HeightRequest="28" WidthRequest="28"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"/>
+                        </Border>
+                        <Label Text="库存查询" FontSize="12" Margin="0,6,0,0"
+               HorizontalTextAlignment="Center" TextColor="#333"/>
+                    </VerticalStackLayout>
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnInventorySearch"/>
+                    </Frame.GestureRecognizers>
+                </Frame>
+
+                <!-- 库存盘点 -->
+                <Frame Grid.Row="3" Grid.Column="1" Style="{StaticResource Card}">
+                    <VerticalStackLayout HorizontalOptions="Center">
+                        <Border HeightRequest="64" WidthRequest="64"
+                BackgroundColor="#90A4AE"
+                StrokeShape="RoundRectangle 32">
+                            <Image Source="document_24_filled.svg"
+                   HeightRequest="28" WidthRequest="28"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"/>
+                        </Border>
+                        <Label Text="库存盘点" FontSize="12" Margin="0,6,0,0"
+               HorizontalTextAlignment="Center" TextColor="#333"/>
+                    </VerticalStackLayout>
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnStockCheck"/>
+                    </Frame.GestureRecognizers>
+                </Frame>
+
             </Grid>
             <!-- 仓储作业 -->
             <Label Text="生产作业" Style="{StaticResource SectionTitle}"/>
@@ -178,7 +216,7 @@
        Padding="8,0,8,24">
 
                 <!-- 工单查询 -->
-                <!--<Frame Grid.Row="0" Grid.Column="0" Style="{StaticResource Card}">
+                <Frame Grid.Row="0" Grid.Column="0" Style="{StaticResource Card}">
                     <VerticalStackLayout HorizontalOptions="Center">
                         <Border HeightRequest="64" WidthRequest="64"
                      BackgroundColor="#00ACC1"
@@ -191,8 +229,10 @@
                         <Label Text="工单查询 " FontSize="12" Margin="0,6,0,0"
                     HorizontalTextAlignment="Center" TextColor="#333"/>
                     </VerticalStackLayout>
-
-                </Frame>-->
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnWorkOrder"/>
+                    </Frame.GestureRecognizers>
+                </Frame>
 
                 <!-- 工序任务执行 -->
                 <Frame Grid.Row="0" Grid.Column="1" Style="{StaticResource Card}">

@@ -82,6 +82,9 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<ViewModels.ExceptionSubmissionSearchViewModel>();
             builder.Services.AddTransient<MeterSelectViewModel>();
             builder.Services.AddTransient<ManualReadingViewModel>();
+            builder.Services.AddTransient<InventorySearchViewModel>();
+            builder.Services.AddTransient<FlexibleStockCheckViewModel>();
+            builder.Services.AddTransient<StockCheckSearchViewModel>();
 
             // ===== 注册 Pages（DI 创建）=====
             builder.Services.AddTransient<Pages.LoginPage>();
@@ -126,6 +129,10 @@ namespace IndustrialControlMAUI
             builder.Services.AddTransient<Pages.EditExceptionSubmissionPage>();
             builder.Services.AddTransient<MeterSelectPopup>();
             builder.Services.AddTransient<ManualReadingPage>();
+            builder.Services.AddTransient<InventorySearchPage>();
+            builder.Services.AddTransient<FlexibleStockCheckPage>();
+            builder.Services.AddTransient<StockCheckSearchPage>();
+
 
             builder.Services.AddTransient<WarehouseLocationPickerPage>();
             builder.Services.AddTransient<QrScanPage>();

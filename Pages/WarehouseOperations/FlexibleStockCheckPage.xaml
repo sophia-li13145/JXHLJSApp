@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="IndustrialControlMAUI.Pages.FlexibleStockCheckPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:conv="clr-namespace:IndustrialControlMAUI.Converters"
+    x:Name="Page"
+    Title="灵活盘点">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <conv:DecimalTrimConverter x:Key="TrimNumber" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    <Grid>
+
+        <!-- 主体内容 -->
+        <ScrollView>
+            <VerticalStackLayout Padding="12" Spacing="10">
+
+                <!-- 顶部：库位号 / 物料条码 + 保存 -->
+                <Grid ColumnDefinitions="80,*,80"
+                      RowDefinitions="Auto,Auto,Auto"
+                      ColumnSpacing="6"
+                      RowSpacing="6">
+
+                    <!-- 库位号 -->
+                    <Label Grid.Row="0" Grid.Column="0"
+                           Text="库位号：" VerticalTextAlignment="Center" />
+                    <Entry x:Name="LocationEntry"
+                           Grid.Row="0" Grid.Column="1"
+                           Placeholder="请扫描/输入库位"
+                           Text="{Binding LocationCode}"
+                           Completed="OnLocationCompleted" />
+                    <ImageButton Grid.Row="0" Grid.Column="2"
+                                  Source="scan_button.png"      
+                                 WidthRequest="36"
+                                  HeightRequest="36"
+                                 BackgroundColor="Transparent"
+                                 Aspect="AspectFit"
+                                 Clicked="OnLocationScanClicked" />
+
+                    <!-- 物料条码 -->
+                    <Label Grid.Row="1" Grid.Column="0"
+                           Text="物料条码：" VerticalTextAlignment="Center" />
+                    <Entry x:Name="MaterialEntry"
+                           Grid.Row="1" Grid.Column="1"
+                           Placeholder="请扫描/输入物料编码"
+                           Text="{Binding MaterialBarcode}"
+                           Completed="OnMaterialCompleted" />
+                    <ImageButton Grid.Row="1" Grid.Column="2"
+                                  Source="scan_button.png"      
+                                     WidthRequest="36"
+                                      HeightRequest="36"
+                                 BackgroundColor="Transparent"
+                                 Aspect="AspectFit"
+                                 Clicked="OnMaterialScanClicked" />
+                    <!-- 结存按钮：绑定到 SettleCommand，只有未完成时可点 -->
+                    <Button Text="结存"
+                Grid.Row="2" Grid.Column="3"
+BackgroundColor="#00C853"
+TextColor="White"
+CornerRadius="6"
+HeightRequest="40"
+Command="{Binding SettleCommand}"
+IsEnabled="{Binding CanEdit}" />
+
+                </Grid>
+
+                <!-- 盘点单号 + 仓库名称（同一行显示） -->
+                <Frame Padding="8,6"
+                   HasShadow="False"
+                   Margin="0,4,0,0"
+                   CornerRadius="4"
+                   BorderColor="#E0E0E0"
+                   BackgroundColor="White">
+                    <Grid ColumnDefinitions="Auto,*,Auto,*"
+                      RowDefinitions="Auto"
+                      ColumnSpacing="4">
+
+                        <Label Grid.Column="0"
+                           Text="盘点单号：" />
+                        <Label Grid.Column="1"
+                           Text="{Binding CheckNo}" />
+
+                        <Label Grid.Column="2"
+                           Text="仓库名称：" />
+                        <Label Grid.Column="3"
+                           Text="{Binding WarehouseName}" />
+                    </Grid>
+                </Frame>
+
+                <Label Text="盘点明细"
+                       FontAttributes="Bold"
+                       Margin="0,4,0,0" />
+
+                <!-- 明细列表 -->
+                <CollectionView ItemsSource="{Binding Details}"
+                                SelectionMode="None">
+
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame Padding="0"
+                               Margin="0,4"
+                               HasShadow="False"
+                               BorderColor="#E0E0E0"
+                               CornerRadius="4"
+                               BackgroundColor="White">
+
+                                <Frame.Triggers>
+
+                                    <!-- 点击选中时变绿 -->
+                                    <DataTrigger TargetType="Frame"
+                                                 Binding="{Binding IsSelected}"
+                                                 Value="True">  
+                                        <Setter Property="BackgroundColor" Value="#A5FF9E" />
+                                    </DataTrigger>
+                                </Frame.Triggers>
+
+
+                                <!-- 点击整条记录打开弹窗 -->
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding BindingContext.OpenEditDialogCommand, Source={x:Reference Page}}"
+                                        CommandParameter="{Binding .}" />
+                                </Frame.GestureRecognizers>
+
+                                <Grid ColumnDefinitions="30,*"
+                                      RowSpacing="2">
+
+                                    <!-- 左边序号 -->
+                                    <Label Grid.RowSpan="6"
+                                           Grid.Column="0"
+                                           Text="{Binding index}"
+                                           HorizontalTextAlignment="Center"
+                                            />
+
+                                    <!-- 右边内容 -->
+                                    <Grid Grid.Column="1"
+                                          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                                          ColumnDefinitions="80,*,80,*"
+                                          RowSpacing="2" ColumnSpacing="2">
+
+                                        <!-- 行1：库位号 / 批次号 -->
+                                        <Label Grid.Row="0" Grid.Column="0" Text="库位号：" />
+                                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding location}" />
+                                        <Label Grid.Row="0" Grid.Column="2" Text="批次号：" />
+                                        <Label Grid.Row="0" Grid.Column="3" Text="{Binding stockBatch}" />
+
+                                        <!-- 行2：物料编码 / 名称 -->
+                                        <Label Grid.Row="1" Grid.Column="0" Text="物料编码：" />
+                                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding materialCode}" />
+                                        <Label Grid.Row="1" Grid.Column="2" Text="物料名称：" />
+                                        <Label Grid.Row="1" Grid.Column="3" Text="{Binding materialName}" />
+
+                                        <!-- 行3：规格 / 型号 -->
+                                        <Label Grid.Row="2" Grid.Column="0" Text="规格：" />
+                                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding spec}" />
+                                        <Label Grid.Row="2" Grid.Column="2" Text="型号：" />
+                                        <Label Grid.Row="2" Grid.Column="3" Text="{Binding model}" />
+
+                                        <!-- 行4：账存数量 / 单位 -->
+                                        <Label Grid.Row="3" Grid.Column="0" Text="账存数量：" />
+                                        <Label Grid.Row="3" Grid.Column="1" Text="{Binding instockQty, Converter={StaticResource TrimNumber}}" />
+                                        <Label Grid.Row="3" Grid.Column="2" Text="单位：" />
+                                        <Label Grid.Row="3" Grid.Column="3" Text="{Binding unit}" />
+
+                                        <!-- 行5：盘点数量 / 盘盈盘亏 -->
+                                        <Label Grid.Row="4" Grid.Column="0" Text="盘点数量：" />
+                                        <Label Grid.Row="4" Grid.Column="1" Text="{Binding checkQty, Converter={StaticResource TrimNumber}}" />
+                                        <Label Grid.Row="4" Grid.Column="2" Text="盘盈/盘亏：" />
+                                        <Label Grid.Row="4" Grid.Column="3" Text="{Binding profitLossQty, Converter={StaticResource TrimNumber}}" />
+
+                                        <!-- 行6：备注 -->
+                                        <Label Grid.Row="5" Grid.Column="0" Text="备注：" />
+                                        <Label Grid.Row="5" Grid.Column="1"
+                                               Grid.ColumnSpan="3"
+                                               Text="{Binding memo}" />
+                                    </Grid>
+                                </Grid>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- ===== 弹窗 Overlay ===== -->
+        <Grid IsVisible="{Binding IsEditDialogVisible}"
+              BackgroundColor="#80000000">
+            <Frame Padding="12"
+                   CornerRadius="6"
+                   HasShadow="True"
+                   BackgroundColor="#E3F2FD"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"
+                   WidthRequest="320">
+
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                      ColumnDefinitions="80,*"
+                      RowSpacing="6"
+                      ColumnSpacing="4">
+
+                    <!-- 标题行：库位号 + 批次号 + 关闭按钮 -->
+                    <Grid Grid.Row="0" Grid.ColumnSpan="2"
+                          ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0"
+                               Text="{Binding EditingItem.location, StringFormat='库位号：{0}'}"
+                               FontAttributes="Bold" />
+                        <Label Grid.Column="1"
+                               Text="X"
+                               TextColor="Red"
+                               HorizontalTextAlignment="Center"
+                               VerticalTextAlignment="Center">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding CancelEditCommand}" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+
+                    <Label Grid.Row="1" Grid.Column="0" Text="物料名称：" />
+                    <Label Grid.Row="1" Grid.Column="1" Text="{Binding EditingItem.materialName}" />
+
+                    <Label Grid.Row="2" Grid.Column="0" Text="物料编码：" />
+                    <Label Grid.Row="2" Grid.Column="1" Text="{Binding EditingItem.materialCode}" />
+
+                    <Label Grid.Row="3" Grid.Column="0" Text="批次号：" />
+                    <Label Grid.Row="3" Grid.Column="1" Text="{Binding EditingItem.stockBatch}" />
+
+                    <Label Grid.Row="4" Grid.Column="0" Text="账存数量：" />
+                    <Label Grid.Row="4" Grid.Column="1"
+                           Text="{Binding EditingItem.InstockQtyDisplay, StringFormat='{0}  kg'}" />
+
+                    <Label Grid.Row="5" Grid.Column="0" Text="盘点数量：" />
+                    <Entry Grid.Row="5" Grid.Column="1"
+                           Keyboard="Numeric"
+                           Text="{Binding EditCheckQtyText}" />
+
+                    <Label Grid.Row="6" Grid.Column="0" Text="备注：" />
+                    <Entry Grid.Row="6" Grid.Column="1"
+                           Text="{Binding EditMemo}" />
+
+                    <!-- 按钮行 -->
+                    <Grid Grid.Row="7" Grid.ColumnSpan="2"
+                          Margin="0,8,0,0"
+                          ColumnDefinitions="*,*"
+                          ColumnSpacing="10">
+                        <Button Grid.Column="0"
+                                Text="确认"
+                                BackgroundColor="#1976D2"
+                                TextColor="White"
+                                Command="{Binding ConfirmEditCommand}" />
+                        <Button Grid.Column="1"
+                                Text="取消"
+                                BackgroundColor="White"
+                                BorderColor="#1976D2"
+                                BorderWidth="1"
+                                TextColor="#1976D2"
+                                Command="{Binding CancelEditCommand}" />
+                    </Grid>
+                </Grid>
+            </Frame>
+        </Grid>
+
+    </Grid>
+</ContentPage>

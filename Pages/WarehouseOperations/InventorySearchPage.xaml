@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="IndustrialControlMAUI.Pages.InventorySearchPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:conv="clr-namespace:IndustrialControlMAUI.Converters"
+             Shell.NavBarIsVisible="True">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <conv:DecimalTrimConverter x:Key="TrimNumber" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" >
+
+        <Grid Grid.Row="0" BackgroundColor="#007BFF" HeightRequest="60" Padding="16,0">
+            <Label Text="仓储管理系统"
+                   VerticalOptions="Center"
+                   TextColor="White"
+                   FontSize="18"
+                   FontAttributes="Bold"/>
+        </Grid>
+
+        <!-- 扫描输入行 -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,40" ColumnSpacing="8" Padding="16,0">
+            <Entry x:Name="ScanEntry"
+                   Placeholder="请扫描库位/物料条码"
+                   Text="{Binding ScanCode}"
+                   ReturnType="Done"
+                   Completed="OnScanCompleted"
+                   WidthRequest="300"
+                   />
+            <ImageButton  Grid.Column="1"
+                    Source="scan_button.png"      
+                    WidthRequest="36"
+                     HeightRequest="36"
+                     BackgroundColor="Transparent"
+                     Padding="0"
+                     Aspect="AspectFit"
+                     Clicked="OnScanClicked"  /> 
+        </Grid>
+
+        <VerticalStackLayout Grid.Row="2" Spacing="2">
+
+            <CollectionView ItemsSource="{Binding InventoryList}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Padding="0"
+       Margin="0,8"
+       HasShadow="False"
+       BackgroundColor="White"
+       BorderColor="#D1D5DB"
+       CornerRadius="6">
+
+                            <Grid ColumnDefinitions="40,*">
+
+                                <!-- 左侧序号列 -->
+                                <Grid BackgroundColor="#F9FAFB"
+              RowDefinitions="Auto,Auto,Auto,Auto">
+                                    <Label Grid.Row="0"
+                   Grid.RowSpan="4"
+                   Text="{Binding index}"
+                   FontSize="14"
+                   FontAttributes="Bold"
+                   TextColor="#111827"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center" />
+                                </Grid>
+
+                                <!-- 右侧表格主体 -->
+                                <Grid Grid.Column="1"
+              RowSpacing="0"
+              RowDefinitions="Auto,Auto,Auto,Auto">
+
+                                    <!-- ==== 第 1 行 ==== -->
+                                    <Grid Grid.Row="0" Grid.ColumnSpan="4"
+                  ColumnDefinitions="80,*,80,*">
+                                        <Label Grid.Column="0"
+                       Text="库位号："
+                       FontAttributes="Bold"
+                       TextColor="#374151"
+                       Margin="8,4,0,4" />
+                                        <Label Grid.Column="1"
+                       Text="{Binding location}"
+                       TextColor="#111827"
+                       Margin="0,4,8,4" />
+
+                                        <Label Grid.Column="2"
+                       Text="批次号："
+                       FontAttributes="Bold"
+                       TextColor="#374151"
+                       Margin="8,4,0,4" />
+                                        <Label Grid.Column="3"
+                       Text="{Binding stockBatch}"
+                       TextColor="#111827"
+                       Margin="0,4,8,4" />
+
+                                        <!-- 底部分割线 -->
+                                        <BoxView Grid.ColumnSpan="4"
+                         HeightRequest="1"
+                         VerticalOptions="End"
+                         BackgroundColor="#E5E7EB" />
+                                    </Grid>
+
+                                    <!-- ==== 第 2 行 ==== -->
+                                    <Grid Grid.Row="1" Grid.ColumnSpan="4"
+                  ColumnDefinitions="80,*,80,*">
+                                        <Label Grid.Column="0"
+                       Text="物料编码："
+                       FontAttributes="Bold"
+                       TextColor="#374151"
+                       Margin="8,4,0,4" />
+                                        <Label Grid.Column="1"
+                       Text="{Binding materialCode}"
+                       TextColor="#111827"
+                       Margin="0,4,8,4" />
+
+                                        <Label Grid.Column="2"
+                       Text="物料名称："
+                       FontAttributes="Bold"
+                       TextColor="#374151"
+                       Margin="8,4,0,4" />
+                                        <Label Grid.Column="3"
+                       Text="{Binding materialName}"
+                       TextColor="#111827"
+                       Margin="0,4,8,4" />
+
+                                        <BoxView Grid.ColumnSpan="4"
+                         HeightRequest="1"
+                         VerticalOptions="End"
+                         BackgroundColor="#E5E7EB" />
+                                    </Grid>
+
+                                    <!-- ==== 第 3 行 ==== -->
+                                    <Grid Grid.Row="2" Grid.ColumnSpan="4"
+                  ColumnDefinitions="80,*,80,*">
+                                        <Label Grid.Column="0"
+                       Text="规格："
+                       FontAttributes="Bold"
+                       TextColor="#374151"
+                       Margin="8,4,0,4" />
+                                        <Label Grid.Column="1"
+                       Text="{Binding spec}"
+                       TextColor="#111827"
+                       Margin="0,4,8,4" />
+
+                                        <Label Grid.Column="2"
+                       Text="型号："
+                       FontAttributes="Bold"
+                       TextColor="#374151"
+                       Margin="8,4,0,4" />
+                                        <Label Grid.Column="3"
+                       Text="{Binding model}"
+                       TextColor="#111827"
+                       Margin="0,4,8,4" />
+
+                                        <BoxView Grid.ColumnSpan="4"
+                         HeightRequest="1"
+                         VerticalOptions="End"
+                         BackgroundColor="#E5E7EB" />
+                                    </Grid>
+
+                                    <!-- ==== 第 4 行 ==== -->
+                                    <Grid Grid.Row="3" Grid.ColumnSpan="4"
+                  ColumnDefinitions="80,*,80,*">
+                                        <Label Grid.Column="0"
+                       Text="在库数量："
+                       FontAttributes="Bold"
+                       TextColor="#374151"
+                       Margin="8,4,0,4" />
+                                        <Label Grid.Column="1"
+                       Text="{Binding availableQuantity, Converter={StaticResource TrimNumber}}"
+                       TextColor="#111827"
+                       Margin="0,4,8,8" />
+
+                                        <Label Grid.Column="2"
+                       Text="单位："
+                       FontAttributes="Bold"
+                       TextColor="#374151"
+                       Margin="8,4,0,4" />
+                                        <Label Grid.Column="3"
+                       Text="{Binding unit}"
+                       TextColor="#111827"
+                       Margin="0,4,8,8" />
+                                    </Grid>
+
+                                </Grid>
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+        </VerticalStackLayout>
+
+    </Grid>
+</ContentPage>

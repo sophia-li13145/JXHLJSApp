@@ -86,6 +86,41 @@ namespace IndustrialControlMAUI.Services
             string? memo = null,
             string? rawMaterialProductionDate = null,
             CancellationToken ct = default);
+
+        Task<WorkOrderDomainResp?> GetWorkOrderDomainAsync(string id, CancellationToken ct = default);
+        Task<PageResp<InventoryRecord>?> PageInventoryAsync(
+    string? barcode,          // 库位或者物料条码
+    int pageNo = 1,           // 当前页
+    int pageSize = 50,        // 页大小
+    bool? searchCount = null, // 是否计算总数
+    CancellationToken ct = default);
+
+        Task<PageResp<StockCheckOrderItem>?> PageStockCheckOrdersAsync(
+    string? checkNo,
+    DateTime? beginDate = null,
+    DateTime? endDate = null,
+    bool? searchCount = null,
+    int pageNo = 1,
+    int pageSize = 50,
+    CancellationToken ct = default);
+
+        Task<PageResp<StockCheckDetailItem>?> PageStockCheckDetailsAsync(
+    string checkNo,
+    string? location,
+    string? materialBarcode,
+    bool? searchCount = null,
+    int pageNo = 1,
+    int pageSize = 50,
+    CancellationToken ct = default);
+
+        Task<SimpleOk> EditStockCheckAsync(
+    StockCheckEditReq req,
+    CancellationToken ct = default);
+        Task<SimpleOk> AddFlexibleStockCheckAsync(
+    FlexibleStockCheckAddReq req,
+    CancellationToken ct = default);
+
+
     }
 
 
@@ -114,7 +149,13 @@ namespace IndustrialControlMAUI.Services
         private readonly string _deleteWorkProcessTaskMaterialInputEndpoint;
         private readonly string _deleteWorkProcessTaskOutputEndpoint;
         private readonly string _editWorkProcessTaskMaterialInputEndpoint;
-        private readonly string _editWorkProcessTaskOutputEndpoint;
+        private readonly string _workOrderDomainEndpoint;
+        private readonly string _inventoryPageEndpoint;
+        private readonly string _stockCheckPageEndpoint;
+        private readonly string _stockCheckDetailPageEndpoint;
+        private readonly string _stockCheckEditEndpoint;
+        private readonly string _flexibleStockCheckAddEndpoint;
+
 
         private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
@@ -174,6 +215,28 @@ namespace IndustrialControlMAUI.Services
                     configLoader.GetApiPath("workOrder.deleteWorkProcessTaskOutput", "/pda/pmsWorkOrder/deleteWorkProcessTaskMaterialOutput"), servicePath);
             _editWorkProcessTaskMaterialInputEndpoint = NormalizeRelative(
                     configLoader.GetApiPath("workOrder.editWorkProcessTaskMaterialInput", "/pda/pmsWorkOrder/editWorkProcessTaskMaterialInput"), servicePath);
+            _workOrderDomainEndpoint = NormalizeRelative(
+        configLoader.GetApiPath("workOrder.domain", "/pda/pmsWorkOrder/getWorkOrderDomain"),
+        servicePath);
+            _inventoryPageEndpoint = NormalizeRelative(
+    configLoader.GetApiPath("inventory.page", "/pda/wmsInstock/pageQuery"),
+    servicePath);
+
+            _stockCheckPageEndpoint = NormalizeRelative(
+    configLoader.GetApiPath("stockCheck.page", "/pda/wmsInstockCheck/pageQuery"),
+    servicePath);
+
+            _stockCheckDetailPageEndpoint = NormalizeRelative(
+    configLoader.GetApiPath("stockCheck.detailPage", "/pda/wmsInstockCheck/pageQueryDetails"),
+    servicePath);
+            _stockCheckEditEndpoint = NormalizeRelative(
+    configLoader.GetApiPath("stockCheck.edit", "/pda/wmsInstockCheck/edit"),
+    servicePath);
+            _flexibleStockCheckAddEndpoint = NormalizeRelative(
+    configLoader.GetApiPath("stockCheck.flexibleAdd", "/pda/wmsInstockCheck/add"),
+    servicePath);
+
+
         }
         // ===== 公共工具 =====
         private static string BuildFullUrl(Uri? baseAddress, string url)
@@ -193,9 +256,6 @@ namespace IndustrialControlMAUI.Services
 
             return baseUrl + url.TrimStart('/');
         }
-
-        private static string BuildQuery(IDictionary<string, string> p)
-            => string.Join("&", p.Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
 
         private static string NormalizeRelative(string? endpoint, string servicePath)
         {
@@ -777,7 +837,224 @@ namespace IndustrialControlMAUI.Services
             return data ?? new ApiResp<bool> { success = false, message = "empty response" };
         }
 
-        
+        public async Task<WorkOrderDomainResp?> GetWorkOrderDomainAsync(string id, CancellationToken ct = default)
+        {
+            var url = _workOrderDomainEndpoint + "?id=" + Uri.EscapeDataString(id ?? "");
+            var full = BuildFullUrl(_http.BaseAddress, url);
+
+            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
+            using var res = await _http.SendAsync(req, ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+
+            if (!res.IsSuccessStatusCode)
+                return new WorkOrderDomainResp { success = false, message = $"HTTP {(int)res.StatusCode}" };
+
+            return JsonSerializer.Deserialize<WorkOrderDomainResp>(json,
+                       new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                   ?? new WorkOrderDomainResp();
+        }
+
+        public async Task<PageResp<InventoryRecord>?> PageInventoryAsync(
+    string? barcode,
+    int pageNo = 1,
+    int pageSize = 50,
+    bool? searchCount = null,
+    CancellationToken ct = default)
+        {
+            if (pageNo <= 0) pageNo = 1;
+            if (pageSize <= 0) pageSize = 50;
+
+            var pairs = new List<KeyValuePair<string, string>>
+    {
+        new("pageNo",  pageNo.ToString()),
+        new("pageSize", pageSize.ToString())
+    };
+
+            if (!string.IsNullOrWhiteSpace(barcode))
+                pairs.Add(new("barcode", barcode.Trim()));
+
+            if (searchCount.HasValue)
+                pairs.Add(new("searchCount", searchCount.Value ? "true" : "false"));
+
+            string BuildQueryMulti(IEnumerable<KeyValuePair<string, string>> kvs)
+                => string.Join("&", kvs.Select(kv =>
+                       $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+
+            var url = _inventoryPageEndpoint + "?" + BuildQueryMulti(pairs);
+            var full = BuildFullUrl(_http.BaseAddress, url);
+
+            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
+            using var res = await _http.SendAsync(req, ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+
+            if (!res.IsSuccessStatusCode)
+                return new PageResp<InventoryRecord> { success = false, message = $"HTTP {(int)res.StatusCode}" };
+
+            return JsonSerializer.Deserialize<PageResp<InventoryRecord>>(json,
+                       new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                   ?? new PageResp<InventoryRecord>();
+        }
+
+        public async Task<PageResp<StockCheckOrderItem>?> PageStockCheckOrdersAsync(
+    string? checkNo,
+    DateTime? beginDate = null,
+    DateTime? endDate = null,
+    bool? searchCount = null,
+    int pageNo = 1,
+    int pageSize = 50,
+    CancellationToken ct = default)
+        {
+            if (pageNo <= 0) pageNo = 1;
+            if (pageSize <= 0) pageSize = 50;
+
+            var pairs = new List<KeyValuePair<string, string>>
+    {
+        new("pageNo", pageNo.ToString()),
+        new("pageSize", pageSize.ToString())
+    };
+
+            if (!string.IsNullOrWhiteSpace(checkNo))
+                pairs.Add(new("checkNo", checkNo.Trim()));
+            if (beginDate.HasValue)
+                pairs.Add(new("beginDate", beginDate.Value.ToString("yyyy-MM-dd 00:00:00")));
+
+            if (endDate.HasValue)
+                pairs.Add(new("endDate", endDate.Value.ToString("yyyy-MM-dd 23:59:59")));
+
+            if (searchCount.HasValue)
+                pairs.Add(new("searchCount", searchCount.Value ? "true" : "false"));
+
+            string BuildQueryMulti(IEnumerable<KeyValuePair<string, string>> kvs)
+                => string.Join("&", kvs.Select(kv =>
+                       $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+
+            var url = _stockCheckPageEndpoint + "?" + BuildQueryMulti(pairs);
+            var full = BuildFullUrl(_http.BaseAddress, url);
+
+            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
+            using var res = await _http.SendAsync(req, ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+
+            if (!res.IsSuccessStatusCode)
+                return new PageResp<StockCheckOrderItem>
+                {
+                    success = false,
+                    message = $"HTTP {(int)res.StatusCode}"
+                };
+
+            return JsonSerializer.Deserialize<PageResp<StockCheckOrderItem>>(json,
+                       new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                   ?? new PageResp<StockCheckOrderItem>();
+        }
+        public async Task<PageResp<StockCheckDetailItem>?> PageStockCheckDetailsAsync(
+    string checkNo,
+    string? location,
+    string? materialBarcode,
+    bool? searchCount = null,
+    int pageNo = 1,
+    int pageSize = 50,
+    CancellationToken ct = default)
+        {
+            if (pageNo <= 0) pageNo = 1;
+            if (pageSize <= 0) pageSize = 50;
+
+            var pairs = new List<KeyValuePair<string, string>>
+    {
+        new("pageNo", pageNo.ToString()),
+        new("pageSize", pageSize.ToString())
+    };
+
+            if (!string.IsNullOrWhiteSpace(checkNo))
+                pairs.Add(new("checkNo", checkNo.Trim()));
+
+            if (!string.IsNullOrWhiteSpace(location))
+                pairs.Add(new("location", location.Trim()));
+
+            if (!string.IsNullOrWhiteSpace(materialBarcode))
+                pairs.Add(new("materialBarcode", materialBarcode.Trim()));
+
+            if (searchCount.HasValue)
+                pairs.Add(new("searchCount", searchCount.Value ? "true" : "false"));
+
+            string BuildQueryMulti(IEnumerable<KeyValuePair<string, string>> kvs)
+                => string.Join("&", kvs.Select(kv =>
+                   $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+
+            var url = _stockCheckDetailPageEndpoint + "?" + BuildQueryMulti(pairs);
+            var full = BuildFullUrl(_http.BaseAddress, url);
+
+            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
+            using var res = await _http.SendAsync(req, ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+
+            if (!res.IsSuccessStatusCode)
+                return new PageResp<StockCheckDetailItem>
+                {
+                    success = false,
+                    message = $"HTTP {(int)res.StatusCode}"
+                };
+
+            return JsonSerializer.Deserialize<PageResp<StockCheckDetailItem>>(json,
+                   new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                   ?? new PageResp<StockCheckDetailItem>();
+        }
+
+        public async Task<SimpleOk> EditStockCheckAsync(
+    StockCheckEditReq req,
+    CancellationToken ct = default)
+        {
+            var full = BuildFullUrl(_http.BaseAddress, _stockCheckEditEndpoint);
+
+            var options = new JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+
+            var body = JsonSerializer.Serialize(req, options);
+
+            using var msg = new HttpRequestMessage(HttpMethod.Post, new Uri(full, UriKind.Absolute))
+            {
+                Content = new StringContent(body, Encoding.UTF8, "application/json")
+            };
+
+            using var res = await _http.SendAsync(msg, ct);
+            var txt = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+
+            // 后端大部分接口都是这种 ConfirmResp 结构，你项目里已经有这个类型了
+            var dto = JsonSerializer.Deserialize<ConfirmResp>(
+                txt, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            var ok = dto?.success == true && (dto.result is not bool b || b);
+            return new SimpleOk(ok, dto?.message ?? (ok ? "成功" : "失败"));
+        }
+        public async Task<SimpleOk> AddFlexibleStockCheckAsync(
+    FlexibleStockCheckAddReq req,
+    CancellationToken ct = default)
+        {
+            var full = BuildFullUrl(_http.BaseAddress, _flexibleStockCheckAddEndpoint);
+
+            var options = new JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+
+            var body = JsonSerializer.Serialize(req, options);
+
+            using var msg = new HttpRequestMessage(HttpMethod.Post, new Uri(full, UriKind.Absolute))
+            {
+                Content = new StringContent(body, Encoding.UTF8, "application/json")
+            };
+
+            using var res = await _http.SendAsync(msg, ct);
+            var txt = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+
+            var dto = JsonSerializer.Deserialize<ConfirmResp>(
+                txt, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            var ok = dto?.success == true && (dto.result is not bool b || b);
+            return new SimpleOk(ok, dto?.message ?? (ok ? "成功" : "失败"));
+        }
+
     }
 
 }
