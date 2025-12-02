@@ -311,12 +311,18 @@
       ColumnDefinitions="Auto,Auto">
                             <Entry Grid.Column="0"
            WidthRequest="80"
-           Text="{Binding Detail.repairDuration, Mode=TwoWay, StringFormat='{0:F2}', TargetNullValue=''}" />
+           Text="{Binding Detail.repairDuration,
+                          Mode=OneWay,
+                          StringFormat='{}{0:F2}',
+                          TargetNullValue=''}"
+           IsReadOnly="True"
+           IsEnabled="False" />
                             <Label Grid.Column="1"
            Text="小时"
            VerticalTextAlignment="Center"
-           Margin="6,0,0,0"/>
+           Margin="6,0,0,0" />
                         </Grid>
+
 
 
                     </Grid>

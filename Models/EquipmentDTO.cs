@@ -1184,6 +1184,9 @@ public class RepairWorkflowVmItem
 //异常提报
 public class MaintenanceReportDto : ObservableObject
 {
+    // 直接根据状态计算是否可编辑
+    public bool CanEdit =>
+        !string.Equals(auditStatus, "1", StringComparison.OrdinalIgnoreCase);
     public bool auditBack { get; set; }
     public string? auditStatus { get; set; }
     public string? auditStatusText { get; set; }

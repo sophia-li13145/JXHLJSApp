@@ -65,11 +65,13 @@
                         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
                             <!-- 右上角蓝点 -->
                             <BoxView Grid.Column="1" WidthRequest="8" HeightRequest="8"
+                                     IsVisible="{Binding CanEdit}"
                                      HorizontalOptions="End" VerticalOptions="Start"
                                      CornerRadius="4" Color="#2F80ED" />
 
                             <!-- 编辑按钮 -->
                             <Button Grid.Column="1" Grid.Row="0" Text="编辑"
+                                    IsVisible="{Binding CanEdit}"
                                     Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.GoEditCommand}"
                                     CommandParameter="{Binding .}"
                                     HeightRequest="28"

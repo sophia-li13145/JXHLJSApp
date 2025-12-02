@@ -129,26 +129,33 @@
        ColumnDefinitions="90,*,60,*,60,*" 
         RowSpacing="8" ColumnSpacing="5">
 
-                        <Label Grid.Row="0" Grid.Column="0"  Grid.ColumnSpan="2" Text="检验结果：" />
-                        <Picker Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2"
-         ItemsSource="{Binding InspectResultOptions}"
-         ItemDisplayBinding="{Binding Text}"
-         SelectedItem="{Binding SelectedInspectResult, Mode=TwoWay}"
-         IsEnabled="{Binding IsEditing}">
+                        <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Text="检验结果：" />
+
+                        <!-- 这里改：用字符串列表 + 自己的 SelectedItem 做触发 -->
+                        <Picker x:Name="MainResultPicker"
+        Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2"
+        ItemsSource="{Binding InspectResultTextList}"
+        SelectedItem="{Binding Detail.inspectResult, Mode=TwoWay}"
+        IsEnabled="{Binding IsEditing}">
+
+                            <Picker.BackgroundColor>#F3F4F6</Picker.BackgroundColor>
+
                             <Picker.Triggers>
                                 <DataTrigger TargetType="Picker"
-Binding="{Binding SelectedInspectResult.Text}"
-Value="合格">
+                     Binding="{Binding Source={x:Reference MainResultPicker}, Path=SelectedItem}"
+                     Value="合格">
                                     <Setter Property="BackgroundColor" Value="#B2F2BB"/>
                                 </DataTrigger>
+
                                 <DataTrigger TargetType="Picker"
-Binding="{Binding SelectedInspectResult.Text}"
-Value="不合格">
+                     Binding="{Binding Source={x:Reference MainResultPicker}, Path=SelectedItem}"
+                     Value="不合格">
                                     <Setter Property="BackgroundColor" Value="#FFA8A8"/>
                                 </DataTrigger>
                             </Picker.Triggers>
 
                         </Picker>
+
                         <!-- 分割线 -->
                         <BoxView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="6" HeightRequest="1" BackgroundColor="#E5E7EB" />
                         <Label Grid.Row="2" Grid.Column="0" Text="点检项目总数：" Style="{StaticResource FieldLabel}" />
@@ -280,28 +287,31 @@ ColumnDefinitions="Auto,*" ColumnSpacing="10">
                                             <Label Text="点检结果：" Style="{StaticResource FieldLabel}" />
 
                                             <Picker x:Name="RowResultPicker"
-                           Grid.Column="1"
-                           ItemsSource="{Binding Source={x:Reference ThisPage}, Path=BindingContext.InspectResultTextList}"
-                           SelectedItem="{Binding inspectResult, Mode=TwoWay}"
-                           IsEnabled="{Binding Source={x:Reference ThisPage}, Path=BindingContext.IsEditing}">
-                                                <!-- 默认底色（可选） -->
+        Grid.Column="1"
+        ItemsSource="{Binding BindingContext.InspectResultTextList,
+                              Source={RelativeSource AncestorType={x:Type ContentPage}}}"
+        SelectedItem="{Binding inspectResult, Mode=TwoWay}"
+        IsEnabled="{Binding BindingContext.IsEditing,
+                            Source={RelativeSource AncestorType={x:Type ContentPage}}}">
+                                                <!-- 默认底色 -->
                                                 <Picker.BackgroundColor>#F3F4F6</Picker.BackgroundColor>
 
                                                 <Picker.Triggers>
-                                                    <!-- 直接监听控件自己的 SelectedItem，避免依赖模型的通知 -->
+                                                    <!-- 直接监听控件自己的 SelectedItem -->
                                                     <DataTrigger TargetType="Picker"
-Binding="{Binding Source={x:Reference RowResultPicker}, Path=SelectedItem}"
-Value="合格">
-                                                        <Setter Property="BackgroundColor" Value="#B2F2BB"/>
+                     Binding="{Binding Source={x:Reference RowResultPicker}, Path=SelectedItem}"
+                     Value="合格">
+                                                        <Setter Property="BackgroundColor" Value="#B2F2BB" />
                                                     </DataTrigger>
 
                                                     <DataTrigger TargetType="Picker"
-Binding="{Binding Source={x:Reference RowResultPicker}, Path=SelectedItem}"
-Value="不合格">
-                                                        <Setter Property="BackgroundColor" Value="#FFA8A8"/>
+                     Binding="{Binding Source={x:Reference RowResultPicker}, Path=SelectedItem}"
+                     Value="不合格">
+                                                        <Setter Property="BackgroundColor" Value="#FFA8A8" />
                                                     </DataTrigger>
                                                 </Picker.Triggers>
                                             </Picker>
+
                                         </Grid>
                                         <Grid Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2"
                                 ColumnDefinitions="Auto,*" ColumnSpacing="10">

@@ -99,7 +99,7 @@ namespace IndustrialControlMAUI.ViewModels
             // 2) ★ 已扫描列表（来自后端）
             ScannedList.Clear();
             var i = 1;
-            foreach (var s in view.Scanned)
+            foreach (var s in view.Scanned.Where(x => !x.IzOutStock))
             {
                 ScannedList.Add(new ScannedRow
                 {
@@ -111,7 +111,6 @@ namespace IndustrialControlMAUI.ViewModels
                     IsSelected = false
                 });
             }
-            view.Scanned.Where(x => !x.IzOutStock);
         }
         #endregion
 
@@ -128,9 +127,6 @@ namespace IndustrialControlMAUI.ViewModels
                 return;
             }
 
-            // ✅ 先本地占位一条，保证“始终只看到一条”，避免 UI 出现两条再合并的闪动
-            var row = UpsertLocalByMoldCode(code);
-
             await _scanLock.WaitAsync();
             try
             {
@@ -138,7 +134,7 @@ namespace IndustrialControlMAUI.ViewModels
                 var ok = resp?.success == true && resp.result != null;
                 if (!ok)
                 {
-                    await Application.Current.MainPage.DisplayAlert("提示", resp.message, "知道了");
+                    await Application.Current.MainPage.DisplayAlert("提示", resp?.message ?? "未查询到模具信息", "知道了");
                     return;
                 }
 
@@ -152,7 +148,6 @@ namespace IndustrialControlMAUI.ViewModels
 
                 if (isOut)
                 {
-                   // ApplyRow(row, moldModel, row.OutQty, location, warehouseName, warehouseCode);
                     await Application.Current.MainPage.DisplayAlert("已出库", $"模具[{moldCode}] 已完成出库，不能重复出库。", "知道了");
                     return;
                 }
@@ -166,21 +161,50 @@ namespace IndustrialControlMAUI.ViewModels
                     return;
                 }
 
-                // ✅ 不新增第二条：直接把“占位行”更新为真实数据
-                // 数量策略：同码多次扫码就 +1；首次则 1
-                var newQty = row.OutQty <= 0 ? 1 : row.OutQty + 1;
-                ApplyRow(row, moldModel, newQty, location, warehouseName, warehouseCode);
+                // =====================================
+                // ✔ 不使用占位行：直接查真实数据、直接操作真实行
+                // =====================================
 
-                // 保持选中与顺手体验
+                // 查找是否已存在相同行（按模具编码）
+                var row = ScannedList.FirstOrDefault(x =>
+                    string.Equals(x.MoldCode, moldCode, StringComparison.OrdinalIgnoreCase));
+
+                if (row == null)
+                {
+                    // ✔ 首次扫码创建一条新记录
+                    row = new ScannedRow
+                    {
+                        MoldCode = moldCode,
+                        MoldModel = moldModel,
+                        OutQty = 1,
+                        Location = location,
+                        OutstockWarehouse = warehouseName,
+                        OutstockWarehouseCode = warehouseCode,
+                    };
+                    ScannedList.Insert(0, row);
+                }
+                else
+                {
+                    // ✔ 同码多次扫码 +1
+                    row.OutQty += 1;
+
+                    // 更新位置等后台最新信息
+                    row.Location = location;
+                    row.OutstockWarehouse = warehouseName;
+                    row.OutstockWarehouseCode = warehouseCode;
+                }
+                // 统一重排序号
+                ReindexScannedList();
+
+                // 设置选中项
                 row.IsSelected = true;
                 SelectedScanItem = row;
 
-                // 清空输入准备下一个
+                // 清空输入
                 ScanCode = string.Empty;
             }
             catch (Exception ex)
             {
-                ApplyRow(row, row.MoldModel ?? "", row.OutQty, "查询失败", row.OutstockWarehouse, row.OutstockWarehouseCode);
                 await Application.Current.MainPage.DisplayAlert("错误", $"扫描校验失败：{ex.Message}", "好的");
             }
             finally
@@ -190,7 +214,8 @@ namespace IndustrialControlMAUI.ViewModels
         }
 
 
-       
+
+
         #endregion
 
         #region 取消扫描（支持勾选多选移除）
@@ -295,46 +320,16 @@ namespace IndustrialControlMAUI.ViewModels
                 MainThread.BeginInvokeOnMainThread(async () => await LoadAsync(no));
             }
         }
-        // 先在本地按 MoldCode 做 Upsert：存在就复用并选中；不存在就占位插入一条
-        private ScannedRow UpsertLocalByMoldCode(string moldCode)
+       
+       
+        private void ReindexScannedList()
         {
-            var exist = ScannedList.FirstOrDefault(x =>
-                string.Equals(x.MoldCode, moldCode, StringComparison.OrdinalIgnoreCase));
-
-            if (exist != null)
+            for (int i = 0; i < ScannedList.Count; i++)
             {
-                exist.IsSelected = true;
-                SelectedScanItem = exist;
-                return exist;
+                ScannedList[i].Index = i + 1;
             }
-
-            // 占位行：接口回来后只“更新字段”，不删除/再新增 —— 避免“闪一下”
-            var placeholder = new ScannedRow
-            {
-                IsSelected = true,
-                Index = ScannedList.Count + 1,
-                MoldCode = moldCode,
-                MoldModel = "",
-                OutQty = 0,               // 等接口回来再确定
-                Location = "查询中…",       // 友好占位
-                OutstockWarehouse = "",
-                OutstockWarehouseCode = ""
-            };
-            ScannedList.Add(placeholder);
-            SelectedScanItem = placeholder;
-            return placeholder;
         }
 
-        // 只更新字段，不替换对象（避免 UI 的“删除→新增”造成闪烁）
-        private static void ApplyRow(ScannedRow target, string moldModel, int outQty,
-                                     string? location, string? whName, string? whCode)
-        {
-            if (!string.Equals(target.MoldModel, moldModel, StringComparison.Ordinal)) target.MoldModel = moldModel;
-            if (target.OutQty != outQty) target.OutQty = outQty;
-            if (!string.Equals(target.Location, location ?? "", StringComparison.Ordinal)) target.Location = location ?? "";
-            if (!string.Equals(target.OutstockWarehouse, whName ?? "", StringComparison.Ordinal)) target.OutstockWarehouse = whName ?? "";
-            if (!string.Equals(target.OutstockWarehouseCode, whCode ?? "", StringComparison.Ordinal)) target.OutstockWarehouseCode = whCode ?? "";
-        }
 
     }
 
