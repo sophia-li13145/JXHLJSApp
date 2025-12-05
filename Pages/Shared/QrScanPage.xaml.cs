@@ -12,21 +12,16 @@ public partial class QrScanPage : ContentPage
     {
         InitializeComponent();
         _tcs = tcs;
-        // 🔴 关键：在 Handler 映射之前就让 Options != null
-        // 关键：注册 HandlerChanging（在 SetHandler/MapOptions 之前触发）
-        barcodeView.HandlerChanging += (s, e) =>
+
+        // 直接在这里设置一次就够了
+        barcodeView.Options = new BarcodeReaderOptions
         {
-            if (barcodeView.Options is null)
-            {
-                barcodeView.Options = new BarcodeReaderOptions
-                {
-                    Formats = BarcodeFormats.All,
-                    AutoRotate = true,
-                    Multiple = false
-                };
-            }
+            Formats = BarcodeFormats.All,
+            AutoRotate = true,
+            Multiple = false
         };
     }
+
 
     // 扫码事件
     private void BarcodesDetected(object sender, BarcodeDetectionEventArgs e)
@@ -52,7 +47,6 @@ public partial class QrScanPage : ContentPage
     {
         try
         {
-            // 可选：暂停取景器识别，避免前台还在扫到结果引发重复返回
             try { barcodeView.IsDetecting = false; } catch { }
 
             var pick = await FilePicker.PickAsync(new PickOptions
@@ -63,14 +57,11 @@ public partial class QrScanPage : ContentPage
 
             if (pick is null)
             {
-                // 用户取消
                 try { barcodeView.IsDetecting = true; } catch { }
                 return;
             }
 
             await using var stream = await pick.OpenReadAsync();
-
-            // 用 SkiaSharp 解码为位图
             using var skBitmap = SKBitmap.Decode(stream);
             if (skBitmap is null)
             {
@@ -79,36 +70,44 @@ public partial class QrScanPage : ContentPage
                 return;
             }
 
-            // ZXing 解码
-            var reader = new ZXing.SkiaSharp.BarcodeReader
-            {
-                Options = new ZXing.Common.DecodingOptions
-                {
-                    TryHarder = true,
-                    PossibleFormats = new[]
-                    {
-                            BarcodeFormat.QR_CODE,
-                            BarcodeFormat.DATA_MATRIX,
-                            BarcodeFormat.AZTEC,
-                            BarcodeFormat.PDF_417,
-                            BarcodeFormat.CODE_128, BarcodeFormat.CODE_39,
-                            BarcodeFormat.EAN_13,  BarcodeFormat.EAN_8,
-                            BarcodeFormat.ITF,     BarcodeFormat.UPC_A,
-                            BarcodeFormat.UPC_E
-                        }
-                }
-            };
+            // 原图尺寸
+            var w0 = skBitmap.Width;
+            var h0 = skBitmap.Height;
 
-            var result = reader.Decode(skBitmap);
+            // === 第一次：直接对原图识别 ===
+            var result = DecodeWithZxing(skBitmap);
+
+            // === 第二次：原图失败的话，把图放大 2.5 倍再识别 ===
+            if (result is null)
+            {
+                var factor = 2.5f;                       // 可再调大一点，比如 3
+                var newW = (int)(w0 * factor);
+                var newH = (int)(h0 * factor);
+                var info = new SKImageInfo(newW, newH);
+
+                using var enlarged = new SKBitmap(info);
+                using (var canvas = new SKCanvas(enlarged))
+                {
+                    canvas.Clear(SKColors.White);
+                    canvas.DrawBitmap(skBitmap,
+                        new SKRect(0, 0, w0, h0),
+                        new SKRect(0, 0, newW, newH));
+                    canvas.Flush();
+                }
+
+                result = DecodeWithZxing(enlarged);
+            }
 
             if (result is null || string.IsNullOrWhiteSpace(result.Text))
             {
-                await DisplayAlert("提示", "未在图片中识别到二维码/条码。", "确定");
+                await DisplayAlert(
+                    "提示",
+                    $"未识别到条码。\n原图: {w0}x{h0}",
+                    "确定");
                 try { barcodeView.IsDetecting = true; } catch { }
                 return;
             }
 
-            // 与摄像头识别一致：只返回一次结果并关闭页面
             if (_returned) return;
             _returned = true;
 
@@ -121,7 +120,43 @@ public partial class QrScanPage : ContentPage
             try { barcodeView.IsDetecting = true; } catch { }
         }
     }
-    
+
+    /// <summary>
+    /// 统一的 ZXing 解码逻辑（原图和放大图都走它）
+    /// </summary>
+    private ZXing.Result? DecodeWithZxing(SKBitmap bitmap)
+    {
+        var options = new ZXing.Common.DecodingOptions
+        {
+            TryHarder = true,
+            TryInverted = true, // 新版写在 Options 里
+            PossibleFormats = new[]
+            {
+            BarcodeFormat.CODE_128,
+            BarcodeFormat.CODE_39,
+            BarcodeFormat.EAN_13,
+            BarcodeFormat.EAN_8,
+            BarcodeFormat.ITF,
+            BarcodeFormat.UPC_A,
+            BarcodeFormat.UPC_E
+            // 如果后面你也要扫二维码，再加上：
+            // BarcodeFormat.QR_CODE
+        }
+        };
+
+        var reader = new ZXing.SkiaSharp.BarcodeReader
+        {
+            AutoRotate = true,
+            Options = options
+        };
+
+        // 这里不再裁剪，先用整图识别，成功率反而更高
+        return reader.Decode(bitmap);
+    }
+
+
+
+
 
     // 前后摄像头切换
     private void SwitchCameraButton_Clicked(object sender, EventArgs e)
@@ -161,7 +196,6 @@ public partial class QrScanPage : ContentPage
         if (barcodeView != null)
         {
             barcodeView.IsDetecting = false;
-            barcodeView.Handler?.DisconnectHandler();
         }
     }
 

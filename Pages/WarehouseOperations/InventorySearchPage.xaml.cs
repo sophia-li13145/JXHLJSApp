@@ -32,29 +32,57 @@ namespace IndustrialControlMAUI.Pages
             _vm.ScanSubmitCommand.Execute(null);
         }
 
+        private bool _isScanning;
+
         private async void OnScanClicked(object sender, EventArgs e)
         {
-            var tcs = new TaskCompletionSource<string>();
-            await Navigation.PushAsync(new QrScanPage(tcs));
+            if (_isScanning) return;   // 防止连点
+            _isScanning = true;
 
-            // 等待扫码结果
-            var result = await tcs.Task;
-            if (string.IsNullOrWhiteSpace(result))
-                return;
-
-            // 回填到输入框
-            ScanEntry.Text = result.Trim();
-
-            // 同步到 ViewModel
-            if (BindingContext is InventorySearchViewModel vm)
+            try
             {
-                // 交给 VM 统一处理（第二个参数随意标记来源）
-                await _vm.QueryInventoryAsync(ScanEntry.Text);
+                var tcs = new TaskCompletionSource<string>();
+                await Navigation.PushAsync(new QrScanPage(tcs));
 
-                // 清空并继续聚焦，方便下一次输入/扫码
+                string result = null;
+
+                try
+                {
+                    // 如果用户取消、扫码页中途异常，不会卡死
+                    result = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(30));
+                }
+                catch (TimeoutException)
+                {
+                    await DisplayAlert("提示", "扫码超时，请重新扫描。", "确定");
+                    return;
+                }
+                catch (TaskCanceledException)
+                {
+                    // 扫码页主动取消，不作为错误处理
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(result))
+                    return;
+
+                // 回填到输入框
+                ScanEntry.Text = result.Trim();
+
+                // 交给 VM 查询第一页
+                if (BindingContext is InventorySearchViewModel vm)
+                {
+                    await vm.QueryInventoryAsync(result.Trim());
+                }
+
+                // 清空并聚焦
                 ScanEntry.Text = string.Empty;
                 ScanEntry.Focus();
             }
+            finally
+            {
+                _isScanning = false;
+            }
         }
+
     }
 }

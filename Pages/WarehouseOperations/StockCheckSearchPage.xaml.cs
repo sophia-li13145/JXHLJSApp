@@ -17,22 +17,21 @@ public partial class StockCheckSearchPage : ContentPage
         var tcs = new TaskCompletionSource<string>();
         await Navigation.PushAsync(new QrScanPage(tcs));
 
-        // 等待扫码结果
         var result = await tcs.Task;
         if (string.IsNullOrWhiteSpace(result))
             return;
 
-        // 同步到 ViewModel
-        if (BindingContext is InventorySearchViewModel vm)
-        {
-            // 交给 VM 统一处理（第二个参数随意标记来源）
-            await _vm.SearchAsync();
+        // 把扫码结果写入查询条件
+        _vm.SearchCheckNo = result.Trim();
 
-            // 清空并继续聚焦，方便下一次输入/扫码
-            OrderEntry.Text = string.Empty;
-            OrderEntry.Focus();
-        }
+        // 重新按当前条件查第一页 10 条
+        await _vm.SearchAsync();
+
+        // 清空输入框并聚焦
+        OrderEntry.Text = string.Empty;
+        OrderEntry.Focus();
     }
+
 
 
     protected override async void OnAppearing()

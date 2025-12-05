@@ -20,28 +20,28 @@ namespace IndustrialControlMAUI.ViewModels
             _api = api;
         }
 
-        /// <summary>
-        /// 扫码/输入的条码（库位码或物料条码）
-        /// </summary>
+        // ===== 输入 / 状态 =====
+
         [ObservableProperty]
         private string? scanCode;
 
-        /// <summary>
-        /// 是否正在查询，用于按钮禁用/Loading
-        /// </summary>
         [ObservableProperty]
-        private bool isBusy;
+        private bool isBusy;          // 首次查询 Loading
 
-        /// <summary>
-        /// 查询结果库存列表
-        /// </summary>
+        [ObservableProperty]
+        private bool isLoadingMore;   // 上拉加载更多 Loading
+
+        [ObservableProperty]
+        private bool hasMore;         // 是否还有下一页
+
+        private const int PageSize = 10;
+        private int _pageNo = 0;      // 当前已加载到第几页
+        private string? _currentBarcode; // 当前查询使用的条码
+
         public ObservableCollection<InventoryRecord> InventoryList { get; } = new();
 
         // ================== 命令：扫码提交 ==================
 
-        /// <summary>
-        /// 扫码完成后调用 / 查询按钮复用
-        /// </summary>
         [RelayCommand]
         private async Task ScanSubmit()
         {
@@ -52,62 +52,112 @@ namespace IndustrialControlMAUI.ViewModels
                 return;
             }
 
-            await QueryInventoryAsync(code);
+            await QueryInventoryAsync(code);   // 查第一页 10 条
             ScanCode = string.Empty;
         }
 
-        /// <summary>
-        /// 查询按钮可以直接绑定这个命令（和 ScanSubmit 共用逻辑）
-        /// </summary>
         [RelayCommand]
         private Task Search() => ScanSubmit();
 
-        // ================== 核心查询逻辑 ==================
+        // ================== 对外查询接口 ==================
 
+        /// <summary>
+        /// 查询指定条码的库存（重置为第一页）
+        /// </summary>
         public async Task QueryInventoryAsync(string barcode)
+        {
+            // 防止并发
+            if (IsBusy) return;
+
+            await LoadPageAsync(barcode, append: false);
+        }
+
+        /// <summary>
+        /// 上拉加载更多命令，绑定给 CollectionView
+        /// </summary>
+        [RelayCommand]
+        public async Task LoadMoreAsync()
+        {
+            if (IsLoadingMore || !HasMore) return;
+            if (string.IsNullOrEmpty(_currentBarcode)) return;
+
+            await LoadPageAsync(_currentBarcode, append: true);
+        }
+
+        // ================== 核心分页加载逻辑 ==================
+
+        private async Task LoadPageAsync(string barcode, bool append)
         {
             await _scanLock.WaitAsync();
             try
             {
-                IsBusy = true;
+                if (append)
+                {
+                    IsLoadingMore = true;
+                }
+                else
+                {
+                    IsBusy = true;
+                    _pageNo = 0;         // 重新从第一页开始
+                    HasMore = true;
+                    _currentBarcode = barcode;
+                }
 
-                // 调用接口：只查第一页 50 条
+                var nextPage = _pageNo + 1;
+
                 var resp = await _api.PageInventoryAsync(
                     barcode: barcode,
-                    pageNo: 1,
-                    pageSize: 50,
+                    pageNo: nextPage,
+                    pageSize: PageSize,
                     searchCount: false);
-
-                InventoryList.Clear();
 
                 if (resp == null || resp.success != true || resp.result == null)
                 {
-                    var msg = string.IsNullOrWhiteSpace(resp?.message)
-                        ? "查询库存失败，请稍后重试。"
-                        : resp!.message!;
-                    await ShowTip(msg);
+                    if (!append) // 只在首次查询时提示错误
+                    {
+                        var msg = string.IsNullOrWhiteSpace(resp?.message)
+                            ? "查询库存失败，请稍后重试。"
+                            : resp!.message!;
+                        await ShowTip(msg);
+                    }
+                    HasMore = false;
                     return;
                 }
-                var i = 1;
+
                 var records = resp.result.records ?? new List<InventoryRecord>();
+
+                if (!append)
+                    InventoryList.Clear();
+
+                // 连续编号
+                var index = append ? InventoryList.Count + 1 : 1;
                 foreach (var r in records)
                 {
-                    r.index = i++;
+                    r.index = index++;
                     InventoryList.Add(r);
-                } 
+                }
 
-                if (InventoryList.Count == 0)
+                _pageNo = nextPage;
+                HasMore = records.Count >= PageSize;
+
+                if (!append && InventoryList.Count == 0)
                 {
                     await ShowTip("未查询到对应的库存信息。");
                 }
             }
             catch (Exception ex)
             {
-                await ShowTip("查询异常：" + ex.Message);
+                if (!append)
+                    await ShowTip("查询异常：" + ex.Message);
+                // 加载更多失败就不弹，避免打扰
             }
             finally
             {
-                IsBusy = false;
+                if (append)
+                    IsLoadingMore = false;
+                else
+                    IsBusy = false;
+
                 _scanLock.Release();
             }
         }
@@ -117,4 +167,5 @@ namespace IndustrialControlMAUI.ViewModels
         private Task ShowTip(string msg) =>
             Shell.Current?.DisplayAlert("提示", msg, "确定") ?? Task.CompletedTask;
     }
+
 }

@@ -47,8 +47,11 @@
             </Grid>
 
             <!-- 结果列表 -->
-            <CollectionView ItemsSource="{Binding Orders}"
-                            SelectionMode="None">
+            <CollectionView
+    x:Name="OrdersList"
+    ItemsSource="{Binding Orders}"
+    RemainingItemsThreshold="2"
+    RemainingItemsThresholdReachedCommand="{Binding LoadMoreCommand}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
                         <Frame Padding="10"
@@ -89,6 +92,17 @@
                         </Frame>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
+                <!-- 底部 footer：加载更多的小圈圈 -->
+                <CollectionView.Footer>
+                    <Grid Padding="8"
+              HorizontalOptions="Center"
+              IsVisible="{Binding IsLoadingMore}">
+                        <ActivityIndicator IsRunning="True" />
+                        <Label Text="加载中..."
+                   Margin="8,0,0,0"
+                   VerticalOptions="Center" />
+                    </Grid>
+                </CollectionView.Footer>
             </CollectionView>
 
         </VerticalStackLayout>
