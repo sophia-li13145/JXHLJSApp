@@ -39,12 +39,19 @@ namespace IndustrialControlMAUI.Pages
 
         private async void OnStockCheck(object? s, TappedEventArgs e)
           => await Shell.Current.GoToAsync(nameof(StockCheckSearchPage));             // 库存盘点
+        private async void OnAllQuality(object? s, TappedEventArgs e)
+            => await Shell.Current.GoToAsync(nameof(QualitySearchPage));
 
+        private async void OnIQC(object? s, TappedEventArgs e)
+            => await Shell.Current.GoToAsync(nameof(IncomingQualitySearchPage));
         private async void OnIPQC(object? s, TappedEventArgs e)
             => await Shell.Current.GoToAsync(nameof(ProcessQualitySearchPage));      
         private async void OnFQC(object? s, TappedEventArgs e)
-            => await Shell.Current.GoToAsync(nameof(FinishedQualitySearchPage));             
-
+            => await Shell.Current.GoToAsync(nameof(FinishedQualitySearchPage));
+        private async void OnOQC(object? s, TappedEventArgs e)
+           => await Shell.Current.GoToAsync(nameof(OutgoingQualitySearchPage));
+        private async void OnOtherQ(object? s, TappedEventArgs e)
+           => await Shell.Current.GoToAsync(nameof(OtherQualitySearchPage));
         // —— 质检作业（按需替换为真实页面）——
         private async void GotoIQC(object? s, TappedEventArgs e)
             => await DisplayAlert("IQC", "待接入页面", "确定");

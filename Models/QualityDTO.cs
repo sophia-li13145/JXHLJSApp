@@ -15,13 +15,19 @@ namespace IndustrialControlMAUI.Models;
         public string? id { get; set; }
         public string? factoryCode { get; set; }
         public string? qualityNo { get; set; }
+        public string? qualityType { get; set; }
+        public string? qualityTypeText { get; set; }
         public string? inspectStatus { get; set; }
+        public string? inspectResult { get; set; }
         public string? inspectStatusName { get; set; }
         public string? materialName { get; set; }
         public string? orderNumber { get; set; }
         public string? processName { get; set; }
         public string? createdTime { get; set; }
-    }
+        public string? inspectTime { get; set; }
+        public string? inspectionObject { get; set; }
+        public string? inspectionSchemeName { get; set; }
+}
 
 /// <summary>
 /// 质检单列表项，用于前端展示（从 QualityRecordDto 转换而来）
@@ -39,6 +45,8 @@ public class QualityOrderItem
     /// </summary>
     public string? InspectStatus { get; set; }
 
+    public string? InspectResult { get; set; }
+
     /// <summary>
     /// 检验状态名称（映射显示用）
     /// </summary>
@@ -48,6 +56,10 @@ public class QualityOrderItem
     /// 产品/物料名称
     /// </summary>
     public string? MaterialName { get; set; }
+
+    public string? QualityType { get; set; }
+
+    public string? QualityTypeText { get; set; }
 
     /// <summary>
     /// 关联工单号
@@ -59,15 +71,22 @@ public class QualityOrderItem
     /// </summary>
     public string? ProcessName { get; set; }
 
+    public string? InspectionObject { get; set; }
+
+    public string? InspectionSchemeName { get; set; }
+
     /// <summary>
     /// 创建时间（用于显示 yyyy-MM-dd）
     /// </summary>
     public DateTime? CreatedTime { get; set; }
+
+    public DateTime? InspectTime { get; set; }
 }
 
 public class DictQuality
 {
     public List<DictItem> InspectStatus { get; set; } = new();
+    public List<DictItem> QualityTypes { get; set; } = new();
 }
 
 
@@ -84,6 +103,8 @@ public class QualityDetailDto : ObservableObject
     public string? inspectStatus { get; set; }     // 0/1/2/3
     public string? inspectResult { get; set; }     // 合格/不合格
     public string? inspectRemark { get; set; }
+
+    public string? inspectionSchemeName { get; set; }
 
     public string? inspectTime { get; set; }
     public string? createdTime { get; set; }
@@ -178,12 +199,50 @@ public class QualityDetailDto : ObservableObject
 
 public class QualityMaterial
 {
+    public string? acceptor { get; set; }
+    public string? arrivalBatch { get; set; }
+    public string? arrivalDate { get; set; }
+
+    public decimal? completedQty { get; set; }
+
+    public string? createdTime { get; set; }
+    public string? creator { get; set; }
+    public bool delStatus { get; set; }
+
+    public string? factoryCode { get; set; }
+    public string? id { get; set; }
+
+    public decimal? instockQty { get; set; }
+
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
+
+    public string? memo { get; set; }
     public string? model { get; set; }
+
+    public string? modifiedTime { get; set; }
+    public string? modifier { get; set; }
+
+    public string? productionDate { get; set; }
+
+    public decimal qty { get; set; }
+
+    public string? qualityNo { get; set; }
+
+    public int? shelfLife { get; set; }
+
     public string? spec { get; set; }
-    public decimal? qty { get; set; }               // 生产/到货数量
+
+    public string? supOutInspect { get; set; }
+    public string? thirdInspect { get; set; }
+
     public string? unit { get; set; }
+    public string? vehicleTemperature { get; set; }
+
+    public string QtyWithUnit => string.IsNullOrWhiteSpace(unit) ? $"{qty:G29}" : $"{qty:G29} {unit}";
+    public string InstockQtyWithUnit => string.IsNullOrWhiteSpace(unit) ? $"{instockQty:G29}" : $"{instockQty:G29} {unit}";
+    public string CompletedQtyWithUnit => string.IsNullOrWhiteSpace(unit) ? $"{completedQty:G29}" : $"{completedQty:G29} {unit}";
+
 }
 
 public partial class QualityItem : ObservableObject

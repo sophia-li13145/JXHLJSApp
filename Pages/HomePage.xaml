@@ -135,7 +135,7 @@
                 <Frame Grid.Row="2" Grid.Column="0" Style="{StaticResource Card}">
                     <VerticalStackLayout HorizontalOptions="Center">
                         <Border HeightRequest="64" WidthRequest="64"
-                                BackgroundColor="#9E9E9E"
+                                BackgroundColor="Gold"
                                 StrokeShape="RoundRectangle 32">
                             <Image Source="wrench_24_filled.svg"
                                    HeightRequest="28" WidthRequest="28"
@@ -154,7 +154,7 @@
                 <Frame Grid.Row="2" Grid.Column="1" Style="{StaticResource Card}">
                     <VerticalStackLayout HorizontalOptions="Center">
                         <Border HeightRequest="64" WidthRequest="64"
-                                BackgroundColor="#90A4AE"
+                                BackgroundColor="LavenderBlush"
                                 StrokeShape="RoundRectangle 32">
                             <Image Source="document_24_filled.svg"
                                    HeightRequest="28" WidthRequest="28"
@@ -175,7 +175,7 @@
                         <Border HeightRequest="64" WidthRequest="64"
                 BackgroundColor="#9E9E9E"
                 StrokeShape="RoundRectangle 32">
-                            <Image Source="wrench_24_filled.svg"
+                            <Image Source="stock_search.svg"
                    HeightRequest="28" WidthRequest="28"
                    HorizontalOptions="Center"
                    VerticalOptions="Center"/>
@@ -194,7 +194,7 @@
                         <Border HeightRequest="64" WidthRequest="64"
                 BackgroundColor="#90A4AE"
                 StrokeShape="RoundRectangle 32">
-                            <Image Source="document_24_filled.svg"
+                            <Image Source="all_match.svg"
                    HeightRequest="28" WidthRequest="28"
                    HorizontalOptions="Center"
                    VerticalOptions="Center"/>
@@ -219,9 +219,9 @@
                 <Frame Grid.Row="0" Grid.Column="0" Style="{StaticResource Card}">
                     <VerticalStackLayout HorizontalOptions="Center">
                         <Border HeightRequest="64" WidthRequest="64"
-                     BackgroundColor="#00ACC1"
+                     BackgroundColor="CadetBlue"
                      StrokeShape="RoundRectangle 32">
-                            <Image Source="pen_24_filled.svg"
+                            <Image Source="order_search.svg"
                         HeightRequest="28" WidthRequest="28"
                         HorizontalOptions="Center"
                         VerticalOptions="Center"/>
@@ -261,10 +261,10 @@
 
             <Grid ColumnDefinitions="*,*"
                     RowDefinitions="Auto,Auto,Auto"
-                    Padding="8,0,8,24"> 
+                    Padding="8,0,8,24">
 
-                <!-- 质检单单查询 -->
-                <!--<Frame Grid.Row="0" Grid.Column="0" Style="{StaticResource Card}">
+                <!-- 质检单查询 -->
+                <Frame Grid.Row="0" Grid.Column="0" Style="{StaticResource Card}">
              <VerticalStackLayout HorizontalOptions="Center">
                  <Border HeightRequest="64" WidthRequest="64"
               BackgroundColor="#00ACC1"
@@ -274,14 +274,17 @@
                  HorizontalOptions="Center"
                  VerticalOptions="Center"/>
                  </Border>
-                 <Label Text="工单查询 " FontSize="12" Margin="0,6,0,0"
+                        <Label Text="质检单查询" FontSize="12" Margin="0,6,0,0"
              HorizontalTextAlignment="Center" TextColor="#333"/>
              </VerticalStackLayout>
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnAllQuality"/>
+                    </Frame.GestureRecognizers>
 
-         </Frame>-->
+                </Frame>
 
                 <!-- 来料质检执行IQC -->
-                <!--<Frame Grid.Row="0" Grid.Column="1" Style="{StaticResource Card}">
+                <Frame Grid.Row="0" Grid.Column="1" Style="{StaticResource Card}">
                     <VerticalStackLayout HorizontalOptions="Center">
                         <Border HeightRequest="64" WidthRequest="64"
               BackgroundColor="#26C6DA"
@@ -291,13 +294,13 @@
                  HorizontalOptions="Center"
                  VerticalOptions="Center"/>
                         </Border>
-                        <Label Text="工序任务执行" FontSize="12" Margin="0,6,0,0"
+                        <Label Text="来料质检执行IQC" FontSize="12" Margin="0,6,0,0"
              HorizontalTextAlignment="Center" TextColor="#333"/>
                     </VerticalStackLayout>
                     <Frame.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnInProcess"/>
+                        <TapGestureRecognizer Tapped="OnIQC"/>
                     </Frame.GestureRecognizers>
-                </Frame>-->
+                </Frame>
 
                 <!-- 过程质检执行IPQC -->
                 <Frame Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}">
@@ -336,7 +339,43 @@
                         <TapGestureRecognizer Tapped="OnFQC"/>
                     </Frame.GestureRecognizers>
                 </Frame>
+                <!-- 发货质检执行OQC -->
+                <Frame Grid.Row="2" Grid.Column="0" Style="{StaticResource Card}">
+                    <VerticalStackLayout HorizontalOptions="Center">
+                        <Border HeightRequest="64" WidthRequest="64"
+                 BackgroundColor="BurlyWood"
+                 StrokeShape="RoundRectangle 32">
+                            <Image Source="shopping_cart.svg"
+                    HeightRequest="28" WidthRequest="28"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"/>
+                        </Border>
+                        <Label Text="发货质检执行OQC" FontSize="12" Margin="0,6,0,0"
+                HorizontalTextAlignment="Center" TextColor="#333"/>
+                    </VerticalStackLayout>
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnOQC"/>
+                    </Frame.GestureRecognizers>
+                </Frame>
 
+                <!-- 其他质检执行 -->
+                <Frame Grid.Row="2" Grid.Column="1" Style="{StaticResource Card}">
+                    <VerticalStackLayout HorizontalOptions="Center">
+                        <Border HeightRequest="64" WidthRequest="64"
+                 BackgroundColor="Beige"
+                 StrokeShape="RoundRectangle 32">
+                            <Image Source="where_to_vote.svg"
+                    HeightRequest="28" WidthRequest="28"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"/>
+                        </Border>
+                        <Label Text="其他质检执行" FontSize="12" Margin="0,6,0,0"
+                HorizontalTextAlignment="Center" TextColor="#333"/>
+                    </VerticalStackLayout>
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnOtherQ"/>
+                    </Frame.GestureRecognizers>
+                </Frame>
 
             </Grid>
 

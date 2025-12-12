@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
     x:Name="ThisPage"
-    x:Class="IndustrialControlMAUI.Pages.FinishedQualityDetailPage"
+    x:Class="IndustrialControlMAUI.Pages.OtherQualityDetailPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:conv="clr-namespace:IndustrialControlMAUI.Converters"
@@ -15,7 +15,7 @@
             <conv:StringToNullableDecimalConverter x:Key="DecConv" />
             <conv:DecParseOnlyConverter x:Key="DecParseOnlyConv" />
             <conv:DefectLevelToColorConverter x:Key="DefectLevelToColor"/>
-            <conv:IntGreaterThanZeroConverter x:Key="IntGT0" /> 
+            <conv:IntGreaterThanZeroConverter x:Key="IntGT0" />
             <conv:IndexConverter x:Key="IndexConverter" />
             <Style x:Key="PrimaryBtn" TargetType="Button">
                 <Setter Property="HeightRequest" Value="36" />
@@ -83,13 +83,11 @@
             <Button Grid.Column="1"
                     Text="保存"
                     Style="{StaticResource PrimaryBtn}"
-                    Command="{Binding SaveCommand}"
-                    IsVisible="{Binding IsEditing}"/>
+                    Command="{Binding SaveCommand}" IsVisible="{Binding IsEditing}" />
             <Button Grid.Column="2"
                     Text="完成质检"
                     Style="{StaticResource SuccessBtn}"
-                    Command="{Binding CompleteCommand}"
-                    IsVisible="{Binding IsEditing}"/>
+                    Command="{Binding CompleteCommand}" IsVisible="{Binding IsEditing}" />
         </Grid>
 
 
@@ -103,33 +101,34 @@
                           RowDefinitions="Auto,Auto,Auto,Auto,Auto"
                           ColumnSpacing="10" RowSpacing="8">
 
+                        <!-- 第一行 -->
                         <Label Grid.Row="0" Grid.Column="0" Text="质检单号：" Style="{StaticResource FieldLabel}" />
                         <Label Grid.Row="0" Grid.Column="1" Text="{Binding Detail.qualityNo}" Style="{StaticResource FieldValue}" />
 
                         <Label Grid.Row="0" Grid.Column="2" Text="质检单类型：" Style="{StaticResource FieldLabel}" />
                         <Label Grid.Row="0" Grid.Column="3" Text="{Binding Detail.qualityTypeName}" Style="{StaticResource FieldValue}" />
 
-                        <Label Grid.Row="1" Grid.Column="0" Text="关联工单号：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding Detail.orderNumber}" Style="{StaticResource FieldValue}" />
+                        <!-- 第二行 -->
+                        <Label Grid.Row="1" Grid.Column="0" Text="检查对象：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding Detail.processName}" Style="{StaticResource FieldValue}" />
 
-                        <Label Grid.Row="1" Grid.Column="2" Text="产品名称：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="1" Grid.Column="3" Text="{Binding Detail.orderQualityMaterial.materialName}" Style="{StaticResource FieldValue}" />
+                        <Label Grid.Row="1" Grid.Column="2" Text="数据来源：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="1" Grid.Column="3" Text="{Binding Detail.orderNumber}" Style="{StaticResource FieldValue}" />
 
-                        <Label Grid.Row="2" Grid.Column="0" Text="生产数量：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding Detail.orderQualityMaterial.qty, StringFormat='{0:G29}'}" Style="{StaticResource FieldValue}" />
+                        <!-- 第三行 -->
+                        <Label Grid.Row="2" Grid.Column="0" Text="质检方案：" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Detail.inspectionSchemeName}" Style="{StaticResource FieldValue}" />
 
-                        <Label Grid.Row="2" Grid.Column="2" Text="实际完工数量：" Style="{StaticResource FieldLabel}" />
-                        <Label Grid.Row="2" Grid.Column="3" Text="{Binding Detail.orderQualityMaterial.completedQty, StringFormat='{0:G29}'}" Style="{StaticResource FieldValue}" />
-
+                        <!-- 第四行 -->
                         <Label Grid.Row="3" Grid.Column="0" Style="{StaticResource FieldLabel}" >
-                            <Label.FormattedText>
-                                <FormattedString>
-                                    <Span Text="*" TextColor="Red" FontAttributes="Bold"/>
-                                    <Span Text="质检员：" />
-                                </FormattedString>
-                            </Label.FormattedText>
-                           </Label>
-                            <!-- 外层容器，便于定位下拉 -->
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="*" TextColor="Red" FontAttributes="Bold"/>
+                                    <Span Text=" 检验员：" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                        </Label>
+                        <!-- 外层容器，便于定位下拉 -->
                         <Grid Grid.Row="3" Grid.Column="1">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -192,12 +191,12 @@
 
                         <!-- 第0行：检验结果 下拉 -->
                         <Label Grid.Row="0" Grid.Column="0"  Grid.ColumnSpan="2"  Style="{StaticResource FieldLabel}" >
-                            <Label.FormattedText>
-                                <FormattedString>
-                                    <Span Text="*" TextColor="Red" FontAttributes="Bold"/>
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="*" TextColor="Red" FontAttributes="Bold"/>
                                     <Span Text=" 检验结果: " />
-                                </FormattedString>
-                            </Label.FormattedText>
+                            </FormattedString>
+                        </Label.FormattedText>
                         </Label>
                         <Picker Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2"
                                 ItemsSource="{Binding InspectResultOptions}"
@@ -218,8 +217,8 @@
                             </Picker.Triggers>
 
                         </Picker>
-                        <BoxView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="6" HeightRequest="1" BackgroundColor="#E5E7EB" />
 
+                        <BoxView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="6" HeightRequest="1" BackgroundColor="#E5E7EB" />
                         <!-- 第1行：抽样总数、不良总数、抽样不良率(只读) -->
                         <Label Grid.Row="2" Grid.Column="0" Text="抽样总数：" Style="{StaticResource FieldLabel}" />
                         <Entry Grid.Row="2" Grid.Column="1"
@@ -238,61 +237,9 @@
                                Text="{Binding Detail.samplingDefectRate, Mode=OneWay, StringFormat='{0:0.##}%'}"
                                IsEnabled="False" /> 
 
-                        <!-- 只读，显示XXXX风格 -->
-
-                        <!-- 第2行：合格总数、不合格总数、总体合格率(只读) -->
-                        <Label Grid.Row="3" Grid.Column="0" Style="{StaticResource FieldLabel}">
-                            <Label.FormattedText>
-                                <FormattedString>
-                                    <Span Text="*" TextColor="Red" FontAttributes="Bold"/>
-                                    <Span Text=" 合格总数：" />
-                                </FormattedString>
-                            </Label.FormattedText>
-                        </Label>
-                        <Entry Grid.Row="3" Grid.Column="1"
-                               Text="{Binding Detail.totalQualified, Mode=TwoWay,  Converter={StaticResource DecParseOnlyConv}}"
-                               Keyboard="Numeric"
-                               IsEnabled="{Binding IsEditing}" />
-                        <Label Grid.Row="3" Grid.Column="2" Style="{StaticResource FieldLabel}">
-                            <Label.FormattedText>
-                                <FormattedString>
-                                    <Span Text="*" TextColor="Red" FontAttributes="Bold"/>
-                                    <Span Text=" 不合格总数：" />
-                                </FormattedString>
-                            </Label.FormattedText>
-                        </Label>
-                        <Entry Grid.Row="3" Grid.Column="3"
-                               Text="{Binding Detail.totalUnqualified, Mode=TwoWay,Converter={StaticResource DecParseOnlyConv}}"
-                               Keyboard="Numeric"
-                               IsEnabled="{Binding IsEditing}" /> 
-
-                        <Label Grid.Row="3" Grid.Column="4" Text="总体合格率：" Style="{StaticResource FieldLabel}" />
-                        <Entry Grid.Row="3" Grid.Column="5"
-                               Text="{Binding Detail.passRate, Mode=OneWay, StringFormat='{0:0.##}%'}"
-                               IsEnabled="False" /> 
-                        <!-- 只读 -->
-
-                        <!-- 第3行：质检损耗、留样数量、留样编号 -->
-                        <Label Grid.Row="4" Grid.Column="0" Text="质检损耗：" Style="{StaticResource FieldLabel}" />
-                        <Entry Grid.Row="4" Grid.Column="1"
-                               Text="{Binding Detail.inspectionLossQty, Mode=TwoWay, Converter={StaticResource DecConv}}"
-                               Keyboard="Numeric"
-                               IsEnabled="{Binding IsEditing}" /> 
-
-                        <Label Grid.Row="4" Grid.Column="2" Text="留样数量：" Style="{StaticResource FieldLabel}" />
-                        <Entry Grid.Row="4" Grid.Column="3"
-                               Text="{Binding Detail.retainedSampleQty, Mode=TwoWay, Converter={StaticResource DecConv}}"
-                               Keyboard="Numeric"
-                               IsEnabled="{Binding IsEditing}" />
-
-                        <Label Grid.Row="4" Grid.Column="4" Text="留样编号：" Style="{StaticResource FieldLabel}" />
-                        <Entry Grid.Row="4" Grid.Column="5"
-                               Text="{Binding Detail.retainedSampleNumber, Mode=TwoWay}"
-                               IsEnabled="{Binding IsEditing}" />   
-
                         <!-- 第4行：检验备注（整行） -->
-                        <Label Grid.Row="5" Grid.Column="0" Text="检验备注：" Style="{StaticResource FieldLabel}" />
-                        <Entry Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="5"
+                        <Label Grid.Row="3" Grid.Column="0" Text="检验备注：" Style="{StaticResource FieldLabel}" />
+                        <Entry Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="5"
                                Text="{Binding Detail.inspectRemark, Mode=TwoWay}"
                                IsEnabled="{Binding IsEditing}" /> 
                     </Grid>
@@ -443,7 +390,7 @@
                                                     HorizontalOptions="Center"
                                                     VerticalOptions="Center"
                                                     Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.OpenDefectPickerCommand}"
-                                                    CommandParameter="{Binding .}"
+                                                    CommandParameter="{Binding .}" 
                                                     IsVisible="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.IsEditing}"/>
                                             </HorizontalStackLayout>
 
@@ -479,12 +426,12 @@
                                         </Frame>
                                         <!-- 右上角删除 -->
                                         <Button Text="×" FontSize="12" Padding="0"
-                                                WidthRequest="22" HeightRequest="22" CornerRadius="11"
-                                                BackgroundColor="#00000066" TextColor="White"
-                                                HorizontalOptions="End" VerticalOptions="Start" Margin="2"
-                                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteAttachmentCommand}"
-                                                CommandParameter="{Binding .}"
-                                                IsVisible="{Binding IsEditing}" /> 
+                    WidthRequest="22" HeightRequest="22" CornerRadius="11"
+                    BackgroundColor="#00000066" TextColor="White"
+                    HorizontalOptions="End" VerticalOptions="Start" Margin="2"
+                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteAttachmentCommand}"
+                    CommandParameter="{Binding .}" 
+                    IsVisible="{Binding IsEditing}"                         />
                                     </Grid>
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
@@ -492,8 +439,8 @@
 
                         <!-- 上传方块 -->
                         <Frame WidthRequest="96" HeightRequest="96" CornerRadius="8"
-           BorderColor="#E5E7EB" BackgroundColor="White" IsVisible="{Binding IsEditing}"
-           HasShadow="False" Padding="8" VerticalOptions="Start">
+           BorderColor="#E5E7EB" BackgroundColor="White"
+           HasShadow="False" Padding="8" VerticalOptions="Start" IsVisible="{Binding IsEditing}" >
                             <VerticalStackLayout Spacing="4" VerticalOptions="Center" HorizontalOptions="Center">
                                 <Label Text="＋" FontSize="28" TextColor="#9CA3AF" />
                                 <Label Text="单击上传" FontSize="12" TextColor="#9CA3AF" Margin="0,0,0,2" LineHeight="1.1"/>
@@ -519,10 +466,10 @@
                     <!-- Row2 右：提示 -->
                     <Label Grid.Row="2" Grid.Column="1"
          Text="（单个附件最大支持20M，支持格式PDF、Word、Excel、Txt、JPG、PNG、RAR）"
-         FontSize="12" TextColor="#9CA3AF" IsVisible="{Binding IsEditing}"/>
+         FontSize="12" TextColor="#9CA3AF" IsVisible="{Binding IsEditing}" />
 
                     <!-- Row3 右：附件表格 -->
-                    <Grid Grid.Row="3" Grid.Column="1" RowDefinitions="Auto,*" Margin="0,4,0,0">
+                    <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" RowDefinitions="Auto,*" Margin="0,4,0,0">
                         <Grid Grid.Row="0" ColumnDefinitions="40,100,40,80,120"
           BackgroundColor="#E5EEF9" Padding="8,8">
                             <Label Grid.Column="0" Text="序号" />
@@ -537,8 +484,8 @@
                                 <DataTemplate>
                                     <Grid ColumnDefinitions="40,100,40,80,120" Padding="8,10">
                                         <Label Text="{Binding .,
-                                            Converter={StaticResource IndexConverter},
-                                            ConverterParameter={x:Reference AttList}}" />   
+                                      Converter={StaticResource IndexConverter},
+                                      ConverterParameter={x:Reference AttList}}" />
                                         <Label Grid.Column="1" Text="{Binding AttachmentName}" LineBreakMode="TailTruncation"/>
                                         <Label Grid.Column="2" Text="{Binding AttachmentSize}" />
                                         <Label Grid.Column="3" Text="{Binding CreatedTime}" />
@@ -562,8 +509,8 @@
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
                         </CollectionView>
-                    
                     </Grid>
+
                     <Grid Grid.Row="4"  Grid.Column="0" Grid.ColumnSpan="2" RowDefinitions="Auto,*">
                         <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
 ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="10">

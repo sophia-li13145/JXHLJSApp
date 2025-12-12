@@ -33,10 +33,18 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(nameof(Pages.MoldOutboundExecutePage), typeof(Pages.MoldOutboundExecutePage));
         Routing.RegisterRoute(nameof(Pages.ProcessTaskSearchPage), typeof(Pages.ProcessTaskSearchPage));
         Routing.RegisterRoute(nameof(Pages.WorkProcessTaskDetailPage), typeof(Pages.WorkProcessTaskDetailPage));
+        Routing.RegisterRoute(nameof(Pages.QualitySearchPage), typeof(Pages.QualitySearchPage));
+        Routing.RegisterRoute(nameof(Pages.QualityDetailPage), typeof(Pages.QualityDetailPage));
+        Routing.RegisterRoute(nameof(Pages.IncomingQualitySearchPage), typeof(Pages.IncomingQualitySearchPage));
+        Routing.RegisterRoute(nameof(Pages.IncomingQualityDetailPage), typeof(Pages.IncomingQualityDetailPage));
         Routing.RegisterRoute(nameof(Pages.ProcessQualitySearchPage), typeof(Pages.ProcessQualitySearchPage));
         Routing.RegisterRoute(nameof(Pages.ProcessQualityDetailPage), typeof(Pages.ProcessQualityDetailPage));
         Routing.RegisterRoute(nameof(Pages.FinishedQualitySearchPage), typeof(Pages.FinishedQualitySearchPage));
         Routing.RegisterRoute(nameof(Pages.FinishedQualityDetailPage), typeof(Pages.FinishedQualityDetailPage));
+        Routing.RegisterRoute(nameof(Pages.OutgoingQualitySearchPage), typeof(Pages.OutgoingQualitySearchPage));
+        Routing.RegisterRoute(nameof(Pages.OutgoingQualityDetailPage), typeof(Pages.OutgoingQualityDetailPage));
+        Routing.RegisterRoute(nameof(Pages.OtherQualitySearchPage), typeof(Pages.OtherQualitySearchPage));
+        Routing.RegisterRoute(nameof(Pages.OtherQualityDetailPage), typeof(Pages.OtherQualityDetailPage));
         Routing.RegisterRoute(nameof(Pages.InspectionSearchPage), typeof(Pages.InspectionSearchPage));
         Routing.RegisterRoute(nameof(Pages.InspectionDetailPage), typeof(Pages.InspectionDetailPage));
         Routing.RegisterRoute(nameof(Pages.InspectionRunSearchPage), typeof(Pages.InspectionRunSearchPage));

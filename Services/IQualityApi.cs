@@ -37,6 +37,7 @@ namespace IndustrialControlMAUI.Services
     CancellationToken ct = default);
 
         Task<ApiResp<bool>> DeleteAttachmentAsync(string id, CancellationToken ct = default);
+        Task<ApiResp<List<InspectWorkflowNode>>> GetWorkflowAsync(string id, CancellationToken ct = default);
     }
 
     // ===================== 实现 =====================
@@ -52,6 +53,7 @@ namespace IndustrialControlMAUI.Services
         private readonly string _defectPagePath;
         private readonly string _deleteAttPath;
         private readonly IAttachmentApi _attachmentApi;
+        private readonly string _workflowPath;
 
         private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
@@ -88,7 +90,9 @@ namespace IndustrialControlMAUI.Services
             _deleteAttPath = NormalizeRelative(
     configLoader.GetApiPath("quality.previewImage", "/pda/qsOrderQuality/deleteAttachment"),
     servicePath);
-            _auth = auth;
+            _workflowPath = NormalizeRelative(
+               configLoader.GetApiPath("quality.workflow", "/pda/qsOrderQuality/getQsOrderWorkflow"),
+               servicePath);
         }
         // ===== 公共工具 =====
         private static string BuildFullUrl(Uri? baseAddress, string url)
@@ -204,8 +208,12 @@ namespace IndustrialControlMAUI.Services
             var inspectStatus = all.FirstOrDefault(f =>
        string.Equals(f.field, "inspectStatus", StringComparison.OrdinalIgnoreCase))
        ?.dictItems ?? new List<DictItem>();
+            var qualityTypes = all.FirstOrDefault(f =>
+       string.Equals(f.field, "qualityType", StringComparison.OrdinalIgnoreCase))
+       ?.dictItems ?? new List<DictItem>();
+            
 
-            return new DictQuality { InspectStatus = inspectStatus };
+            return new DictQuality { InspectStatus = inspectStatus, QualityTypes = qualityTypes };
         }
         // Services/QualityApi.cs 追加方法（沿用你 BuildQuery/BuildFullUrl 风格）
         public async Task<ApiResp<QualityDetailDto>?> GetDetailAsync(string id, CancellationToken ct = default)
@@ -314,7 +322,36 @@ namespace IndustrialControlMAUI.Services
         return await _attachmentApi.DeleteAttachmentAsync(id, _deleteAttPath, ct);
          }
 
+        public Task<ApiResp<List<InspectWorkflowNode>>> GetWorkflowAsync(string id, CancellationToken ct = default)
+            => GetApiRespByIdAsync<List<InspectWorkflowNode>>(_workflowPath, id, ct)!;
+
+        private async Task<ApiResp<T>?> GetApiRespByIdAsync<T>(
+            string endpoint,
+            string id,
+            CancellationToken ct)
+        {
+            var full = BuildFullUrl(_http.BaseAddress, endpoint) +
+                       "?id=" + Uri.EscapeDataString(id ?? string.Empty);
+
+            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
+            using var res = await _http.SendAsync(req, ct);
+            var json = await ResponseGuard.ReadAsStringAndCheckAsync(res, _auth, ct);
+
+            if (!res.IsSuccessStatusCode)
+            {
+                return new ApiResp<T>
+                {
+                    success = false,
+                    code = (int)res.StatusCode,
+                    message = $"HTTP {(int)res.StatusCode}"
+                };
+            }
+
+            return JsonSerializer.Deserialize<ApiResp<T>>(json, _json)
+                   ?? new ApiResp<T> { success = false, message = "Empty body" };
         }
+
+    }
 
 
 

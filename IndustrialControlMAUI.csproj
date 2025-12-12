@@ -170,6 +170,30 @@
 		<Compile Update="Pages\Quality\FinishedQualitySearchPage.xaml.cs">
 		  <DependentUpon>FinishedQualitySearchPage.xaml</DependentUpon>
 		</Compile>
+		<Compile Update="Pages\Quality\OtherQualitySearchPage.xaml.cs">
+		  <DependentUpon>OtherQualitySearchPage.xaml</DependentUpon>
+		</Compile>
+		<Compile Update="Pages\Quality\OtherQualityDetailPage.xaml.cs">
+		  <DependentUpon>OtherQualityDetailPage.xaml</DependentUpon>
+		</Compile>
+		<Compile Update="Pages\Quality\OutgoingQualitySearchPage.xaml.cs">
+		  <DependentUpon>OutgoingQualitySearchPage.xaml</DependentUpon>
+		</Compile>
+		<Compile Update="Pages\Quality\OutgoingQualityDetailPage.xaml.cs">
+		  <DependentUpon>OutgoingQualityDetailPage.xaml</DependentUpon>
+		</Compile>
+		<Compile Update="Pages\Quality\IncomingQualityDetailPage.xaml.cs">
+		  <DependentUpon>IncomingQualityDetailPage.xaml</DependentUpon>
+		</Compile>
+		<Compile Update="Pages\Quality\IncomingQualitySearchPage.xaml.cs">
+		  <DependentUpon>IncomingQualitySearchPage.xaml</DependentUpon>
+		</Compile>
+		<Compile Update="Pages\Quality\QualitySearchPage.xaml.cs">
+		  <DependentUpon>QualitySearchPage.xaml</DependentUpon>
+		</Compile>
+		<Compile Update="Pages\Quality\QualityDetailPage.xaml.cs">
+		  <DependentUpon>QualityDetailPage.xaml</DependentUpon>
+		</Compile>
 		<Compile Update="Pages\Quality\ProcessQualitySearchPage.xaml.cs">
 		  <DependentUpon>ProcessQualitySearchPage.xaml</DependentUpon>
 		</Compile>
@@ -273,6 +297,30 @@
 		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Pages\Quality\FinishedQualitySearchPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\Quality\OtherQualityDetailPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\Quality\OtherQualitySearchPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\Quality\OutgoingQualityDetailPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\Quality\IncomingQualityDetailPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\Quality\OutgoingQualitySearchPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\Quality\IncomingQualitySearchPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\Quality\QualityDetailPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\Quality\QualitySearchPage.xaml">
 		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Pages\Quality\ProcessQualitySearchPage.xaml">
