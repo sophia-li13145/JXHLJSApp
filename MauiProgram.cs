@@ -5,6 +5,7 @@ using IndustrialControlMAUI.Services;
 using IndustrialControlMAUI.Tools;
 using IndustrialControlMAUI.ViewModels;
 using Microsoft.Extensions.Logging;
+using Serilog;
 using ZXing.Net.Maui;
 using ZXing.Net.Maui.Controls;
 
@@ -28,6 +29,10 @@ namespace IndustrialControlMAUI
 #if DEBUG
             builder.Logging.AddDebug(); // ✅ 放在 Build 之前
 #endif
+            // =====================================================
+            // ✅ Serilog 初始化（统一安全路径）
+            // =====================================================
+            InitSerilog(builder);
             builder.Services.AddSingleton<AppShell>();
             // 注册 ConfigLoader
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();
@@ -196,10 +201,40 @@ namespace IndustrialControlMAUI
             return app;
         }
 
+        // =====================================================
+        // Serilog 初始化方法
+        // =====================================================
+        private static void InitSerilog(MauiAppBuilder builder)
+        {
+            var baseDir = FileSystem.Current.AppDataDirectory;
+
+            if (string.IsNullOrWhiteSpace(baseDir) || baseDir == "/")
+            {
+                baseDir = FileSystem.Current.CacheDirectory;
+            }
+
+            var logsDir = Path.Combine(baseDir, "logs");
+            Directory.CreateDirectory(logsDir);
+
+            var logPath = Path.Combine(logsDir, "app_log-.txt");
+
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.Debug()
+                .WriteTo.File(
+                    path: logPath,
+                    rollingInterval: RollingInterval.Day,
+                    shared: true)
+                .CreateLogger();
+
+            builder.Logging.AddSerilog(Log.Logger, dispose: true);
+        }
+
         private static void ConfigureBaseAddress(IServiceProvider sp, HttpClient http)
         {
             var cfg = sp.GetRequiredService<IConfigLoader>();
             var baseUrl = cfg.GetBaseUrl();
+
             if (string.IsNullOrWhiteSpace(baseUrl))
                 throw new InvalidOperationException("配置文件缺少有效的 BaseUrl。");
 
@@ -210,3 +245,4 @@ namespace IndustrialControlMAUI
         }
     }
 }
+
