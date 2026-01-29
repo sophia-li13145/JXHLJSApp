@@ -408,7 +408,7 @@
                                             <Label Grid.Column="2" Text="检验参数：" Style="{StaticResource FieldLabel}" />
                                             <Picker Grid.Column="3"
                                     Title="请选择"
-                                    ItemsSource="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.InspectParamList}"
+                                    ItemsSource="{Binding InspectParamOptions}"
                                     ItemDisplayBinding="{Binding Name}"
                                     SelectedItem="{Binding selectedInspectParam, Mode=TwoWay}"
                                     IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.IsEditing}"
@@ -480,7 +480,14 @@
                                         Padding="10,6"
                                         Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.AutoInspectCommand}"
                                         CommandParameter="{Binding .}"
-                                        IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.IsEditing}"/>
+                                        IsEnabled="{Binding IsAutoInspectEnabled}">
+                                                    <Button.Triggers>
+                                                        <Trigger TargetType="Button" Property="IsEnabled" Value="False">
+                                                            <Setter Property="BackgroundColor" Value="#D1D5DB" />
+                                                            <Setter Property="TextColor" Value="#9CA3AF" />
+                                                        </Trigger>
+                                                    </Button.Triggers>
+                                                </Button>
                                                 <Button Text="查看检验详细数据"
                                         BackgroundColor="Transparent"
                                         TextColor="#2563EB"
@@ -678,4 +685,3 @@ ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="10">
         </ScrollView>
     </Grid>
 </ContentPage>
-
