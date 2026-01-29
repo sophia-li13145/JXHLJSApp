@@ -140,7 +140,7 @@ namespace IndustrialControlMAUI.ViewModels
                 inspectStatus: inspectStatus,
                 searchCount: searchCount);
 
-            var records = resp?.result?.records ?? new List<InspectionOrderItem>();
+            var records = resp?.result?.records ?? new List<InspectionRecordDto>();
             var mapped = new List<InspectionOrderItem>();
             foreach (var t in records)
             {

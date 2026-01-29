@@ -141,7 +141,7 @@ namespace IndustrialControlMAUI.ViewModels
                 qualityType: qualityType,
                 searchCount: searchCount);
 
-            var records = resp?.result?.records ?? new List<QualityOrderItem>();
+            var records = resp?.result?.records ?? new List<QualityRecordDto>();
             var mapped = new List<QualityOrderItem>();
             foreach (var t in records)
             {

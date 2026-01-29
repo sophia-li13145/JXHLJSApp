@@ -140,7 +140,7 @@ namespace IndustrialControlMAUI.ViewModels
                 upkeepStatus: upkeepStatus,
                 searchCount: searchCount);
 
-            var records = resp?.result?.records ?? new List<MaintenanceOrderItem>();
+            var records = resp?.result?.records ?? new List<MaintenanceRecordDto>();
             var mapped = new List<MaintenanceOrderItem>();
             foreach (var t in records)
             {
