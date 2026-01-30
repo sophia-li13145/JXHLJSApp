@@ -1,28 +1,34 @@
 using System.Globalization;
+using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Storage;
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace IndustrialControlMAUI.Services
 {
-//    本地文本日志：
+    //    本地文本日志：
 
-//每天一个文件，按日期命名；
+    //每天一个文件，按日期命名；
 
-//只记录时间（时分秒）+ 文本，不区分等级（Info/Error 等），也没有结构化字段。
+    //只记录时间（时分秒）+ 文本，不区分等级（Info/Error 等），也没有结构化字段。
 
-//后台轮询 + 事件推送：
+    //后台轮询 + 事件推送：
 
-//800ms 轮询当前日志文件，检测变化；
+    //800ms 轮询当前日志文件，检测变化；
 
-//有变化就把全量日志文本通过 LogTextUpdated 推给 UI；
+    //有变化就把全量日志文本通过 LogTextUpdated 推给 UI；
 
-//写日志时会额外推送增量单条日志给订阅者。
+    //写日志时会额外推送增量单条日志给订阅者。
 
-//页面级启停：
+    //页面级启停：
 
-//只在日志查看页面打开时启动轮询，离开时停止，避免长期占资源。
+    //只在日志查看页面打开时启动轮询，离开时停止，避免长期占资源。
 
-//系统级 Debug 日志：
+    //系统级 Debug 日志：
 
-//DEBUG 模式下，用 Microsoft.Extensions.Logging 把日志输出到 VS 调试器。
+    //DEBUG 模式下，用 Microsoft.Extensions.Logging 把日志输出到 VS 调试器。
     public class LogService : IDisposable
     {
         private readonly string _logsDir = Path.Combine(FileSystem.AppDataDirectory, "logs");
@@ -35,7 +41,6 @@ namespace IndustrialControlMAUI.Services
 
         // 日志保留天数（包含今天）
         private const int LogRetainDays = 7;
-
 
         public LogService()
         {
@@ -88,11 +93,6 @@ namespace IndustrialControlMAUI.Services
                             file.Delete();
                         }
                     }
-                    else
-                    {
-                        // 文件名不是标准格式时可以选择忽略或删除，这里选择忽略
-                        continue;
-                    }
                 }
             }
             catch (Exception ex)
@@ -102,7 +102,6 @@ namespace IndustrialControlMAUI.Services
             }
         }
 
-
         public void Stop()
         {
             _cts?.Cancel();
@@ -110,10 +109,9 @@ namespace IndustrialControlMAUI.Services
             _cts = null;
         }
 
-                            var text = await sr.ReadToEndAsync().ConfigureAwait(false);
-                        await SafeDelay(_interval, token).ConfigureAwait(false);
+        private async Task LoopAsync(CancellationToken token)
         {
-                await Task.Delay(step).ConfigureAwait(false);
+            var last = string.Empty;
 
             try
             {
@@ -127,7 +125,7 @@ namespace IndustrialControlMAUI.Services
                             using var fs = new FileStream(
                                 TodayLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                             using var sr = new StreamReader(fs);
-                            var text = await sr.ReadToEndAsync();
+                            var text = await sr.ReadToEndAsync().ConfigureAwait(false);
 
                             if (!string.Equals(text, last, StringComparison.Ordinal))
                             {
@@ -149,7 +147,7 @@ namespace IndustrialControlMAUI.Services
 
                     try
                     {
-                        await SafeDelay(_interval, token);
+                        await SafeDelay(_interval, token).ConfigureAwait(false);
                     }
                     catch (OperationCanceledException)
                     {
@@ -172,11 +170,9 @@ namespace IndustrialControlMAUI.Services
             for (int i = 0; i < loops; i++)
             {
                 if (token.IsCancellationRequested) return;
-                await Task.Delay(step);
+                await Task.Delay(step, token).ConfigureAwait(false);
             }
         }
-
-
 
         // 写日志
         public void WriteLog(string message)
