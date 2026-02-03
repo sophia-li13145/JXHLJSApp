@@ -105,6 +105,8 @@ namespace JXHLJSApp.Pages
         {
             await TokenStorage.ClearAsync();   // 清除 token
             ApiClient.SetBearer(null);         // 清空请求头
+            Preferences.Remove("WorkshopName");
+            Preferences.Remove("WorkshopScope");
 
             // 切换到未登录的 Shell：显示 登录｜日志｜管理员
             MainThread.BeginInvokeOnMainThread(() =>
