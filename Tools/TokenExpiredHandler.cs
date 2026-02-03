@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Text.Json;
 
-namespace IndustrialControlMAUI.Tools
+namespace JXHLJSApp.Tools
 {
     /// <summary>
     /// 统一拦截 HTTP 401/403 或 业务 JSON 返回的 token 失效码，触发 Logout。

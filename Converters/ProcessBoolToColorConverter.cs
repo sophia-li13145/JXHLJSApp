@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 
 
-namespace IndustrialControlMAUI.Converters
+namespace JXHLJSApp.Converters
 {
     public class ProcessBoolToColorConverter : IValueConverter
     {

@@ -1,7 +1,7 @@
-using IndustrialControlMAUI.Models;
+using JXHLJSApp.Models;
 using System.Text.Json;
 
-namespace IndustrialControlMAUI.Services;
+namespace JXHLJSApp.Services;
 
 public class ConfigLoader
 {

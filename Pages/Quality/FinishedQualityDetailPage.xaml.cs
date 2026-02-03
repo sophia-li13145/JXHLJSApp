@@ -1,6 +1,6 @@
-using IndustrialControlMAUI.ViewModels;
+using JXHLJSApp.ViewModels;
 
-namespace IndustrialControlMAUI.Pages;
+namespace JXHLJSApp.Pages;
 
 public partial class FinishedQualityDetailPage : ContentPage
 {

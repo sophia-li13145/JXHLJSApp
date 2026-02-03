@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Collections;
 
-namespace IndustrialControlMAUI.Converters
+namespace JXHLJSApp.Converters
 {
     public class IndexConverter : IValueConverter
     {

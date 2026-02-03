@@ -2,7 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Text.Json.Nodes;
 
-namespace IndustrialControlMAUI.ViewModels;
+namespace JXHLJSApp.ViewModels;
 
 public partial class AdminViewModel : ObservableObject
 {

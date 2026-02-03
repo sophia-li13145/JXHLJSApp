@@ -1,9 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndustrialControlMAUI.Services;
+using JXHLJSApp.Services;
 using System.Collections.ObjectModel;
 
-namespace IndustrialControlMAUI.ViewModels;
+namespace JXHLJSApp.ViewModels;
 
 public partial class OutboundFinishedSearchViewModel : ObservableObject
 {

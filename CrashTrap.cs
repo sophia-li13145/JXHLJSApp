@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 #if ANDROID
 using Android.Runtime;
 #endif
-namespace IndustrialControlMAUI;
+namespace JXHLJSApp;
 public static class CrashTrap
 {
     public static void Init()

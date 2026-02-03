@@ -1,6 +1,6 @@
-using IndustrialControl.ViewModels.Energy;
+using JXHLJSApp.ViewModels.Energy;
 
-namespace IndustrialControlMAUI.Pages;
+namespace JXHLJSApp.Pages;
 
 public partial class ManualReadingPage : ContentPage
 {

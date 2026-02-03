@@ -1,8 +1,8 @@
 ﻿
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndustrialControlMAUI.Services;
-using IndustrialControlMAUI.ViewModels;
+using JXHLJSApp.Services;
+using JXHLJSApp.ViewModels;
 using Microsoft.Maui;
 using Microsoft.Maui.ApplicationModel;
 using System;
@@ -11,7 +11,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace IndustrialControlMAUI.ViewModels
+namespace JXHLJSApp.ViewModels
 {
     public partial class WarehouseLocationPickerViewModel : ObservableObject
     {

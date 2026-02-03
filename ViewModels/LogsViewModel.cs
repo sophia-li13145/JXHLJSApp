@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using IndustrialControlMAUI.Services;
+using JXHLJSApp.Services;
 
-namespace IndustrialControlMAUI.ViewModels
+namespace JXHLJSApp.ViewModels
 {
     public partial class LogsViewModel : ObservableObject
     {

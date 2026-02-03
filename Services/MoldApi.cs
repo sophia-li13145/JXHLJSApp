@@ -1,11 +1,11 @@
-using IndustrialControlMAUI.Services.Common;
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Tools;
+using JXHLJSApp.Services.Common;
+using JXHLJSApp.Models;
+using JXHLJSApp.Tools;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
-namespace IndustrialControlMAUI.Services
+namespace JXHLJSApp.Services
 {
 public class MoldApi : IMoldApi
     {

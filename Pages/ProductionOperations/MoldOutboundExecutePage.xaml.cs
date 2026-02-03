@@ -1,8 +1,8 @@
-﻿using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.ViewModels;
+﻿using JXHLJSApp.Models;
+using JXHLJSApp.ViewModels;
 using System.Text.Json;
 
-namespace IndustrialControlMAUI.Pages;
+namespace JXHLJSApp.Pages;
 
 // 注意：不再使用 [QueryProperty]，改用 IQueryAttributable
 public partial class MoldOutboundExecutePage : ContentPage, IQueryAttributable

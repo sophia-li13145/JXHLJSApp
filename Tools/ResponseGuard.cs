@@ -7,7 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace IndustrialControlMAUI.Tools
+namespace JXHLJSApp.Tools
 {
     public static class ResponseGuard
     {

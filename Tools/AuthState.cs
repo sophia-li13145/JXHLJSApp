@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
 using System.Threading;
 
-namespace IndustrialControlMAUI.Tools
+namespace JXHLJSApp.Tools
 {
     public sealed class AuthState
     {

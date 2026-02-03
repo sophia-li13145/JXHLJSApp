@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace IndustrialControlMAUI.Converters
+namespace JXHLJSApp.Converters
 {
     public class BoolToPrimaryOrGrayConverter : IValueConverter
     {

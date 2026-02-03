@@ -3,7 +3,7 @@ using Microsoft.Maui.Storage;
 using Serilog;
 using System.IO;
 
-namespace IndustrialControlMAUI;
+namespace JXHLJSApp;
 
 public partial class App : Application
 {
@@ -19,28 +19,28 @@ public partial class App : Application
         _configLoader = configLoader;
         _shell = shell;
 
-        // ===== ³õÊ¼»¯ Serilog£¨¿çÆ½Ì¨°²È«Â·¾¶£©=====
+        // ===== åˆå§‹åŒ– Serilogï¼ˆè·¨å¹³å°å®‰å…¨è·¯å¾„ï¼‰=====
         InitSerilog();
 
-        // ===== È«¾ÖÒì³£²¶»ñ =====
+        // ===== å…¨å±€å¼‚å¸¸æ•è· =====
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
-        // ÏÈ¸ø MainPage£¬±ÜÃâ¿ÕÒıÓÃ
+        // å…ˆç»™ MainPageï¼Œé¿å…ç©ºå¼•ç”¨
         MainPage = _shell;
 
-        // Òì²½³õÊ¼»¯µÇÂ¼×´Ì¬
+        // å¼‚æ­¥åˆå§‹åŒ–ç™»å½•çŠ¶æ€
         _ = InitAsync();
     }
 
     /// <summary>
-    /// Serilog ³õÊ¼»¯£¨AppDataDirectory/logs£©
+    /// Serilog åˆå§‹åŒ–ï¼ˆAppDataDirectory/logsï¼‰
     /// </summary>
     private static void InitSerilog()
     {
         var baseDir = FileSystem.Current.AppDataDirectory;
 
-        // ¼«¶Ë¶µµ×£¨ÀíÂÛÉÏ²»»á·¢Éú£¬µ«·ÀÓùĞÔ´¦Àí£©
+        // æç«¯å…œåº•ï¼ˆç†è®ºä¸Šä¸ä¼šå‘ç”Ÿï¼Œä½†é˜²å¾¡æ€§å¤„ç†ï¼‰
         if (string.IsNullOrWhiteSpace(baseDir) || baseDir == "/")
         {
             baseDir = FileSystem.Current.CacheDirectory;
@@ -67,7 +67,7 @@ public partial class App : Application
     {
         base.OnStart();
 
-        // Æô¶¯Ê±È·±£ÅäÖÃ×îĞÂ
+        // å¯åŠ¨æ—¶ç¡®ä¿é…ç½®æœ€æ–°
         await _configLoader.EnsureLatestAsync();
 
         var token = await TokenStorage.LoadAsync();
@@ -110,18 +110,18 @@ public partial class App : Application
         });
     }
 
-    // ===== È«¾ÖÒì³£´¦Àí =====
+    // ===== å…¨å±€å¼‚å¸¸å¤„ç† =====
     private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         if (e.ExceptionObject is Exception ex)
         {
-            Log.Error(ex, "²¶»ñµ½Î´´¦ÀíµÄÈ«¾ÖÒì³£");
+            Log.Error(ex, "æ•è·åˆ°æœªå¤„ç†çš„å…¨å±€å¼‚å¸¸");
         }
     }
 
     private void OnUnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
     {
-        Log.Error(e.Exception, "²¶»ñµ½Î´¹Û²ìµÄÈÎÎñÒì³£");
+        Log.Error(e.Exception, "æ•è·åˆ°æœªè§‚å¯Ÿçš„ä»»åŠ¡å¼‚å¸¸");
         e.SetObserved();
     }
 }

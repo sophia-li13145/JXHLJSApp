@@ -1,5 +1,5 @@
 ﻿// Utils/TokenStorage.cs
-namespace IndustrialControlMAUI;
+namespace JXHLJSApp;
 
 public static class TokenStorage
 {

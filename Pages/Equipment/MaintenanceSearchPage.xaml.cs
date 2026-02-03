@@ -1,7 +1,7 @@
-using IndustrialControlMAUI.Services;
-using IndustrialControlMAUI.ViewModels;
+using JXHLJSApp.Services;
+using JXHLJSApp.ViewModels;
 
-namespace IndustrialControlMAUI.Pages;
+namespace JXHLJSApp.Pages;
 
 public partial class MaintenanceSearchPage : ContentPage
 {

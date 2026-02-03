@@ -1,16 +1,16 @@
 ﻿using CommunityToolkit.Maui;
-using IndustrialControl.ViewModels.Energy;
-using IndustrialControlMAUI.Pages;
-using IndustrialControlMAUI.Services;
-using IndustrialControlMAUI.Tools;
-using IndustrialControlMAUI.ViewModels;
+using JXHLJSApp.ViewModels.Energy;
+using JXHLJSApp.Pages;
+using JXHLJSApp.Services;
+using JXHLJSApp.Tools;
+using JXHLJSApp.ViewModels;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using ZXing.Net.Maui;
 using ZXing.Net.Maui.Controls;
 
 
-namespace IndustrialControlMAUI
+namespace JXHLJSApp
 {
     public static class MauiProgram
     {
@@ -245,4 +245,3 @@ namespace IndustrialControlMAUI
         }
     }
 }
-

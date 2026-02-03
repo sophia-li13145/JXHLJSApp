@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage x:Class="IndustrialControlMAUI.Pages.InventorySearchPage"
+<ContentPage x:Class="JXHLJSApp.Pages.InventorySearchPage"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:conv="clr-namespace:IndustrialControlMAUI.Converters"
+             xmlns:conv="clr-namespace:JXHLJSApp.Converters"
              Shell.NavBarIsVisible="True">
     <ContentPage.Resources>
         <ResourceDictionary>

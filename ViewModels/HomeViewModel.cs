@@ -1,1 +1,1 @@
-namespace IndustrialControlMAUI.ViewModels; public partial class HomeViewModel { }
+namespace JXHLJSApp.ViewModels; public partial class HomeViewModel { }

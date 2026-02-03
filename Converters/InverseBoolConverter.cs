@@ -1,6 +1,6 @@
 ﻿// Converters/InverseBoolConverter.cs
 using System.Globalization;
-namespace IndustrialControlMAUI.Converters
+namespace JXHLJSApp.Converters
 {
     public sealed class InverseBoolConverter : IValueConverter
     {

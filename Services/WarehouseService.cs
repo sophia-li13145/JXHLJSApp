@@ -1,6 +1,6 @@
-using IndustrialControlMAUI.Services.Common;
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Tools;
+using JXHLJSApp.Services.Common;
+using JXHLJSApp.Models;
+using JXHLJSApp.Tools;
 using Serilog;
 using System.Net.Http.Headers;
 using System.Reflection;
@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace IndustrialControlMAUI.Services;
+namespace JXHLJSApp.Services;
 
 public sealed class WarehouseService : IWarehouseService
 {

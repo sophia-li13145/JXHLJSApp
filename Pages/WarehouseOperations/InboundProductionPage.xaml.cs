@@ -1,9 +1,9 @@
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Services;
-using IndustrialControlMAUI.ViewModels;
-using SharedLocationVM = IndustrialControlMAUI.ViewModels.LocationVM;
+using JXHLJSApp.Models;
+using JXHLJSApp.Services;
+using JXHLJSApp.ViewModels;
+using SharedLocationVM = JXHLJSApp.ViewModels.LocationVM;
 
-namespace IndustrialControlMAUI.Pages;
+namespace JXHLJSApp.Pages;
 
 [QueryProperty(nameof(InstockId), "instockId")]
 [QueryProperty(nameof(InstockNo), "instockNo")]
@@ -194,7 +194,7 @@ public partial class InboundProductionPage : ContentPage
     private async void OnQtyCompleted(object sender, EventArgs e)
     {
         if (sender is not Entry entry) return;
-        if (entry.BindingContext is not IndustrialControlMAUI.ViewModels.OutScannedItem row) return;
+        if (entry.BindingContext is not JXHLJSApp.ViewModels.OutScannedItem row) return;
 
         // 只看 ScanStatus：未通过则不提交
         if (!row.ScanStatus)

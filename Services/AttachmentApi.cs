@@ -1,12 +1,12 @@
-using IndustrialControlMAUI.Services.Common;
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Tools;
+using JXHLJSApp.Services.Common;
+using JXHLJSApp.Models;
+using JXHLJSApp.Tools;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Web;
 
-namespace IndustrialControlMAUI.Services
+namespace JXHLJSApp.Services
 {
 public class AttachmentApi : IAttachmentApi
     {

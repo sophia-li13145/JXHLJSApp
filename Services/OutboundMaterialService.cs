@@ -1,14 +1,14 @@
-using IndustrialControlMAUI.Services.Common;
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Tools;
-using IndustrialControlMAUI.ViewModels;
+using JXHLJSApp.Services.Common;
+using JXHLJSApp.Models;
+using JXHLJSApp.Tools;
+using JXHLJSApp.ViewModels;
 using Serilog;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace IndustrialControlMAUI.Services;
+namespace JXHLJSApp.Services;
 
 public sealed class OutboundMaterialService : IOutboundMaterialService
 {

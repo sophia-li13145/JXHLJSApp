@@ -1,6 +1,6 @@
 ﻿using Microsoft.Maui.Controls;
 
-namespace IndustrialControlMAUI.Behaviors
+namespace JXHLJSApp.Behaviors
 {
     public class ClearOnFocusBehavior : Behavior<Entry>
     {

@@ -1,4 +1,4 @@
-namespace IndustrialControlMAUI.Models;
+namespace JXHLJSApp.Models;
 
 public class ServerSettings
 {

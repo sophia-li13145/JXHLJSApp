@@ -1,6 +1,6 @@
-﻿using IndustrialControlMAUI.Models;
+﻿using JXHLJSApp.Models;
 
-namespace IndustrialControlMAUI.Services;
+namespace JXHLJSApp.Services;
 
 public interface IDialogService
 {

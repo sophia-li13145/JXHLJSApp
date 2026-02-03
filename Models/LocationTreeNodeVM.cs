@@ -2,7 +2,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
 
-namespace IndustrialControlMAUI.Models;
+namespace JXHLJSApp.Models;
 
 public partial class LocationTreeNodeVM : ObservableObject
 {

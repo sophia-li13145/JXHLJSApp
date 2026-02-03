@@ -1,7 +1,7 @@
-﻿using IndustrialControlMAUI.Services;
-using IndustrialControlMAUI.ViewModels;
-using SharedLocationVM = IndustrialControlMAUI.ViewModels.LocationVM;
-namespace IndustrialControlMAUI.Pages;
+﻿using JXHLJSApp.Services;
+using JXHLJSApp.ViewModels;
+using SharedLocationVM = JXHLJSApp.ViewModels.LocationVM;
+namespace JXHLJSApp.Pages;
 
 public partial class WarehouseLocationPickerPage : ContentPage
 {

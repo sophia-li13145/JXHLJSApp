@@ -1,8 +1,8 @@
-using IndustrialControlMAUI.Services;
-using IndustrialControlMAUI.ViewModels;
+using JXHLJSApp.Services;
+using JXHLJSApp.ViewModels;
 using System.Threading.Tasks;
 
-namespace IndustrialControlMAUI.Pages;
+namespace JXHLJSApp.Pages;
 
 public partial class InspectionRunSearchPage : ContentPage
 {

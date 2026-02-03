@@ -1,6 +1,6 @@
-﻿using IndustrialControlMAUI.Pages;
+﻿using JXHLJSApp.Pages;
 
-namespace IndustrialControlMAUI;
+namespace JXHLJSApp;
 
 public partial class AppShell : Shell
 {

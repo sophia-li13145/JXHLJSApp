@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
     x:Name="ThisPage"
-    x:Class="IndustrialControlMAUI.Pages.InspectionRunDetailPage"
+    x:Class="JXHLJSApp.Pages.InspectionRunDetailPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
-    xmlns:vm="clr-namespace:IndustrialControlMAUI.ViewModels"
-    xmlns:conv="clr-namespace:IndustrialControlMAUI.Converters"
+    xmlns:vm="clr-namespace:JXHLJSApp.ViewModels"
+    xmlns:conv="clr-namespace:JXHLJSApp.Converters"
     Title="点巡检执行">
 
     <ContentPage.Resources>

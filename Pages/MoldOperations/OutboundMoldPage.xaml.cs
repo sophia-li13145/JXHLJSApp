@@ -1,7 +1,7 @@
-using IndustrialControlMAUI.ViewModels;
+using JXHLJSApp.ViewModels;
 using ZXing.Net.Maui.Controls;
 
-namespace IndustrialControlMAUI.Pages;
+namespace JXHLJSApp.Pages;
 [QueryProperty(nameof(WorkOrderNo), "workOrderNo")]
 public partial class OutboundMoldPage : ContentPage
 {

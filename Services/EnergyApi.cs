@@ -1,11 +1,11 @@
-using IndustrialControlMAUI.Services.Common;
+using JXHLJSApp.Services.Common;
 using AndroidX.Annotations;
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Tools;
+using JXHLJSApp.Models;
+using JXHLJSApp.Tools;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
-namespace IndustrialControlMAUI.Services
+namespace JXHLJSApp.Services
 {
 public class EnergyApi : IEnergyApi
     {

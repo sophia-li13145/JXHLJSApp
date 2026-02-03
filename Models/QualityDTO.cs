@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace IndustrialControlMAUI.Models;
+namespace JXHLJSApp.Models;
 
     public class QualityRecordDto
     {

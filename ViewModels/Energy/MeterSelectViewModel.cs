@@ -1,11 +1,11 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Services;
+using JXHLJSApp.Models;
+using JXHLJSApp.Services;
 using System.Collections.ObjectModel;
 using static Android.App.DownloadManager;
 
-namespace IndustrialControlMAUI.ViewModels
+namespace JXHLJSApp.ViewModels
 {
     /// <summary>图1：仪表选择弹窗 VM</summary>
     public partial class MeterSelectViewModel : ObservableObject
