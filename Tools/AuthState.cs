@@ -18,6 +18,8 @@ namespace JXHLJSApp.Tools
                 await TokenStorage.ClearAsync();
                 Preferences.Remove("UserName");
                 Preferences.Remove("Password");
+                Preferences.Remove("WorkshopName");
+                Preferences.Remove("WorkshopScope");
                 Preferences.Set("RememberPassword", false);
 
                 // 2)（可选）全局通知：用于各页面收起弹窗/停止轮询

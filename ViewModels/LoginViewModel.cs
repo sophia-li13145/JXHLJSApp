@@ -3,8 +3,6 @@ using CommunityToolkit.Mvvm.Input;
 using JXHLJSApp.Tools;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 
 namespace JXHLJSApp.ViewModels;
 
@@ -84,6 +82,7 @@ public partial class LoginViewModel : ObservableObject
             }
 
             await TokenStorage.SaveAsync(token!);
+            ApiClient.SetBearer(token);
             Preferences.Set("UserName", UserName ?? "");
             if (RememberPassword)
             {
@@ -96,7 +95,9 @@ public partial class LoginViewModel : ObservableObject
                 Preferences.Set("RememberPassword", false);
             }
 
-             App.SwitchToLoggedInShell();
+            await CacheUserWorkshopInfoAsync(baseUrl, cts.Token);
+
+            App.SwitchToLoggedInShell();
         }
         catch (OperationCanceledException)
         {
@@ -138,9 +139,45 @@ public partial class LoginViewModel : ObservableObject
         public T? result { get; set; }
     }
 
+    private async Task CacheUserWorkshopInfoAsync(string baseUrl, CancellationToken ct)
+    {
+        var userInfoRel = _cfg.GetApiPath("auth.userinfo", "/pda/auth/getUserInfo");
+        var fullUrl = new Uri(baseUrl + userInfoRel);
+
+        using var resp = await ApiClient.Instance.GetAsync(fullUrl, ct);
+        if (!resp.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        var raw = await ResponseGuard.ReadAsStringSafeAsync(resp.Content, ct);
+        var result = JsonSerializer.Deserialize<ApiResponse<UserInfoResult>>(raw, _json);
+        var info = result?.result;
+        if (info is null)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(info.workshopName))
+            Preferences.Set("WorkshopName", info.workshopName);
+        else
+            Preferences.Remove("WorkshopName");
+
+        if (!string.IsNullOrWhiteSpace(info.workshopScope))
+            Preferences.Set("WorkshopScope", info.workshopScope);
+        else
+            Preferences.Remove("WorkshopScope");
+    }
+
     private sealed class LoginResult
     {
         public string? token { get; set; }
         public object? userInfo { get; set; }
+    }
+
+    private sealed class UserInfoResult
+    {
+        public string? workshopName { get; set; }
+        public string? workshopScope { get; set; }
     }
 }
