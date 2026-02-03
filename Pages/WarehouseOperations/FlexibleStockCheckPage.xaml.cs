@@ -1,8 +1,8 @@
-using IndustrialControlMAUI.ViewModels;
-using IndustrialControlMAUI.Services;
+using JXHLJSApp.ViewModels;
+using JXHLJSApp.Services;
 using System.Linq;
 
-namespace IndustrialControlMAUI.Pages
+namespace JXHLJSApp.Pages
 {
     public partial class FlexibleStockCheckPage : ContentPage
     {

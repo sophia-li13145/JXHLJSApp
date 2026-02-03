@@ -1,7 +1,7 @@
-using IndustrialControlMAUI.Services.Common;
+using JXHLJSApp.Services.Common;
 using GoogleGson;
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Tools;
+using JXHLJSApp.Models;
+using JXHLJSApp.Tools;
 using Org.Apache.Http.Authentication;
 using System.Collections.Generic;
 using System.Net.Http.Headers;
@@ -9,9 +9,9 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using AuthState = IndustrialControlMAUI.Tools.AuthState;
+using AuthState = JXHLJSApp.Tools.AuthState;
 
-namespace IndustrialControlMAUI.Services
+namespace JXHLJSApp.Services
 {
     // ===================== 接口定义 =====================
     public interface IWorkOrderApi

@@ -1,9 +1,9 @@
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Services;
-using IndustrialControlMAUI.ViewModels;
-using SharedLocationVM = IndustrialControlMAUI.ViewModels.LocationVM;
+using JXHLJSApp.Models;
+using JXHLJSApp.Services;
+using JXHLJSApp.ViewModels;
+using SharedLocationVM = JXHLJSApp.ViewModels.LocationVM;
 
-namespace IndustrialControlMAUI.Pages;
+namespace JXHLJSApp.Pages;
 
 [QueryProperty(nameof(OutstockId), "outstockId")]
 [QueryProperty(nameof(OutstockNo), "outstockNo")]
@@ -128,7 +128,7 @@ public partial class OutboundFinishedPage : ContentPage
     private async void OnBinTapped(object? sender, TappedEventArgs e)
     {
         // 1) 取到行对象
-        if ((sender as BindableObject)?.BindingContext is not IndustrialControlMAUI.ViewModels.OutScannedItem item)
+        if ((sender as BindableObject)?.BindingContext is not JXHLJSApp.ViewModels.OutScannedItem item)
             return;
 
         // 2) 未扫描通过禁止修改
@@ -185,7 +185,7 @@ public partial class OutboundFinishedPage : ContentPage
     private async void OnQtyCompleted(object sender, EventArgs e)
     {
         if (sender is not Entry entry) return;
-        if (entry.BindingContext is not IndustrialControlMAUI.ViewModels.OutScannedItem row) return;
+        if (entry.BindingContext is not JXHLJSApp.ViewModels.OutScannedItem row) return;
 
         // 只看 ScanStatus：未通过则不提交
         if (!row.ScanStatus)

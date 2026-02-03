@@ -1,9 +1,9 @@
 ﻿using CommunityToolkit.Maui.Views;
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.ViewModels;
+using JXHLJSApp.Models;
+using JXHLJSApp.ViewModels;
 using Microsoft.Maui.Controls;
 
-namespace IndustrialControlMAUI.Pages
+namespace JXHLJSApp.Pages
 {
     public partial class HomePage : ContentPage
     {

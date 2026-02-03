@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
-    x:Class="IndustrialControlMAUI.Pages.FlexibleStockCheckPage"
+    x:Class="JXHLJSApp.Pages.FlexibleStockCheckPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:conv="clr-namespace:IndustrialControlMAUI.Converters"
-    xmlns:behaviors="clr-namespace:IndustrialControlMAUI.Behaviors"
+    xmlns:conv="clr-namespace:JXHLJSApp.Converters"
+    xmlns:behaviors="clr-namespace:JXHLJSApp.Behaviors"
     x:Name="Page"
     Title="灵活盘点">
     <ContentPage.Resources>

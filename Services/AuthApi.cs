@@ -1,5 +1,5 @@
-using IndustrialControlMAUI.Services.Common;
-using IndustrialControlMAUI.Models;
+using JXHLJSApp.Services.Common;
+using JXHLJSApp.Models;
 using Org.Apache.Http.Authentication;
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace IndustrialControlMAUI.Services
+namespace JXHLJSApp.Services
 {
     public interface IAuthApi
     {

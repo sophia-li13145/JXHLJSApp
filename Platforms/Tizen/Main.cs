@@ -2,7 +2,7 @@ using System;
 using Microsoft.Maui;
 using Microsoft.Maui.Hosting;
 
-namespace IndustrialControlMAUIMAUI
+namespace JXHLJSApp
 {
     internal class Program : MauiApplication
     {

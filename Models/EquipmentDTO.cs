@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
-namespace IndustrialControlMAUI.Models;
+namespace JXHLJSApp.Models;
 
     public class InspectionRecordDto
     {

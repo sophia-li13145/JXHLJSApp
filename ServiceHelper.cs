@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace IndustrialControlMAUI;
+namespace JXHLJSApp;
 
 /// <summary>
 /// 全局依赖注入助手，跨平台安全访问 Application.Services。

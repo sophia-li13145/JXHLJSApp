@@ -2,7 +2,7 @@
 using SkiaSharp;
 using BarcodeFormat = ZXing.BarcodeFormat;                       
 
-namespace IndustrialControlMAUI.Pages;
+namespace JXHLJSApp.Pages;
 
 public partial class QrScanPage : ContentPage
 {

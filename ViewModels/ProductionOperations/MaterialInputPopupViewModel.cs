@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
-using IndustrialControlMAUI.Models;
+using JXHLJSApp.Models;
 using System.Collections.ObjectModel;
 
 public partial class MaterialInputPopupViewModel : ObservableObject

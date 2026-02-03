@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace IndustrialControlMAUI.Converters
+namespace JXHLJSApp.Converters
 {
     /// <summary>
     /// 将 decimal? ↔ string 相互转换，自动去掉多余 0

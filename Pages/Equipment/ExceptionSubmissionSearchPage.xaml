@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="IndustrialControlMAUI.Pages.ExceptionSubmissionSearchPage"
+             x:Class="JXHLJSApp.Pages.ExceptionSubmissionSearchPage"
              Shell.NavBarIsVisible="True">
 
     <!-- 根布局：顶部（蓝条） / 条件区 / 列表 -->

@@ -1,7 +1,7 @@
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.ViewModels;
+using JXHLJSApp.Models;
+using JXHLJSApp.ViewModels;
 
-namespace IndustrialControlMAUI.Services;
+namespace JXHLJSApp.Services;
 
 public interface IInboundMaterialService
 {

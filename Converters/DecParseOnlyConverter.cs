@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using Microsoft.Maui.Controls;
-namespace IndustrialControlMAUI.Converters;
+namespace JXHLJSApp.Converters;
 public class DecParseOnlyConverter : IValueConverter
 {
     // 模型 -> 界面

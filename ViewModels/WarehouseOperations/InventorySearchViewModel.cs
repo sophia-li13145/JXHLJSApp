@@ -1,11 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Services;
+using JXHLJSApp.Models;
+using JXHLJSApp.Services;
 using IntelliJ.Lang.Annotations;
 using System.Collections.ObjectModel;
 
-namespace IndustrialControlMAUI.ViewModels
+namespace JXHLJSApp.ViewModels
 {
     /// <summary>
     /// 库存查询 VM：通过条码查询库存信息

@@ -1,7 +1,7 @@
 ﻿// Services/AuthHeaderHandler.cs
 using System.Net.Http.Headers;
 
-namespace IndustrialControlMAUI.Services
+namespace JXHLJSApp.Services
 {
     /// 统一为经 DI 创建的 HttpClient 附加鉴权头：token: <jwt>
     public sealed class AuthHeaderHandler : DelegatingHandler

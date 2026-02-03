@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System.Text.Json.Serialization;
 
-namespace IndustrialControlMAUI.Models;
+namespace JXHLJSApp.Models;
 
 // Models/WorkOrderDto.cs  （文件路径随你工程）
 public class WorkOrderDto

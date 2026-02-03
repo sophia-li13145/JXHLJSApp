@@ -1,9 +1,9 @@
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Services;
-using IndustrialControlMAUI.ViewModels;
+using JXHLJSApp.Models;
+using JXHLJSApp.Services;
+using JXHLJSApp.ViewModels;
 using System.Text.Json;
 
-namespace IndustrialControlMAUI.Pages;
+namespace JXHLJSApp.Pages;
 
 public partial class WorkOrderSearchPage : ContentPage
 {

@@ -1,15 +1,15 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Pages;
-using IndustrialControlMAUI.Services;
+using JXHLJSApp.Models;
+using JXHLJSApp.Pages;
+using JXHLJSApp.Services;
 using System.Collections.ObjectModel;
-using ConfirmDetail = IndustrialControlMAUI.Models.InStockDetail;
+using ConfirmDetail = JXHLJSApp.Models.InStockDetail;
 // 使用服务层 DTO，避免 VM 内重复定义
-using ConfirmReq = IndustrialControlMAUI.Models.InStockConfirmReq;
-using SharedLocationVM = IndustrialControlMAUI.ViewModels.LocationVM;
+using ConfirmReq = JXHLJSApp.Models.InStockConfirmReq;
+using SharedLocationVM = JXHLJSApp.ViewModels.LocationVM;
 
-namespace IndustrialControlMAUI.ViewModels
+namespace JXHLJSApp.ViewModels
 {
     public partial class InboundMoldViewModel : ObservableObject
     {

@@ -1,6 +1,6 @@
 using System.Windows.Input;
 
-namespace IndustrialControlMAUI.Controls;
+namespace JXHLJSApp.Controls;
 
 public partial class PasswordEntryView : ContentView
 {

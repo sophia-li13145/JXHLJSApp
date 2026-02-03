@@ -1,12 +1,12 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndustrialControlMAUI;
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Services;
+using JXHLJSApp;
+using JXHLJSApp.Models;
+using JXHLJSApp.Services;
 using IntelliJ.Lang.Annotations;
 using System.Collections.ObjectModel;
 
-namespace IndustrialControl.ViewModels.Energy
+namespace JXHLJSApp.ViewModels.Energy
 {
     /// <summary>图2：手动抄表 VM</summary>
     public partial class ManualReadingViewModel : ObservableObject, IQueryAttributable

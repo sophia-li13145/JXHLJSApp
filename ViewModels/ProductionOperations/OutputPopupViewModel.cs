@@ -1,10 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndustrialControlMAUI.Models;
+using JXHLJSApp.Models;
 using Kotlin;
 using System.Collections.ObjectModel;
 
-namespace IndustrialControlMAUI.ViewModels
+namespace JXHLJSApp.ViewModels
 {
     public partial class OutputPopupViewModel : ObservableObject
     {

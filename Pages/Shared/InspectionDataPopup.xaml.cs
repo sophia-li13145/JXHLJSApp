@@ -1,9 +1,9 @@
 using CommunityToolkit.Maui.Views;
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Services;
-using IndustrialControlMAUI.ViewModels;
+using JXHLJSApp.Models;
+using JXHLJSApp.Services;
+using JXHLJSApp.ViewModels;
 
-namespace IndustrialControlMAUI.Popups;
+namespace JXHLJSApp.Popups;
 
 public partial class InspectionDataPopup : Popup
 {

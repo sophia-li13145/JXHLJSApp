@@ -1,5 +1,5 @@
 ﻿using System.Globalization;
-namespace IndustrialControlMAUI.Converters;
+namespace JXHLJSApp.Converters;
 public class BoolToColorConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

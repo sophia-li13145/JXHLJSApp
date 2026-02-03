@@ -2,7 +2,7 @@
 using System.Globalization;
 using Microsoft.Maui.Controls;
 
-namespace IndustrialControlMAUI.Converters
+namespace JXHLJSApp.Converters
 {
     public class DecimalTrimConverter : IValueConverter
     {

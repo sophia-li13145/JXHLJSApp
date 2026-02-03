@@ -5,10 +5,10 @@ using Microsoft.Maui.Controls;
 #if ANDROID
 using Android.Content;
 using Android.Util;
-using IndustrialControlMAUI.Droid; // 引用 DynamicScanReceiver
+using JXHLJSApp.Droid; // 引用 DynamicScanReceiver
 #endif
 
-namespace IndustrialControlMAUI.Services
+namespace JXHLJSApp.Services
 {
     /// <summary>
     /// 统一的扫码服务：支持软键盘回车、手动发布、以及 Android 广播动态接收

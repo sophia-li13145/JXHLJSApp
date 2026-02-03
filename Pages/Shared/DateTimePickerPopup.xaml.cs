@@ -3,7 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using static Android.Icu.Text.CaseMap;
 
-namespace IndustrialControlMAUI.Popups;
+namespace JXHLJSApp.Popups;
 
 public class DateTimePopupResult
 {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace IndustrialControlMAUI.Pages;
+namespace JXHLJSApp.Pages;
 
 public partial class DateTimePickerPage : ContentPage
 {

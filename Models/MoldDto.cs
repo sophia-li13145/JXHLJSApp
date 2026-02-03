@@ -1,8 +1,8 @@
 ﻿using AndroidX.Core.Location;
-using IndustrialControlMAUI.Services;
+using JXHLJSApp.Services;
 using System.Text.Json;
 
-namespace IndustrialControlMAUI.Models;
+namespace JXHLJSApp.Models;
 
 // Models/MoldDto.cs  （文件路径随你工程）
 public class MoldDto

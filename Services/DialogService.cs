@@ -1,7 +1,7 @@
-﻿using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Pages;
+﻿using JXHLJSApp.Models;
+using JXHLJSApp.Pages;
 
-namespace IndustrialControlMAUI.Services;
+namespace JXHLJSApp.Services;
 
 public class DialogService : IDialogService
 {

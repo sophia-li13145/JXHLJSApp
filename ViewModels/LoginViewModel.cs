@@ -1,12 +1,12 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndustrialControlMAUI.Tools;
+using JXHLJSApp.Tools;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
-namespace IndustrialControlMAUI.ViewModels;
+namespace JXHLJSApp.ViewModels;
 
 public partial class LoginViewModel : ObservableObject
 {

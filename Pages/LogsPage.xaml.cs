@@ -1,4 +1,4 @@
-namespace IndustrialControlMAUI.Pages
+namespace JXHLJSApp.Pages
 {
     public partial class LogsPage : ContentPage
     {

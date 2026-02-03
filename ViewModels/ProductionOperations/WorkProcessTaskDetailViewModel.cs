@@ -1,14 +1,14 @@
 ﻿using Android.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.Pages;
-using IndustrialControlMAUI.Services;
+using JXHLJSApp.Models;
+using JXHLJSApp.Pages;
+using JXHLJSApp.Services;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 
 
-namespace IndustrialControlMAUI.ViewModels;
+namespace JXHLJSApp.ViewModels;
 public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAttributable
 {
     private readonly IWorkOrderApi _api;

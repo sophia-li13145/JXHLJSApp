@@ -6,7 +6,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace IndustrialControlMAUI.Services
+namespace JXHLJSApp.Services
 {
     //    本地文本日志：
 

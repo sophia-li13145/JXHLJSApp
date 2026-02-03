@@ -1,6 +1,6 @@
 ﻿using System.Net.Http.Headers;
 
-namespace IndustrialControlMAUI;
+namespace JXHLJSApp;
 
 public static class ApiClient
 {

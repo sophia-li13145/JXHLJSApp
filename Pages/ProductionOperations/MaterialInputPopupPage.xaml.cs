@@ -1,11 +1,11 @@
-using IndustrialControlMAUI.Models;
-using IndustrialControlMAUI.ViewModels;
+using JXHLJSApp.Models;
+using JXHLJSApp.ViewModels;
 using Microsoft.Extensions.DependencyInjection; // 
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace IndustrialControlMAUI.Pages;
+namespace JXHLJSApp.Pages;
 
 public partial class MaterialInputPopupPage : ContentPage
 {

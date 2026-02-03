@@ -1,6 +1,6 @@
-﻿using IndustrialControlMAUI.Services;
-using IndustrialControlMAUI.ViewModels;
-namespace IndustrialControlMAUI.Pages;
+﻿using JXHLJSApp.Services;
+using JXHLJSApp.ViewModels;
+namespace JXHLJSApp.Pages;
 public partial class InboundMaterialSearchPage : ContentPage
 {
 

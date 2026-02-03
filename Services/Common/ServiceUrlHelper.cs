@@ -1,6 +1,6 @@
 using System;
 
-namespace IndustrialControlMAUI.Services.Common;
+namespace JXHLJSApp.Services.Common;
 
 internal static class ServiceUrlHelper
 {
