@@ -15,7 +15,8 @@ public partial class IncomingStockAddPopupPage : ContentPage
 
     public static async Task<Models.IncomingBarcodeParseResult?> ShowAsync(
         IServiceProvider? sp,
-        string? presetBarcode = null)
+        string? presetBarcode = null,
+        IncomingStockLine? editLine = null)
     {
         var tcs = new TaskCompletionSource<Models.IncomingBarcodeParseResult?>();
         var provider = sp ?? Application.Current?.Handler?.MauiContext?.Services;
@@ -31,7 +32,11 @@ public partial class IncomingStockAddPopupPage : ContentPage
         if (Application.Current?.MainPage?.Navigation is not null)
             await Application.Current.MainPage.Navigation.PushModalAsync(page);
 
-        if (!string.IsNullOrWhiteSpace(presetBarcode))
+        if (editLine is not null)
+        {
+            vm.LoadForEdit(editLine);
+        }
+        else if (!string.IsNullOrWhiteSpace(presetBarcode))
         {
             await vm.LoadByBarcodeAsync(presetBarcode);
         }

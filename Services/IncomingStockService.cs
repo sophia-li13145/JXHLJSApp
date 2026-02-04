@@ -42,12 +42,10 @@ public sealed class IncomingStockService : IIncomingStockService
             servicePath);
     }
 
-    public async Task<IncomingBarcodeParseResult?> ParseIncomingBarcodeAsync(string barcode, CancellationToken ct = default)
+    public async Task<IncomingBarcodeParseResponse?> ParseIncomingBarcodeAsync(string barcode, CancellationToken ct = default)
     {
-        var dto = await PostJsonAsync<object, IncomingBarcodeParseResponse>(
+        return await PostJsonAsync<object, IncomingBarcodeParseResponse>(
             _parseIncomingEndpoint, new { barcode }, ct).ConfigureAwait(false);
-
-        return dto?.result;
     }
 
     public async Task<SimpleOk> SubmitPendingStockAsync(IEnumerable<IncomingPendingStockRequest> items, CancellationToken ct = default)

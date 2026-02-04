@@ -54,4 +54,22 @@ public partial class IncomingStockPage : ContentPage
         if (parsed is null) return;
         _vm.AddLine(parsed);
     }
+
+    private async void OnEditLineTapped(object sender, EventArgs e)
+    {
+        if (sender is not BindableObject bindable || bindable.BindingContext is not IncomingStockLine line)
+            return;
+
+        var result = await IncomingStockAddPopupPage.ShowAsync(_sp, editLine: line);
+        if (result is null) return;
+
+        line.Origin = result.origin ?? string.Empty;
+        line.MaterialCode = result.materialCode ?? string.Empty;
+        line.MaterialName = result.materialName ?? string.Empty;
+        line.FurnaceNo = result.furnaceNo ?? string.Empty;
+        line.CoilNo = result.coilNo ?? string.Empty;
+        line.Spec = result.spec ?? string.Empty;
+        line.Qty = result.qty;
+        line.ProductionDate = result.productionDate ?? string.Empty;
+    }
 }

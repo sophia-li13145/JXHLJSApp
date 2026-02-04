@@ -1,3 +1,4 @@
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using JXHLJSApp.Models;
@@ -21,6 +22,10 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
     [ObservableProperty] private string productionDate = string.Empty;
     [ObservableProperty] private decimal? qty;
     [ObservableProperty] private bool isBusy;
+    [ObservableProperty] private bool isEditMode;
+    [ObservableProperty] private string confirmButtonText = "确认";
+    [ObservableProperty] private bool isBarcodeReadOnly;
+    [ObservableProperty] private string barcodeBackgroundColor = "White";
 
     public IncomingStockAddPopupViewModel(IIncomingStockService api, IDialogService dialogs)
     {
@@ -40,11 +45,13 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
         }
 
         Barcode = barcodeValue;
+        SetEditMode(false);
         IsBusy = true;
         try
         {
-            var result = await _api.ParseIncomingBarcodeAsync(barcodeValue);
-            if (result is null || result.success == false)
+            var response = await _api.ParseIncomingBarcodeAsync(barcodeValue);
+            var result = response?.result;
+            if (response?.success != true || result is null)
             {
                 await _dialogs.AlertAsync("提示", "条码解析失败，请检查后重试。");
                 return;
@@ -66,9 +73,58 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
         }
     }
 
+    public void LoadForEdit(IncomingStockLine line)
+    {
+        if (line is null) return;
+
+        SetEditMode(true);
+        Barcode = line.Barcode ?? string.Empty;
+        Origin = line.Origin ?? string.Empty;
+        MaterialCode = line.MaterialCode ?? string.Empty;
+        MaterialName = line.MaterialName ?? string.Empty;
+        FurnaceNo = line.FurnaceNo ?? string.Empty;
+        CoilNo = line.CoilNo ?? string.Empty;
+        Spec = line.Spec ?? string.Empty;
+        ProductionDate = line.ProductionDate ?? string.Empty;
+        Qty = line.Qty;
+    }
+
     [RelayCommand]
     private async Task ConfirmAsync()
     {
+        var validationMessage = ValidateRequiredFields();
+        if (validationMessage is not null)
+        {
+            await _dialogs.AlertAsync("提示", validationMessage);
+            return;
+        }
+
+        var composedBarcode = BuildCompositeBarcode();
+
+        if (!IsEditMode)
+        {
+            IsBusy = true;
+            try
+            {
+                var response = await _api.ParseIncomingBarcodeAsync(composedBarcode);
+                if (response?.success != true || response.result is null)
+                {
+                    await _dialogs.AlertAsync("提示", response?.message ?? "条码解析失败，请检查后重试。");
+                    return;
+                }
+
+                var parsed = response.result;
+                parsed.barcode ??= composedBarcode;
+                _tcs?.TrySetResult(parsed);
+                await CloseAsync();
+                return;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
         var result = new IncomingBarcodeParseResult
         {
             barcode = Barcode,
@@ -96,4 +152,39 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
 
     private static Task CloseAsync()
         => Application.Current?.MainPage?.Navigation.PopModalAsync() ?? Task.CompletedTask;
+
+    private void SetEditMode(bool enabled)
+    {
+        IsEditMode = enabled;
+        ConfirmButtonText = enabled ? "确认修改" : "确认";
+        IsBarcodeReadOnly = enabled;
+        BarcodeBackgroundColor = enabled ? "#E0E0E0" : "White";
+    }
+
+    private string BuildCompositeBarcode()
+    {
+        var qtyText = Qty?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+        return string.Join("-",
+            (Origin ?? string.Empty).Trim(),
+            (MaterialCode ?? string.Empty).Trim(),
+            (FurnaceNo ?? string.Empty).Trim(),
+            (CoilNo ?? string.Empty).Trim(),
+            qtyText.Trim(),
+            (Spec ?? string.Empty).Trim(),
+            (ProductionDate ?? string.Empty).Trim());
+    }
+
+    private string? ValidateRequiredFields()
+    {
+        if (string.IsNullOrWhiteSpace(Barcode)) return "请填写条码。";
+        if (string.IsNullOrWhiteSpace(Origin)) return "请填写产地。";
+        if (string.IsNullOrWhiteSpace(MaterialCode)) return "请填写钢号。";
+        if (string.IsNullOrWhiteSpace(FurnaceNo)) return "请填写炉号。";
+        if (string.IsNullOrWhiteSpace(MaterialName)) return "请填写牌号。";
+        if (!Qty.HasValue) return "请填写重量。";
+        if (string.IsNullOrWhiteSpace(Spec)) return "请填写规格。";
+        if (string.IsNullOrWhiteSpace(ProductionDate)) return "请填写生产日期。";
+        if (string.IsNullOrWhiteSpace(CoilNo)) return "请填写卷号。";
+        return null;
+    }
 }
