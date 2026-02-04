@@ -19,32 +19,36 @@ public partial class IncomingStockViewModel : ObservableObject
         _dialogs = dialogs;
     }
 
-    public void AddLine(IncomingBarcodeParseResult parsed)
+    public async Task<bool> TryAddLineAsync(IncomingBarcodeParseResult parsed)
     {
-        if (parsed is null) return;
+        if (parsed is null) return false;
 
-        var barcode = parsed.barcode?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(barcode)) return;
+        var materialCode = parsed.materialCode?.Trim() ?? string.Empty;
+        var spec = parsed.spec?.Trim() ?? string.Empty;
+        var identityKey = BuildIdentityKey(materialCode, spec);
+        if (string.IsNullOrWhiteSpace(identityKey)) return false;
 
-        if (Lines.Any(x => string.Equals(x.Barcode, barcode, StringComparison.OrdinalIgnoreCase)))
+        if (Lines.Any(x => string.Equals(BuildIdentityKey(x.MaterialCode, x.Spec), identityKey, StringComparison.OrdinalIgnoreCase)))
         {
-            _ = _dialogs.AlertAsync("提示", $"条码 {barcode} 已存在。");
-            return;
+            await _dialogs.AlertAsync("提示", $"钢号 {materialCode} / 规格 {spec} 已存在。");
+            return false;
         }
 
         Lines.Add(new IncomingStockLine
         {
             Index = Lines.Count + 1,
-            Barcode = barcode,
+            Barcode = parsed.barcode?.Trim() ?? identityKey,
             Origin = parsed.origin ?? string.Empty,
-            MaterialCode = parsed.materialCode ?? string.Empty,
+            MaterialCode = materialCode,
             MaterialName = parsed.materialName ?? string.Empty,
             FurnaceNo = parsed.furnaceNo ?? string.Empty,
             CoilNo = parsed.coilNo ?? string.Empty,
-            Spec = parsed.spec ?? string.Empty,
+            Spec = spec,
             Qty = parsed.qty,
             ProductionDate = parsed.productionDate ?? string.Empty
         });
+
+        return true;
     }
 
     public void ClearAll()
@@ -84,7 +88,8 @@ public partial class IncomingStockViewModel : ObservableObject
     private async Task RemoveLineAsync(IncomingStockLine? line)
     {
         if (line is null) return;
-        var confirm = await _dialogs.ConfirmAsync("确认", $"确定删除条码 {line.Barcode} 吗？");
+        var identityKey = BuildIdentityKey(line.MaterialCode, line.Spec);
+        var confirm = await _dialogs.ConfirmAsync("确认", $"确定删除钢号 {line.MaterialCode} / 规格 {line.Spec} 吗？");
         if (!confirm) return;
 
         Lines.Remove(line);
@@ -98,6 +103,11 @@ public partial class IncomingStockViewModel : ObservableObject
             Lines[i].Index = i + 1;
         }
     }
+
+    private static string BuildIdentityKey(string? materialCode, string? spec)
+        => string.Join("-",
+            (materialCode ?? string.Empty).Trim(),
+            (spec ?? string.Empty).Trim());
 }
 
 public sealed class IncomingStockLine : ObservableObject

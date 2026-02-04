@@ -24,8 +24,10 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private bool isEditMode;
     [ObservableProperty] private string confirmButtonText = "确认";
-    [ObservableProperty] private bool isBarcodeReadOnly;
-    [ObservableProperty] private string barcodeBackgroundColor = "White";
+    [ObservableProperty] private bool isMaterialCodeReadOnly;
+    [ObservableProperty] private string materialCodeBackgroundColor = "White";
+    [ObservableProperty] private bool isSpecReadOnly;
+    [ObservableProperty] private string specBackgroundColor = "White";
 
     public IncomingStockAddPopupViewModel(IIncomingStockService api, IDialogService dialogs)
     {
@@ -81,7 +83,6 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
         Barcode = line.Barcode ?? string.Empty;
         Origin = line.Origin ?? string.Empty;
         MaterialCode = line.MaterialCode ?? string.Empty;
-        MaterialName = line.MaterialName ?? string.Empty;
         FurnaceNo = line.FurnaceNo ?? string.Empty;
         CoilNo = line.CoilNo ?? string.Empty;
         Spec = line.Spec ?? string.Empty;
@@ -100,6 +101,7 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
         }
 
         var composedBarcode = BuildCompositeBarcode();
+        var identityKey = BuildIdentityKey();
 
         if (!IsEditMode)
         {
@@ -114,7 +116,7 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
                 }
 
                 var parsed = response.result;
-                parsed.barcode ??= composedBarcode;
+                parsed.barcode ??= identityKey;
                 _tcs?.TrySetResult(parsed);
                 await CloseAsync();
                 return;
@@ -127,10 +129,9 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
 
         var result = new IncomingBarcodeParseResult
         {
-            barcode = Barcode,
+            barcode = string.IsNullOrWhiteSpace(Barcode) ? identityKey : Barcode,
             origin = Origin,
             materialCode = MaterialCode,
-            materialName = MaterialName,
             furnaceNo = FurnaceNo,
             coilNo = CoilNo,
             spec = Spec,
@@ -157,8 +158,10 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
     {
         IsEditMode = enabled;
         ConfirmButtonText = enabled ? "确认修改" : "确认";
-        IsBarcodeReadOnly = enabled;
-        BarcodeBackgroundColor = enabled ? "#E0E0E0" : "White";
+        IsMaterialCodeReadOnly = enabled;
+        MaterialCodeBackgroundColor = enabled ? "#E0E0E0" : "White";
+        IsSpecReadOnly = enabled;
+        SpecBackgroundColor = enabled ? "#E0E0E0" : "White";
     }
 
     private string BuildCompositeBarcode()
@@ -174,13 +177,16 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
             (ProductionDate ?? string.Empty).Trim());
     }
 
+    private string BuildIdentityKey()
+        => string.Join("-",
+            (MaterialCode ?? string.Empty).Trim(),
+            (Spec ?? string.Empty).Trim());
+
     private string? ValidateRequiredFields()
     {
-        if (string.IsNullOrWhiteSpace(Barcode)) return "请填写条码。";
         if (string.IsNullOrWhiteSpace(Origin)) return "请填写产地。";
         if (string.IsNullOrWhiteSpace(MaterialCode)) return "请填写钢号。";
         if (string.IsNullOrWhiteSpace(FurnaceNo)) return "请填写炉号。";
-        if (string.IsNullOrWhiteSpace(MaterialName)) return "请填写牌号。";
         if (!Qty.HasValue) return "请填写重量。";
         if (string.IsNullOrWhiteSpace(Spec)) return "请填写规格。";
         if (string.IsNullOrWhiteSpace(ProductionDate)) return "请填写生产日期。";

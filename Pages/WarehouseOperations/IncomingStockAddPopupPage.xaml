@@ -14,43 +14,40 @@
                    BorderColor="#B0D6EE"
                    CornerRadius="6"
                    HasShadow="False">
-                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                       ColumnDefinitions="Auto,*"
                       RowSpacing="10"
                       ColumnSpacing="8">
-                    <!-- 条码 -->
-                    <Label Text="*条码：" TextColor="#D0021B" VerticalTextAlignment="Center" />
-                    <Grid Grid.Column="1" >
-                        <Entry x:Name="BarcodeEntry"
-                               Placeholder="请扫描物料/包装条码"
-                               Text="{Binding Barcode}"
-                               IsReadOnly="{Binding IsBarcodeReadOnly}"
-                               BackgroundColor="{Binding BarcodeBackgroundColor}" />
-                    </Grid>
+                    <Label Text="*产地：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Column="1" Placeholder="请输入" Text="{Binding Origin}" />
 
-                    <Label Grid.Row="1" Text="*产地：" TextColor="#D0021B" VerticalTextAlignment="Center" />
-                    <Entry Grid.Row="1" Grid.Column="1" Placeholder="请输入" Text="{Binding Origin}" />
+                    <Label Grid.Row="1" Text="*钢号：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Row="1"
+                           Grid.Column="1"
+                           Placeholder="请输入"
+                           Text="{Binding MaterialCode}"
+                           IsReadOnly="{Binding IsMaterialCodeReadOnly}"
+                           BackgroundColor="{Binding MaterialCodeBackgroundColor}" />
 
-                    <Label Grid.Row="2" Text="*钢号：" TextColor="#D0021B" VerticalTextAlignment="Center" />
-                    <Entry Grid.Row="2" Grid.Column="1" Placeholder="请输入" Text="{Binding MaterialCode}" />
+                    <Label Grid.Row="2" Text="*炉号：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Row="2" Grid.Column="1" Placeholder="请输入" Text="{Binding FurnaceNo}" />
 
-                    <Label Grid.Row="3" Text="*炉号：" TextColor="#D0021B" VerticalTextAlignment="Center" />
-                    <Entry Grid.Row="3" Grid.Column="1" Placeholder="请输入" Text="{Binding FurnaceNo}" />
+                    <Label Grid.Row="3" Text="*重量：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Row="3" Grid.Column="1" Placeholder="请输入" Keyboard="Numeric" Text="{Binding Qty}" />
 
-                    <Label Grid.Row="4" Text="*牌号：" TextColor="#D0021B" VerticalTextAlignment="Center" />
-                    <Entry Grid.Row="4" Grid.Column="1" Placeholder="请输入" Text="{Binding MaterialName}" />
+                    <Label Grid.Row="4" Text="*规格：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Row="4"
+                           Grid.Column="1"
+                           Placeholder="请输入"
+                           Text="{Binding Spec}"
+                           IsReadOnly="{Binding IsSpecReadOnly}"
+                           BackgroundColor="{Binding SpecBackgroundColor}" />
 
-                    <Label Grid.Row="5" Text="*重量：" TextColor="#D0021B" VerticalTextAlignment="Center" />
-                    <Entry Grid.Row="5" Grid.Column="1" Placeholder="请输入" Keyboard="Numeric" Text="{Binding Qty}" />
+                    <Label Grid.Row="5" Text="*生产日期：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Row="5" Grid.Column="1" Placeholder="请选择" Text="{Binding ProductionDate}" />
 
-                    <Label Grid.Row="6" Text="*规格：" TextColor="#D0021B" VerticalTextAlignment="Center" />
-                    <Entry Grid.Row="6" Grid.Column="1" Placeholder="请输入" Text="{Binding Spec}" />
-
-                    <Label Grid.Row="7" Text="*生产日期：" TextColor="#D0021B" VerticalTextAlignment="Center" />
-                    <Entry Grid.Row="7" Grid.Column="1" Placeholder="请选择" Text="{Binding ProductionDate}" />
-
-                    <Label Grid.Row="8" Text="*卷号：" TextColor="#D0021B" VerticalTextAlignment="Center" />
-                    <Entry Grid.Row="8" Grid.Column="1" Placeholder="请输入" Text="{Binding CoilNo}" />
+                    <Label Grid.Row="6" Text="*卷号：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Row="6" Grid.Column="1" Placeholder="请输入" Text="{Binding CoilNo}" />
                 </Grid>
             </Frame>
         </ScrollView>
