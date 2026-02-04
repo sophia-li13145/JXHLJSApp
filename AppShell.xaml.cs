@@ -20,6 +20,7 @@ public partial class AppShell : Shell
     {
         Routing.RegisterRoute(nameof(Pages.InboundMaterialSearchPage), typeof(Pages.InboundMaterialSearchPage));
         Routing.RegisterRoute(nameof(Pages.InboundMaterialPage), typeof(Pages.InboundMaterialPage));
+        Routing.RegisterRoute(nameof(Pages.IncomingStockPage), typeof(Pages.IncomingStockPage));
         Routing.RegisterRoute(nameof(Pages.InboundProductionSearchPage), typeof(Pages.InboundProductionSearchPage));
         Routing.RegisterRoute(nameof(Pages.InboundProductionPage), typeof(Pages.InboundProductionPage));
         Routing.RegisterRoute(nameof(Pages.OutboundMaterialSearchPage), typeof(Pages.OutboundMaterialSearchPage));

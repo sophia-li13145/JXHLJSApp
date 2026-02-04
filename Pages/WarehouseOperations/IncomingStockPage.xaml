@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="JXHLJSApp.Pages.IncomingStockPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    BackgroundColor="White"
+    Shell.NavBarIsVisible="True">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+        <!-- 顶部标题 -->
+        <Grid BackgroundColor="#007BFF" HeightRequest="60" Padding="16,0">
+            <Label Text="仓储管理系统"
+                   VerticalOptions="Center"
+                   TextColor="White"
+                   FontSize="18"
+                   FontAttributes="Bold" />
+        </Grid>
+
+        <!-- 条码扫描 -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,40" Padding="16,8">
+            <Entry x:Name="ScanEntry"
+                   Placeholder="请扫描物料/包装条码"
+                   FontSize="14"
+                   VerticalOptions="Center"
+                   BackgroundColor="White"
+                   HeightRequest="40"
+                   Completed="OnScanEntryCompleted" />
+            <ImageButton Grid.Column="1"
+                         Source="scan_button.png"
+                         WidthRequest="36"
+                         HeightRequest="36"
+                         BackgroundColor="Transparent"
+                         Padding="0"
+                         Aspect="AspectFit"
+                         Clicked="OnScanClicked" />
+        </Grid>
+
+        <!-- 本次到货明细标题 -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Padding="16,4">
+            <StackLayout Orientation="Horizontal" Spacing="8">
+                <Label Text="本次到货明细"
+                       TextColor="#2E7D32"
+                       FontSize="14"
+                       FontAttributes="Bold" />
+            </StackLayout>
+            <Button Grid.Column="1"
+                    Text="添加到货"
+                    BackgroundColor="#2E7DFF"
+                    TextColor="White"
+                    CornerRadius="4"
+                    Padding="12,4"
+                    Clicked="OnAddIncomingClicked" />
+        </Grid>
+
+        <!-- 明细列表 -->
+        <CollectionView Grid.Row="3"
+                        ItemsSource="{Binding Lines}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame BorderColor="#CCCCCC"
+                           BackgroundColor="White"
+                           Margin="16,6"
+                           Padding="10"
+                           HasShadow="False">
+                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                              ColumnDefinitions="*,*"
+                              RowSpacing="6"
+                              ColumnSpacing="12">
+                            <Grid Grid.ColumnSpan="2" ColumnDefinitions="*,Auto">
+                                <Label FontSize="13">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="序号：" FontAttributes="Bold" />
+                                            <Span Text="{Binding Index}" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                                <Label Grid.Column="1"
+                                       Text="删除"
+                                       TextColor="#E53935"
+                                       FontSize="13">
+                                    <Label.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.RemoveLineCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Label.GestureRecognizers>
+                                </Label>
+                            </Grid>
+
+                            <Label Grid.Row="1" Grid.ColumnSpan="2" FontSize="13">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="条码：" FontAttributes="Bold" />
+                                        <Span Text="{Binding Barcode}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+
+                            <Label Grid.Row="2" Grid.Column="0" FontSize="13">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="产地：" FontAttributes="Bold" />
+                                        <Span Text="{Binding Origin}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                            <Label Grid.Row="2" Grid.Column="1" FontSize="13">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="钢号：" FontAttributes="Bold" />
+                                        <Span Text="{Binding MaterialCode}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+
+                            <Label Grid.Row="3" Grid.Column="0" FontSize="13">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="炉号：" FontAttributes="Bold" />
+                                        <Span Text="{Binding FurnaceNo}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                            <Label Grid.Row="3" Grid.Column="1" FontSize="13">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="卷号：" FontAttributes="Bold" />
+                                        <Span Text="{Binding CoilNo}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+
+                            <Label Grid.Row="4" Grid.Column="0" FontSize="13">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="牌号：" FontAttributes="Bold" />
+                                        <Span Text="{Binding MaterialName}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                            <Label Grid.Row="4" Grid.Column="1" FontSize="13">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="重量：" FontAttributes="Bold" />
+                                        <Span Text="{Binding Qty}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+
+                            <Label Grid.Row="5" Grid.Column="0" FontSize="13">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="规格：" FontAttributes="Bold" />
+                                        <Span Text="{Binding Spec}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                            <Label Grid.Row="5" Grid.Column="1" FontSize="13">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="生产日期：" FontAttributes="Bold" />
+                                        <Span Text="{Binding ProductionDate}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- 底部按钮 -->
+        <Grid Grid.Row="4" Padding="16,8">
+            <Grid BackgroundColor="#2196F3"
+                  HorizontalOptions="Fill"
+                  VerticalOptions="Fill"
+                  HeightRequest="50">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnConfirmClicked" />
+                </Grid.GestureRecognizers>
+                <StackLayout Orientation="Horizontal"
+                             HorizontalOptions="Center"
+                             VerticalOptions="Center">
+                    <Image Source="confirm.png" HeightRequest="20" WidthRequest="20" />
+                    <Label Text="确认待入库"
+                           Margin="5,0,0,0"
+                           VerticalOptions="Center"
+                           TextColor="White" />
+                </StackLayout>
+            </Grid>
+        </Grid>
+    </Grid>
+</ContentPage>

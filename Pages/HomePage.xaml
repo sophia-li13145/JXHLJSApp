@@ -52,7 +52,7 @@
             <Label Text="仓储作业" Style="{StaticResource SectionTitle}"/>
 
             <Grid ColumnDefinitions="*,*"
-                  RowDefinitions="Auto,Auto,Auto,Auto"
+                  RowDefinitions="Auto,Auto,Auto,Auto,Auto"
                   Padding="8,0,8,24">
 
                 <!-- 物料入库 -->
@@ -93,8 +93,27 @@
                     </Frame.GestureRecognizers>
                 </Frame>
 
-                <!-- 物料出库 -->
+                <!-- 到货入库 -->
                 <Frame Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}">
+                    <VerticalStackLayout HorizontalOptions="Center">
+                        <Border HeightRequest="64" WidthRequest="64"
+                                BackgroundColor="#5C6BC0"
+                                StrokeShape="RoundRectangle 32">
+                            <Image Source="scan_button.png"
+                                   HeightRequest="28" WidthRequest="28"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </Border>
+                        <Label Text="到货入库" FontSize="12" Margin="0,6,0,0"
+                               HorizontalTextAlignment="Center" TextColor="#333"/>
+                    </VerticalStackLayout>
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnIncomingStock"/>
+                    </Frame.GestureRecognizers>
+                </Frame>
+
+                <!-- 物料出库 -->
+                <Frame Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}">
                     <VerticalStackLayout HorizontalOptions="Center">
                         <Border HeightRequest="64" WidthRequest="64"
                                 BackgroundColor="#00796B"
@@ -113,7 +132,7 @@
                 </Frame>
 
                 <!-- 成品出库接货 -->
-                <Frame Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}">
+                <Frame Grid.Row="2" Grid.Column="0" Style="{StaticResource Card}">
                     <VerticalStackLayout HorizontalOptions="Center">
                         <Border HeightRequest="64" WidthRequest="64"
                                 BackgroundColor="#FF7043"
@@ -132,7 +151,7 @@
                 </Frame>
 
                 <!-- 模具出库管理 -->
-                <Frame Grid.Row="2" Grid.Column="0" Style="{StaticResource Card}">
+                <Frame Grid.Row="2" Grid.Column="1" Style="{StaticResource Card}">
                     <VerticalStackLayout HorizontalOptions="Center">
                         <Border HeightRequest="64" WidthRequest="64"
                                 BackgroundColor="Gold"
@@ -151,7 +170,7 @@
                 </Frame>
 
                 <!-- 模具入库管理 -->
-                <Frame Grid.Row="2" Grid.Column="1" Style="{StaticResource Card}">
+                <Frame Grid.Row="3" Grid.Column="0" Style="{StaticResource Card}">
                     <VerticalStackLayout HorizontalOptions="Center">
                         <Border HeightRequest="64" WidthRequest="64"
                                 BackgroundColor="LavenderBlush"
@@ -170,7 +189,7 @@
                 </Frame>
 
                 <!-- 库存查询 -->
-                <Frame Grid.Row="3" Grid.Column="0" Style="{StaticResource Card}">
+                <Frame Grid.Row="3" Grid.Column="1" Style="{StaticResource Card}">
                     <VerticalStackLayout HorizontalOptions="Center">
                         <Border HeightRequest="64" WidthRequest="64"
                 BackgroundColor="#9E9E9E"
@@ -189,7 +208,7 @@
                 </Frame>
 
                 <!-- 库存盘点 -->
-                <Frame Grid.Row="3" Grid.Column="1" Style="{StaticResource Card}">
+                <Frame Grid.Row="4" Grid.Column="0" Style="{StaticResource Card}">
                     <VerticalStackLayout HorizontalOptions="Center">
                         <Border HeightRequest="64" WidthRequest="64"
                 BackgroundColor="#90A4AE"
