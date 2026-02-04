@@ -19,7 +19,7 @@ public partial class IncomingStockPage : ContentPage
     {
         var result = await IncomingStockAddPopupPage.ShowAsync(_sp);
         if (result is null) return;
-        _vm.AddLine(result);
+        await _vm.TryAddLineAsync(result);
     }
 
     private async void OnConfirmClicked(object sender, EventArgs e)
@@ -39,7 +39,7 @@ public partial class IncomingStockPage : ContentPage
         ScanEntry.Text = string.Empty;
         var result = await IncomingStockAddPopupPage.ShowAsync(_sp, code);
         if (result is null) return;
-        _vm.AddLine(result);
+        await _vm.TryAddLineAsync(result);
     }
 
     private async void OnScanClicked(object sender, EventArgs e)
@@ -52,7 +52,7 @@ public partial class IncomingStockPage : ContentPage
 
         var parsed = await IncomingStockAddPopupPage.ShowAsync(_sp, result.Trim());
         if (parsed is null) return;
-        _vm.AddLine(parsed);
+        await _vm.TryAddLineAsync(parsed);
     }
 
     private async void OnEditLineTapped(object sender, EventArgs e)

@@ -19,19 +19,19 @@ public partial class IncomingStockViewModel : ObservableObject
         _dialogs = dialogs;
     }
 
-    public void AddLine(IncomingBarcodeParseResult parsed)
+    public async Task<bool> TryAddLineAsync(IncomingBarcodeParseResult parsed)
     {
-        if (parsed is null) return;
+        if (parsed is null) return false;
 
         var materialCode = parsed.materialCode?.Trim() ?? string.Empty;
         var spec = parsed.spec?.Trim() ?? string.Empty;
         var identityKey = BuildIdentityKey(materialCode, spec);
-        if (string.IsNullOrWhiteSpace(identityKey)) return;
+        if (string.IsNullOrWhiteSpace(identityKey)) return false;
 
         if (Lines.Any(x => string.Equals(BuildIdentityKey(x.MaterialCode, x.Spec), identityKey, StringComparison.OrdinalIgnoreCase)))
         {
-            _ = _dialogs.AlertAsync("提示", $"钢号 {materialCode} / 规格 {spec} 已存在。");
-            return;
+            await _dialogs.AlertAsync("提示", $"钢号 {materialCode} / 规格 {spec} 已存在。");
+            return false;
         }
 
         Lines.Add(new IncomingStockLine
@@ -47,6 +47,8 @@ public partial class IncomingStockViewModel : ObservableObject
             Qty = parsed.qty,
             ProductionDate = parsed.productionDate ?? string.Empty
         });
+
+        return true;
     }
 
     public void ClearAll()
