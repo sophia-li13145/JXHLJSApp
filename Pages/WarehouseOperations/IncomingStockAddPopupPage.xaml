@@ -23,7 +23,9 @@
                     <Grid Grid.Column="1" >
                         <Entry x:Name="BarcodeEntry"
                                Placeholder="请扫描物料/包装条码"
-                               Text="{Binding Barcode}" />
+                               Text="{Binding Barcode}"
+                               IsReadOnly="{Binding IsBarcodeReadOnly}"
+                               BackgroundColor="{Binding BarcodeBackgroundColor}" />
                     </Grid>
 
                     <Label Grid.Row="1" Text="*产地：" TextColor="#D0021B" VerticalTextAlignment="Center" />
@@ -54,7 +56,7 @@
         </ScrollView>
 
         <Grid Grid.Row="1" Padding="0,12,0,0">
-            <Button Text="确认"
+            <Button Text="{Binding ConfirmButtonText}"
                     Command="{Binding ConfirmCommand}"
                     BackgroundColor="#1E88E5"
                     TextColor="White"
