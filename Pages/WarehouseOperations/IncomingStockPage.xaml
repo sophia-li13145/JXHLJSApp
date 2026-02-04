@@ -133,14 +133,6 @@
                                 </Label.FormattedText>
                             </Label>
 
-                            <Label Grid.Row="4" Grid.Column="0" FontSize="13">
-                                <Label.FormattedText>
-                                    <FormattedString>
-                                        <Span Text="牌号：" FontAttributes="Bold" />
-                                        <Span Text="{Binding MaterialName}" />
-                                    </FormattedString>
-                                </Label.FormattedText>
-                            </Label>
                             <Label Grid.Row="4" Grid.Column="1" FontSize="13">
                                 <Label.FormattedText>
                                     <FormattedString>
@@ -150,7 +142,7 @@
                                 </Label.FormattedText>
                             </Label>
 
-                            <Label Grid.Row="5" Grid.Column="0" FontSize="13">
+                            <Label Grid.Row="4" Grid.Column="0" FontSize="13">
                                 <Label.FormattedText>
                                     <FormattedString>
                                         <Span Text="规格：" FontAttributes="Bold" />
@@ -158,7 +150,7 @@
                                     </FormattedString>
                                 </Label.FormattedText>
                             </Label>
-                            <Label Grid.Row="5" Grid.Column="1" FontSize="13">
+                            <Label Grid.Row="5" Grid.ColumnSpan="2" FontSize="13">
                                 <Label.FormattedText>
                                     <FormattedString>
                                         <Span Text="生产日期：" FontAttributes="Bold" />

@@ -83,6 +83,7 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
         Barcode = line.Barcode ?? string.Empty;
         Origin = line.Origin ?? string.Empty;
         MaterialCode = line.MaterialCode ?? string.Empty;
+        MaterialName = line.MaterialName ?? string.Empty;
         FurnaceNo = line.FurnaceNo ?? string.Empty;
         CoilNo = line.CoilNo ?? string.Empty;
         Spec = line.Spec ?? string.Empty;
@@ -132,6 +133,7 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
             barcode = string.IsNullOrWhiteSpace(Barcode) ? identityKey : Barcode,
             origin = Origin,
             materialCode = MaterialCode,
+            materialName = MaterialName,
             furnaceNo = FurnaceNo,
             coilNo = CoilNo,
             spec = Spec,

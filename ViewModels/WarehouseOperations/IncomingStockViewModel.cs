@@ -34,13 +34,19 @@ public partial class IncomingStockViewModel : ObservableObject
             return false;
         }
 
+        var materialName = parsed.materialName?.Trim() ?? string.Empty;
+        if (string.Equals(materialName, materialCode, StringComparison.OrdinalIgnoreCase))
+        {
+            materialName = string.Empty;
+        }
+
         Lines.Add(new IncomingStockLine
         {
             Index = Lines.Count + 1,
             Barcode = parsed.barcode?.Trim() ?? identityKey,
             Origin = parsed.origin ?? string.Empty,
             MaterialCode = materialCode,
-            MaterialName = parsed.materialName ?? string.Empty,
+            MaterialName = materialName,
             FurnaceNo = parsed.furnaceNo ?? string.Empty,
             CoilNo = parsed.coilNo ?? string.Empty,
             Spec = spec,
@@ -69,7 +75,7 @@ public partial class IncomingStockViewModel : ObservableObject
             coilNo = x.CoilNo,
             furnaceNo = x.FurnaceNo,
             materialCode = x.MaterialCode,
-            materialName = x.MaterialName,
+            materialName = string.IsNullOrWhiteSpace(x.MaterialName) ? null : x.MaterialName,
             origin = x.Origin,
             productionDate = x.ProductionDate,
             qty = x.Qty,
