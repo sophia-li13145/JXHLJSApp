@@ -39,19 +39,4 @@ public partial class IncomingStockAddPopupPage : ContentPage
         return await tcs.Task;
     }
 
-    private async void OnBarcodeCompleted(object sender, EventArgs e)
-    {
-        await _vm.LoadByBarcodeAsync(_vm.Barcode);
-    }
-
-    private async void OnScanClicked(object sender, EventArgs e)
-    {
-        var tcs = new TaskCompletionSource<string>();
-        await Navigation.PushAsync(new QrScanPage(tcs));
-
-        var result = await tcs.Task;
-        if (string.IsNullOrWhiteSpace(result)) return;
-
-        await _vm.LoadByBarcodeAsync(result.Trim());
-    }
 }

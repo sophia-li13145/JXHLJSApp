@@ -69,12 +69,6 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
     [RelayCommand]
     private async Task ConfirmAsync()
     {
-        if (string.IsNullOrWhiteSpace(Barcode))
-        {
-            await _dialogs.AlertAsync("提示", "请先扫描条码。");
-            return;
-        }
-
         var result = new IncomingBarcodeParseResult
         {
             barcode = Barcode,
