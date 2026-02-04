@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="JXHLJSApp.Pages.IncomingStockAddPopupPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="添加到货"
+    Padding="16"
+    BackgroundColor="#F5F5F5">
+
+    <Grid RowDefinitions="*,Auto">
+        <ScrollView Grid.Row="0">
+            <Frame Padding="16"
+                   BackgroundColor="#BFE4F8"
+                   BorderColor="#B0D6EE"
+                   CornerRadius="6"
+                   HasShadow="False">
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                      ColumnDefinitions="Auto,*"
+                      RowSpacing="10"
+                      ColumnSpacing="8">
+                    <!-- 条码 -->
+                    <Label Text="*条码：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Grid Grid.Column="1" ColumnDefinitions="*,40">
+                        <Entry x:Name="BarcodeEntry"
+                               Placeholder="请扫描物料/包装条码"
+                               Text="{Binding Barcode}"
+                               Completed="OnBarcodeCompleted" />
+                        <ImageButton Grid.Column="1"
+                                     Source="scan_button.png"
+                                     WidthRequest="36"
+                                     HeightRequest="36"
+                                     BackgroundColor="Transparent"
+                                     Padding="0"
+                                     Aspect="AspectFit"
+                                     Clicked="OnScanClicked" />
+                    </Grid>
+
+                    <Label Grid.Row="1" Text="*产地：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Row="1" Grid.Column="1" Placeholder="请输入" Text="{Binding Origin}" />
+
+                    <Label Grid.Row="2" Text="*钢号：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Row="2" Grid.Column="1" Placeholder="请输入" Text="{Binding MaterialCode}" />
+
+                    <Label Grid.Row="3" Text="*炉号：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Row="3" Grid.Column="1" Placeholder="请输入" Text="{Binding FurnaceNo}" />
+
+                    <Label Grid.Row="4" Text="*牌号：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Row="4" Grid.Column="1" Placeholder="请输入" Text="{Binding MaterialName}" />
+
+                    <Label Grid.Row="5" Text="*重量：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Row="5" Grid.Column="1" Placeholder="请输入" Keyboard="Numeric" Text="{Binding Qty}" />
+
+                    <Label Grid.Row="6" Text="*规格：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Row="6" Grid.Column="1" Placeholder="请输入" Text="{Binding Spec}" />
+
+                    <Label Grid.Row="7" Text="*生产日期：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Row="7" Grid.Column="1" Placeholder="请选择" Text="{Binding ProductionDate}" />
+
+                    <Label Grid.Row="8" Text="*卷号：" TextColor="#D0021B" VerticalTextAlignment="Center" />
+                    <Entry Grid.Row="8" Grid.Column="1" Placeholder="请输入" Text="{Binding CoilNo}" />
+                </Grid>
+            </Frame>
+        </ScrollView>
+
+        <Grid Grid.Row="1" Padding="0,12,0,0">
+            <Button Text="确认"
+                    Command="{Binding ConfirmCommand}"
+                    BackgroundColor="#1E88E5"
+                    TextColor="White"
+                    CornerRadius="4"
+                    HeightRequest="44" />
+        </Grid>
+    </Grid>
+</ContentPage>

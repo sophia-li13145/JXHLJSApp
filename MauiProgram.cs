@@ -52,6 +52,8 @@ namespace JXHLJSApp
             builder.Services.AddTransient<ViewModels.LogsViewModel>();
             builder.Services.AddTransient<ViewModels.InboundMaterialSearchViewModel>();
             builder.Services.AddTransient<ViewModels.InboundMaterialViewModel>();
+            builder.Services.AddTransient<ViewModels.IncomingStockViewModel>();
+            builder.Services.AddTransient<ViewModels.IncomingStockAddPopupViewModel>();
             builder.Services.AddTransient<ViewModels.InboundProductionViewModel>();
             builder.Services.AddTransient<ViewModels.InboundProductionSearchViewModel>();
             builder.Services.AddTransient<ViewModels.OutboundMaterialViewModel>();
@@ -108,6 +110,8 @@ namespace JXHLJSApp
             // 注册需要路由的页面
             builder.Services.AddTransient<Pages.InboundMaterialSearchPage>();
             builder.Services.AddTransient<Pages.InboundMaterialPage>();
+            builder.Services.AddTransient<Pages.IncomingStockPage>();
+            builder.Services.AddTransient<Pages.IncomingStockAddPopupPage>();
             builder.Services.AddTransient<Pages.InboundProductionPage>();
             builder.Services.AddTransient<Pages.InboundProductionSearchPage>();
             builder.Services.AddTransient<Pages.OutboundMaterialPage>();
@@ -168,6 +172,9 @@ namespace JXHLJSApp
                 .AddHttpMessageHandler<TokenExpiredHandler>();
 
             builder.Services.AddHttpClient<IInboundMaterialService, InboundMaterialService>(ConfigureBaseAddress)
+                .AddHttpMessageHandler<AuthHeaderHandler>()
+                .AddHttpMessageHandler<TokenExpiredHandler>();
+            builder.Services.AddHttpClient<IIncomingStockService, IncomingStockService>(ConfigureBaseAddress)
                 .AddHttpMessageHandler<AuthHeaderHandler>()
                 .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient<IOutboundMaterialService, OutboundMaterialService>(ConfigureBaseAddress)

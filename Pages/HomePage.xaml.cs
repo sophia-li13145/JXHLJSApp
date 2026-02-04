@@ -28,6 +28,8 @@ namespace JXHLJSApp.Pages
             => await Shell.Current.GoToAsync(nameof(InboundProductionSearchPage)); // 生产入库
         private async void OnOutMat(object? s, TappedEventArgs e)
             => await Shell.Current.GoToAsync(nameof(OutboundMaterialSearchPage));  // 物料出库
+        private async void OnIncomingStock(object? s, TappedEventArgs e)
+            => await Shell.Current.GoToAsync(nameof(IncomingStockPage));  // 到货入库
         private async void OnOutFinished(object? s, TappedEventArgs e)
             => await Shell.Current.GoToAsync(nameof(OutboundFinishedSearchPage));  // 成品出库接货
         private async void OnMoldOut(object? s, TappedEventArgs e)
