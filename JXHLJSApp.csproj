@@ -16,7 +16,7 @@
 		<ApplicationTitle>JXHLJSApp</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.ty.industrialcontrol</ApplicationId>
+		<ApplicationId>com.jxhljs.app</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>

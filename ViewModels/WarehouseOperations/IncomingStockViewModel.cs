@@ -23,21 +23,16 @@ public partial class IncomingStockViewModel : ObservableObject
     {
         if (parsed is null) return false;
 
+        var materialName = parsed.materialName?.Trim() ?? string.Empty;
         var materialCode = parsed.materialCode?.Trim() ?? string.Empty;
         var spec = parsed.spec?.Trim() ?? string.Empty;
-        var identityKey = BuildIdentityKey(materialCode, spec);
+        var identityKey = BuildIdentityKey(materialName, spec);
         if (string.IsNullOrWhiteSpace(identityKey)) return false;
 
-        if (Lines.Any(x => string.Equals(BuildIdentityKey(x.MaterialCode, x.Spec), identityKey, StringComparison.OrdinalIgnoreCase)))
+        if (Lines.Any(x => string.Equals(BuildIdentityKey(x.MaterialName, x.Spec), identityKey, StringComparison.OrdinalIgnoreCase)))
         {
-            await _dialogs.AlertAsync("提示", $"钢号 {materialCode} / 规格 {spec} 已存在。");
+            await _dialogs.AlertAsync("提示", $"钢号 {materialName} / 规格 {spec} 已存在。");
             return false;
-        }
-
-        var materialName = parsed.materialName?.Trim() ?? string.Empty;
-        if (string.Equals(materialName, materialCode, StringComparison.OrdinalIgnoreCase))
-        {
-            materialName = string.Empty;
         }
 
         Lines.Add(new IncomingStockLine
@@ -94,8 +89,8 @@ public partial class IncomingStockViewModel : ObservableObject
     private async Task RemoveLineAsync(IncomingStockLine? line)
     {
         if (line is null) return;
-        var identityKey = BuildIdentityKey(line.MaterialCode, line.Spec);
-        var confirm = await _dialogs.ConfirmAsync("确认", $"确定删除钢号 {line.MaterialCode} / 规格 {line.Spec} 吗？");
+        var identityKey = BuildIdentityKey(line.MaterialName, line.Spec);
+        var confirm = await _dialogs.ConfirmAsync("确认", $"确定删除钢号 {line.MaterialName} / 规格 {line.Spec} 吗？");
         if (!confirm) return;
 
         Lines.Remove(line);

@@ -24,8 +24,8 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private bool isEditMode;
     [ObservableProperty] private string confirmButtonText = "确认";
-    [ObservableProperty] private bool isMaterialCodeReadOnly;
-    [ObservableProperty] private string materialCodeBackgroundColor = "White";
+    [ObservableProperty] private bool isMaterialNameReadOnly;
+    [ObservableProperty] private string materialNameBackgroundColor = "White";
     [ObservableProperty] private bool isSpecReadOnly;
     [ObservableProperty] private string specBackgroundColor = "White";
 
@@ -160,8 +160,8 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
     {
         IsEditMode = enabled;
         ConfirmButtonText = enabled ? "确认修改" : "确认";
-        IsMaterialCodeReadOnly = enabled;
-        MaterialCodeBackgroundColor = enabled ? "#E0E0E0" : "White";
+        IsMaterialNameReadOnly = enabled;
+        MaterialNameBackgroundColor = enabled ? "#E0E0E0" : "White";
         IsSpecReadOnly = enabled;
         SpecBackgroundColor = enabled ? "#E0E0E0" : "White";
     }
@@ -171,7 +171,7 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
         var qtyText = Qty?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
         return string.Join("-",
             (Origin ?? string.Empty).Trim(),
-            (MaterialCode ?? string.Empty).Trim(),
+            (MaterialName ?? string.Empty).Trim(),
             (FurnaceNo ?? string.Empty).Trim(),
             (CoilNo ?? string.Empty).Trim(),
             qtyText.Trim(),
@@ -181,13 +181,13 @@ public partial class IncomingStockAddPopupViewModel : ObservableObject
 
     private string BuildIdentityKey()
         => string.Join("-",
-            (MaterialCode ?? string.Empty).Trim(),
+            (MaterialName ?? string.Empty).Trim(),
             (Spec ?? string.Empty).Trim());
 
     private string? ValidateRequiredFields()
     {
         if (string.IsNullOrWhiteSpace(Origin)) return "请填写产地。";
-        if (string.IsNullOrWhiteSpace(MaterialCode)) return "请填写钢号。";
+        if (string.IsNullOrWhiteSpace(MaterialName)) return "请填写钢号。";
         if (string.IsNullOrWhiteSpace(FurnaceNo)) return "请填写炉号。";
         if (!Qty.HasValue) return "请填写重量。";
         if (string.IsNullOrWhiteSpace(Spec)) return "请填写规格。";

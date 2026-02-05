@@ -111,7 +111,7 @@
                                 <Label.FormattedText>
                                     <FormattedString>
                                         <Span Text="钢号：" FontAttributes="Bold" />
-                                        <Span Text="{Binding MaterialCode}" />
+                                        <Span Text="{Binding MaterialName}" />
                                     </FormattedString>
                                 </Label.FormattedText>
                             </Label>

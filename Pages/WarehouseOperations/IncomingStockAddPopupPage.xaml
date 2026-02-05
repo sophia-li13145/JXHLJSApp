@@ -25,9 +25,9 @@
                     <Entry Grid.Row="1"
                            Grid.Column="1"
                            Placeholder="请输入"
-                           Text="{Binding MaterialCode}"
-                           IsReadOnly="{Binding IsMaterialCodeReadOnly}"
-                           BackgroundColor="{Binding MaterialCodeBackgroundColor}" />
+                           Text="{Binding MaterialName}"
+                           IsReadOnly="{Binding IsMaterialNameReadOnly}"
+                           BackgroundColor="{Binding MaterialNameBackgroundColor}" />
 
                     <Label Grid.Row="2" Text="*炉号：" TextColor="#D0021B" VerticalTextAlignment="Center" />
                     <Entry Grid.Row="2" Grid.Column="1" Placeholder="请输入" Text="{Binding FurnaceNo}" />
