@@ -3,6 +3,11 @@ using SkiaSharp;
 using BarcodeFormat = ZXing.BarcodeFormat;
 using JXHLJSApp.Services;
 
+#if ANDROID
+using Android.Text;
+using Android.Widget;
+#endif
+
 namespace JXHLJSApp.Pages;
 
 public partial class QrScanPage : ContentPage
@@ -248,6 +253,7 @@ public partial class QrScanPage : ContentPage
         ModeHintLabel.Text = "支持相机与硬件扫码：可使用相机或扫描头进行识别。";
         ModeHintLabel.IsVisible = true;
         WedgeInputEntry.IsVisible = true;
+        ConfigureWedgeEntryForHardwareScan();
         EnsureWedgeFocus();
         if (!_wedgeFocusHooked)
         {
@@ -295,6 +301,23 @@ public partial class QrScanPage : ContentPage
     }
 
 #if ANDROID
+    private void ConfigureWedgeEntryForHardwareScan()
+    {
+        try
+        {
+            if (WedgeInputEntry?.Handler?.PlatformView is EditText nativeEdit)
+            {
+                nativeEdit.ShowSoftInputOnFocus = false;
+                nativeEdit.SetRawInputType(InputTypes.Null);
+                nativeEdit.InputType = InputTypes.Null;
+            }
+        }
+        catch
+        {
+            // 忽略设备差异导致的输入法设置异常，避免影响扫码流程
+        }
+    }
+
     private void WedgeInputEntry_Unfocused(object? sender, FocusEventArgs e)
     {
         if (!_returned && !_isPickingFromGallery)
