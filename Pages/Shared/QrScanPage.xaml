@@ -6,7 +6,7 @@
     x:Class="JXHLJSApp.Pages.QrScanPage"
     Title="扫码">
 
-    <Grid RowDefinitions="1*,3*,1*">
+    <Grid RowDefinitions="4*,Auto,Auto">
         <!-- 扫码取码 -->
         <zxing:CameraBarcodeReaderView
             x:Name="barcodeView"
@@ -20,13 +20,14 @@
         <Label x:Name="ResultLabel"
                Grid.Row="1"
                Text="请对准二维码..."
-               FontSize="18"
+               Margin="0,12,0,8"
+               FontSize="16"
                HorizontalOptions="Center"
                VerticalOptions="Center" />
 
         <!-- 底部按钮区 -->
         <Grid Grid.Row="2"
-              ColumnDefinitions="Auto,Auto,*,Auto"
+              ColumnDefinitions="Auto,Auto,Auto"
               Padding="20"
               BackgroundColor="#222">
             <!-- 新增：相册识别 -->
@@ -40,20 +41,8 @@
                     BorderColor="Black"
                     Clicked="SwitchCameraButton_Clicked" />
 
-            <zxing:BarcodeGeneratorView
-                x:Name="barcodeGenerator"
-                Grid.Column="2"
-                HorizontalOptions="Center"
-                VerticalOptions="Center"
-                HeightRequest="100"
-                WidthRequest="100"
-                ForegroundColor="DarkBlue"
-                Format="QrCode"
-                Value="Sample"
-                BarcodeMargin="1" />
-
             <Button Text="💡"
-                    Grid.Column="3"
+                    Grid.Column="2"
                     BackgroundColor="#444"
                     BorderColor="Black"
                     Clicked="TorchButton_Clicked" />
