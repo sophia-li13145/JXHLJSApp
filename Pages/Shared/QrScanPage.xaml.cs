@@ -8,46 +8,77 @@ public partial class QrScanPage : ContentPage
 {
     private readonly TaskCompletionSource<string> _tcs;
     private bool _returned;
+    private DateTime _lastDetectedAt = DateTime.MinValue;
+    private static readonly TimeSpan MinDetectInterval = TimeSpan.FromMilliseconds(60);
+    private int _handling = 0;          // 并发保护
     /// <summary>执行 QrScanPage 初始化逻辑。</summary>
     public QrScanPage(TaskCompletionSource<string> tcs)
     {
         InitializeComponent();
         _tcs = tcs;
 
-        // 直接在这里设置一次就够了
         barcodeView.Options = new BarcodeReaderOptions
         {
+            // B：通过 Options 降低识别压力
+            // 1) Multiple=false：一帧只取一个结果
+            // 2) AutoRotate=false：减少旋转尝试的计算量（如果你现场经常倒着扫，再改回 true）
+            // 3) Formats：尽量收敛到你需要的码制（越少越快）
             Formats = BarcodeFormats.OneDimensional | BarcodeFormats.TwoDimensional,
-            AutoRotate = true,
+            AutoRotate = false,
             Multiple = false,
             TryHarder = false,
             TryInverted = false
         };
 
-        // 降低实时预览帧压力，提升连续扫码响应速度
-        barcodeView.DelayBetweenAnalyzingFrames = 60;
-        barcodeView.DelayBetweenContinuousScans = 800;
     }
 
 
-    // 扫码事件
-    /// <summary>执行 BarcodesDetected 逻辑。</summary>
     private void BarcodesDetected(object sender, BarcodeDetectionEventArgs e)
     {
-        if (_returned) return; // 防止重复触发
+        if (_returned) return;
 
-        var first = e.Results.FirstOrDefault();
-        if (first == null || string.IsNullOrWhiteSpace(first.Value))
-            return;
+        // 并发保护：如果上一次还没处理完，直接丢弃
+        if (System.Threading.Interlocked.Exchange(ref _handling, 1) == 1) return;
 
-        _returned = true;
-
-        MainThread.BeginInvokeOnMainThread(async () =>
+        try
         {
-            try { barcodeView.IsDetecting = false; } catch { }
-            _tcs.TrySetResult(first.Value.Trim());
-            await Navigation.PopAsync();
-        });
+            // 降频：避免一秒几十次回调把 UI/业务打爆
+            var now = DateTime.UtcNow;
+            if (now - _lastDetectedAt < MinDetectInterval) return;
+            _lastDetectedAt = now;
+
+            var first = e.Results?.FirstOrDefault();
+            var value = first?.Value?.Trim();
+            if (string.IsNullOrWhiteSpace(value)) return;
+
+            _returned = true;
+
+            // 命中就停，避免重复触发
+            barcodeView.IsDetecting = false;
+
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                try
+                {
+                    // TODO: 你的业务处理
+                    ResultLabel.Text = value;
+
+                    // 如果是返回上个页面
+                    _tcs?.TrySetResult(value);
+                    await Navigation.PopAsync();
+                }
+                catch
+                {
+                    // 兜底：失败则允许继续扫
+                    _returned = false;
+                    barcodeView.IsDetecting = true;
+                }
+            });
+        }
+        finally
+        {
+            System.Threading.Interlocked.Exchange(ref _handling, 0);
+        }
     }
 
     // 新增：从相册选择图片并识别
