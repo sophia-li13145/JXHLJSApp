@@ -214,8 +214,11 @@ public partial class InboundMaterialPage : ContentPage
         var result = await tcs.Task;
         if (string.IsNullOrWhiteSpace(result)) return;
 
-        // 直接交给 VM，别再设置 ScanEntry.Text
-        await _vm.HandleScannedAsync(result.Trim(), "CAMERA");
+        // 回填到条码输入框，保持与其它扫描页一致
+        ScanEntry.Text = result.Trim();
+
+        // 交给 VM 统一处理
+        await _vm.HandleScannedAsync(ScanEntry.Text, "CAMERA");
 
         // 保持体验一致
         ScanEntry.Text = string.Empty;

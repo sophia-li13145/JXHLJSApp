@@ -50,9 +50,15 @@ public partial class IncomingStockPage : ContentPage
         var result = await tcs.Task;
         if (string.IsNullOrWhiteSpace(result)) return;
 
-        var parsed = await IncomingStockAddPopupPage.ShowAsync(_sp, result.Trim());
+        // 回填到条码输入框，确保识别成功后有可见结果
+        ScanEntry.Text = result.Trim();
+
+        var parsed = await IncomingStockAddPopupPage.ShowAsync(_sp, ScanEntry.Text);
         if (parsed is null) return;
         await _vm.TryAddLineAsync(parsed);
+
+        // 保持与手动回车一致：处理后清空输入框
+        ScanEntry.Text = string.Empty;
     }
 
     private async void OnEditLineTapped(object sender, EventArgs e)
