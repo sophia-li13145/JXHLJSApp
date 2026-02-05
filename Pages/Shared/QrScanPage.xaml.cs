@@ -73,18 +73,65 @@ public partial class QrScanPage : ContentPage
 
         await MainThread.InvokeOnMainThreadAsync(async () =>
         {
-            try
-            {
-                ResultLabel.Text = value;
-                _tcs?.TrySetResult(value);
-                await Navigation.PopAsync();
-            }
-            catch
-            {
-                _returned = false;
-                barcodeView.IsDetecting = true;
-            }
+            ResultLabel.Text = value;
+
+            // 先关闭扫码页，再回传结果，避免调用页在导航动画未完成时弹窗失败
+            await CloseScanPageAsync();
+            _tcs?.TrySetResult(value);
         });
+    }
+
+    private async Task CloseScanPageAsync()
+    {
+        // 优先按当前页面所在栈类型关闭，失败再做兜底重试
+        try
+        {
+            if (Navigation?.ModalStack?.Contains(this) == true)
+            {
+                await Navigation.PopModalAsync();
+                return;
+            }
+
+            if (Navigation?.NavigationStack?.Contains(this) == true)
+            {
+                await Navigation.PopAsync();
+                return;
+            }
+        }
+        catch
+        {
+            // ignore, fallback below
+        }
+
+        try
+        {
+            if (Shell.Current?.Navigation?.ModalStack?.Contains(this) == true)
+            {
+                await Shell.Current.Navigation.PopModalAsync();
+                return;
+            }
+
+            if (Shell.Current?.Navigation?.NavigationStack?.Contains(this) == true)
+            {
+                await Shell.Current.Navigation.PopAsync();
+                return;
+            }
+        }
+        catch
+        {
+            // ignore, fallback below
+        }
+
+        try
+        {
+            await Task.Delay(80);
+            if (Navigation?.NavigationStack?.Contains(this) == true)
+                await Navigation.PopAsync();
+        }
+        catch
+        {
+            // ignore，回传结果后由调用页继续流程
+        }
     }
 
     private async void PickFromGalleryButton_Clicked(object? sender, EventArgs e)
