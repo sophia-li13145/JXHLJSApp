@@ -17,12 +17,16 @@ public partial class QrScanPage : ContentPage
         // 直接在这里设置一次就够了
         barcodeView.Options = new BarcodeReaderOptions
         {
-            Formats = BarcodeFormats.All,
+            Formats = BarcodeFormats.OneDimensional | BarcodeFormats.TwoDimensional,
             AutoRotate = true,
             Multiple = false,
-            TryHarder = true,
-            TryInverted = true
+            TryHarder = false,
+            TryInverted = false
         };
+
+        // 降低实时预览帧压力，提升连续扫码响应速度
+        barcodeView.DelayBetweenAnalyzingFrames = 60;
+        barcodeView.DelayBetweenContinuousScans = 800;
     }
 
 
@@ -111,19 +115,19 @@ public partial class QrScanPage : ContentPage
     {
         var options = new ZXing.Common.DecodingOptions
         {
-            TryHarder = true,
-            TryInverted = true, // 新版写在 Options 里
+            TryHarder = false,
+            TryInverted = false,
             PossibleFormats = new[]
             {
-            BarcodeFormat.CODE_128,
-            BarcodeFormat.CODE_39,
-            BarcodeFormat.EAN_13,
-            BarcodeFormat.EAN_8,
-            BarcodeFormat.ITF,
-            BarcodeFormat.UPC_A,
-            BarcodeFormat.UPC_E,
-            BarcodeFormat.QR_CODE
-        }
+                BarcodeFormat.CODE_128,
+                BarcodeFormat.CODE_39,
+                BarcodeFormat.EAN_13,
+                BarcodeFormat.EAN_8,
+                BarcodeFormat.ITF,
+                BarcodeFormat.UPC_A,
+                BarcodeFormat.UPC_E,
+                BarcodeFormat.QR_CODE
+            }
         };
 
         var reader = new ZXing.SkiaSharp.BarcodeReader
@@ -138,44 +142,14 @@ public partial class QrScanPage : ContentPage
 
     private ZXing.Result? DecodeWithFallbacks(SKBitmap bitmap)
     {
+        // 优先走原图，命中率最高且速度最快
         var result = DecodeWithZxing(bitmap);
         if (result is not null) return result;
 
-        using var enlargedNearest = ResizeBitmap(bitmap, 3f, SKFilterQuality.None);
-        if (enlargedNearest is not null)
-        {
-            result = DecodeWithZxing(enlargedNearest);
-            if (result is not null) return result;
-        }
-
-        using var enlargedHigh = ResizeBitmap(bitmap, 3f, SKFilterQuality.High);
-        if (enlargedHigh is not null)
-        {
-            result = DecodeWithZxing(enlargedHigh);
-            if (result is not null) return result;
-        }
-
+        // 仅保留一次灰度兜底，避免多轮高成本重采样导致等待过长
         using var grayscale = ToGrayscale(bitmap);
-        result = DecodeWithZxing(grayscale);
-        if (result is not null) return result;
-
-        using var binary = ToBinarized(grayscale, false, 128);
-        result = DecodeWithZxing(binary);
-        if (result is not null) return result;
-
-        using var inverted = ToBinarized(grayscale, true, 128);
-        return DecodeWithZxing(inverted);
+        return DecodeWithZxing(grayscale);
     }
-
-    private static SKBitmap? ResizeBitmap(SKBitmap source, float factor, SKFilterQuality quality)
-    {
-        if (factor <= 0) return null;
-        var newW = Math.Max(1, (int)(source.Width * factor));
-        var newH = Math.Max(1, (int)(source.Height * factor));
-        var info = new SKImageInfo(newW, newH, source.ColorType, source.AlphaType);
-        return source.Resize(info, quality);
-    }
-
     private static SKBitmap ToGrayscale(SKBitmap source)
     {
         var grayscale = new SKBitmap(source.Width, source.Height, SKColorType.Bgra8888, source.AlphaType);
@@ -191,27 +165,6 @@ public partial class QrScanPage : ContentPage
 
         return grayscale;
     }
-
-    private static SKBitmap ToBinarized(SKBitmap source, bool invert, byte threshold)
-    {
-        var binary = new SKBitmap(source.Width, source.Height, SKColorType.Bgra8888, source.AlphaType);
-        for (var y = 0; y < source.Height; y++)
-        {
-            for (var x = 0; x < source.Width; x++)
-            {
-                var color = source.GetPixel(x, y);
-                var lum = color.Red;
-                if (invert) lum = (byte)(255 - lum);
-                var value = lum >= threshold ? (byte)255 : (byte)0;
-                binary.SetPixel(x, y, new SKColor(value, value, value, color.Alpha));
-            }
-        }
-
-        return binary;
-    }
-
-
-
 
     // 前后摄像头切换
     /// <summary>执行 SwitchCameraButton_Clicked 逻辑。</summary>
