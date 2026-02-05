@@ -19,7 +19,9 @@ public partial class QrScanPage : ContentPage
         {
             Formats = BarcodeFormats.All,
             AutoRotate = true,
-            Multiple = false
+            Multiple = false,
+            TryHarder = true,
+            TryInverted = true
         };
     }
 
@@ -141,9 +143,8 @@ public partial class QrScanPage : ContentPage
             BarcodeFormat.EAN_8,
             BarcodeFormat.ITF,
             BarcodeFormat.UPC_A,
-            BarcodeFormat.UPC_E
-            // 如果后面你也要扫二维码，再加上：
-            // BarcodeFormat.QR_CODE
+            BarcodeFormat.UPC_E,
+            BarcodeFormat.QR_CODE
         }
         };
 
