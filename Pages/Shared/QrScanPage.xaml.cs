@@ -13,7 +13,6 @@ public partial class QrScanPage : ContentPage
     private DateTime _lastDetectedAt = DateTime.MinValue;
     private static readonly TimeSpan MinDetectInterval = TimeSpan.FromMilliseconds(60);
     private int _handling = 0;
-    private bool _hardwareScanPreferred;
     private bool _wedgeFocusHooked;
 
     /// <summary>执行 QrScanPage 初始化逻辑。</summary>
@@ -37,7 +36,7 @@ public partial class QrScanPage : ContentPage
 
     private void BarcodesDetected(object sender, BarcodeDetectionEventArgs e)
     {
-        if (_returned || _hardwareScanPreferred) return;
+        if (_returned) return;
 
         if (System.Threading.Interlocked.Exchange(ref _handling, 1) == 1) return;
 
@@ -77,10 +76,7 @@ public partial class QrScanPage : ContentPage
             catch
             {
                 _returned = false;
-                if (!_hardwareScanPreferred)
-                {
-                    barcodeView.IsDetecting = true;
-                }
+                barcodeView.IsDetecting = true;
             }
         });
     }
@@ -99,7 +95,7 @@ public partial class QrScanPage : ContentPage
 
             if (pick is null)
             {
-                try { if (!_hardwareScanPreferred) barcodeView.IsDetecting = true; } catch { }
+                try { barcodeView.IsDetecting = true; } catch { }
                 return;
             }
 
@@ -108,7 +104,7 @@ public partial class QrScanPage : ContentPage
             if (skBitmap is null)
             {
                 await DisplayAlert("提示", "无法读取该图片。", "确定");
-                try { if (!_hardwareScanPreferred) barcodeView.IsDetecting = true; } catch { }
+                try { barcodeView.IsDetecting = true; } catch { }
                 return;
             }
 
@@ -123,7 +119,7 @@ public partial class QrScanPage : ContentPage
                     "提示",
                     $"未识别到条码。\n原图: {w0}x{h0}",
                     "确定");
-                try { if (!_hardwareScanPreferred) barcodeView.IsDetecting = true; } catch { }
+                try { barcodeView.IsDetecting = true; } catch { }
                 return;
             }
 
@@ -132,7 +128,7 @@ public partial class QrScanPage : ContentPage
         catch (Exception ex)
         {
             await DisplayAlert("错误", $"识别失败：{ex.Message}", "确定");
-            try { if (!_hardwareScanPreferred) barcodeView.IsDetecting = true; } catch { }
+            try { barcodeView.IsDetecting = true; } catch { }
         }
     }
 
@@ -210,29 +206,22 @@ public partial class QrScanPage : ContentPage
         _scanService.Scanned += OnHardwareScanned;
         _scanService.StartListening();
 
-        _hardwareScanPreferred = true;
-        if (_hardwareScanPreferred)
+        ModeHintLabel.Text = "支持相机与硬件扫码：可使用相机或扫描头进行识别。";
+        ModeHintLabel.IsVisible = true;
+        WedgeInputEntry.IsVisible = true;
+        EnsureWedgeFocus();
+        if (!_wedgeFocusHooked)
         {
-            ModeHintLabel.Text = "当前为手持机硬件扫码模式（Intent/Wedge），按扫描键即可。";
-            ModeHintLabel.IsVisible = true;
-            CameraActionGrid.IsVisible = false;
-            barcodeView.IsVisible = false;
-            WedgeInputEntry.IsVisible = true;
-            EnsureWedgeFocus();
-            if (!_wedgeFocusHooked)
-            {
-                WedgeInputEntry.Unfocused += WedgeInputEntry_Unfocused;
-                _wedgeFocusHooked = true;
-            }
-            ResultLabel.Text = "请使用扫描头扫码...";
-            return;
+            WedgeInputEntry.Unfocused += WedgeInputEntry_Unfocused;
+            _wedgeFocusHooked = true;
         }
+#else
+        ModeHintLabel.IsVisible = false;
+        WedgeInputEntry.IsVisible = false;
 #endif
 
-        ModeHintLabel.IsVisible = false;
         CameraActionGrid.IsVisible = true;
         barcodeView.IsVisible = true;
-        WedgeInputEntry.IsVisible = false;
 
         var status = await Permissions.RequestAsync<Permissions.Camera>();
         if (status != PermissionStatus.Granted)
@@ -269,7 +258,7 @@ public partial class QrScanPage : ContentPage
 #if ANDROID
     private void WedgeInputEntry_Unfocused(object? sender, FocusEventArgs e)
     {
-        if (_hardwareScanPreferred && !_returned)
+        if (!_returned)
         {
             EnsureWedgeFocus();
         }
