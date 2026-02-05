@@ -77,6 +77,7 @@ namespace JXHLJSApp.Services
             FilterAndRaise(code, type ?? string.Empty);
         }
 
+
         public void StartListening()
         {
 #if ANDROID
