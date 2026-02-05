@@ -14,6 +14,7 @@ public partial class QrScanPage : ContentPage
     private static readonly TimeSpan MinDetectInterval = TimeSpan.FromMilliseconds(60);
     private int _handling = 0;
     private bool _hardwareScanPreferred;
+    private bool _wedgeFocusHooked;
 
     /// <summary>执行 QrScanPage 初始化逻辑。</summary>
     public QrScanPage(TaskCompletionSource<string> tcs)
@@ -217,7 +218,12 @@ public partial class QrScanPage : ContentPage
             CameraActionGrid.IsVisible = false;
             barcodeView.IsVisible = false;
             WedgeInputEntry.IsVisible = true;
-            WedgeInputEntry.Focus();
+            EnsureWedgeFocus();
+            if (!_wedgeFocusHooked)
+            {
+                WedgeInputEntry.Unfocused += WedgeInputEntry_Unfocused;
+                _wedgeFocusHooked = true;
+            }
             ResultLabel.Text = "请使用扫描头扫码...";
             return;
         }
@@ -246,6 +252,12 @@ public partial class QrScanPage : ContentPage
 #if ANDROID
         _scanService.Scanned -= OnHardwareScanned;
         _scanService.StopListening();
+
+        if (_wedgeFocusHooked)
+        {
+            WedgeInputEntry.Unfocused -= WedgeInputEntry_Unfocused;
+            _wedgeFocusHooked = false;
+        }
 #endif
 
         if (barcodeView != null)
@@ -255,6 +267,34 @@ public partial class QrScanPage : ContentPage
     }
 
 #if ANDROID
+    private void WedgeInputEntry_Unfocused(object? sender, FocusEventArgs e)
+    {
+        if (_hardwareScanPreferred && !_returned)
+        {
+            EnsureWedgeFocus();
+        }
+    }
+
+    private void EnsureWedgeFocus()
+    {
+        _ = MainThread.InvokeOnMainThreadAsync(async () =>
+        {
+            try
+            {
+                WedgeInputEntry.Focus();
+                await Task.Delay(80);
+                if (!WedgeInputEntry.IsFocused)
+                {
+                    WedgeInputEntry.Focus();
+                }
+            }
+            catch
+            {
+                // 忽略焦点争抢导致的异常，避免影响扫码流程
+            }
+        });
+    }
+
     private void OnHardwareScanned(string data, string? type)
     {
         if (string.IsNullOrWhiteSpace(data)) return;
