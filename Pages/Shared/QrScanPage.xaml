@@ -61,6 +61,8 @@
         <Entry x:Name="WedgeInputEntry"
                Grid.Row="3"
                IsVisible="False"
+               HeightRequest="1"
+               Opacity="0"
                ReturnType="Done" />
     </Grid>
 </ContentPage>
