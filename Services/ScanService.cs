@@ -5,7 +5,6 @@ using Microsoft.Maui.Controls;
 #if ANDROID
 using Android.Content;
 using Android.Util;
-using JXHLJSApp.Droid; // 引用 DynamicScanReceiver
 #endif
 
 namespace JXHLJSApp.Services
@@ -29,9 +28,11 @@ namespace JXHLJSApp.Services
         private string? _lastData;
         private DateTime _lastAt = DateTime.MinValue;
 
-        // 约定的广播/键名（与你的设备或发送方对齐）
-        public const string BroadcastAction = "lc";
-        public const string DataKey = "data";
+        // 常见广播 Action（兼容不同扫码枪配置）
+        public const string BroadcastAction = "nlscan.action.SCANNER_RESULT";
+        public const string LegacyBroadcastAction = "lc";
+        public const string DataKey = "SCAN_BARCODE1";
+        public const string LegacyDataKey = "data";
         public const string TypeKey = "SCAN_BARCODE_TYPE_NAME";
 
         /// <summary>
@@ -39,7 +40,6 @@ namespace JXHLJSApp.Services
         /// </summary>
         public void Attach(Entry entry)
         {
-            // 回车（Completed）
             entry.Completed += (s, e) =>
             {
                 var data = entry.Text?.Trim();
@@ -48,12 +48,11 @@ namespace JXHLJSApp.Services
 #if ANDROID
                     Log.Info("ScanService", $"[Attach] Entry.Completed -> {data}");
 #endif
-                    FilterAndRaise(data, "kbd");
+                    FilterAndRaise(data, "wedge");
                     entry.Text = string.Empty;
                 }
             };
 
-            // 文本变化：遇到 \n/\r 也触发
             entry.TextChanged += (s, e) =>
             {
                 if (string.IsNullOrEmpty(e.NewTextValue)) return;
@@ -64,15 +63,12 @@ namespace JXHLJSApp.Services
 #if ANDROID
                     Log.Info("ScanService", $"[Attach] Entry.TextChanged -> {data}");
 #endif
-                    FilterAndRaise(data, "kbd");
+                    FilterAndRaise(data, "wedge");
                     entry.Text = string.Empty;
                 }
             };
         }
 
-        /// <summary>
-        /// 代码侧模拟一次扫码（用于调试/联调）
-        /// </summary>
         public void Publish(string code, string? type = null)
         {
 #if ANDROID
@@ -81,28 +77,22 @@ namespace JXHLJSApp.Services
             FilterAndRaise(code, type ?? string.Empty);
         }
 
-        /// <summary>
-        /// 开始监听 Android 广播（动态注册）
-        /// </summary>
         public void StartListening()
         {
 #if ANDROID
-            Log.Info("ScanService", "[StartListening] ENTER");
             if (_receiver != null) return;
 
-            _receiver = new DynamicScanReceiver();
-            _receiver.OnScanned += OnScannedFromPlatform;
+            _receiver = new DynamicScanReceiver(OnScannedFromPlatform);
 
-            _filter = new IntentFilter(BroadcastAction);
+            _filter = new IntentFilter();
+            _filter.AddAction(BroadcastAction);
+            _filter.AddAction(LegacyBroadcastAction);
+
             Android.App.Application.Context.RegisterReceiver(_receiver, _filter);
-
-            Log.Info("ScanService", $"[StartListening] 已注册广播 Action={BroadcastAction}");
+            Log.Info("ScanService", $"[StartListening] 已注册广播 Action={BroadcastAction}/{LegacyBroadcastAction}");
 #endif
         }
 
-        /// <summary>
-        /// 停止监听 Android 广播（反注册）
-        /// </summary>
         public void StopListening()
         {
 #if ANDROID
@@ -118,17 +108,15 @@ namespace JXHLJSApp.Services
                 Log.Warn("ScanService", $"[StopListening] 注销异常: {ex.Message}");
             }
 
-            _receiver.OnScanned -= OnScannedFromPlatform;
             _receiver = null;
             _filter = null;
 #endif
         }
 
-        /// <summary>
-        /// 统一过滤 + 去抖 + 触发事件
-        /// </summary>
         private bool FilterAndRaise(string data, string? type)
         {
+            if (string.IsNullOrWhiteSpace(data)) return false;
+
             if (!string.IsNullOrEmpty(Prefix) && data.StartsWith(Prefix, StringComparison.Ordinal))
                 data = data.Substring(Prefix.Length);
 
@@ -162,6 +150,26 @@ namespace JXHLJSApp.Services
         {
             Log.Info("ScanService", $"[OnScannedFromPlatform] 原始 -> {data}, type={type}");
             FilterAndRaise(data, type);
+        }
+
+        private sealed class DynamicScanReceiver(Action<string, string?> onScanned) : BroadcastReceiver
+        {
+            private readonly Action<string, string?> _onScanned = onScanned;
+
+            public override void OnReceive(Context? context, Intent? intent)
+            {
+                if (intent is null) return;
+
+                var data =
+                    intent.GetStringExtra(DataKey)
+                    ?? intent.GetStringExtra(LegacyDataKey)
+                    ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(data)) return;
+
+                var type = intent.GetStringExtra(TypeKey);
+                _onScanned(data.Trim(), type);
+            }
         }
 #endif
     }
