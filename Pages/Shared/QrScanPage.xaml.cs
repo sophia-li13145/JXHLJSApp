@@ -79,29 +79,7 @@ public partial class QrScanPage : ContentPage
             var w0 = skBitmap.Width;
             var h0 = skBitmap.Height;
 
-            // === 第一次：直接对原图识别 ===
-            var result = DecodeWithZxing(skBitmap);
-
-            // === 第二次：原图失败的话，把图放大 2.5 倍再识别 ===
-            if (result is null)
-            {
-                var factor = 2.5f;                       // 可再调大一点，比如 3
-                var newW = (int)(w0 * factor);
-                var newH = (int)(h0 * factor);
-                var info = new SKImageInfo(newW, newH);
-
-                using var enlarged = new SKBitmap(info);
-                using (var canvas = new SKCanvas(enlarged))
-                {
-                    canvas.Clear(SKColors.White);
-                    canvas.DrawBitmap(skBitmap,
-                        new SKRect(0, 0, w0, h0),
-                        new SKRect(0, 0, newW, newH));
-                    canvas.Flush();
-                }
-
-                result = DecodeWithZxing(enlarged);
-            }
+            var result = DecodeWithFallbacks(skBitmap);
 
             if (result is null || string.IsNullOrWhiteSpace(result.Text))
             {
@@ -158,6 +136,79 @@ public partial class QrScanPage : ContentPage
         return reader.Decode(bitmap);
     }
 
+    private ZXing.Result? DecodeWithFallbacks(SKBitmap bitmap)
+    {
+        var result = DecodeWithZxing(bitmap);
+        if (result is not null) return result;
+
+        using var enlargedNearest = ResizeBitmap(bitmap, 3f, SKFilterQuality.None);
+        if (enlargedNearest is not null)
+        {
+            result = DecodeWithZxing(enlargedNearest);
+            if (result is not null) return result;
+        }
+
+        using var enlargedHigh = ResizeBitmap(bitmap, 3f, SKFilterQuality.High);
+        if (enlargedHigh is not null)
+        {
+            result = DecodeWithZxing(enlargedHigh);
+            if (result is not null) return result;
+        }
+
+        using var grayscale = ToGrayscale(bitmap);
+        result = DecodeWithZxing(grayscale);
+        if (result is not null) return result;
+
+        using var binary = ToBinarized(grayscale, false, 128);
+        result = DecodeWithZxing(binary);
+        if (result is not null) return result;
+
+        using var inverted = ToBinarized(grayscale, true, 128);
+        return DecodeWithZxing(inverted);
+    }
+
+    private static SKBitmap? ResizeBitmap(SKBitmap source, float factor, SKFilterQuality quality)
+    {
+        if (factor <= 0) return null;
+        var newW = Math.Max(1, (int)(source.Width * factor));
+        var newH = Math.Max(1, (int)(source.Height * factor));
+        var info = new SKImageInfo(newW, newH, source.ColorType, source.AlphaType);
+        return source.Resize(info, quality);
+    }
+
+    private static SKBitmap ToGrayscale(SKBitmap source)
+    {
+        var grayscale = new SKBitmap(source.Width, source.Height, SKColorType.Bgra8888, source.AlphaType);
+        for (var y = 0; y < source.Height; y++)
+        {
+            for (var x = 0; x < source.Width; x++)
+            {
+                var color = source.GetPixel(x, y);
+                var lum = (byte)Math.Clamp((color.Red * 0.299f) + (color.Green * 0.587f) + (color.Blue * 0.114f), 0, 255);
+                grayscale.SetPixel(x, y, new SKColor(lum, lum, lum, color.Alpha));
+            }
+        }
+
+        return grayscale;
+    }
+
+    private static SKBitmap ToBinarized(SKBitmap source, bool invert, byte threshold)
+    {
+        var binary = new SKBitmap(source.Width, source.Height, SKColorType.Bgra8888, source.AlphaType);
+        for (var y = 0; y < source.Height; y++)
+        {
+            for (var x = 0; x < source.Width; x++)
+            {
+                var color = source.GetPixel(x, y);
+                var lum = color.Red;
+                if (invert) lum = (byte)(255 - lum);
+                var value = lum >= threshold ? (byte)255 : (byte)0;
+                binary.SetPixel(x, y, new SKColor(value, value, value, color.Alpha));
+            }
+        }
+
+        return binary;
+    }
 
 
 
