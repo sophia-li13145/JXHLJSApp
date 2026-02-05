@@ -14,6 +14,7 @@ public partial class QrScanPage : ContentPage
     private static readonly TimeSpan MinDetectInterval = TimeSpan.FromMilliseconds(60);
     private int _handling = 0;
     private bool _wedgeFocusHooked;
+    private bool _isPickingFromGallery;
 
     /// <summary>执行 QrScanPage 初始化逻辑。</summary>
     public QrScanPage(TaskCompletionSource<string> tcs)
@@ -83,6 +84,10 @@ public partial class QrScanPage : ContentPage
 
     private async void PickFromGalleryButton_Clicked(object? sender, EventArgs e)
     {
+        if (_returned || _isPickingFromGallery) return;
+
+        _isPickingFromGallery = true;
+
         try
         {
             try { barcodeView.IsDetecting = false; } catch { }
@@ -95,7 +100,6 @@ public partial class QrScanPage : ContentPage
 
             if (pick is null)
             {
-                try { barcodeView.IsDetecting = true; } catch { }
                 return;
             }
 
@@ -104,7 +108,6 @@ public partial class QrScanPage : ContentPage
             if (skBitmap is null)
             {
                 await DisplayAlert("提示", "无法读取该图片。", "确定");
-                try { barcodeView.IsDetecting = true; } catch { }
                 return;
             }
 
@@ -119,7 +122,6 @@ public partial class QrScanPage : ContentPage
                     "提示",
                     $"未识别到条码。\n原图: {w0}x{h0}",
                     "确定");
-                try { barcodeView.IsDetecting = true; } catch { }
                 return;
             }
 
@@ -128,16 +130,27 @@ public partial class QrScanPage : ContentPage
         catch (Exception ex)
         {
             await DisplayAlert("错误", $"识别失败：{ex.Message}", "确定");
-            try { barcodeView.IsDetecting = true; } catch { }
+        }
+        finally
+        {
+            _isPickingFromGallery = false;
+
+            if (!_returned)
+            {
+                try { barcodeView.IsDetecting = true; } catch { }
+#if ANDROID
+                EnsureWedgeFocus();
+#endif
+            }
         }
     }
 
-    private ZXing.Result? DecodeWithZxing(SKBitmap bitmap)
+    private ZXing.Result? DecodeWithZxing(SKBitmap bitmap, bool tryHarder, bool tryInverted)
     {
         var options = new ZXing.Common.DecodingOptions
         {
-            TryHarder = false,
-            TryInverted = false,
+            TryHarder = tryHarder,
+            TryInverted = tryInverted,
             PossibleFormats = new[]
             {
                 BarcodeFormat.CODE_128,
@@ -147,7 +160,10 @@ public partial class QrScanPage : ContentPage
                 BarcodeFormat.ITF,
                 BarcodeFormat.UPC_A,
                 BarcodeFormat.UPC_E,
-                BarcodeFormat.QR_CODE
+                BarcodeFormat.QR_CODE,
+                BarcodeFormat.DATA_MATRIX,
+                BarcodeFormat.PDF_417,
+                BarcodeFormat.AZTEC
             }
         };
 
@@ -162,11 +178,18 @@ public partial class QrScanPage : ContentPage
 
     private ZXing.Result? DecodeWithFallbacks(SKBitmap bitmap)
     {
-        var result = DecodeWithZxing(bitmap);
+        var result = DecodeWithZxing(bitmap, tryHarder: false, tryInverted: false);
+        if (result is not null) return result;
+
+        result = DecodeWithZxing(bitmap, tryHarder: true, tryInverted: false);
         if (result is not null) return result;
 
         using var grayscale = ToGrayscale(bitmap);
-        return DecodeWithZxing(grayscale);
+        result = DecodeWithZxing(grayscale, tryHarder: true, tryInverted: true);
+        if (result is not null) return result;
+
+        using var scaled = ResizeIfNeeded(grayscale, 1600);
+        return DecodeWithZxing(scaled, tryHarder: true, tryInverted: true);
     }
 
     private static SKBitmap ToGrayscale(SKBitmap source)
@@ -183,6 +206,22 @@ public partial class QrScanPage : ContentPage
         }
 
         return grayscale;
+    }
+
+    private static SKBitmap ResizeIfNeeded(SKBitmap source, int maxEdge)
+    {
+        var width = source.Width;
+        var height = source.Height;
+        var max = Math.Max(width, height);
+        if (max <= maxEdge) return source.Copy();
+
+        var scale = maxEdge / (float)max;
+        var newW = Math.Max(1, (int)Math.Round(width * scale));
+        var newH = Math.Max(1, (int)Math.Round(height * scale));
+
+        var resized = new SKBitmap(newW, newH, source.ColorType, source.AlphaType);
+        source.ScalePixels(resized, SKFilterQuality.Medium);
+        return resized;
     }
 
     private void SwitchCameraButton_Clicked(object sender, EventArgs e)
@@ -258,7 +297,7 @@ public partial class QrScanPage : ContentPage
 #if ANDROID
     private void WedgeInputEntry_Unfocused(object? sender, FocusEventArgs e)
     {
-        if (!_returned)
+        if (!_returned && !_isPickingFromGallery)
         {
             EnsureWedgeFocus();
         }
