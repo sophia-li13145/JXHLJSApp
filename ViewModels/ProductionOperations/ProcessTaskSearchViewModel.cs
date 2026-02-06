@@ -11,16 +11,13 @@ namespace JXHLJSApp.ViewModels
 {
     public partial class ProcessTaskSearchViewModel : ObservableObject
     {
-        private const string PrefKey_LastProcessValue = "ProcessTaskSearch.LastProcessValue";
-        private const string PrefKey_LastProcessText = "ProcessTaskSearch.LastProcessText";
-
-        // 进入页面前如果下拉尚未加载，先把“上一次的值”暂存，等列表准备好后再应用
-        private string? _pendingLastProcessValue;
         private readonly IWorkOrderApi _workapi;
 
         /// <summary>执行 new 逻辑。</summary>
         [ObservableProperty] private bool isBusy;
+        [ObservableProperty] private string headerTitle = "生产管理系统";
         [ObservableProperty] private string? keyword;
+        [ObservableProperty] private string? machineKeyword;
         [ObservableProperty] private DateTime startDate = DateTime.Today.AddDays(-7);
         [ObservableProperty] private DateTime endDate = DateTime.Today;
         [ObservableProperty] private string? selectedStatus = "全部";
@@ -31,8 +28,6 @@ namespace JXHLJSApp.ViewModels
         public ObservableCollection<StatusOption> StatusOptions { get; } = new();
         /// <summary>执行 new 逻辑。</summary>
         [ObservableProperty] private StatusOption? selectedStatusOption;
-        public ObservableCollection<StatusOption> ProcessOptions { get; } = new();
-        [ObservableProperty] private StatusOption? selectedProcessOption;
 
         readonly Dictionary<string, string> _statusMap = new();      // 状态：值→中文
         readonly Dictionary<string, string> _orderstatusMap = new();    // 工序：code→name
@@ -48,10 +43,8 @@ namespace JXHLJSApp.ViewModels
         public ProcessTaskSearchViewModel(IWorkOrderApi workapi)
         {
             _workapi = workapi;
-            // 读取上次选择（Value 优先，没有则用 Text）
-            var lastVal = Preferences.Get(PrefKey_LastProcessValue, null);
-            var lastText = Preferences.Get(PrefKey_LastProcessText, null);
-            _pendingLastProcessValue = lastVal ?? lastText;
+            HeaderTitle = Preferences.Get("WorkShopName", Preferences.Get("WorkshopName", "生产管理系统"));
+            if (string.IsNullOrWhiteSpace(HeaderTitle)) HeaderTitle = "生产管理系统";
             SearchCommand = new AsyncRelayCommand(SearchAsync);
             ClearCommand = new RelayCommand(ClearFilters);
             _ = EnsureDictsLoadedAsync();   // fire-and-forget
@@ -93,73 +86,21 @@ namespace JXHLJSApp.ViewModels
                 }
                 SelectedStatusOption ??= StatusOptions.FirstOrDefault();
 
-                // 2) 工序下拉：来自 PmsProcessInfoList?status=1
-                var proResp = await _workapi.GetProcessInfoListAsync();
-                ProcessOptions.Clear();
-                ProcessOptions.Add(new StatusOption { Text = "全部", Value = null }); // 或“不限”
-                if (proResp.result != null)
-                {
-                    foreach (var p in proResp.result)
-                    {
-                        var code = p.processCode?.Trim();
-                        if (string.IsNullOrWhiteSpace(code)) continue;
-
-                        var name = p.processName ?? code;
-                        ProcessOptions.Add(new StatusOption
-                        {
-                            Text = p.processName ?? p.processCode,
-                            Value = p.processCode
-                        });
-                    }
-                }
                 //3)工单状态
                 var orderstatus = await _workapi.GetWorkOrderDictsAsync();
                 _orderstatusMap.Clear();
                 foreach (var d in orderstatus.AuditStatus)
                     if (!string.IsNullOrWhiteSpace(d.dictItemValue))
                         _orderstatusMap[d.dictItemValue!] = d.dictItemName ?? d.dictItemValue!;
-                // 3) ★ 应用“上一次的工序选择”
-                ApplyLastProcessSelectionIfAny();
                 _dictsLoaded = true;
             }
             catch (Exception ex)
             {
                 //if (StatusOptions.Count == 0)
                    // StatusOptions.Add(new StatusOption { Text = "全部", Value = null });
-                if (ProcessOptions.Count == 0)
-                    ProcessOptions.Add(new StatusOption { Text = "全部", Value = null });
-                ApplyLastProcessSelectionIfAny();
                 _dictsLoaded = true;
             }
         }
-        /// <summary>执行 ApplyLastProcessSelectionIfAny 逻辑。</summary>
-        private void ApplyLastProcessSelectionIfAny()
-        {
-            if (ProcessOptions.Count == 0) return;
-
-            if (!string.IsNullOrWhiteSpace(_pendingLastProcessValue))
-            {
-                var hit = ProcessOptions.FirstOrDefault(x =>
-                    string.Equals(x.Value, _pendingLastProcessValue, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(x.Text, _pendingLastProcessValue, StringComparison.OrdinalIgnoreCase));
-
-                if (hit != null)
-                    SelectedProcessOption = hit;
-            }
-
-            // 若仍未命中，则默认选第一项
-            SelectedProcessOption ??= ProcessOptions.FirstOrDefault();
-        }
-
-        // ★ 当用户改变工序下拉时，立刻持久化
-        /// <summary>执行 OnSelectedProcessOptionChanged 逻辑。</summary>
-        partial void OnSelectedProcessOptionChanged(StatusOption? oldValue, StatusOption? newValue)
-        {
-            if (newValue == null) return;
-            Preferences.Set(PrefKey_LastProcessValue, newValue.Value ?? string.Empty);
-            Preferences.Set(PrefKey_LastProcessText, newValue.Text ?? string.Empty);
-        }
-
         /// <summary>执行 SearchAsync 逻辑。</summary>
         public async Task SearchAsync()
         {
@@ -211,17 +152,19 @@ namespace JXHLJSApp.ViewModels
         /// <summary>执行 LoadPageAsync 逻辑。</summary>
         private async Task<List<ProcessTask>> LoadPageAsync(int pageNo)
         {
-            var byOrderNo = !string.IsNullOrWhiteSpace(Keyword);
+            var hasKeyword = !string.IsNullOrWhiteSpace(Keyword);
             var statusList = string.IsNullOrWhiteSpace(SelectedStatusOption?.Value)
             ? null
             : new[] { SelectedStatusOption.Value };
 
             var page = await _workapi.PageWorkProcessTasksAsync(
-                workOrderNo: byOrderNo ? Keyword?.Trim() : null,
+                workOrderNo: null,
                 auditStatusList: statusList,
-                processCode: SelectedProcessOption?.Value,
-                createdTimeStart: byOrderNo ? null : StartDate.Date,
-                createdTimeEnd: byOrderNo ? null : EndDate.Date.AddDays(1).AddSeconds(-1),
+                processCode: null,
+                createdTimeStart: hasKeyword ? null : StartDate.Date,
+                createdTimeEnd: hasKeyword ? null : EndDate.Date.AddDays(1).AddSeconds(-1),
+                materialName: hasKeyword ? Keyword?.Trim() : null,
+                machine: string.IsNullOrWhiteSpace(MachineKeyword) ? null : MachineKeyword.Trim(),
                 pageNo: pageNo,
                 pageSize: PageSize,
                 ct: CancellationToken.None);
@@ -247,6 +190,7 @@ namespace JXHLJSApp.ViewModels
         private void ClearFilters()
         {
             Keyword = string.Empty;
+            MachineKeyword = string.Empty;
             SelectedStatus = "全部";
             StartDate = DateTime.Today.AddDays(-7);
             EndDate = DateTime.Today;
