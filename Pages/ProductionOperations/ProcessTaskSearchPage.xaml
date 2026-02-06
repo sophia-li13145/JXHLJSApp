@@ -9,7 +9,7 @@
 
         <!-- 顶部蓝条 -->
         <Grid Grid.Row="0" BackgroundColor="#007BFF" HeightRequest="56" Padding="16,0">
-            <Label Text="生产管理系统"
+            <Label Text="{Binding HeaderTitle}"
                    VerticalOptions="Center"
                    TextColor="White"
                    FontSize="18"
@@ -18,10 +18,10 @@
 
         <!-- 条件区 -->
         <VerticalStackLayout Grid.Row="1" Padding="12" Spacing="10">
-            <!-- 第一行：工单号 + 查询 + 扫码图标按钮 -->
+            <!-- 第一行：物料名称 + 查询 + 扫码图标按钮 -->
             <Grid ColumnDefinitions="*,40,Auto">
                 <Entry x:Name="OrderEntry"
-                       Placeholder="请输入/扫描工单号"
+                       Placeholder="请输入/扫描物料名称"
                        Text="{Binding Keyword}"
                        HeightRequest="40" />
                 <ImageButton  Grid.Column="1"
@@ -40,7 +40,7 @@
             </Grid>
 
             <!-- 第二行：时间 + 状态 -->
-            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8">
+            <Grid ColumnDefinitions="Auto,Auto,Auto,*" ColumnSpacing="8">
                 <DatePicker Date="{Binding StartDate}" />
                 <DatePicker Grid.Column="1" Date="{Binding EndDate}" />
                 <Picker 
@@ -50,12 +50,10 @@
          ItemsSource="{Binding StatusOptions}"
          ItemDisplayBinding="{Binding Text}"
          SelectedItem="{Binding SelectedStatusOption}" />
-                <Picker Grid.Column="3"
-        Title="工序"
-        WidthRequest="120"
-        ItemsSource="{Binding ProcessOptions}"
-        ItemDisplayBinding="{Binding Text}"
-        SelectedItem="{Binding SelectedProcessOption}" />
+                <Entry Grid.Column="3"
+                       Placeholder="请输入机台名称"
+                       Text="{Binding MachineKeyword}"
+                       HeightRequest="40" />
 
             </Grid>
         </VerticalStackLayout>
