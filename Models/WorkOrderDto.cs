@@ -236,6 +236,14 @@ public class ProcessTask
     public string? WorkOrderNo { get; set; }
 
     public string? WorkOrderName { get; set; }
+    public string? FactoryName { get; set; }
+    public string? MaterialSpec { get; set; }
+    public string? PlatPlanNo { get; set; }
+    public string? Memo { get; set; }
+    public string? ProductionMachineName { get; set; }
+    public string? MaterialCode { get; set; }
+    public string? LineName { get; set; }
+    public string? WorkShopName { get; set; }
 
     [JsonPropertyName("WorkOrderAuditStatus")]
     public string? WorkOrderAuditStatus { get; set; }

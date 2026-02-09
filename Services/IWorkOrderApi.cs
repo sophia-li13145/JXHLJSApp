@@ -27,6 +27,7 @@ namespace JXHLJSApp.Services
          DateTime? createdTimeEnd = null,
          string? materialName = null,
          string? machine = null,
+         string? workShopName = null,
          string? platPlanNo = null,
          string? schemeNo = null,
          bool? searchCount = null,      // 是否计算总记录数（可选）

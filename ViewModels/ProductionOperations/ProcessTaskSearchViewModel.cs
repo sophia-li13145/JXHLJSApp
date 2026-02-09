@@ -16,6 +16,10 @@ namespace JXHLJSApp.ViewModels
         /// <summary>执行 new 逻辑。</summary>
         [ObservableProperty] private bool isBusy;
         [ObservableProperty] private string headerTitle = "生产管理系统";
+        [ObservableProperty] private bool isSuanxiWorkshop;
+        [ObservableProperty] private bool isRechuliWorkshop;
+        [ObservableProperty] private bool isLasiWorkshop;
+        [ObservableProperty] private bool isDefaultWorkshop;
         [ObservableProperty] private string? keyword;
         [ObservableProperty] private string? machineKeyword;
         [ObservableProperty] private DateTime startDate = DateTime.Today.AddDays(-7);
@@ -45,11 +49,21 @@ namespace JXHLJSApp.ViewModels
             _workapi = workapi;
             HeaderTitle = Preferences.Get("WorkShopName", Preferences.Get("WorkshopName", "生产管理系统"));
             if (string.IsNullOrWhiteSpace(HeaderTitle)) HeaderTitle = "生产管理系统";
+            ApplyWorkshopLayout();
             SearchCommand = new AsyncRelayCommand(SearchAsync);
             ClearCommand = new RelayCommand(ClearFilters);
             _ = EnsureDictsLoadedAsync();   // fire-and-forget
            
         }
+        private void ApplyWorkshopLayout()
+        {
+            var ws = HeaderTitle?.Trim() ?? string.Empty;
+            IsSuanxiWorkshop = ws.Contains("酸洗", StringComparison.OrdinalIgnoreCase);
+            IsRechuliWorkshop = ws.Contains("热处理", StringComparison.OrdinalIgnoreCase);
+            IsLasiWorkshop = ws.Contains("拉丝", StringComparison.OrdinalIgnoreCase);
+            IsDefaultWorkshop = !IsSuanxiWorkshop && !IsRechuliWorkshop && !IsLasiWorkshop;
+        }
+
         /// <summary>执行 EnsureDictsLoadedAsync 逻辑。</summary>
         private async Task EnsureDictsLoadedAsync()
         {
@@ -165,6 +179,7 @@ namespace JXHLJSApp.ViewModels
                 createdTimeEnd: hasKeyword ? null : EndDate.Date.AddDays(1).AddSeconds(-1),
                 materialName: hasKeyword ? Keyword?.Trim() : null,
                 machine: string.IsNullOrWhiteSpace(MachineKeyword) ? null : MachineKeyword.Trim(),
+                workShopName: HeaderTitle,
                 pageNo: pageNo,
                 pageSize: PageSize,
                 ct: CancellationToken.None);
