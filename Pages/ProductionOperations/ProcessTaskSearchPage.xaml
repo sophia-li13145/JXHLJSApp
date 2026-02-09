@@ -65,19 +65,6 @@
                         SelectionMode="None"
                         RemainingItemsThreshold="2"
                         RemainingItemsThresholdReachedCommand="{Binding LoadMoreCommand}">
-                        <CollectionView.Header>
-                <VerticalStackLayout Spacing="0" Padding="0,4">
-                    <Grid IsVisible="{Binding IsSuanxiWorkshop}">
-                        <BoxView HeightRequest="8" Color="#31BFC1" />
-                    </Grid>
-                    <Grid IsVisible="{Binding IsRechuliWorkshop}">
-                        <BoxView HeightRequest="8" Color="#31BFC1" />
-                    </Grid>
-                    <Grid IsVisible="{Binding IsLasiWorkshop}">
-                        <BoxView HeightRequest="8" Color="#31BFC1" />
-                    </Grid>
-                </VerticalStackLayout>
-            </CollectionView.Header>
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <Frame Margin="0,6,0,0" Padding="8" HasShadow="False" BorderColor="#E0E6EF">
@@ -152,7 +139,7 @@
                         </Grid>
 
                         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
-                              IsVisible="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.IsLasiWorkshop}">
+                              IsVisible="true">
                             <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
                                 <Label Text="机台：" FontAttributes="Bold" />
                                 <Label Grid.Column="1" Text="{Binding ProductionMachineName}" />
@@ -187,24 +174,6 @@
                             </Grid>
                         </Grid>
 
-                        <Grid RowDefinitions="Auto,Auto,Auto,Auto" IsVisible="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.IsDefaultWorkshop}">
-                            <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
-                                <Label Text="工单编号：" FontAttributes="Bold" />
-                                <Label Grid.Column="1" Text="{Binding WorkOrderNo}" />
-                            </Grid>
-                            <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
-                                <Label Text="工序：" FontAttributes="Bold" />
-                                <Label Grid.Column="1" Text="{Binding ProcessName}" />
-                            </Grid>
-                            <Grid Grid.Row="2" ColumnDefinitions="Auto,*">
-                                <Label Text="产品名称：" FontAttributes="Bold" />
-                                <Label Grid.Column="1" Text="{Binding MaterialName}" />
-                            </Grid>
-                            <Grid Grid.Row="3" ColumnDefinitions="Auto,*">
-                                <Label Text="创建时间：" FontAttributes="Bold" />
-                                <Label Grid.Column="1" Text="{Binding CreatedTime}" />
-                            </Grid>
-                        </Grid>
                     </Frame>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
