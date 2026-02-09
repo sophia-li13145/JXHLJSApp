@@ -144,7 +144,21 @@ public partial class LoginViewModel : ObservableObject
         var userInfoRel = _cfg.GetApiPath("auth.userinfo", "/pda/auth/getUserInfo");
         var fullUrl = new Uri(baseUrl + userInfoRel);
 
-        using var resp = await ApiClient.Instance.GetAsync(fullUrl, ct);
+        using var req = new HttpRequestMessage(HttpMethod.Get, fullUrl);
+
+        // getUserInfo 接口在部分环境下只认 token/satoken 头，不能只依赖 Authorization
+        var token = await TokenStorage.LoadAsync();
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            req.Headers.Remove("token");
+            req.Headers.Remove("satoken");
+            req.Headers.Remove("Authorization");
+            req.Headers.TryAddWithoutValidation("token", token);
+            req.Headers.TryAddWithoutValidation("satoken", token);
+            req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
+
+        using var resp = await ApiClient.Instance.SendAsync(req, ct);
         if (!resp.IsSuccessStatusCode)
         {
             return;

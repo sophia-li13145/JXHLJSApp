@@ -176,6 +176,8 @@ public class WorkOrderApi : IWorkOrderApi
     DateTime? createdTimeStart = null,
     DateTime? createdTimeEnd = null,
     string? materialName = null,
+    string? machine = null,
+    string? workShopName = null,
     string? platPlanNo = null,
     string? schemeNo = null,
     bool? searchCount = null,      // 是否计算总记录数（可选）
@@ -200,6 +202,8 @@ public class WorkOrderApi : IWorkOrderApi
             AddIf("workOrderNo", workOrderNo);
             AddIf("processCode", processCode);
             AddIf("materialName", materialName);
+            AddIf("machine", machine);
+            AddIf("workShopName", workShopName);
             AddIf("platPlanNo", platPlanNo);
             AddIf("schemeNo", schemeNo);
 
