@@ -68,38 +68,13 @@
                         <CollectionView.Header>
                 <VerticalStackLayout Spacing="0" Padding="0,4">
                     <Grid IsVisible="{Binding IsSuanxiWorkshop}">
-                        <Grid ColumnDefinitions="80,100,90,90,100,90,120" BackgroundColor="#31BFC1" Padding="4" ColumnSpacing="1">
-                            <Label Text="厂家" TextColor="White" />
-                            <Label Grid.Column="1" Text="产品名称" TextColor="White" />
-                            <Label Grid.Column="2" Text="规格" TextColor="White" />
-                            <Label Grid.Column="3" Text="计划数量" TextColor="White" />
-                            <Label Grid.Column="4" Text="客户加工" TextColor="White" />
-                            <Label Grid.Column="5" Text="使用位置" TextColor="White" />
-                            <Label Grid.Column="6" Text="时间" TextColor="White" />
-                        </Grid>
+                        <BoxView HeightRequest="8" Color="#31BFC1" />
                     </Grid>
                     <Grid IsVisible="{Binding IsRechuliWorkshop}">
-                        <Grid ColumnDefinitions="70,80,80,60,100,80,120" BackgroundColor="#31BFC1" Padding="4" ColumnSpacing="1">
-                            <Label Text="机台" TextColor="White" />
-                            <Label Grid.Column="1" Text="钢号" TextColor="White" />
-                            <Label Grid.Column="2" Text="规格" TextColor="White" />
-                            <Label Grid.Column="3" Text="DV" TextColor="White" />
-                            <Label Grid.Column="4" Text="分包/自用" TextColor="White" />
-                            <Label Grid.Column="5" Text="备注" TextColor="White" />
-                            <Label Grid.Column="6" Text="时间" TextColor="White" />
-                        </Grid>
+                        <BoxView HeightRequest="8" Color="#31BFC1" />
                     </Grid>
                     <Grid IsVisible="{Binding IsLasiWorkshop}">
-                        <Grid ColumnDefinitions="70,70,70,70,110,70,90,120" BackgroundColor="#31BFC1" Padding="4" ColumnSpacing="1">
-                            <Label Text="机台" TextColor="White" />
-                            <Label Grid.Column="1" Text="钢厂" TextColor="White" />
-                            <Label Grid.Column="2" Text="钢号" TextColor="White" />
-                            <Label Grid.Column="3" Text="挂牌" TextColor="White" />
-                            <Label Grid.Column="4" Text="生产规格" TextColor="White" />
-                            <Label Grid.Column="5" Text="代码" TextColor="White" />
-                            <Label Grid.Column="6" Text="生产数(吨)" TextColor="White" />
-                            <Label Grid.Column="7" Text="时间" TextColor="White" />
-                        </Grid>
+                        <BoxView HeightRequest="8" Color="#31BFC1" />
                     </Grid>
                 </VerticalStackLayout>
             </CollectionView.Header>
@@ -112,35 +87,104 @@
                                 CommandParameter="{Binding .}" />
                         </Frame.GestureRecognizers>
 
-                        <Grid ColumnDefinitions="80,100,90,90,100,90,120" ColumnSpacing="1" IsVisible="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.IsSuanxiWorkshop}">
-                            <Label Text="{Binding FactoryName}" />
-                            <Label Grid.Column="1" Text="{Binding MaterialName}" />
-                            <Label Grid.Column="2" Text="{Binding MaterialSpec}" />
-                            <Label Grid.Column="3" Text="{Binding ScheQty, StringFormat='{0:G29}'}" />
-                            <Label Grid.Column="4" Text="{Binding LineName}" />
-                            <Label Grid.Column="5" Text="{Binding PlatPlanNo}" />
-                            <Label Grid.Column="6" Text="{Binding CreatedTime}" />
+                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                              IsVisible="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.IsSuanxiWorkshop}">
+                            <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
+                                <Label Text="厂家：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding FactoryName}" />
+                            </Grid>
+                            <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
+                                <Label Text="产品名称：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding MaterialName}" />
+                            </Grid>
+                            <Grid Grid.Row="2" ColumnDefinitions="Auto,*">
+                                <Label Text="规格：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding MaterialSpec}" />
+                            </Grid>
+                            <Grid Grid.Row="3" ColumnDefinitions="Auto,*">
+                                <Label Text="计划数量：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding ScheQty, StringFormat='{0:G29}'}" />
+                            </Grid>
+                            <Grid Grid.Row="4" ColumnDefinitions="Auto,*">
+                                <Label Text="客户加工：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding LineName}" />
+                            </Grid>
+                            <Grid Grid.Row="5" ColumnDefinitions="Auto,*">
+                                <Label Text="使用位置：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding PlatPlanNo}" />
+                            </Grid>
+                            <Grid Grid.Row="6" ColumnDefinitions="Auto,*">
+                                <Label Text="时间：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding CreatedTime}" />
+                            </Grid>
                         </Grid>
 
-                        <Grid ColumnDefinitions="70,80,80,60,100,80,120" ColumnSpacing="1" IsVisible="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.IsRechuliWorkshop}">
-                            <Label Text="{Binding ProductionMachineName}" />
-                            <Label Grid.Column="1" Text="{Binding MaterialName}" />
-                            <Label Grid.Column="2" Text="{Binding MaterialSpec}" />
-                            <Label Grid.Column="3" Text="{Binding ProcessName}" />
-                            <Label Grid.Column="4" Text="{Binding LineName}" />
-                            <Label Grid.Column="5" Text="{Binding Memo}" />
-                            <Label Grid.Column="6" Text="{Binding CreatedTime}" />
+                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                              IsVisible="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.IsRechuliWorkshop}">
+                            <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
+                                <Label Text="机台：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding ProductionMachineName}" />
+                            </Grid>
+                            <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
+                                <Label Text="钢号：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding MaterialName}" />
+                            </Grid>
+                            <Grid Grid.Row="2" ColumnDefinitions="Auto,*">
+                                <Label Text="规格：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding MaterialSpec}" />
+                            </Grid>
+                            <Grid Grid.Row="3" ColumnDefinitions="Auto,*">
+                                <Label Text="DV：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding ProcessName}" />
+                            </Grid>
+                            <Grid Grid.Row="4" ColumnDefinitions="Auto,*">
+                                <Label Text="分包/自用：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding LineName}" />
+                            </Grid>
+                            <Grid Grid.Row="5" ColumnDefinitions="Auto,*">
+                                <Label Text="备注：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding Memo}" />
+                            </Grid>
+                            <Grid Grid.Row="6" ColumnDefinitions="Auto,*">
+                                <Label Text="时间：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding CreatedTime}" />
+                            </Grid>
                         </Grid>
 
-                        <Grid ColumnDefinitions="70,70,70,70,110,70,90,120" ColumnSpacing="1" IsVisible="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.IsLasiWorkshop}">
-                            <Label Text="{Binding ProductionMachineName}" />
-                            <Label Grid.Column="1" Text="{Binding FactoryName}" />
-                            <Label Grid.Column="2" Text="{Binding MaterialName}" />
-                            <Label Grid.Column="3" Text="{Binding WorkOrderNo}" />
-                            <Label Grid.Column="4" Text="{Binding MaterialSpec}" />
-                            <Label Grid.Column="5" Text="{Binding MaterialCode}" />
-                            <Label Grid.Column="6" Text="{Binding ScheQty, StringFormat='{0:G29}'}" />
-                            <Label Grid.Column="7" Text="{Binding CreatedTime}" />
+                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                              IsVisible="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.IsLasiWorkshop}">
+                            <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
+                                <Label Text="机台：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding ProductionMachineName}" />
+                            </Grid>
+                            <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
+                                <Label Text="钢厂：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding FactoryName}" />
+                            </Grid>
+                            <Grid Grid.Row="2" ColumnDefinitions="Auto,*">
+                                <Label Text="钢号：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding MaterialName}" />
+                            </Grid>
+                            <Grid Grid.Row="3" ColumnDefinitions="Auto,*">
+                                <Label Text="挂牌：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding WorkOrderNo}" />
+                            </Grid>
+                            <Grid Grid.Row="4" ColumnDefinitions="Auto,*">
+                                <Label Text="生产规格：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding MaterialSpec}" />
+                            </Grid>
+                            <Grid Grid.Row="5" ColumnDefinitions="Auto,*">
+                                <Label Text="代码：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding MaterialCode}" />
+                            </Grid>
+                            <Grid Grid.Row="6" ColumnDefinitions="Auto,*">
+                                <Label Text="生产数(吨)：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding ScheQty, StringFormat='{0:G29}'}" />
+                            </Grid>
+                            <Grid Grid.Row="7" ColumnDefinitions="Auto,*">
+                                <Label Text="时间：" FontAttributes="Bold" />
+                                <Label Grid.Column="1" Text="{Binding CreatedTime}" />
+                            </Grid>
                         </Grid>
 
                         <Grid RowDefinitions="Auto,Auto,Auto,Auto" IsVisible="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.IsDefaultWorkshop}">
