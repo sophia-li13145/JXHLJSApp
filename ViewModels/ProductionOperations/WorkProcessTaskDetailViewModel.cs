@@ -16,6 +16,11 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
     // 状态字典（值→名），用于将 auditStatus 映射为中文
     private readonly Dictionary<string, string> _auditMap = new();
     [ObservableProperty] private bool isBusy;
+    [ObservableProperty] private string headerTitle = "生产管理系统";
+    [ObservableProperty] private bool isSuanxiWorkshop;
+    [ObservableProperty] private bool isRechuliWorkshop;
+    [ObservableProperty] private bool isLasiWorkshop;
+    [ObservableProperty] private bool isDefaultWorkshop;
     [ObservableProperty] private bool isPaused;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanStart))]
@@ -98,6 +103,18 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
     public WorkProcessTaskDetailViewModel(IWorkOrderApi api)
     {
         _api = api;
+        HeaderTitle = Preferences.Get("WorkShopName", Preferences.Get("WorkshopName", "生产管理系统"));
+        if (string.IsNullOrWhiteSpace(HeaderTitle)) HeaderTitle = "生产管理系统";
+        ApplyWorkshopLayout();
+    }
+
+    private void ApplyWorkshopLayout()
+    {
+        var ws = HeaderTitle?.Trim() ?? string.Empty;
+        IsSuanxiWorkshop = ws.Contains("酸洗", StringComparison.OrdinalIgnoreCase);
+        IsRechuliWorkshop = ws.Contains("热处理", StringComparison.OrdinalIgnoreCase);
+        IsLasiWorkshop = ws.Contains("拉丝", StringComparison.OrdinalIgnoreCase);
+        IsDefaultWorkshop = !IsSuanxiWorkshop && !IsRechuliWorkshop && !IsLasiWorkshop;
     }
     private StatusOption? _selectedShift;
     public StatusOption? SelectedShift
