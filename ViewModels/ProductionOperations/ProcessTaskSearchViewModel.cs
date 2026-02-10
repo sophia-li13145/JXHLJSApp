@@ -179,7 +179,6 @@ namespace JXHLJSApp.ViewModels
                 createdTimeEnd: hasKeyword ? null : EndDate.Date.AddDays(1).AddSeconds(-1),
                 materialName: hasKeyword ? Keyword?.Trim() : null,
                 machine: string.IsNullOrWhiteSpace(MachineKeyword) ? null : MachineKeyword.Trim(),
-                workShopName: HeaderTitle,
                 pageNo: pageNo,
                 pageSize: PageSize,
                 ct: CancellationToken.None);
