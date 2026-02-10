@@ -84,7 +84,7 @@ public class WorkOrderApi : IWorkOrderApi
             _updateTeamEndpoint = ServiceUrlHelper.NormalizeRelative(
                 configLoader.GetApiPath("workOrder.updateWorkProcess", "/pda/pmsWorkOrder/editWorkProcessTask"), servicePath);
             _startworkEndpoint = ServiceUrlHelper.NormalizeRelative(
-                configLoader.GetApiPath("workOrder.startwork", "/pda/pmsWorkOrder/workProcessTaskWorkStart"), servicePath);
+                configLoader.GetApiPath("workOrder.startwork", "/pda/pmsWorkOrder/workProcessTaskWorkChange"), servicePath);
             _completeworkEndpoint = ServiceUrlHelper.NormalizeRelative(
                 configLoader.GetApiPath("workOrder.completework", "/pda/pmsWorkOrder/workProcessTaskWorkChangeComplete"), servicePath);
             _pauseworkEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -288,8 +288,11 @@ public class WorkOrderApi : IWorkOrderApi
         }
         public async Task<ApiResp<WorkProcessTaskDetail>> GetWorkProcessTaskDetailAsync(string id, CancellationToken ct = default)
         {
-            var url = _workProcessTaskDetailEndpoint + "?id=" + Uri.EscapeDataString(id ?? "");
-            var full = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, url);
+            var query = BuildQuery(new Dictionary<string, string?>
+            {
+                ["id"] = id
+            });
+            var full = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _workProcessTaskDetailEndpoint + query);
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
             var resp = await _http.SendAsync(req, ct);
             resp.EnsureSuccessStatusCode();
@@ -398,10 +401,11 @@ public class WorkOrderApi : IWorkOrderApi
             }) ?? new ApiResp<bool> { success = false, message = "反序列化失败" };
         }
 
-        public async Task<ApiResp<bool>> CompleteWorkAsync(string processCode, string workOrderNo, string? memo = null)
+        public async Task<ApiResp<bool>> CompleteWorkAsync(string processCode, string workOrderNo, string? memo = null, decimal? actQty = null)
         {
             var body = new
             {
+                actQty = actQty ?? 0,
                 memo = memo ?? "",
                 processCode,
                 workOrderNo
@@ -415,10 +419,11 @@ public class WorkOrderApi : IWorkOrderApi
             }) ?? new ApiResp<bool> { success = false, message = "反序列化失败" };
         }
 
-        public async Task<ApiResp<bool>> PauseWorkAsync(string processCode, string workOrderNo, string? memo = null)
+        public async Task<ApiResp<bool>> PauseWorkAsync(string processCode, string workOrderNo, string? memo = null, int? actQty = null)
         {
             var body = new
             {
+                actQty = actQty ?? 0,
                 memo = memo ?? "",
                 processCode,
                 workOrderNo

@@ -1,5 +1,4 @@
-﻿using Android.Text;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using JXHLJSApp.Models;
 using JXHLJSApp.Pages;
@@ -21,7 +20,6 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
     [ObservableProperty] private bool isRechuliWorkshop;
     [ObservableProperty] private bool isLasiWorkshop;
     [ObservableProperty] private bool isDefaultWorkshop;
-    [ObservableProperty] private bool isPaused;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanStart))]
     [NotifyPropertyChangedFor(nameof(CanPauseResume))]
@@ -36,7 +34,6 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
     public bool CanPauseResume => !IsBusy && (State == TaskRunState.Running || State == TaskRunState.Paused);
     public bool CanFinish => !IsBusy && State == TaskRunState.Running;
 
-    private readonly IServiceProvider _sp;
     public string PauseResumeText => State == TaskRunState.Running ? "暂停" : "复工";
 
     [ObservableProperty] private DetailTab activeTab = DetailTab.Input;
@@ -66,7 +63,6 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
     // —— 产出记录列表（表2数据源）
     /// <summary>执行 new 逻辑。</summary>
     public ObservableCollection<OutputAuRecord> OutputRecords { get; } = new();
-    public event EventHandler? TabChanged;
 
     private TaskMaterialInput? _selectedMaterialItem;
     public TaskMaterialInput? SelectedMaterialItem
@@ -94,9 +90,6 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
             OnPropertyChanged(nameof(Detail));  // 若其他地方也用到了 Detail
         }
     }
-    // 上表选中项（应产出计划行）
-    [ObservableProperty] private OutputPlanItem? selectedOutputPlanItem;
-
     private bool _suppressRemoteUpdate = false;
 
     /// <summary>执行 WorkProcessTaskDetailViewModel 初始化逻辑。</summary>
@@ -169,7 +162,6 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
 
         OnPropertyChanged(nameof(IsInputTab));
         OnPropertyChanged(nameof(IsOutputTab));
-        TabChanged?.Invoke(this, EventArgs.Empty);
     }
 
 
@@ -249,7 +241,7 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
                     return;
                 }
 
-                var resp = await _api.PauseWorkAsync(Detail.processCode, Detail.workOrderNo, reason);
+                var resp = await _api.PauseWorkAsync(Detail.processCode, Detail.workOrderNo, reason, 0);
                 if (resp.success && resp.result)
                 {
                     State = TaskRunState.Paused;
@@ -266,7 +258,7 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
                 bool go = await Application.Current.MainPage.DisplayAlert("确认", "确定恢复生产吗？", "恢复", "取消");
                 if (!go) return;
 
-                var resp = await _api.PauseWorkAsync(Detail.processCode, Detail.workOrderNo, null);
+                var resp = await _api.PauseWorkAsync(Detail.processCode, Detail.workOrderNo, null, 1);
                 if (resp.success && resp.result)
                 {
                     State = TaskRunState.Running;
@@ -297,11 +289,28 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
 
         try
         {
-            var resp = await _api.CompleteWorkAsync(Detail.processCode, Detail.workOrderNo, null);
+            var planQtyText = Detail?.scheQty?.ToString("G29") ?? "0";
+            var input = await Application.Current.MainPage.DisplayPromptAsync(
+                "完工确认",
+                $"计划数量：{planQtyText}\n完工数量：",
+                "确定",
+                "取消",
+                placeholder: "请输入完工数量",
+                keyboard: Keyboard.Numeric);
+
+            if (input is null) return;
+
+            input = input.Trim();
+            if (!decimal.TryParse(input, out var actQty) || actQty < 0)
+            {
+                await Shell.Current.DisplayAlert("提示", "完工数量格式不正确。", "确定");
+                return;
+            }
+
+            var resp = await _api.CompleteWorkAsync(Detail.processCode, Detail.workOrderNo, null, actQty);
             if (resp.success && resp.result)
             {
                 State = TaskRunState.Finished;
-                //await Task.CompletedTask;
                 await Shell.Current.DisplayAlert("提示", "完工成功！", "确定");
             }
             else
@@ -635,7 +644,7 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
             };
 
         // 打开弹窗（新重载）：有预设则只输入数量/备注；无预设则先选物料再输入
-        var picked = await MaterialInputPopupPage.ShowAsync(_sp, list, preset);
+        var picked = await MaterialInputPopupPage.ShowAsync(null, list, preset);
         if (picked is null) return;
 
         // 统一取“最终物料信息”（优先用预设；没有预设时用弹窗选择结果）
@@ -715,7 +724,7 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
             };
 
         // 打开弹窗（新重载）：有预设则只输入数量/备注；无预设则先选物料再输入
-        var picked = await OutputPopupPage.ShowAsync(_sp, list, preset);
+        var picked = await OutputPopupPage.ShowAsync(null, list, preset);
         if (picked is null) return;
 
         // 统一取“最终物料信息”（优先用预设；没有预设时用弹窗选择结果）
