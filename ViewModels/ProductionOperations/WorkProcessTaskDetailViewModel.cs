@@ -249,7 +249,7 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
                     return;
                 }
 
-                var resp = await _api.PauseWorkAsync(Detail.processCode, Detail.workOrderNo, reason);
+                var resp = await _api.PauseWorkAsync(Detail.processCode, Detail.workOrderNo, reason, 0);
                 if (resp.success && resp.result)
                 {
                     State = TaskRunState.Paused;
@@ -266,7 +266,7 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
                 bool go = await Application.Current.MainPage.DisplayAlert("确认", "确定恢复生产吗？", "恢复", "取消");
                 if (!go) return;
 
-                var resp = await _api.PauseWorkAsync(Detail.processCode, Detail.workOrderNo, null);
+                var resp = await _api.PauseWorkAsync(Detail.processCode, Detail.workOrderNo, null, 1);
                 if (resp.success && resp.result)
                 {
                     State = TaskRunState.Running;
@@ -297,11 +297,28 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
 
         try
         {
-            var resp = await _api.CompleteWorkAsync(Detail.processCode, Detail.workOrderNo, null);
+            var planQtyText = Detail?.scheQty?.ToString("G29") ?? "0";
+            var input = await Application.Current.MainPage.DisplayPromptAsync(
+                "完工确认",
+                $"计划数量：{planQtyText}\n完工数量：",
+                "确定",
+                "取消",
+                placeholder: "请输入完工数量",
+                keyboard: Keyboard.Numeric);
+
+            if (input is null) return;
+
+            input = input.Trim();
+            if (!decimal.TryParse(input, out var actQty) || actQty < 0)
+            {
+                await Shell.Current.DisplayAlert("提示", "完工数量格式不正确。", "确定");
+                return;
+            }
+
+            var resp = await _api.CompleteWorkAsync(Detail.processCode, Detail.workOrderNo, null, actQty);
             if (resp.success && resp.result)
             {
                 State = TaskRunState.Finished;
-                //await Task.CompletedTask;
                 await Shell.Current.DisplayAlert("提示", "完工成功！", "确定");
             }
             else
