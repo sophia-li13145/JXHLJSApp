@@ -103,11 +103,11 @@
                                 </Grid>
                                 <Grid Grid.Row="4" ColumnDefinitions="Auto,*">
                                     <Label Text="客户加工：" FontAttributes="Bold" />
-                                    <Label Grid.Column="1" Text="{Binding LineName}" />
+                                    <Label Grid.Column="1" Text="{Binding CustomerIdentifier}" />
                                 </Grid>
                                 <Grid Grid.Row="5" ColumnDefinitions="Auto,*">
                                     <Label Text="使用位置：" FontAttributes="Bold" />
-                                    <Label Grid.Column="1" Text="{Binding PlatPlanNo}" />
+                                    <Label Grid.Column="1" Text="{Binding Machine}" />
                                 </Grid>
                                 <Grid Grid.Row="6" ColumnDefinitions="Auto,*">
                                     <Label Text="时间：" FontAttributes="Bold" />
@@ -120,7 +120,7 @@
               IsVisible="{Binding Source={x:Reference ThisPage}, Path=BindingContext.IsRechuliWorkshop}">
                                 <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
                                     <Label Text="机台：" FontAttributes="Bold" />
-                                    <Label Grid.Column="1" Text="{Binding ProductionMachineName}" />
+                                    <Label Grid.Column="1" Text="{Binding Machine}" />
                                 </Grid>
                                 <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
                                     <Label Text="钢号：" FontAttributes="Bold" />
@@ -136,7 +136,7 @@
                                 </Grid>
                                 <Grid Grid.Row="4" ColumnDefinitions="Auto,*">
                                     <Label Text="分包/自用：" FontAttributes="Bold" />
-                                    <Label Grid.Column="1" Text="{Binding LineName}" />
+                                    <Label Grid.Column="1" Text="{Binding UsageType}" />
                                 </Grid>
                                 <Grid Grid.Row="5" ColumnDefinitions="Auto,*">
                                     <Label Text="备注：" FontAttributes="Bold" />
@@ -153,11 +153,11 @@
               IsVisible="{Binding Source={x:Reference ThisPage}, Path=BindingContext.IsLasiWorkshop}">
                                 <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
                                     <Label Text="机台：" FontAttributes="Bold" />
-                                    <Label Grid.Column="1" Text="{Binding ProductionMachineName}" />
+                                    <Label Grid.Column="1" Text="{Binding Machine}" />
                                 </Grid>
                                 <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
                                     <Label Text="钢厂：" FontAttributes="Bold" />
-                                    <Label Grid.Column="1" Text="{Binding FactoryName}" />
+                                    <Label Grid.Column="1" Text="{Binding SteelMill}" />
                                 </Grid>
                                 <Grid Grid.Row="2" ColumnDefinitions="Auto,*">
                                     <Label Text="钢号：" FontAttributes="Bold" />
@@ -165,7 +165,7 @@
                                 </Grid>
                                 <Grid Grid.Row="3" ColumnDefinitions="Auto,*">
                                     <Label Text="挂牌：" FontAttributes="Bold" />
-                                    <Label Grid.Column="1" Text="{Binding WorkOrderNo}" />
+                                    <Label Grid.Column="1" Text="{Binding ListingMaterialName}" />
                                 </Grid>
                                 <Grid Grid.Row="4" ColumnDefinitions="Auto,*">
                                     <Label Text="生产规格：" FontAttributes="Bold" />
@@ -173,7 +173,7 @@
                                 </Grid>
                                 <Grid Grid.Row="5" ColumnDefinitions="Auto,*">
                                     <Label Text="代码：" FontAttributes="Bold" />
-                                    <Label Grid.Column="1" Text="{Binding MaterialCode}" />
+                                    <Label Grid.Column="1" Text="{Binding CustomerIdentifier}" />
                                 </Grid>
                                 <Grid Grid.Row="6" ColumnDefinitions="Auto,*">
                                     <Label Text="生产数(吨)：" FontAttributes="Bold" />

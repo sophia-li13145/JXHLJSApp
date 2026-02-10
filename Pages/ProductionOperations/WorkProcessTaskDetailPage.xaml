@@ -125,51 +125,51 @@
 
                         <!-- 酸洗字段 -->
                         <Label Grid.Row="0" Grid.Column="0" Text="厂家：" IsVisible="{Binding IsSuanxiWorkshop}" />
-                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding Detail.workOrderName}" IsVisible="{Binding IsSuanxiWorkshop}" />
+                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding Detail.steelMill}" IsVisible="{Binding IsSuanxiWorkshop}" />
                         <Label Grid.Row="0" Grid.Column="2" Text="产品名称：" IsVisible="{Binding IsSuanxiWorkshop}" />
                         <Label Grid.Row="0" Grid.Column="3" Text="{Binding Detail.materialName}" IsVisible="{Binding IsSuanxiWorkshop}" />
 
                         <Label Grid.Row="1" Grid.Column="0" Text="规格：" IsVisible="{Binding IsSuanxiWorkshop}" />
-                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding Detail.processName}" IsVisible="{Binding IsSuanxiWorkshop}" />
+                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding Detail.materialSpec}" IsVisible="{Binding IsSuanxiWorkshop}" />
                         <Label Grid.Row="1" Grid.Column="2" Text="计划数量：" IsVisible="{Binding IsSuanxiWorkshop}" />
                         <Label Grid.Row="1" Grid.Column="3" Text="{Binding Detail.scheQty, StringFormat='{0:G29}'}" IsVisible="{Binding IsSuanxiWorkshop}" />
 
                         <Label Grid.Row="2" Grid.Column="0" Text="客户加工：" IsVisible="{Binding IsSuanxiWorkshop}" />
-                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding Detail.line}" IsVisible="{Binding IsSuanxiWorkshop}" />
+                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding Detail.customerIdentifier}" IsVisible="{Binding IsSuanxiWorkshop}" />
                         <Label Grid.Row="2" Grid.Column="2" Text="使用位置：" IsVisible="{Binding IsSuanxiWorkshop}" />
-                        <Label Grid.Row="2" Grid.Column="3" Text="{Binding Detail.platPlanNo}" IsVisible="{Binding IsSuanxiWorkshop}" />
+                        <Label Grid.Row="2" Grid.Column="3" Text="{Binding Detail.machine}" IsVisible="{Binding IsSuanxiWorkshop}" />
 
                         <!-- 热处理字段 -->
                         <Label Grid.Row="0" Grid.Column="0" Text="机台：" IsVisible="{Binding IsRechuliWorkshop}" />
-                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding Detail.productionMachineName}" IsVisible="{Binding IsRechuliWorkshop}" />
+                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding Detail.machine}" IsVisible="{Binding IsRechuliWorkshop}" />
                         <Label Grid.Row="0" Grid.Column="2" Text="钢号：" IsVisible="{Binding IsRechuliWorkshop}" />
                         <Label Grid.Row="0" Grid.Column="3" Text="{Binding Detail.materialName}" IsVisible="{Binding IsRechuliWorkshop}" />
 
                         <Label Grid.Row="1" Grid.Column="0" Text="规格：" IsVisible="{Binding IsRechuliWorkshop}" />
-                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding Detail.processName}" IsVisible="{Binding IsRechuliWorkshop}" />
+                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding Detail.materialSpec}" IsVisible="{Binding IsRechuliWorkshop}" />
                         <Label Grid.Row="1" Grid.Column="2" Text="DV：" IsVisible="{Binding IsRechuliWorkshop}" />
-                        <Label Grid.Row="1" Grid.Column="3" Text="{Binding Detail.teamName}" IsVisible="{Binding IsRechuliWorkshop}" />
+                        <Label Grid.Row="1" Grid.Column="3" Text="{Binding Detail.dvValue}" IsVisible="{Binding IsRechuliWorkshop}" />
 
                         <Label Grid.Row="2" Grid.Column="0" Text="分包/自用：" IsVisible="{Binding IsRechuliWorkshop}" />
-                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding Detail.line}" IsVisible="{Binding IsRechuliWorkshop}" />
+                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding Detail.usageType}" IsVisible="{Binding IsRechuliWorkshop}" />
                         <Label Grid.Row="2" Grid.Column="2" Text="备注：" IsVisible="{Binding IsRechuliWorkshop}" />
-                        <Label Grid.Row="2" Grid.Column="3" Text="{Binding Detail.workOrderName}" IsVisible="{Binding IsRechuliWorkshop}" />
+                        <Label Grid.Row="2" Grid.Column="3" Text="{Binding Detail.memo}" IsVisible="{Binding IsRechuliWorkshop}" />
 
                         <!-- 拉丝字段 -->
                         <Label Grid.Row="0" Grid.Column="0" Text="机台：" IsVisible="{Binding IsLasiWorkshop}" />
-                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding Detail.productionMachineName}" IsVisible="{Binding IsLasiWorkshop}" />
+                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding Detail.machine}" IsVisible="{Binding IsLasiWorkshop}" />
                         <Label Grid.Row="0" Grid.Column="2" Text="钢厂：" IsVisible="{Binding IsLasiWorkshop}" />
-                        <Label Grid.Row="0" Grid.Column="3" Text="{Binding Detail.workOrderName}" IsVisible="{Binding IsLasiWorkshop}" />
+                        <Label Grid.Row="0" Grid.Column="3" Text="{Binding Detail.steelMill}" IsVisible="{Binding IsLasiWorkshop}" />
 
                         <Label Grid.Row="1" Grid.Column="0" Text="钢号：" IsVisible="{Binding IsLasiWorkshop}" />
                         <Label Grid.Row="1" Grid.Column="1" Text="{Binding Detail.materialName}" IsVisible="{Binding IsLasiWorkshop}" />
                         <Label Grid.Row="1" Grid.Column="2" Text="挂牌：" IsVisible="{Binding IsLasiWorkshop}" />
-                        <Label Grid.Row="1" Grid.Column="3" Text="{Binding Detail.workOrderNo}" IsVisible="{Binding IsLasiWorkshop}" />
+                        <Label Grid.Row="1" Grid.Column="3" Text="{Binding Detail.listingMaterialName}" IsVisible="{Binding IsLasiWorkshop}" />
 
                         <Label Grid.Row="2" Grid.Column="0" Text="生产规格：" IsVisible="{Binding IsLasiWorkshop}" />
-                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding Detail.processName}" IsVisible="{Binding IsLasiWorkshop}" />
+                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding Detail.materialSpec}" IsVisible="{Binding IsLasiWorkshop}" />
                         <Label Grid.Row="2" Grid.Column="2" Text="代码：" IsVisible="{Binding IsLasiWorkshop}" />
-                        <Label Grid.Row="2" Grid.Column="3" Text="{Binding Detail.processCode}" IsVisible="{Binding IsLasiWorkshop}" />
+                        <Label Grid.Row="2" Grid.Column="3" Text="{Binding Detail.customerIdentifier}" IsVisible="{Binding IsLasiWorkshop}" />
 
                         <!-- 默认字段 -->
                         <Label Grid.Row="0" Grid.Column="0" Text="工单号：" IsVisible="{Binding IsDefaultWorkshop}" />
@@ -181,35 +181,17 @@
                         <Label Grid.Row="3" Grid.Column="0" Text="工单名称：" />
                         <Label Grid.Row="3" Grid.Column="1" Text="{Binding Detail.workOrderName}" />
 
-                        <Label Grid.Row="3" Grid.Column="2" Text="生产数量：" />
+                        <Label Grid.Row="3" Grid.Column="2" Text="计划生产数量：" />
                         <Label Grid.Row="3" Grid.Column="3" Text="{Binding Detail.scheQty, StringFormat='{0:G29}'}" />
 
                         <Label Grid.Row="4" Grid.Column="0" Text="工序：" FontAttributes="Bold"/>
                         <Label Grid.Row="4" Grid.Column="1" Text="{Binding Detail.processName}" FontAttributes="Bold"/>
 
-                        <Label Grid.Row="4" Grid.Column="2" Text="班次：" FontAttributes="Bold"/>
-                        <Picker Grid.Row="4" Grid.Column="3"
-                                ItemsSource="{Binding ShiftOptions}"
-                                ItemDisplayBinding="{Binding Text}"
-                                SelectedItem="{Binding SelectedShift, Mode=TwoWay}"
-                                IsEnabled="{Binding IsEditing}" /> 
+                        <Label Grid.Row="4" Grid.Column="2" Text="实际生产数量：" />
+                        <Label Grid.Row="4" Grid.Column="3" Text="{Binding Detail.completedQty, StringFormat='{0:G29}'}" />
 
-                        <Label Grid.Row="5" Grid.Column="0" Text="生产设备：" />
-                        <Picker Grid.Row="5" Grid.Column="1"
-                                ItemsSource="{Binding DeviceOptions}"
-                                ItemDisplayBinding="{Binding Text}"
-                                SelectedItem="{Binding SelectedDevice, Mode=TwoWay}"
-                                IsEnabled="{Binding IsEditing}" /> 
-
-                        <Label Grid.Row="5" Grid.Column="2" Text="报工数量：" />
-                        <Entry Grid.Row="5"
-                               Grid.Column="3"
-                               Text="{Binding ReportQtyText, Mode=TwoWay}"
-                               Keyboard="Numeric"
-                               IsEnabled="{Binding IsEditing}"
-                               Completed="OnReportQtyCompleted" /> 
-                        <Label Grid.Row="6" Grid.Column="0" Text="操作人：" />
-                        <Label Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding CurrentUserName}" />
+                        <Label Grid.Row="5" Grid.Column="0" Text="操作人：" />
+                        <Label Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding CurrentUserName}" />
                     </Grid>
                 </Frame>
 

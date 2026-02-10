@@ -223,7 +223,10 @@ public sealed class PageResult<T>
 public class ProcessTask
 {
     public string? Id { get; set; }
+    public string? ListingMaterialName { get; set; }
+
     public string? ProcessCode { get; set; }
+    
     public string? ProcessName { get; set; }
     public string? MaterialName { get; set; }
     public decimal? ScheQty { get; set; }
@@ -236,13 +239,14 @@ public class ProcessTask
     public string? WorkOrderNo { get; set; }
 
     public string? WorkOrderName { get; set; }
-    public string? FactoryName { get; set; }
+    public string? SteelMill { get; set; }
     public string? MaterialSpec { get; set; }
-    public string? PlatPlanNo { get; set; }
+    public string? CustomerIdentifier { get; set; }
     public string? Memo { get; set; }
-    public string? ProductionMachineName { get; set; }
+    public string? Machine { get; set; }
     public string? MaterialCode { get; set; }
-    public string? LineName { get; set; }
+    public string? DvValue { get; set; }
+    public string? UsageType { get; set; }
     public string? WorkShopName { get; set; }
 
     [JsonPropertyName("WorkOrderAuditStatus")]
@@ -339,24 +343,29 @@ public class WorkProcessTaskDetail
     public decimal? scheQty { get; set; }
     public decimal? completedQty { get; set; }
     public string? auditStatus { get; set; }
-    public string? teamCode { get; set; }
-    public string? teamName { get; set; }
+    public string? materialSpec { get; set; }
+    public string? steelMill { get; set; }
     public decimal? taskReportedQty { get; set; }
     public string? productionMachine { get; set; }
     public string? productionMachineName { get; set; }
     public string? workShop { get; set; }
     public string?  factoryCode { get; set; }
-    public string? line { get; set; }
+    public string? customerIdentifier { get; set; }
+
+    public string? machine { get; set; }
+
+    public string? dvValue { get; set; }
+    public string? listingMaterialName { get; set; }
+
+    public string? usageType { get; set; }
+
+    public string? teamCode { get; set; }
 
     public string? periodExecute { get; set; }
 
     public string? schemeNo { get; set; }
 
     public string? platPlanNo { get; set; }
-
-    public List<TaskMaterialInput> materialInputList { get; set; } = new();
-    public List<TaskMaterialOutput> materialOutputList { get; set; } = new();
-    public List<RouteResourceDemand> planProcessRouteResourceDemandList { get; set; } = new();
 
     // 页面显示
     [System.Text.Json.Serialization.JsonIgnore] public string? AuditStatusName { get; set; }

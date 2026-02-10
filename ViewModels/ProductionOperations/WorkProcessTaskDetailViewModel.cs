@@ -37,25 +37,9 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
     public string PauseResumeText => State == TaskRunState.Running ? "暂停" : "复工";
 
     [ObservableProperty] private DetailTab activeTab = DetailTab.Input;
-    [ObservableProperty] private bool isInputVisible = true;   // 默认显示投料
-    [ObservableProperty] private bool isOutputVisible = false; // 默认隐藏产出
-
-    public bool IsInputTab => ActiveTab == DetailTab.Input;
-    public bool IsOutputTab => ActiveTab == DetailTab.Output;
-
 
     [ObservableProperty] private WorkProcessTaskDetail? detail;
 
-    /// <summary>执行 new 逻辑。</summary>
-    public ObservableCollection<TaskMaterialInput> Inputs { get; } = new();
-    /// <summary>执行 new 逻辑。</summary>
-    public ObservableCollection<TaskMaterialOutput> Outputs { get; } = new();
-
-    // 班次/设备下拉
-    /// <summary>执行 new 逻辑。</summary>
-    public ObservableCollection<StatusOption> ShiftOptions { get; } = new();
-    /// <summary>执行 new 逻辑。</summary>
-    public ObservableCollection<StatusOption> DeviceOptions { get; } = new();
     [ObservableProperty] private string? currentUserName; // 进入页面时赋值实际登录人
     // 投料记录列表（表格2的数据源）
     /// <summary>执行 new 逻辑。</summary>
@@ -109,41 +93,8 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
         IsLasiWorkshop = ws.Contains("拉丝", StringComparison.OrdinalIgnoreCase);
         IsDefaultWorkshop = !IsSuanxiWorkshop && !IsRechuliWorkshop && !IsLasiWorkshop;
     }
-    private StatusOption? _selectedShift;
-    public StatusOption? SelectedShift
-    {
-        get => _selectedShift;
-        set
-        {
-            if (_selectedShift != value)
-            {
-                _selectedShift = value;
-                OnPropertyChanged();
-
-                // 只有在非抑制阶段，才调用后端更新
-                if (!_suppressRemoteUpdate)
-                    _ = UpdateShiftAsync(value);
-            }
-        }
-    }
-
-    private StatusOption? _selectedDevice;
-    public StatusOption? SelectedDevice
-    {
-        get => _selectedDevice;
-        set
-        {
-            if (_selectedDevice != value)
-            {
-                _selectedDevice = value;
-                OnPropertyChanged();
-
-                if (!_suppressRemoteUpdate)
-                    _ = UpdateDeviceAsync(value);
-            }
-        }
-    }
-    /// <summary>执行 OnIsBusyChanged 逻辑。</summary>
+    
+   
     partial void OnIsBusyChanged(bool value) => NotifyAllCanExec();
     /// <summary>执行 OnStateChanged 逻辑。</summary>
     partial void OnStateChanged(TaskRunState value) => NotifyAllCanExec();
@@ -153,15 +104,6 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
         (StartWorkCommand as IRelayCommand)?.NotifyCanExecuteChanged();
         (PauseResumeCommand as IRelayCommand)?.NotifyCanExecuteChanged();
         (FinishCommand as IRelayCommand)?.NotifyCanExecuteChanged();
-    }
-    /// <summary>执行 OnActiveTabChanged 逻辑。</summary>
-    partial void OnActiveTabChanged(DetailTab value)
-    {
-        IsInputVisible = (value == DetailTab.Input);
-        IsOutputVisible = !IsInputVisible;
-
-        OnPropertyChanged(nameof(IsInputTab));
-        OnPropertyChanged(nameof(IsOutputTab));
     }
 
 
@@ -329,21 +271,7 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
     }
 
 
-    /// <summary>执行 ShowInput 逻辑。</summary>
-    [RelayCommand]
-    public void ShowInput()
-    {
-        Debug.WriteLine("切换到投料");
-        ActiveTab = DetailTab.Input;
-    }
-
-    /// <summary>执行 ShowOutput 逻辑。</summary>
-    [RelayCommand]
-    public void ShowOutput()
-    {
-        Debug.WriteLine("切换到产出");
-        ActiveTab = DetailTab.Output;  // 同上
-    }
+    
 
     /// <summary>执行 InitAsync 逻辑。</summary>
     [RelayCommand]
@@ -416,181 +344,12 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
                 };
 
             }
-                // 关键：加载下拉选项
-            await LoadShiftsAsync();
-            await LoadDevicesAsync();
-            await LoadMaterialInputsAsync();
-            await LoadOutputInputsAsync();
 
-            // 关键：抑制更新 → 设定选中项
-            _suppressRemoteUpdate = true;
-            try
-            {
-                // 班次
-                if (!string.IsNullOrWhiteSpace(Detail.teamCode))
-                {
-                    var shiftOpt = ShiftOptions.FirstOrDefault(x => x.Value == Detail.teamCode)
-                                   ?? ShiftOptions.FirstOrDefault(); // 找不到就给“请选择”
-                    SelectedShift = shiftOpt;
-                }
-                else
-                {
-                    SelectedShift = ShiftOptions.FirstOrDefault(); // “请选择”
-                }
-
-                // 设备
-                if (!string.IsNullOrWhiteSpace(Detail.productionMachine))
-                {
-                    var devOpt = DeviceOptions.FirstOrDefault(x => x.Value == Detail.productionMachine)
-                                 ?? DeviceOptions.FirstOrDefault();
-                    SelectedDevice = devOpt;
-                }
-                else
-                {
-                    SelectedDevice = DeviceOptions.FirstOrDefault();
-                }
-            }
-            finally
-            {
-                _suppressRemoteUpdate = false; // 解除抑制
-            }
+           
         }
         else
         {
             // 可视化提示由页面处理
-        }
-    }
-
-    /// <summary>执行 LoadShiftsAsync 逻辑。</summary>
-    private async Task LoadShiftsAsync()
-    {
-        ShiftOptions.Clear();
-        if (Detail != null && Detail.factoryCode != null && Detail.factoryCode != null)
-        {
-            var resp = await _api.GetShiftOptionsAsync(Detail.factoryCode, Detail.workShop);
-            // 默认加一个“请选择”
-            ShiftOptions.Add(new StatusOption { Text = "请选择", Value = null });
-            if (resp != null)
-            {
-                foreach (var o in resp.result ?? new())
-                    ShiftOptions.Add(new StatusOption { Text = o.workshopsName ?? o.workshopsCode, Value = o.workshopsCode });
-            }
-        }
-    }
-
-    /// <summary>执行 LoadDevicesAsync 逻辑。</summary>
-    private async Task LoadDevicesAsync()
-    {
-        DeviceOptions.Clear();
-        if (Detail != null && Detail.factoryCode != null && Detail.processCode != null)
-        {
-            var resp = await _api.GetDeviceOptionsAsync(Detail.factoryCode, Detail.processCode);
-            DeviceOptions.Add(new StatusOption { Text = "请选择", Value = null });
-            if (resp != null)
-            {
-                foreach (var o in resp.result ?? new())
-                    DeviceOptions.Add(new StatusOption { Text = o.deviceName ?? o.deviceCode, Value = o.deviceCode });
-            }
-        }
-    }
-
-    /// <summary>执行 LoadMaterialInputsAsync 逻辑。</summary>
-    private async Task LoadMaterialInputsAsync()
-    {
-        // ② 调用接口
-        var resp = await _api.PageWorkProcessTaskMaterialInputs(
-            factoryCode: Detail.factoryCode,
-            processCode: Detail.processCode!,
-            workOrderNo: Detail.workOrderNo!,
-            pageNo: 1,
-            pageSize: 10
-        );
-
-        // ③ 判断返回是否成功并绑定
-        MaterialInputRecords.Clear();
-
-        if (resp?.result?.records != null)
-        {
-            foreach (var item in resp.result.records)
-                MaterialInputRecords.Add(item);
-        }
-    }
-
-    /// <summary>执行 LoadOutputInputsAsync 逻辑。</summary>
-    private async Task LoadOutputInputsAsync()
-    {
-        // ② 调用接口
-        var resp = await _api.PageWorkProcessTaskOutputs(
-            factoryCode: Detail.factoryCode,
-            processCode: Detail.processCode!,
-            workOrderNo: Detail.workOrderNo!,
-            pageNo: 1,
-            pageSize: 10
-        );
-
-        // ③ 判断返回是否成功并绑定
-        OutputRecords.Clear();
-
-        if (resp?.result?.records != null)
-        {
-            foreach (var item in resp.result.records)
-                OutputRecords.Add(item);
-        }
-    }
-    /// <summary>执行 UpdateShiftAsync 逻辑。</summary>
-    private async Task UpdateShiftAsync(StatusOption? opt)
-    {
-        if (opt == null || string.IsNullOrWhiteSpace(Detail?.id))
-            return;
-
-        try
-        {
-            IsBusy = true;
-
-            var r = await _api.UpdateWorkProcessTaskAsync(
-            id: Detail.id, null, null, null, teamCode: opt.Value, teamName: opt.Text, null, null, null, default);
-
-            if (!r.Succeeded)
-                await ShowTip(string.IsNullOrWhiteSpace(r.Message) ? "更新班次失败" : r.Message);
-            else
-                await ShowTip("班次已更新");
-        }
-        catch (Exception ex)
-        {
-            await ShowTip($"更新班次异常：{ex.Message}");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    /// <summary>执行 UpdateDeviceAsync 逻辑。</summary>
-    private async Task UpdateDeviceAsync(StatusOption? opt)
-    {
-        // 基本校验：必须有任务ID和选中项
-        if (opt == null || string.IsNullOrWhiteSpace(Detail?.id))
-            return;
-
-        try
-        {
-            IsBusy = true;
-
-            var r = await _api.UpdateWorkProcessTaskAsync(
-            id: Detail.id, opt.Value, opt.Text, null, null, null, null, null, null, default);
-
-            if (!r.Succeeded)
-                await ShowTip(string.IsNullOrWhiteSpace(r.Message) ? "更新设备失败" : r.Message);
-            else
-                await ShowTip("设备已更新");
-        }
-        catch (Exception ex)
-        {
-            await ShowTip($"更新设备异常：{ex.Message}");
-        }
-        finally
-        {
-            IsBusy = false;
         }
     }
 
@@ -626,232 +385,7 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
             await ShowTip("报工数量已更新");
     }
 
-    // 点击“新增投料”
-    /// <summary>执行 AddMaterialInputAsync 逻辑。</summary>
-    [RelayCommand]
-    private async Task AddMaterialInputAsync()
-    {
-        // 准备列表（用于“无预设”时给用户选择）
-        var list = Detail?.materialInputList ?? Enumerable.Empty<TaskMaterialInput>();
-
-        // 预设物料（有选中就作为预设；否则传 null 让用户自行选择）
-        TaskMaterialInput? preset = SelectedMaterialItem is null
-            ? null
-            : new TaskMaterialInput
-            {
-                materialCode = SelectedMaterialItem.materialCode,
-                materialName = SelectedMaterialItem.materialName
-            };
-
-        // 打开弹窗（新重载）：有预设则只输入数量/备注；无预设则先选物料再输入
-        var picked = await MaterialInputPopupPage.ShowAsync(null, list, preset);
-        if (picked is null) return;
-
-        // 统一取“最终物料信息”（优先用预设；没有预设时用弹窗选择结果）
-        var finalCode = preset?.materialCode ?? picked.MaterialCode;
-        var finalName = preset?.materialName ?? picked.MaterialName;
-
-        // 组装请求
-        var req = new AddWorkProcessTaskMaterialInputReq
-        {   materialClassName= picked.materialClassName,
-            materialCode = finalCode,
-            materialName = finalName,
-            materialTypeName = picked.materialTypeName,
-            qty = (double)picked.Quantity,                    // 从弹窗取
-            memo = picked.Memo,
-            unit = picked.Unit,
-            workOrderNo = Detail.workOrderNo,
-            processCode = Detail.processCode,
-            processName = Detail.processName,
-            schemeNo = Detail.schemeNo,
-            platPlanNo = Detail.platPlanNo
-        };
-
-        var resp = await _api.AddWorkProcessTaskMaterialInputAsync(req);
-        if (!resp.success)
-        {
-            await Shell.Current.DisplayAlert("失败", resp.message ?? "提交失败", "OK");
-            return;
-        }
-
-        // 成功：插入下表顶部
-        //var idx = (MaterialInputRecords.Count == 0) ? 1 : (MaterialInputRecords[0].Index + 1);
-        //MaterialInputRecords.Insert(0, new MaterialAuRecord
-        //{
-        //    //Index = idx,
-        //    MaterialName = finalName,
-        //    Unit = picked.Unit,
-        //    Qty =  picked.Quantity,
-        //    OperateTime = picked.OperationTime?.ToString("yyyy-MM-dd HH:mm:ss"),
-        //    Memo = picked.Memo
-        //});
-        SelectedMaterialItem = null;
-        await LoadMaterialInputsAsync();
-    }
 
 
-    // 删除（仅前端）
-    /// <summary>执行 DeleteMaterialInput 逻辑。</summary>
-    [RelayCommand]
-    private async void DeleteMaterialInput(MaterialAuRecord row)
-    {
-        if (row == null) return;
-        MaterialInputRecords.Remove(row);
-        // 如需后端删除，在此调用删除接口
-        var resp = await _api.DeleteWorkProcessTaskMaterialInputAsync(row.Id);
-        if (!resp.success)
-        {
-            await Shell.Current.DisplayAlert("失败", resp.message ?? "提交失败", "OK");
-            return;
-        }
-    }
-
-    // 新增产出：只用选中行 + 弹窗返回的数量/备注
-    /// <summary>执行 AddOutputAsync 逻辑。</summary>
-    [RelayCommand]
-    private async Task AddOutputAsync()
-    {
-        // 准备列表（用于“无预设”时给用户选择）
-        var list = Detail?.materialOutputList ?? Enumerable.Empty<TaskMaterialOutput>();
-
-        // 预设物料（有选中就作为预设；否则传 null 让用户自行选择）
-        TaskMaterialOutput? preset = SelectedOutputItem is null
-            ? null
-            : new TaskMaterialOutput
-            {
-                materialCode = SelectedOutputItem.materialCode,
-                materialName = SelectedOutputItem.materialName
-            };
-
-        // 打开弹窗（新重载）：有预设则只输入数量/备注；无预设则先选物料再输入
-        var picked = await OutputPopupPage.ShowAsync(null, list, preset);
-        if (picked is null) return;
-
-        // 统一取“最终物料信息”（优先用预设；没有预设时用弹窗选择结果）
-        var finalCode = preset?.materialCode ?? picked.MaterialCode;
-        var finalName = preset?.materialName ?? picked.MaterialName;
-
-        // 组装请求
-        var req = new AddWorkProcessTaskProductOutputReq
-        {
-            materialClassName = picked.materialClassName,
-            materialCode = finalCode,
-            materialName = finalName,
-            materialTypeName = picked.materialTypeName,
-            qty = (double)picked.Quantity,                    // 从弹窗取
-            memo = picked.Memo,
-            unit = picked.Unit,
-            workOrderNo = Detail.workOrderNo,
-            processCode = Detail.processCode,
-            processName = Detail.processName,
-            schemeNo = Detail.schemeNo,
-            platPlanNo = Detail.platPlanNo
-        };
-
-        var resp = await _api.AddWorkProcessTaskProductOutputAsync(req);
-        if (!resp.success)
-        {
-            await Shell.Current.DisplayAlert("失败", resp.message ?? "提交失败", "OK");
-            return;
-        }
-
-        // 成功：插入下表顶部
-        //var idx = (OutputRecords.Count == 0) ? 1 : (OutputRecords[0].Index + 1);
-        //OutputRecords.Insert(0, new OutputAuRecord
-        //{
-        //    //Index = idx,
-        //    MaterialName = finalName,
-        //    Unit = picked.Unit,
-        //    Qty = picked.Quantity,
-        //    OperateTime = picked.OperationTime?.ToString("yyyy-MM-dd HH:mm:ss"),
-        //    Memo = picked.Memo
-        //});
-       
-        MainThread.BeginInvokeOnMainThread(() =>
-        {
-            IsInputVisible = false;
-            IsOutputVisible = true;
-        });
-        await LoadOutputInputsAsync();
-        SelectedOutputItem = null;
-    }
-
-    // 删除（前端移除；如需后端删除在此补接口）
-    /// <summary>执行 DeleteOutput 逻辑。</summary>
-    [RelayCommand]
-    private async void DeleteOutput(OutputAuRecord row)
-    {
-        if (row == null) return;
-        OutputRecords.Remove(row);
-        //调用删除接口
-        var resp = await _api.DeleteWorkProcessTaskOutputAsync(row.Id);
-        if (!resp.success)
-        {
-            await Shell.Current.DisplayAlert("失败", resp.message ?? "提交失败", "OK");
-            return;
-        }
-    }
-
-    /// <summary>执行 MaterialItemSelected 逻辑。</summary>
-    [RelayCommand]
-    private void MaterialItemSelected(TaskMaterialInput? item)
-    {
-        if (item != null && !ReferenceEquals(SelectedMaterialItem, item))
-            SelectedMaterialItem = item;
-    }
-
-    /// <summary>执行 OutputItemSelected 逻辑。</summary>
-    [RelayCommand]
-    private void OutputItemSelected(TaskMaterialOutput? item)
-    {
-        if (item != null && !ReferenceEquals(SelectedOutputItem, item))
-            SelectedOutputItem = item;
-    }
-
-    /// <summary>执行 EditMaterialRawDate 逻辑。</summary>
-    [RelayCommand]
-    private async Task EditMaterialRawDate(MaterialAuRecord row)
-    {
-        if (row is null || string.IsNullOrWhiteSpace(row.Id))
-        {
-            await ShowTip("缺少记录主键，无法编辑。");
-            return;
-        }
-
-        // 解析当前行已有日期作为默认值
-        DateTime? init = null;
-        if (!string.IsNullOrWhiteSpace(row.RawMaterialProductionDate)
-            && DateTime.TryParse(row.RawMaterialProductionDate, out var parsed))
-            init = parsed;
-
-        // 打开日期时间选择弹窗
-        var picked = await DateTimePickerPage.ShowAsync(init);
-        if (picked is null) return; // 用户取消
-
-        // 转为后端需要的格式
-        var rawStr = picked.Value.ToString("yyyy-MM-dd HH:mm:ss");
-
-        // 调用后端
-        var resp = await _api.EditWorkProcessTaskMaterialInputAsync(
-            id: row.Id!,
-            qty: row.Qty,              // 不改数量就把现值带回去
-            memo: row.Memo,
-            rawMaterialProductionDate: rawStr
-        );
-
-        if (resp.success)
-        {
-            // 本地更新并通知UI
-            row.RawMaterialProductionDate = rawStr;
-            // 如果 MaterialRecord 未实现 INotifyPropertyChanged，可：
-            var i = MaterialInputRecords.IndexOf(row);
-            if (i >= 0) { MaterialInputRecords[i] = row; }
-            await ShowTip("已更新原料生产日期。");
-            await LoadMaterialInputsAsync();
-        }
-        else
-        {
-            await ShowTip(string.IsNullOrWhiteSpace(resp.message) ? "更新失败" : resp.message!);
-        }
-    }
+   
 }

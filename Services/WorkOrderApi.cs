@@ -84,7 +84,7 @@ public class WorkOrderApi : IWorkOrderApi
             _updateTeamEndpoint = ServiceUrlHelper.NormalizeRelative(
                 configLoader.GetApiPath("workOrder.updateWorkProcess", "/pda/pmsWorkOrder/editWorkProcessTask"), servicePath);
             _startworkEndpoint = ServiceUrlHelper.NormalizeRelative(
-                configLoader.GetApiPath("workOrder.startwork", "/pda/pmsWorkOrder/workProcessTaskWorkChange"), servicePath);
+                configLoader.GetApiPath("workOrder.startwork", "/pda/pmsWorkOrder/workProcessTaskWorkStart"), servicePath);
             _completeworkEndpoint = ServiceUrlHelper.NormalizeRelative(
                 configLoader.GetApiPath("workOrder.completework", "/pda/pmsWorkOrder/workProcessTaskWorkChangeComplete"), servicePath);
             _pauseworkEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -292,7 +292,7 @@ public class WorkOrderApi : IWorkOrderApi
             {
                 ["id"] = id
             });
-            var full = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _workProcessTaskDetailEndpoint + query);
+            var full = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _workProcessTaskDetailEndpoint+ "?" + query);
             using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
             var resp = await _http.SendAsync(req, ct);
             resp.EnsureSuccessStatusCode();
