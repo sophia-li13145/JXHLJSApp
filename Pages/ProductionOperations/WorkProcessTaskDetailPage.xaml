@@ -95,14 +95,6 @@
     </ContentPage.Resources>
 
     <Grid x:Name="RootGrid" RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="12" RowSpacing="10">
-        <Grid Grid.Row="0" BackgroundColor="#007BFF" HeightRequest="56" Padding="16,0">
-            <Label Text="{Binding HeaderTitle}"
-                   VerticalOptions="Center"
-                   TextColor="White"
-                   FontSize="18"
-                   FontAttributes="Bold" />
-        </Grid>
-
         <Label Grid.Row="1" Text="工单基础信息" FontAttributes="Bold" Margin="0,8,0,4"/>
         <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,Auto,*,Auto" ColumnSpacing="10">
             <Button Text="开工"
