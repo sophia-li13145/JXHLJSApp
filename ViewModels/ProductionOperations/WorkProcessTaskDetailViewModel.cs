@@ -74,7 +74,6 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
             OnPropertyChanged(nameof(Detail));  // 若其他地方也用到了 Detail
         }
     }
-    private bool _suppressRemoteUpdate = false;
 
     /// <summary>执行 WorkProcessTaskDetailViewModel 初始化逻辑。</summary>
     public WorkProcessTaskDetailViewModel(IWorkOrderApi api)
@@ -91,7 +90,6 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
         IsSuanxiWorkshop = ws.Contains("酸洗", StringComparison.OrdinalIgnoreCase);
         IsRechuliWorkshop = ws.Contains("热处理", StringComparison.OrdinalIgnoreCase);
         IsLasiWorkshop = ws.Contains("拉丝", StringComparison.OrdinalIgnoreCase);
-        IsDefaultWorkshop = !IsSuanxiWorkshop && !IsRechuliWorkshop && !IsLasiWorkshop;
     }
     
    

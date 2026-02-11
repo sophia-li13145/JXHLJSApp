@@ -52,7 +52,7 @@
       "device": "/pda/pmsWorkOrder/getPmsEqptPointListByLineProcess",
       "updateWorkProcess": "/pda/pmsWorkOrder/editWorkProcessTask",
 
-      "startwork": "/pda/pmsWorkOrder/workProcessTaskWorkChange",
+      "startwork": "/pda/pmsWorkOrder/workProcessTaskWorkStart",
       "completework": "/pda/pmsWorkOrder/workProcessTaskWorkChangeComplete",
       "pausework": "/pda/pmsWorkOrder/workProcessTaskWorkChange",
 

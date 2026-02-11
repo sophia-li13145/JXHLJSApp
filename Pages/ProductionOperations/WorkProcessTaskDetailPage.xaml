@@ -172,26 +172,18 @@
                         <Label Grid.Row="2" Grid.Column="3" Text="{Binding Detail.customerIdentifier}" IsVisible="{Binding IsLasiWorkshop}" />
 
                         <!-- 默认字段 -->
-                        <Label Grid.Row="0" Grid.Column="0" Text="工单号：" IsVisible="{Binding IsDefaultWorkshop}" />
-                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding Detail.workOrderNo}" IsVisible="{Binding IsDefaultWorkshop}" />
-                        <Label Grid.Row="0" Grid.Column="2" Text="产品名称：" IsVisible="{Binding IsDefaultWorkshop}" />
-                        <Label Grid.Row="0" Grid.Column="3" Text="{Binding Detail.materialName}" IsVisible="{Binding IsDefaultWorkshop}" />
-
+                        <Label Grid.Row="3" Grid.Column="0" Text="工单号："  />
+                        <Label Grid.Row="3" Grid.Column="1" Text="{Binding Detail.workOrderNo}" />
+             
                         <!-- 公共字段 -->
-                        <Label Grid.Row="3" Grid.Column="0" Text="工单名称：" />
-                        <Label Grid.Row="3" Grid.Column="1" Text="{Binding Detail.workOrderName}" />
-
-                        <Label Grid.Row="3" Grid.Column="2" Text="计划生产数量：" />
-                        <Label Grid.Row="3" Grid.Column="3" Text="{Binding Detail.scheQty, StringFormat='{0:G29}'}" />
+                        <Label Grid.Row="3" Grid.Column="2" Text="工单名称：" />
+                        <Label Grid.Row="3" Grid.Column="3" Text="{Binding Detail.workOrderName}" />
 
                         <Label Grid.Row="4" Grid.Column="0" Text="工序：" FontAttributes="Bold"/>
                         <Label Grid.Row="4" Grid.Column="1" Text="{Binding Detail.processName}" FontAttributes="Bold"/>
 
-                        <Label Grid.Row="4" Grid.Column="2" Text="实际生产数量：" />
-                        <Label Grid.Row="4" Grid.Column="3" Text="{Binding Detail.completedQty, StringFormat='{0:G29}'}" />
-
-                        <Label Grid.Row="5" Grid.Column="0" Text="操作人：" />
-                        <Label Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding CurrentUserName}" />
+                        <Label Grid.Row="4" Grid.Column="2" Text="操作人：" />
+                        <Label Grid.Row="4" Grid.Column="3" Text="{Binding CurrentUserName}" />
                     </Grid>
                 </Frame>
 
