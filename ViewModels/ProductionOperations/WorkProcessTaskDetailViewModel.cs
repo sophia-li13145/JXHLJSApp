@@ -402,7 +402,8 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
 
         var dictResp = await _api.GetWorkProcessTaskDictListAsync();
         var shiftDict = dictResp?.result?
-            .FirstOrDefault(x => string.Equals(x.field, "dict_pms_shift_schedule", StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(x => string.Equals(x.field, "teamCode", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(x.field, "dict_pms_shift_schedule", StringComparison.OrdinalIgnoreCase));
 
         foreach (var item in shiftDict?.dictItems ?? new())
         {
