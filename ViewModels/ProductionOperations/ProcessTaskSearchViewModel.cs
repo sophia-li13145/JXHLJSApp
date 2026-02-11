@@ -123,6 +123,7 @@ namespace JXHLJSApp.ViewModels
             try
             {
                 await EnsureDictsLoadedAsync();   // ★ 先确保字典到位
+                SelectedStatusOption ??= StatusOptions.FirstOrDefault();
 
                 PageIndex = 1;
                 Orders.Clear();
@@ -167,9 +168,7 @@ namespace JXHLJSApp.ViewModels
         private async Task<List<ProcessTask>> LoadPageAsync(int pageNo)
         {
             var hasKeyword = !string.IsNullOrWhiteSpace(Keyword);
-            var statusList = string.IsNullOrWhiteSpace(SelectedStatusOption?.Value)
-            ? null
-            : new[] { SelectedStatusOption.Value };
+            var statusList = BuildStatusQueryList();
 
             var page = await _workapi.PageWorkProcessTasksAsync(
                 workOrderNo: null,
@@ -195,6 +194,25 @@ namespace JXHLJSApp.ViewModels
             }
 
             return records;
+        }
+
+        /// <summary>
+        /// 生成状态查询条件：优先使用当前选中的状态；
+        /// 若尚未选中（如页面首次进入自动查询时），则回退为全部可选状态，避免后端因缺少 auditStatusList 而返回空数据。
+        /// </summary>
+        private IReadOnlyList<string>? BuildStatusQueryList()
+        {
+            if (!string.IsNullOrWhiteSpace(SelectedStatusOption?.Value))
+                return new[] { SelectedStatusOption.Value! };
+
+            var allStatusValues = StatusOptions
+                .Select(x => x.Value)
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Select(v => v!)
+                .Distinct()
+                .ToList();
+
+            return allStatusValues.Count > 0 ? allStatusValues : null;
         }
         /// <summary>执行 ShowTip 逻辑。</summary>
         private Task ShowTip(string message) =>

@@ -201,5 +201,24 @@
             </CollectionView.Footer>
         </CollectionView>
 
+        <!-- 查询全局 loading：点击查询后立即显示，直到接口返回并完成列表绑定 -->
+        <Grid Grid.RowSpan="3"
+              IsVisible="{Binding IsBusy}"
+              BackgroundColor="#33000000"
+              InputTransparent="False">
+            <VerticalStackLayout HorizontalOptions="Center"
+                                 VerticalOptions="Center"
+                                 Spacing="8">
+                <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                   Color="#007BFF"
+                                   WidthRequest="36"
+                                   HeightRequest="36" />
+                <Label Text="查询中..."
+                       TextColor="#007BFF"
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+        </Grid>
+
     </Grid>
 </ContentPage>
