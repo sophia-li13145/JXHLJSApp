@@ -57,11 +57,9 @@ public partial class PauseWorkPopup : Popup
                 return;
             }
 
-            if (!int.TryParse(ExistingReportedQtyText?.Trim(), out var existingQty) || existingQty < 0)
-            {
-                await Shell.Current.DisplayAlert("提示", "请填写正确的已报工数量。", "确定");
-                return;
-            }
+            var existingQty = int.TryParse(ExistingReportedQtyText?.Trim(), out var parsedExistingQty) && parsedExistingQty >= 0
+                ? parsedExistingQty
+                : 0;
 
             if (!int.TryParse(ReportQtyText?.Trim(), out var reportQty) || reportQty <= 0)
             {
