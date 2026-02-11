@@ -18,8 +18,7 @@
 
             <Label Text="已报工数量" />
             <Entry Text="{Binding ExistingReportedQtyText}"
-                   Keyboard="Numeric"
-                   Placeholder="请输入已报工数量" />
+                   IsReadOnly="True" />
 
             <Label Text="报工数量" />
             <Entry Text="{Binding ReportQtyText}"
