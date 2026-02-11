@@ -2,9 +2,10 @@
 using CommunityToolkit.Mvvm.Input;
 using JXHLJSApp.Models;
 using JXHLJSApp.Pages;
+using JXHLJSApp.Popups;
 using JXHLJSApp.Services;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using CommunityToolkit.Maui.Views;
 
 
 namespace JXHLJSApp.ViewModels;
@@ -47,6 +48,7 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
     // —— 产出记录列表（表2数据源）
     /// <summary>执行 new 逻辑。</summary>
     public ObservableCollection<OutputAuRecord> OutputRecords { get; } = new();
+    public ObservableCollection<StatusOption> ShiftOptions { get; } = new();
 
     private TaskMaterialInput? _selectedMaterialItem;
     public TaskMaterialInput? SelectedMaterialItem
@@ -163,27 +165,41 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
         {
             if (State == TaskRunState.Running)
             {
-                // 当前为“运行中”，点击 => 执行“暂停”
-                string title = "填写暂停原因";
-                string message = "请填写暂停原因（必填）：";
-                string accept = "提交";
-                string cancel = "取消";
+                await LoadShiftsAsync();
+                var popup = new PauseWorkPopup(ShiftOptions, Detail?.taskReportedQty);
+                var popupResultObj = await Shell.Current.CurrentPage.ShowPopupAsync(popup);
+                if (popupResultObj is not PauseWorkPopupResult popupResult || popupResult.IsCanceled)
+                    return;
 
-                // 系统弹窗输入（简洁稳妥）
-                string? reason = await Application.Current.MainPage.DisplayPromptAsync(
-                    title, message, accept, cancel, null, maxLength: 200, keyboard: Keyboard.Text);
+                var updateResp = await _api.UpdateWorkProcessTaskAsync(
+                    id: Detail.id,
+                    productionMachine: null,
+                    productionMachineName: null,
+                    taskReportedQty: popupResult.ExistingReportedQty + popupResult.ReportQty,
+                    teamCode: popupResult.SelectedShiftCode,
+                    teamName: popupResult.SelectedShiftName,
+                    workHours: null,
+                    startDate: null,
+                    endDate: null,
+                    ct: default);
 
-                if (reason is null) return;                 // 点击取消
-                reason = reason.Trim();
-                if (reason.Length == 0)
+                if (!updateResp.Succeeded)
                 {
-                    await Application.Current.MainPage.DisplayAlert("提示", "请填写暂停原因。", "知道了");
+                    await Application.Current.MainPage.DisplayAlert("失败", updateResp.Message ?? "更新工序任务失败", "确定");
                     return;
                 }
 
-                var resp = await _api.PauseWorkAsync(Detail.processCode, Detail.workOrderNo, reason, 0);
+                var resp = await _api.PauseWorkAsync(Detail.processCode, Detail.workOrderNo, null, 0);
                 if (resp.success && resp.result)
                 {
+                    if (Detail != null)
+                    {
+                        Detail.teamCode = popupResult.SelectedShiftCode;
+                        Detail.taskReportedQty = popupResult.ExistingReportedQty + popupResult.ReportQty;
+                        OnPropertyChanged(nameof(Detail));
+                        OnPropertyChanged(nameof(ReportQtyText));
+                    }
+
                     State = TaskRunState.Paused;
                     await Application.Current.MainPage.DisplayAlert("成功", "已暂停。", "确定");
                 }
@@ -232,24 +248,49 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
             var planQtyText = Detail?.scheQty?.ToString("G29") ?? "0";
             var input = await Application.Current.MainPage.DisplayPromptAsync(
                 "完工确认",
-                $"计划数量：{planQtyText}\n完工数量：",
+                $"计划数量：{planQtyText}\n报工数量：",
                 "确定",
                 "取消",
-                placeholder: "请输入完工数量",
+                placeholder: "请输入报工数量",
                 keyboard: Keyboard.Numeric);
 
             if (input is null) return;
 
             input = input.Trim();
-            if (!decimal.TryParse(input, out var actQty) || actQty < 0)
+            if (!int.TryParse(input, out var reportQty) || reportQty < 0)
             {
-                await Shell.Current.DisplayAlert("提示", "完工数量格式不正确。", "确定");
+                await Shell.Current.DisplayAlert("提示", "报工数量格式不正确。", "确定");
                 return;
             }
 
-            var resp = await _api.CompleteWorkAsync(Detail.processCode, Detail.workOrderNo, null, actQty);
+            var updateResp = await _api.UpdateWorkProcessTaskAsync(
+                id: Detail.id,
+                productionMachine: null,
+                productionMachineName: null,
+                taskReportedQty: reportQty,
+                teamCode: null,
+                teamName: null,
+                workHours: null,
+                startDate: null,
+                endDate: null,
+                ct: default);
+
+            if (!updateResp.Succeeded)
+            {
+                await Shell.Current.DisplayAlert("错误", updateResp.Message ?? "更新报工数量失败！", "确定");
+                return;
+            }
+
+            var resp = await _api.CompleteWorkAsync(Detail.processCode, Detail.workOrderNo, null, reportQty);
             if (resp.success && resp.result)
             {
+                if (Detail != null)
+                {
+                    Detail.taskReportedQty = reportQty;
+                    OnPropertyChanged(nameof(Detail));
+                    OnPropertyChanged(nameof(ReportQtyText));
+                }
+
                 State = TaskRunState.Finished;
                 await Shell.Current.DisplayAlert("提示", "完工成功！", "确定");
             }
@@ -269,7 +310,6 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
     }
 
 
-    
 
     /// <summary>执行 InitAsync 逻辑。</summary>
     [RelayCommand]
@@ -351,6 +391,28 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
         }
     }
 
+
+    /// <summary>执行 LoadShiftsAsync 逻辑。</summary>
+    private async Task LoadShiftsAsync()
+    {
+        ShiftOptions.Clear();
+
+        // 默认加一个“请选择”
+        ShiftOptions.Add(new StatusOption { Text = "请选择", Value = null });
+
+        var dictResp = await _api.GetWorkProcessTaskDictListAsync();
+        var shiftDict = dictResp?.result?
+            .FirstOrDefault(x => string.Equals(x.field, "dict_pms_shift_schedule", StringComparison.OrdinalIgnoreCase));
+
+        foreach (var item in shiftDict?.dictItems ?? new())
+        {
+            ShiftOptions.Add(new StatusOption
+            {
+                Text = item.dictItemName ?? item.dictItemValue ?? string.Empty,
+                Value = item.dictItemValue
+            });
+        }
+    }
 
     /// <summary>执行 ShowTip 逻辑。</summary>
     private Task ShowTip(string message) =>

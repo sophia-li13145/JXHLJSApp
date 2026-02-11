@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup
+    x:Class="JXHLJSApp.Popups.PauseWorkPopup"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    CanBeDismissedByTappingOutsideOfPopup="False">
+
+    <Frame Padding="16" CornerRadius="12" HasShadow="True" BackgroundColor="White" WidthRequest="340">
+        <VerticalStackLayout Spacing="10">
+            <Label Text="暂停确认" FontAttributes="Bold" FontSize="16" TextColor="#111827"/>
+
+            <Label Text="班次" />
+            <Picker Title="请选择班次"
+                    ItemsSource="{Binding ShiftOptions}"
+                    ItemDisplayBinding="{Binding Text}"
+                    SelectedItem="{Binding SelectedShift}" />
+
+            <Label Text="已报工数量" />
+            <Entry Text="{Binding ExistingReportedQtyText}"
+                   Keyboard="Numeric"
+                   Placeholder="请输入已报工数量" />
+
+            <Label Text="报工数量" />
+            <Entry Text="{Binding ReportQtyText}"
+                   Keyboard="Numeric"
+                   Placeholder="请输入报工数量" />
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,8,0,0">
+                <Button Text="取消" BackgroundColor="#F3F4F6" TextColor="#111827"
+                        Command="{Binding CancelCommand}" />
+                <Button Grid.Column="1" Text="确定" BackgroundColor="#2F80ED" TextColor="White"
+                        Command="{Binding OkCommand}" />
+            </Grid>
+        </VerticalStackLayout>
+    </Frame>
+</toolkit:Popup>
