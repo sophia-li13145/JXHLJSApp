@@ -48,7 +48,7 @@
       "dictProcessList": "/pda/pmsWorkOrder/getWorkProcessTaskDictList",
       "ProcessList": "/pda/pmsWorkOrder/PmsProcessInfoList",
       "ProcessDetail": "/pda/pmsWorkOrder/getWorkProcessTaskDetail",
-      "shift": "/pda/pmsWorkOrder/getClassesListByWorkShopLine",
+      "shift": "/pda/pmsWorkOrder/getWorkProcessTaskDictList",
       "device": "/pda/pmsWorkOrder/getPmsEqptPointListByLineProcess",
       "updateWorkProcess": "/pda/pmsWorkOrder/editWorkProcessTask",
 

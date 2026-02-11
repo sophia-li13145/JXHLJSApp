@@ -78,7 +78,7 @@ public class WorkOrderApi : IWorkOrderApi
             _workProcessTaskDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
                 configLoader.GetApiPath("workOrder.ProcessDetail", "/pda/pmsWorkOrder/getWorkProcessTaskDetail"), servicePath);
             _shiftEndpoint = ServiceUrlHelper.NormalizeRelative(
-                configLoader.GetApiPath("workOrder.shift", "/pda/pmsWorkOrder/getClassesListByWorkShopLine"), servicePath);
+                configLoader.GetApiPath("workOrder.shift", "/pda/pmsWorkOrder/getWorkProcessTaskDictList"), servicePath);
             _deviceEndpoint = ServiceUrlHelper.NormalizeRelative(
                 configLoader.GetApiPath("workOrder.device", "/pda/pmsWorkOrder/getPmsEqptPointListByLineProcess"), servicePath);
             _updateTeamEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -307,19 +307,30 @@ public class WorkOrderApi : IWorkOrderApi
     CancellationToken ct = default)
         {
             var full = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _shiftEndpoint);
-            var query = BuildQuery(new Dictionary<string, string?>
-            {
-                ["factoryCode"] = factoryCode,
-                ["workshopsCode"] = workshopsCode
-            });
-
-            var url = string.IsNullOrEmpty(query) ? full : $"{full}?{query}";
-            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url, UriKind.Absolute));
+            using var req = new HttpRequestMessage(HttpMethod.Get, new Uri(full, UriKind.Absolute));
             var resp = await _http.SendAsync(req, ct);
             resp.EnsureSuccessStatusCode();
             await using var stream = await resp.Content.ReadAsStreamAsync(ct);
-            var data = await JsonSerializer.DeserializeAsync<ApiResp<List<ShiftInfo>>>(stream, _json, ct);
-            return data ?? new ApiResp<List<ShiftInfo>> { success = false, message = "empty response", result = new List<ShiftInfo>() };
+            var data = await JsonSerializer.DeserializeAsync<ApiResp<List<FieldDict>>>(stream, _json, ct);
+
+            var shiftDict = data?.result?.FirstOrDefault(x =>
+                string.Equals(x.field, "teamCode", StringComparison.OrdinalIgnoreCase));
+
+            var shifts = (shiftDict?.dictItems ?? new List<DictItem>())
+                .Select(item => new ShiftInfo
+                {
+                    workshopsCode = item.dictItemValue,
+                    workshopsName = item.dictItemName
+                })
+                .ToList();
+
+            return new ApiResp<List<ShiftInfo>>
+            {
+                success = data?.success ?? false,
+                message = data?.message,
+                code = data?.code ?? 0,
+                result = shifts
+            };
         }
 
         public async Task<ApiResp<List<DevicesInfo>>> GetDeviceOptionsAsync(
