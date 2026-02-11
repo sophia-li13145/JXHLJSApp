@@ -246,9 +246,10 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
         try
         {
             var planQtyText = Detail?.scheQty?.ToString("G29") ?? "0";
+            var reportedQtyText = Detail?.taskReportedQty?.ToString("G29") ?? "0";
             var input = await Application.Current.MainPage.DisplayPromptAsync(
                 "完工确认",
-                $"计划数量：{planQtyText}\n报工数量：",
+                $"计划数量：{planQtyText}\n已报工数量：{reportedQtyText}\n报工数量：",
                 "确定",
                 "取消",
                 placeholder: "请输入报工数量",
