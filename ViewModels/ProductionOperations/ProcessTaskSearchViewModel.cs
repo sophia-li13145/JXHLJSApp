@@ -47,6 +47,8 @@ namespace JXHLJSApp.ViewModels
         public ProcessTaskSearchViewModel(IWorkOrderApi workapi)
         {
             _workapi = workapi;
+            StartDate = DateTime.Today.AddDays(-7);
+            EndDate = DateTime.Today;
             HeaderTitle = Preferences.Get("WorkShopName", Preferences.Get("WorkshopName", "生产管理系统"));
             if (string.IsNullOrWhiteSpace(HeaderTitle)) HeaderTitle = "生产管理系统";
             ApplyWorkshopLayout();

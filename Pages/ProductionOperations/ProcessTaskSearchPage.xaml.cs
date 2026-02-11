@@ -6,6 +6,7 @@ namespace JXHLJSApp.Pages;
 public partial class ProcessTaskSearchPage : ContentPage
 {
     private readonly ProcessTaskSearchViewModel _vm;
+    private bool _inited;
 
     /// <summary>执行 ProcessTaskSearchPage 初始化逻辑。</summary>
     public ProcessTaskSearchPage(ProcessTaskSearchViewModel vm)
@@ -15,11 +16,20 @@ public partial class ProcessTaskSearchPage : ContentPage
         _vm = vm;
     }
 
-    /// <summary>执行 OnAppearing 逻辑。</summary>
-    protected override void OnAppearing()
+    protected override async void OnAppearing()
     {
         base.OnAppearing();
-        OrderEntry.Focus();
+
+        if (_inited) return;
+        _inited = true;
+
+        if (BindingContext is ProcessTaskSearchViewModel vm)
+        {
+            // 如果是 AsyncRelayCommand / IAsyncRelayCommand
+            await vm.SearchAsync();
+            // 或者：await vm.SearchCommand.ExecuteAsync(null);
+            // 如果是普通 Command：vm.SearchCommand.Execute(null);
+        }
     }
 
     /// <summary>执行 OnDisappearing 逻辑。</summary>
