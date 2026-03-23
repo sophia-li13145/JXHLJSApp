@@ -346,6 +346,8 @@ public class WorkProcessTaskDetail
     public string? materialSpec { get; set; }
     public string? steelMill { get; set; }
     public decimal? taskReportedQty { get; set; }
+    public decimal? hasReportedQty { get; set; }
+    public decimal? unReportedQty { get; set; }
     public string? productionMachine { get; set; }
     public string? productionMachineName { get; set; }
     public string? workShop { get; set; }
