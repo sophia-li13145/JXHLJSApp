@@ -184,6 +184,12 @@
 
                         <Label Grid.Row="4" Grid.Column="2" Text="操作人：" />
                         <Label Grid.Row="4" Grid.Column="3" Text="{Binding CurrentUserName}" />
+
+                        <Label Grid.Row="5" Grid.Column="0" Text="生产数量：" />
+                        <Label Grid.Row="5" Grid.Column="1" Text="{Binding Detail.scheQty, StringFormat='{0:G29}'}" />
+
+                        <Label Grid.Row="5" Grid.Column="2" Text="未加工数：" />
+                        <Label Grid.Row="5" Grid.Column="3" Text="{Binding Detail.unReportedQty, StringFormat='{0:G29}'}" />
                     </Grid>
                 </Frame>
 
