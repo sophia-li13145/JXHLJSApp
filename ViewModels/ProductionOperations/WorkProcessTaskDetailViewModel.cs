@@ -249,7 +249,7 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
             var reportedQtyText = Detail?.taskReportedQty?.ToString("G29") ?? "0";
             var input = await Application.Current.MainPage.DisplayPromptAsync(
                 "完工确认",
-                $"计划数量：{planQtyText}\n已报工数量：{reportedQtyText}\n报工数量：",
+                $"计划数量：{planQtyText}\n已报工数量：{reportedQtyText}\n",
                 "确定",
                 "取消",
                 placeholder: "请输入报工数量",
@@ -263,12 +263,13 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
                 await Shell.Current.DisplayAlert("提示", "报工数量格式不正确。", "确定");
                 return;
             }
-
+            var taskReportedQtyInt = (int)Math.Round(Detail?.taskReportedQty ?? 0m); // 或 Floor/Ceiling
+            var total = reportQty + taskReportedQtyInt;
             var updateResp = await _api.UpdateWorkProcessTaskAsync(
                 id: Detail.id,
                 productionMachine: null,
                 productionMachineName: null,
-                taskReportedQty: reportQty,
+                taskReportedQty: total,
                 teamCode: null,
                 teamName: null,
                 workHours: null,
@@ -282,7 +283,7 @@ public partial class WorkProcessTaskDetailViewModel : ObservableObject, IQueryAt
                 return;
             }
 
-            var resp = await _api.CompleteWorkAsync(Detail.processCode, Detail.workOrderNo, null, reportQty);
+            var resp = await _api.CompleteWorkAsync(Detail.processCode, Detail.workOrderNo, null, total);
             if (resp.success && resp.result)
             {
                 if (Detail != null)
