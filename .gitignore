@@ -20,7 +20,6 @@ obj/
 # Android
 *.apk
 *.aab
-platforms/android/
 **/bin/Debug/
 **/bin/Release/
 
@@ -28,8 +27,6 @@ platforms/android/
 *.app
 *.ipa
 *.dSYM
-platforms/ios/
-platforms/maccatalyst/
 
 # Windows
 *.appx

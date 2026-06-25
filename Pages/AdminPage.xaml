@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.AdminPage"
+             Title="管理员设置"
+             BackgroundColor="#F3F6FA">
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="16">
+            <Label Text="管理员设置"
+                   TextColor="#0D2D59"
+                   FontSize="22"
+                   FontAttributes="Bold" />
+            <Label Text="维护服务器地址与服务路径，保存后返回登录页重新登录。"
+                   TextColor="#5D718D"
+                   FontSize="13" />
+
+            <Border BackgroundColor="White" Stroke="#DDE5F0" StrokeThickness="1" Padding="16">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="14" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="协议" FontAttributes="Bold" TextColor="#0D2D59" />
+                    <Entry Text="{Binding Scheme}" Placeholder="http 或 https" />
+
+                    <Label Text="服务器 IP / 域名（可带端口）" FontAttributes="Bold" TextColor="#0D2D59" />
+                    <Entry Text="{Binding Host}" Placeholder="例如：114.250.20.230:9128" />
+
+                    <Label Text="当前服务名" FontAttributes="Bold" TextColor="#0D2D59" />
+                    <Entry Text="{Binding ServiceName}" Placeholder="例如：jxhljszpService" />
+
+                    <Label Text="服务路径" FontAttributes="Bold" TextColor="#0D2D59" />
+                    <Entry Text="{Binding ServicePath}" Placeholder="例如：/jxhljszpService" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="保存配置"
+                    Command="{Binding SaveCommand}"
+                    BackgroundColor="#214779"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    HeightRequest="48"
+                    CornerRadius="8" />
+            <Button Text="返回登录"
+                    BackgroundColor="Transparent"
+                    TextColor="#214779"
+                    BorderColor="#214779"
+                    BorderWidth="1"
+                    HeightRequest="44"
+                    CornerRadius="8"
+                    Clicked="OnBackClicked" />
+
+            <Label Text="{Binding Message}"
+                   FontSize="13"
+                   TextColor="{Binding MessageColor}"
+                   IsVisible="{Binding IsMessageVisible}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

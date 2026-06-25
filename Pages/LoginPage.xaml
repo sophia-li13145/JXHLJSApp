@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="JXHLJSApp.Pages.LoginPage"
@@ -169,5 +169,30 @@
                        IsVisible="False" />
             </VerticalStackLayout>
         </ScrollView>
+
+        <Grid Grid.Row="1"
+              Margin="18,0,18,10"
+              VerticalOptions="End"
+              ColumnDefinitions="Auto,*,Auto">
+            <Label Text="日志"
+                   TextColor="#5D718D"
+                   FontSize="12"
+                   TextDecorations="Underline"
+                   VerticalOptions="End">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnLogTapped" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label Grid.Column="2"
+                   Text="管理员界面"
+                   TextColor="#5D718D"
+                   FontSize="12"
+                   TextDecorations="Underline"
+                   VerticalOptions="End">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnAdminTapped" />
+                </Label.GestureRecognizers>
+            </Label>
+        </Grid>
     </Grid>
 </ContentPage>

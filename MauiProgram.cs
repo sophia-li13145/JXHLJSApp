@@ -1,7 +1,7 @@
-using CommunityToolkit.Maui;
+﻿using CommunityToolkit.Maui;
 using JXHLJSApp.Pages;
 using JXHLJSApp.Services;
-using JXHLJSApp.Tools;
+using JXHLJSApp.ViewModels;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using ZXing.Net.Maui;
@@ -33,62 +33,17 @@ namespace JXHLJSApp
             InitSerilog(builder);
             builder.Services.AddSingleton<AppShell>();
             builder.Services.AddTransient<LoginPage>();
+            builder.Services.AddTransient<AdminPage>();
+            builder.Services.AddTransient<LogPage>();
+            builder.Services.AddTransient<AdminViewModel>();
+            builder.Services.AddTransient<LogsViewModel>();
+            builder.Services.AddSingleton<LogService>();
 
             // Core framework and configuration services.
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();
-            builder.Services.AddSingleton<LogService>();
-            builder.Services.AddSingleton<IDialogService, DialogService>();
-            builder.Services.AddSingleton<AuthState>();
-            builder.Services.AddTransient<AuthHeaderHandler>();
-            builder.Services.AddTransient<TokenExpiredHandler>();
-            builder.Services.AddSingleton<ScanService>();
-
-            builder.Services.AddHttpClient<IWorkOrderApi, WorkOrderApi>(ConfigureBaseAddress)
-                .AddHttpMessageHandler<AuthHeaderHandler>()
-                .AddHttpMessageHandler<TokenExpiredHandler>();
-
-            builder.Services.AddHttpClient<IInboundMaterialService, InboundMaterialService>(ConfigureBaseAddress)
-                .AddHttpMessageHandler<AuthHeaderHandler>()
-                .AddHttpMessageHandler<TokenExpiredHandler>();
-
-            builder.Services.AddHttpClient<IIncomingStockService, IncomingStockService>(ConfigureBaseAddress)
-                .AddHttpMessageHandler<AuthHeaderHandler>()
-                .AddHttpMessageHandler<TokenExpiredHandler>();
-
-            builder.Services.AddHttpClient<IOutboundMaterialService, OutboundMaterialService>(ConfigureBaseAddress)
-                .AddHttpMessageHandler<AuthHeaderHandler>()
-                .AddHttpMessageHandler<TokenExpiredHandler>();
-
-            builder.Services.AddHttpClient<IMoldApi, MoldApi>(ConfigureBaseAddress)
-                .AddHttpMessageHandler<AuthHeaderHandler>()
-                .AddHttpMessageHandler<TokenExpiredHandler>();
-
-            builder.Services.AddHttpClient<IWarehouseService, WarehouseService>(ConfigureBaseAddress)
-                .AddHttpMessageHandler<AuthHeaderHandler>()
-                .AddHttpMessageHandler<TokenExpiredHandler>();
-
-            builder.Services.AddHttpClient<IQualityApi, QualityApi>(ConfigureBaseAddress)
-                .AddHttpMessageHandler<AuthHeaderHandler>()
-                .AddHttpMessageHandler<TokenExpiredHandler>();
-
-            builder.Services.AddHttpClient<IAuthApi, AuthApi>(ConfigureBaseAddress)
-                .AddHttpMessageHandler<AuthHeaderHandler>()
-                .AddHttpMessageHandler<TokenExpiredHandler>();
-
-            builder.Services.AddHttpClient<IEquipmentApi, EquipmentApi>(ConfigureBaseAddress)
-                .AddHttpMessageHandler<AuthHeaderHandler>()
-                .AddHttpMessageHandler<TokenExpiredHandler>();
-
-            builder.Services.AddHttpClient<IAttachmentApi, AttachmentApi>(ConfigureBaseAddress)
-                .AddHttpMessageHandler<AuthHeaderHandler>()
-                .AddHttpMessageHandler<TokenExpiredHandler>();
-
-            builder.Services.AddHttpClient<IEnergyApi, EnergyApi>(ConfigureBaseAddress)
-                .AddHttpMessageHandler<AuthHeaderHandler>()
-                .AddHttpMessageHandler<TokenExpiredHandler>();
+            builder.Services.AddHttpClient<IAuthApi, AuthApi>(ConfigureBaseAddress);
 
             var app = builder.Build();
-            App.Services = app.Services;
             //CrashTrap.Init(); //Debug
             return app;
         }
