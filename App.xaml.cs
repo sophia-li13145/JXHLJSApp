@@ -1,4 +1,4 @@
-using Microsoft.Maui.Controls;
+﻿using Microsoft.Maui.Controls;
 using Microsoft.Maui.Storage;
 using Serilog;
 using System.IO;
@@ -9,8 +9,6 @@ public partial class App : Application
 {
     private readonly IConfigLoader _configLoader;
     private readonly AppShell _shell;
-
-    public static IServiceProvider? Services { get; set; }
 
     public App(IConfigLoader configLoader, AppShell shell)
     {
