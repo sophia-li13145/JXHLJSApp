@@ -1,4 +1,4 @@
-using CommunityToolkit.Maui;
+﻿using CommunityToolkit.Maui;
 using JXHLJSApp.Pages;
 using JXHLJSApp.Services;
 using Microsoft.Extensions.Logging;
@@ -38,7 +38,6 @@ namespace JXHLJSApp
             builder.Services.AddHttpClient<IAuthApi, AuthApi>(ConfigureBaseAddress);
 
             var app = builder.Build();
-            App.Services = app.Services;
             //CrashTrap.Init(); //Debug
             return app;
         }
