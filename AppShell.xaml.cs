@@ -1,4 +1,4 @@
-﻿using JXHLJSApp.Pages;
+using JXHLJSApp.Pages;
 
 namespace JXHLJSApp;
 
@@ -6,6 +6,7 @@ public partial class AppShell : Shell
 {
     private readonly IServiceProvider _services;
     public const string RouteLogin = "//Login";
+    public const string RouteHome = "//Home";
     public const string RouteAdmin = "Admin";
     public const string RouteLog = "Log";
 
@@ -20,8 +21,16 @@ public partial class AppShell : Shell
 
     public void ApplyAuth(bool authed)
     {
-        // The app currently only restores the login entry point; feature pages can be added later.
-        MainThread.BeginInvokeOnMainThread(async () => await GoToAsync(RouteLogin));
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            if (authed)
+            {
+                BuildHomeShell();
+                return;
+            }
+
+            BuildLoginShell();
+        });
     }
 
     private void BuildLoginShell()
@@ -33,6 +42,20 @@ public partial class AppShell : Shell
         {
             Route = "Login",
             ContentTemplate = new DataTemplate(() => _services.GetRequiredService<LoginPage>())
+        });
+
+        Items.Add(tabBar);
+    }
+
+    private void BuildHomeShell()
+    {
+        Items.Clear();
+
+        var tabBar = new TabBar();
+        tabBar.Items.Add(new ShellContent
+        {
+            Route = "Home",
+            ContentTemplate = new DataTemplate(() => _services.GetRequiredService<RoleHomePage>())
         });
 
         Items.Add(tabBar);

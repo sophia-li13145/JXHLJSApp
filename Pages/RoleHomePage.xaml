@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.RoleHomePage"
+             BackgroundColor="#F3F6FA"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="20,24,20,12" HeightRequest="68">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="0,0,18,18" />
+            </Border.StrokeShape>
+            <Grid ColumnDefinitions="*,Auto">
+                <Label x:Name="TitleLabel" TextColor="White" FontSize="20" FontAttributes="Bold" VerticalOptions="Center" />
+                <Button Grid.Column="1" Text="退出登录" BackgroundColor="#5C7DB8" TextColor="White" FontSize="13" Padding="12,5" CornerRadius="12" Clicked="OnLogoutClicked" />
+            </Grid>
+        </Border>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout x:Name="ContentStack" Padding="20,16,20,28" Spacing="16" />
+        </ScrollView>
+    </Grid>
+</ContentPage>
