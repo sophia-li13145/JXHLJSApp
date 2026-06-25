@@ -42,6 +42,7 @@
       "updateQuantity": "/pda/wmsMaterialOutstock/updateOutQuantity"
     },
     "workOrder": {
+      "list": "/pda/pmsWorkOrder/getWorkOrderList",
       "page": "/pda/pmsWorkOrder/pageWorkOrders",
       "workflow": "/pda/pmsWorkOrder/getWorkOrderWorkflow",
       "processTasks": "/pda/pmsWorkOrder/pageWorkProcessTasks",

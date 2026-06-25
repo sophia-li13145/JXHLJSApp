@@ -136,7 +136,7 @@ public partial class RoleHomePage : ContentPage
 
     private static View CreateSquareModule(HomeModule module)
     {
-        return new Border
+        var card = new Border
         {
             BackgroundColor = Colors.White,
             StrokeThickness = 0,
@@ -156,6 +156,9 @@ public partial class RoleHomePage : ContentPage
                 }
             }
         };
+
+        AttachNavigation(card, module);
+        return card;
     }
 
     private static View CreateWideModule(HomeModule module)
@@ -173,7 +176,7 @@ public partial class RoleHomePage : ContentPage
             }
         }, 1);
 
-        return new Border
+        var card = new Border
         {
             BackgroundColor = module.Highlight ? Color.FromArgb("#EAF4FF") : Colors.White,
             Stroke = module.Highlight ? Color.FromArgb("#BBD8FF") : Colors.Transparent,
@@ -184,6 +187,18 @@ public partial class RoleHomePage : ContentPage
             Shadow = module.Highlight ? null : new Shadow { Brush = Color.FromArgb("#18000000"), Offset = new Point(0, 3), Radius = 8 },
             Content = grid
         };
+
+        AttachNavigation(card, module);
+        return card;
+    }
+
+    private static void AttachNavigation(View view, HomeModule module)
+    {
+        if (module.Route is null) return;
+
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += async (_, _) => await Shell.Current.GoToAsync(module.Route);
+        view.GestureRecognizers.Add(tap);
     }
 
     private static View CreateIconBadge(HomeModule module, double size = 58, double iconSize = 28)
@@ -250,7 +265,7 @@ internal static class UserSessionStore
 
 internal enum RoleHomeLayout { Grid, List }
 
-internal sealed record HomeModule(string Title, string IconGlyph, Color IconBackground, string Description = "", bool Highlight = false);
+internal sealed record HomeModule(string Title, string IconGlyph, Color IconBackground, string Description = "", bool Highlight = false, string? Route = null);
 
 internal sealed record RoleHomeDefinition(
     string RoleCode,
@@ -288,7 +303,7 @@ internal sealed record RoleHomeDefinition(
             _ => new("production", "生产作业首页", "#14295D", "👷", RoleHomeLayout.Grid, new[]
             {
                 new HomeModule("扫码开工", "📷", Color.FromArgb("#55A8BB")),
-                new HomeModule("任务列表", "📋", Color.FromArgb("#55ACE3")),
+                new HomeModule("任务列表", "📋", Color.FromArgb("#55ACE3"), Route: AppShell.RouteWorkOrderTasks),
                 new HomeModule("异常上报", "⚠️", Color.FromArgb("#F27655")),
                 new HomeModule("返工上报", "↩️", Color.FromArgb("#DEBC79")),
                 new HomeModule("生产统计", "📈", Color.FromArgb("#9B632A"))
