@@ -1,4 +1,6 @@
 using JXHLJSApp.Models;
+using Microsoft.Maui.Controls.Shapes;
+using Microsoft.Maui.Layouts;
 
 namespace JXHLJSApp.Pages;
 
