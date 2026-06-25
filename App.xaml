@@ -27,9 +27,6 @@
                     </Setter.Value>
                 </Setter>
             </Style>
-            <converters:NullToBoolConverter x:Key="NullToBoolConverter" xmlns:converters="clr-namespace:JXHLJSApp.Converters" />
-            <converters:IntConverter x:Key="IntConverter" xmlns:converters="clr-namespace:JXHLJSApp.Converters" />
-            <converters:BoolToExpandIconConverter x:Key="BoolToExpandIcon" Expanded="▾" Collapsed="▸"  xmlns:converters="clr-namespace:JXHLJSApp.Converters"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

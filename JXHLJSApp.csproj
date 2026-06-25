@@ -28,12 +28,13 @@
 		<PublishTrimmed>false</PublishTrimmed>
 		<AndroidLinkMode>None</AndroidLinkMode>
 		<AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
-		<AndroidPackageFormat>aab</AndroidPackageFormat>
+		<!-- Use APKs in Debug so Visual Studio can deploy directly to emulators/devices. -->
+		<AndroidPackageFormat>apk</AndroidPackageFormat>
 		<AndroidUseApkSigner>true</AndroidUseApkSigner>
 		<AndroidCreatePackagePerAbi>false</AndroidCreatePackagePerAbi>
 		<AndroidDebugNetworkType>adb</AndroidDebugNetworkType>
-		<DebuggerAttached>true</DebuggerAttached>
-		<RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
+		<!-- Include common emulator/device RIDs; Pixel API emulators are typically x64. -->
+		<RuntimeIdentifiers>android-arm64;android-x64;android-x86</RuntimeIdentifiers>
 		<AndroidTargetSdkVersion>34</AndroidTargetSdkVersion>
 	</PropertyGroup>
 	<PropertyGroup>
@@ -46,7 +47,6 @@
 		<MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
 		<MauiFont Include="Resources\Fonts\*" />
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
-		<AndroidResource Remove="Platforms\Android\Resources\xml\network_security_config.xml" />
 		<MauiAsset Include="Resources\Raw\appconfig.json" LogicalName="appconfig.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</MauiAsset>
