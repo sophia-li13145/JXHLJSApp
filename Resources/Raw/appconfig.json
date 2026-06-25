@@ -1,12 +1,13 @@
 {
-  "schemaVersion": 8,
+  "schemaVersion": 9,
   "server": {
     "scheme": "http",
     "ipAddress": "114.250.20.230:9128"
   },
   "services": {
     "normalService": "/normalService",
-    "current": "normalService"
+    "current": "jxhljszpService",
+    "jxhljszpService": "/jxhljszpService"
   },
   "apiEndpoints": {
     "login": "/pda/auth/login",
@@ -51,17 +52,13 @@
       "shift": "/pda/pmsWorkOrder/getWorkProcessTaskDictList",
       "device": "/pda/pmsWorkOrder/getPmsEqptPointListByLineProcess",
       "updateWorkProcess": "/pda/pmsWorkOrder/editWorkProcessTask",
-
       "startwork": "/pda/pmsWorkOrder/workProcessTaskWorkStart",
       "completework": "/pda/pmsWorkOrder/workProcessTaskWorkChangeComplete",
       "pausework": "/pda/pmsWorkOrder/workProcessTaskWorkChange",
-
       "addMaterial": "/pda/pmsWorkOrder/addWorkProcessTaskMaterialInput",
       "addOutput": "/pda/pmsWorkOrder/addWorkProcessTaskMaterialOutput",
-
       "autMaterialList": "/pda/pmsWorkOrder/pageWorkProcessTaskMaterialInputs",
       "autOutputList": "/pda/pmsWorkOrder/pageWorkProcessTaskMaterialOutputs",
-
       "deleteWorkProcessTaskMaterialInput": "/pda/pmsWorkOrder/deleteWorkProcessTaskMaterialInput",
       "deleteWorkProcessTaskOutput": "/pda/pmsWorkOrder/deleteWorkProcessTaskMaterialOutput",
       "editWorkProcessTaskMaterialInput": "/pda/pmsWorkOrder/editWorkProcessTaskMaterialInput"
@@ -78,5 +75,7 @@
       "queryByCode": "/pda/wmsWarehouse/queryLocationByWarehouseCode"
     }
   },
-  "logging": { "level": "Information" }
+  "logging": {
+    "level": "Information"
+  }
 }
