@@ -1,43 +1,94 @@
-using JXHLJSApp.ViewModels;
+using JXHLJSApp.Services;
 
 namespace JXHLJSApp.Pages;
 
 public partial class LoginPage : ContentPage
 {
-    private readonly LoginViewModel _vm;
+    private readonly IAuthApi _authApi;
+    private bool _isBusy;
 
-    /// <summary>执行 LoginPage 初始化逻辑。</summary>
-    public LoginPage(LoginViewModel vm)
+    public LoginPage(IAuthApi authApi)
     {
         InitializeComponent();
-        BindingContext = _vm = vm;
-
-        // 页面出现时注册事件
-        this.Appearing += OnPageAppearing;
+        _authApi = authApi;
     }
 
-    /// <summary>执行 OnPageAppearing 逻辑。</summary>
-    private void OnPageAppearing(object? sender, EventArgs e)
+    protected override void OnAppearing()
     {
-        // 页面出现时默认聚焦用户名
-        if (this.FindByName<Entry>("UserNameEntry") is Entry entry)
+        base.OnAppearing();
+        UsernameEntry.Focus();
+    }
+
+    private async void OnPasswordCompleted(object sender, EventArgs e)
+    {
+        await LoginAsync();
+    }
+
+    private async void OnLoginClicked(object sender, EventArgs e)
+    {
+        await LoginAsync();
+    }
+
+    private async Task LoginAsync()
+    {
+        if (_isBusy)
         {
-            entry.Focus();
+            return;
+        }
+
+        var username = UsernameEntry.Text?.Trim() ?? string.Empty;
+        var password = PasswordEntry.Text ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            ShowMessage("请输入您的账号");
+            UsernameEntry.Focus();
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            ShowMessage("请输入密码");
+            PasswordEntry.Focus();
+            return;
+        }
+
+        try
+        {
+            SetBusy(true);
+            var result = await _authApi.LoginAsync(username, password);
+
+            if (!result.Success || string.IsNullOrWhiteSpace(result.Token))
+            {
+                ShowMessage(string.IsNullOrWhiteSpace(result.Message) ? "登录失败，请检查账号或密码" : result.Message);
+                return;
+            }
+
+            await TokenStorage.SaveAsync(result.Token);
+            ShowMessage("登录成功", isError: false);
+            App.SwitchToLoggedInShell();
+        }
+        catch (Exception ex)
+        {
+            ShowMessage($"登录失败：{ex.Message}");
+        }
+        finally
+        {
+            SetBusy(false);
         }
     }
 
-    // 不使用 XAML Command，改用 C# 绑定
-    /// <summary>执行 OnLoginClicked 逻辑。</summary>
-    private async void OnLoginClicked(object sender, EventArgs e)
+    private void SetBusy(bool isBusy)
     {
-        if (_vm.LoginCommand.CanExecute(null))
-            _vm.LoginCommand.Execute(null);
+        _isBusy = isBusy;
+        LoginButton.IsEnabled = !isBusy;
+        LoginButton.Text = isBusy ? "登 录 中..." : "登 录 系 统";
     }
 
-    /// <summary>执行 OnClearHistoryTapped 逻辑。</summary>
-    private void OnClearHistoryTapped(object sender, TappedEventArgs e)
+    private void ShowMessage(string message, bool isError = true)
     {
-        if (_vm.ClearHistoryCommand.CanExecute(null))
-            _vm.ClearHistoryCommand.Execute(null);
+        MessageLabel.Text = message;
+        MessageLabel.TextColor = isError ? Color.FromArgb("#C0392B") : Color.FromArgb("#1E7E34");
+        MessageLabel.IsVisible = true;
     }
 }

@@ -1,151 +1,36 @@
-﻿using JXHLJSApp.Pages;
+using JXHLJSApp.Pages;
 
 namespace JXHLJSApp;
 
 public partial class AppShell : Shell
 {
-    private readonly IServiceProvider _sp;
-    public const string RouteHome = "//Home";
+    private readonly IServiceProvider _services;
     public const string RouteLogin = "//Login";
-    public AppShell(IServiceProvider sp)
+
+    public AppShell(IServiceProvider services)
     {
         InitializeComponent();
-        _sp = sp;
-        RegisterRoutes();
-
-        // 构造时先放一个“未登录”的壳；真正状态由 App 调用 ApplyAuth 设置
-        BuildTabs(authed: false);
+        _services = services;
+        BuildLoginShell();
     }
-    private void RegisterRoutes()
+
+    public void ApplyAuth(bool authed)
     {
-        Routing.RegisterRoute(nameof(Pages.InboundMaterialSearchPage), typeof(Pages.InboundMaterialSearchPage));
-        Routing.RegisterRoute(nameof(Pages.InboundMaterialPage), typeof(Pages.InboundMaterialPage));
-        Routing.RegisterRoute(nameof(Pages.IncomingStockPage), typeof(Pages.IncomingStockPage));
-        Routing.RegisterRoute(nameof(Pages.InboundProductionSearchPage), typeof(Pages.InboundProductionSearchPage));
-        Routing.RegisterRoute(nameof(Pages.InboundProductionPage), typeof(Pages.InboundProductionPage));
-        Routing.RegisterRoute(nameof(Pages.OutboundMaterialSearchPage), typeof(Pages.OutboundMaterialSearchPage));
-        Routing.RegisterRoute(nameof(Pages.OutboundMaterialPage), typeof(Pages.OutboundMaterialPage));
-        Routing.RegisterRoute(nameof(Pages.OutboundFinishedPage), typeof(Pages.OutboundFinishedPage));
-        Routing.RegisterRoute(nameof(Pages.OutboundFinishedSearchPage), typeof(Pages.OutboundFinishedSearchPage));
-        Routing.RegisterRoute(nameof(Pages.InboundMoldPage), typeof(Pages.InboundMoldPage));
-        Routing.RegisterRoute(nameof(Pages.OutboundMoldPage), typeof(Pages.OutboundMoldPage));
-        Routing.RegisterRoute(nameof(Pages.OutboundMoldSearchPage), typeof(Pages.OutboundMoldSearchPage));
-        Routing.RegisterRoute(nameof(Pages.WorkOrderSearchPage), typeof(Pages.WorkOrderSearchPage));
-        Routing.RegisterRoute(nameof(Pages.MoldOutboundExecutePage), typeof(Pages.MoldOutboundExecutePage));
-        Routing.RegisterRoute(nameof(Pages.ProcessTaskSearchPage), typeof(Pages.ProcessTaskSearchPage));
-        Routing.RegisterRoute(nameof(Pages.WorkProcessTaskDetailPage), typeof(Pages.WorkProcessTaskDetailPage));
-        Routing.RegisterRoute(nameof(Pages.QualitySearchPage), typeof(Pages.QualitySearchPage));
-        Routing.RegisterRoute(nameof(Pages.QualityDetailPage), typeof(Pages.QualityDetailPage));
-        Routing.RegisterRoute(nameof(Pages.IncomingQualitySearchPage), typeof(Pages.IncomingQualitySearchPage));
-        Routing.RegisterRoute(nameof(Pages.IncomingQualityDetailPage), typeof(Pages.IncomingQualityDetailPage));
-        Routing.RegisterRoute(nameof(Pages.ProcessQualitySearchPage), typeof(Pages.ProcessQualitySearchPage));
-        Routing.RegisterRoute(nameof(Pages.ProcessQualityDetailPage), typeof(Pages.ProcessQualityDetailPage));
-        Routing.RegisterRoute(nameof(Pages.FinishedQualitySearchPage), typeof(Pages.FinishedQualitySearchPage));
-        Routing.RegisterRoute(nameof(Pages.FinishedQualityDetailPage), typeof(Pages.FinishedQualityDetailPage));
-        Routing.RegisterRoute(nameof(Pages.OutgoingQualitySearchPage), typeof(Pages.OutgoingQualitySearchPage));
-        Routing.RegisterRoute(nameof(Pages.OutgoingQualityDetailPage), typeof(Pages.OutgoingQualityDetailPage));
-        Routing.RegisterRoute(nameof(Pages.OtherQualitySearchPage), typeof(Pages.OtherQualitySearchPage));
-        Routing.RegisterRoute(nameof(Pages.OtherQualityDetailPage), typeof(Pages.OtherQualityDetailPage));
-        Routing.RegisterRoute(nameof(Pages.InspectionSearchPage), typeof(Pages.InspectionSearchPage));
-        Routing.RegisterRoute(nameof(Pages.InspectionDetailPage), typeof(Pages.InspectionDetailPage));
-        Routing.RegisterRoute(nameof(Pages.InspectionRunSearchPage), typeof(Pages.InspectionRunSearchPage));
-        Routing.RegisterRoute(nameof(Pages.InspectionRunDetailPage), typeof(Pages.InspectionRunDetailPage));
-        Routing.RegisterRoute(nameof(Pages.MaintenanceSearchPage), typeof(Pages.MaintenanceSearchPage));
-        Routing.RegisterRoute(nameof(Pages.MaintenanceDetailPage), typeof(Pages.MaintenanceDetailPage));
-        Routing.RegisterRoute(nameof(Pages.MaintenanceRunSearchPage), typeof(Pages.MaintenanceRunSearchPage));
-        Routing.RegisterRoute(nameof(Pages.MaintenanceRunDetailPage), typeof(Pages.MaintenanceRunDetailPage));
-        Routing.RegisterRoute(nameof(Pages.RepairSearchPage), typeof(Pages.RepairSearchPage));
-        Routing.RegisterRoute(nameof(Pages.RepairDetailPage), typeof(Pages.RepairDetailPage));
-        Routing.RegisterRoute(nameof(Pages.RepairRunSearchPage), typeof(Pages.RepairRunSearchPage));
-        Routing.RegisterRoute(nameof(Pages.RepairRunDetailPage), typeof(Pages.RepairRunDetailPage));
-        Routing.RegisterRoute(nameof(Pages.ManualReadingPage),typeof(Pages.ManualReadingPage));
-        Routing.RegisterRoute(nameof(Pages.ExceptionSubmissionPage), typeof(Pages.ExceptionSubmissionPage));
-        Routing.RegisterRoute(nameof(Pages.ExceptionSubmissionSearchPage), typeof(Pages.ExceptionSubmissionSearchPage));
-        Routing.RegisterRoute(nameof(Pages.EditExceptionSubmissionPage), typeof(Pages.EditExceptionSubmissionPage));
-        Routing.RegisterRoute(nameof(Pages.InventorySearchPage), typeof(Pages.InventorySearchPage));
-        Routing.RegisterRoute(nameof(FlexibleStockCheckPage), typeof(FlexibleStockCheckPage));
-        Routing.RegisterRoute(nameof(StockCheckSearchPage), typeof(StockCheckSearchPage));
-
+        // The app currently only restores the login entry point; feature pages can be added later.
+        MainThread.BeginInvokeOnMainThread(async () => await GoToAsync(RouteLogin));
     }
 
-    /// <summary>根据是否登录重建 TabBar 并跳转到对应根。</summary>
-    public void ApplyAuth(bool authed) =>
-        MainThread.BeginInvokeOnMainThread(async () => await ApplyAuthAsync(authed));
-
-    public async Task ApplyAuthAsync(bool authed)
-    {
-        BuildTabs(authed);  // 重建 Items
-        var target = authed ? RouteHome : RouteLogin;
-        await GoToAsync(target);
-    }
-
-    private void BuildTabs(bool authed)
+    private void BuildLoginShell()
     {
         Items.Clear();
 
-        var bar = new TabBar();
-
-        // 公共：日志
-        bar.Items.Add(new Tab
+        var tabBar = new TabBar();
+        tabBar.Items.Add(new ShellContent
         {
-            Title = "日志",
-            Items =
-            {
-                new ShellContent
-                {
-                    Route = "Logs",
-                    ContentTemplate = new DataTemplate(() => _sp.GetRequiredService<Pages.LogsPage>())
-                }
-            }
+            Route = "Login",
+            ContentTemplate = new DataTemplate(() => _services.GetRequiredService<LoginPage>())
         });
 
-        // 公共：管理员
-        bar.Items.Add(new Tab
-        {
-            Title = "管理员",
-            Items =
-            {
-                new ShellContent
-                {
-                    Route = "Admin",
-                    ContentTemplate = new DataTemplate(() => _sp.GetRequiredService<Pages.AdminPage>())
-                }
-            }
-        });
-
-        if (authed)
-        {
-            // 已登录：主页放在最前，并把根路由命名为 Home
-            bar.Items.Insert(0, new Tab
-            {
-                Title = "主页",
-                Items =
-                {
-                    new ShellContent
-                    {
-                        Route = "Home",    // 对应 RouteHome = "//Home"
-                        ContentTemplate = new DataTemplate(() => _sp.GetRequiredService<Pages.HomePage>())
-                    }
-                }
-            });
-        }
-        else
-        {
-            // 未登录：登录页在最前，并把根路由命名为 Login
-            bar.Items.Insert(0, new Tab
-            {
-                Title = "登录",
-                Items =
-                {
-                    new ShellContent
-                    {
-                        Route = "Login",   // 对应 RouteLogin = "//Login"
-                        ContentTemplate = new DataTemplate(() => _sp.GetRequiredService<Pages.LoginPage>())
-                    }
-                }
-            });
-        }
-
-        Items.Add(bar);
+        Items.Add(tabBar);
     }
 }
