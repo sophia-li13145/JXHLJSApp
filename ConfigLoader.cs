@@ -21,6 +21,11 @@ public interface IConfigLoader
 
 public class ConfigLoader : IConfigLoader
 {
+    public ConfigLoader()
+    {
+        ConfigLoaderStatic.EnsureConfigExists();
+    }
+
     public Task EnsureLatestAsync() => ConfigLoaderStatic.EnsureConfigIsLatestAsync();
     public JsonNode Load() => ConfigLoaderStatic.Load();
     public void Save(JsonNode node) => ConfigLoaderStatic.Save(node);
@@ -54,16 +59,18 @@ public static class ConfigLoaderStatic
 
         // 读包内
         JsonNode pkgNode;
-        using (var s = await FileSystem.OpenAppPackageFileAsync(FileName))
+        using (var s = await FileSystem.OpenAppPackageFileAsync(FileName).ConfigureAwait(false))
         using (var reader = new StreamReader(s))
         {
-            pkgNode = JsonNode.Parse(await reader.ReadToEndAsync())!;
+            pkgNode = JsonNode.Parse(await reader.ReadToEndAsync().ConfigureAwait(false))!;
         }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(appDataPath)!);
 
         // 本地不存在 → 直接落地
         if (!File.Exists(appDataPath))
         {
-            await File.WriteAllTextAsync(appDataPath, pkgNode.ToJsonString(JsonOpts));
+            await File.WriteAllTextAsync(appDataPath, pkgNode.ToJsonString(JsonOpts)).ConfigureAwait(false);
             return;
         }
 
@@ -80,18 +87,34 @@ public static class ConfigLoaderStatic
         // 包内版本更高 → 直接覆盖（整文件替换）
         if (pkgVer > localVer)
         {
-            await File.WriteAllTextAsync(appDataPath, pkgNode.ToJsonString(JsonOpts));
+            await File.WriteAllTextAsync(appDataPath, pkgNode.ToJsonString(JsonOpts)).ConfigureAwait(false);
         }
         // 否则保持本地不动
     }
 
+    public static void EnsureConfigExists()
+    {
+        var appDataPath = Path.Combine(FileSystem.AppDataDirectory, FileName);
+        if (!File.Exists(appDataPath))
+        {
+            EnsureConfigIsLatestAsync().GetAwaiter().GetResult();
+        }
+    }
+
     /// <summary>读取生效配置（AppData）</summary>
-    public static JsonNode Load() =>
-        JsonNode.Parse(File.ReadAllText(Path.Combine(FileSystem.AppDataDirectory, FileName)))!;
+    public static JsonNode Load()
+    {
+        EnsureConfigExists();
+        return JsonNode.Parse(File.ReadAllText(Path.Combine(FileSystem.AppDataDirectory, FileName)))!;
+    }
 
     /// <summary>保存（如果你在设置页手动修改本地配置）</summary>
-    public static void Save(JsonNode node) =>
-        File.WriteAllText(Path.Combine(FileSystem.AppDataDirectory, FileName), node.ToJsonString(JsonOpts));
+    public static void Save(JsonNode node)
+    {
+        var appDataPath = Path.Combine(FileSystem.AppDataDirectory, FileName);
+        Directory.CreateDirectory(Path.GetDirectoryName(appDataPath)!);
+        File.WriteAllText(appDataPath, node.ToJsonString(JsonOpts));
+    }
 
     // ==================== 新增能力 ====================
 
