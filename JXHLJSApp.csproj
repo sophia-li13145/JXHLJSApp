@@ -46,7 +46,6 @@
 		<MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
 		<MauiFont Include="Resources\Fonts\*" />
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
-		<AndroidResource Remove="Platforms\Android\Resources\xml\network_security_config.xml" />
 		<MauiAsset Include="Resources\Raw\appconfig.json" LogicalName="appconfig.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</MauiAsset>
