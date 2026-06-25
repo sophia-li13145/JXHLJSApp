@@ -21,20 +21,11 @@
 		<SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
-		<AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
-		<AndroidFastDeploymentType>None</AndroidFastDeploymentType>
-		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 		<RunAOTCompilation>false</RunAOTCompilation>
 		<PublishTrimmed>false</PublishTrimmed>
-		<AndroidLinkMode>None</AndroidLinkMode>
 		<AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
-		<!-- Use APKs in Debug so Visual Studio can deploy directly to emulators/devices. -->
+		<!-- Debug uses APK so Visual Studio can deploy directly to the selected emulator/device. -->
 		<AndroidPackageFormat>apk</AndroidPackageFormat>
-		<AndroidUseApkSigner>true</AndroidUseApkSigner>
-		<AndroidCreatePackagePerAbi>false</AndroidCreatePackagePerAbi>
-		<AndroidDebugNetworkType>adb</AndroidDebugNetworkType>
-		<!-- Include common emulator/device RIDs; Pixel API emulators are typically x64. -->
-		<RuntimeIdentifiers>android-arm64;android-x64;android-x86</RuntimeIdentifiers>
 		<AndroidTargetSdkVersion>34</AndroidTargetSdkVersion>
 	</PropertyGroup>
 	<PropertyGroup>
