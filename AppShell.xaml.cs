@@ -1,4 +1,4 @@
-using JXHLJSApp.Pages;
+﻿using JXHLJSApp.Pages;
 
 namespace JXHLJSApp;
 
@@ -6,11 +6,15 @@ public partial class AppShell : Shell
 {
     private readonly IServiceProvider _services;
     public const string RouteLogin = "//Login";
+    public const string RouteAdmin = "Admin";
+    public const string RouteLog = "Log";
 
     public AppShell(IServiceProvider services)
     {
         InitializeComponent();
         _services = services;
+        Routing.RegisterRoute(RouteAdmin, typeof(AdminPage));
+        Routing.RegisterRoute(RouteLog, typeof(LogPage));
         BuildLoginShell();
     }
 

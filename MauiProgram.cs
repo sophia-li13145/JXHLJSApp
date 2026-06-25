@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Maui;
 using JXHLJSApp.Pages;
 using JXHLJSApp.Services;
+using JXHLJSApp.ViewModels;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using ZXing.Net.Maui;
@@ -32,6 +33,11 @@ namespace JXHLJSApp
             InitSerilog(builder);
             builder.Services.AddSingleton<AppShell>();
             builder.Services.AddTransient<LoginPage>();
+            builder.Services.AddTransient<AdminPage>();
+            builder.Services.AddTransient<LogPage>();
+            builder.Services.AddTransient<AdminViewModel>();
+            builder.Services.AddTransient<LogsViewModel>();
+            builder.Services.AddSingleton<LogService>();
 
             // Core framework and configuration services.
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();

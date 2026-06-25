@@ -1,4 +1,4 @@
-using JXHLJSApp.Services;
+﻿using JXHLJSApp.Services;
 
 namespace JXHLJSApp.Pages;
 
@@ -27,6 +27,16 @@ public partial class LoginPage : ContentPage
     private async void OnLoginClicked(object sender, EventArgs e)
     {
         await LoginAsync();
+    }
+
+    private async void OnAdminTapped(object sender, TappedEventArgs e)
+    {
+        await Shell.Current.GoToAsync(AppShell.RouteAdmin);
+    }
+
+    private async void OnLogTapped(object sender, TappedEventArgs e)
+    {
+        await Shell.Current.GoToAsync(AppShell.RouteLog);
     }
 
     private async Task LoginAsync()

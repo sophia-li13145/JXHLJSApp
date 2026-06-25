@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.LogPage"
+             Title="运行日志"
+             BackgroundColor="#F3F6FA">
+    <Grid RowDefinitions="Auto,*" Padding="16" RowSpacing="12">
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+            <Label Text="运行日志" TextColor="#0D2D59" FontSize="22" FontAttributes="Bold" />
+            <Button Grid.Column="1"
+                    Text="刷新"
+                    FontSize="12"
+                    HeightRequest="34"
+                    Padding="12,0"
+                    Command="{Binding RefreshCommand}" />
+            <Label Grid.Row="1"
+                   Grid.ColumnSpan="2"
+                   Text="{Binding LogPath}"
+                   TextColor="#5D718D"
+                   FontSize="12"
+                   LineBreakMode="TailTruncation" />
+        </Grid>
+
+        <Border Grid.Row="1" BackgroundColor="White" Stroke="#DDE5F0" StrokeThickness="1" Padding="12">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="12" />
+            </Border.StrokeShape>
+            <ScrollView>
+                <Label Text="{Binding LogContent}"
+                       TextColor="#1A2B3C"
+                       FontSize="12"
+                       LineBreakMode="WordWrap" />
+            </ScrollView>
+        </Border>
+    </Grid>
+</ContentPage>
