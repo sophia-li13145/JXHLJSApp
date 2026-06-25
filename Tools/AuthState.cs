@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
+using JXHLJSApp.Pages;
 using System.Threading;
 
 namespace JXHLJSApp.Tools
@@ -21,6 +22,7 @@ namespace JXHLJSApp.Tools
                 Preferences.Remove("WorkshopName");
                 Preferences.Remove("WorkshopScope");
                 Preferences.Set("RememberPassword", false);
+                UserSessionStore.Clear();
 
                 // 2)（可选）全局通知：用于各页面收起弹窗/停止轮询
                 WeakReferenceMessenger.Default.Send(new LoggedOutMessage(reason));

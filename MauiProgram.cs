@@ -35,6 +35,7 @@ namespace JXHLJSApp
             builder.Services.AddTransient<LoginPage>();
             builder.Services.AddTransient<AdminPage>();
             builder.Services.AddTransient<LogPage>();
+            builder.Services.AddTransient<RoleHomePage>();
             builder.Services.AddTransient<AdminViewModel>();
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();
