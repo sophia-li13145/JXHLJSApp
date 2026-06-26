@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Maui;
 using JXHLJSApp.Pages;
 using JXHLJSApp.Services;
+using JXHLJSApp.Services.WorkOrders;
 using JXHLJSApp.ViewModels;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -36,6 +37,8 @@ namespace JXHLJSApp
             builder.Services.AddTransient<AdminPage>();
             builder.Services.AddTransient<LogPage>();
             builder.Services.AddTransient<RoleHomePage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.WorkOrders.WorkOrderTaskListPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.WorkStartScanPage>();
             builder.Services.AddTransient<AdminViewModel>();
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();
@@ -43,6 +46,7 @@ namespace JXHLJSApp
             // Core framework and configuration services.
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();
             builder.Services.AddHttpClient<IAuthApi, AuthApi>(ConfigureBaseAddress);
+            builder.Services.AddHttpClient<IWorkOrderApi, WorkOrderApi>(ConfigureBaseAddress);
 
             var app = builder.Build();
             //CrashTrap.Init(); //Debug
