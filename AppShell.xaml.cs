@@ -1,5 +1,6 @@
 using JXHLJSApp.Pages;
 using JXHLJSApp.Pages.WorkOrders;
+using JXHLJSApp.Pages.WorkStart;
 
 namespace JXHLJSApp;
 
@@ -11,6 +12,7 @@ public partial class AppShell : Shell
     public const string RouteAdmin = "Admin";
     public const string RouteLog = "Log";
     public const string RouteWorkOrderTasks = "WorkOrderTasks";
+    public const string RouteWorkStartScan = "WorkStartScan";
 
     public AppShell(IServiceProvider services)
     {
@@ -19,6 +21,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteAdmin, typeof(AdminPage));
         Routing.RegisterRoute(RouteLog, typeof(LogPage));
         Routing.RegisterRoute(RouteWorkOrderTasks, typeof(WorkOrderTaskListPage));
+        Routing.RegisterRoute(RouteWorkStartScan, typeof(WorkStartScanPage));
         BuildLoginShell();
     }
 
