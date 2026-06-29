@@ -61,9 +61,9 @@ public sealed class WorkOrderApi : IWorkOrderApi
         using var resp = await _http.PostAsJsonAsync(url, new { devCode }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-        var data = await JsonSerializer.DeserializeAsync<ApiResp<bool>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
-        return data?.result == true;
+        return ReadFlexibleBooleanResult(data);
     }
 
     public async Task<List<WorkOrderTaskDto>> GetCurrentUserMachinesWorkOrdersAsync(CancellationToken ct = default)
@@ -83,11 +83,32 @@ public sealed class WorkOrderApi : IWorkOrderApi
         using var resp = await _http.PostAsJsonAsync(url, new { workOrderNo }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-        var data = await JsonSerializer.DeserializeAsync<ApiResp<bool>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
-        return data?.result == true;
+        return ReadFlexibleBooleanResult(data);
     }
 
+
+
+    private static bool ReadFlexibleBooleanResult(ApiResp<JsonElement?>? response)
+    {
+        if (response?.result is not { } result)
+        {
+            return response?.success == true;
+        }
+
+        return result.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Number => result.TryGetInt32(out var value) && value != 0,
+            JsonValueKind.String => bool.TryParse(result.GetString(), out var value)
+                ? value
+                : response?.success == true,
+            JsonValueKind.Null or JsonValueKind.Undefined => response?.success == true,
+            _ => response?.success == true
+        };
+    }
 
     private static void EnsureApiSuccess<T>(ApiResp<T>? response)
     {
