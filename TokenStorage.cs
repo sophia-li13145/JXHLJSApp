@@ -8,8 +8,19 @@ public static class TokenStorage
     public static async Task SaveAsync(string token)
     {
         var normalized = NormalizeToken(token);
-        await SecureStorage.SetAsync(Key, normalized);
-        Preferences.Set(Key, normalized); // 兜底：极端设备 SecureStorage 取不到时从这里拿
+
+        // 先写 Preferences 兜底缓存，避免部分安卓设备 SecureStorage 异常时 token 完全未保存。
+        Preferences.Set(Key, normalized);
+
+        try
+        {
+            await SecureStorage.SetAsync(Key, normalized);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TokenStorage] SecureStorage save error: {ex.Message}");
+        }
+
         System.Diagnostics.Debug.WriteLine($"[TokenStorage] Saved token len={normalized?.Length}");
     }
 
@@ -52,6 +63,7 @@ public static class TokenStorage
     {
         try { SecureStorage.Remove(Key); } catch { }
         Preferences.Remove(Key);
+        ApiClient.SetBearer(null);
         System.Diagnostics.Debug.WriteLine("[TokenStorage] Cleared");
         return Task.CompletedTask;
     }
