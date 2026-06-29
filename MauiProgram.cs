@@ -39,9 +39,11 @@ namespace JXHLJSApp
             builder.Services.AddTransient<RoleHomePage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkOrders.WorkOrderTaskListPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.WorkStartScanPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.WorkStartOrdersPage>();
             builder.Services.AddTransient<AdminViewModel>();
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();
+            builder.Services.AddSingleton<IScanService, ScanService>();
 
             // Core framework and configuration services.
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();

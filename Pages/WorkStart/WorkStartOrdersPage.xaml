@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.WorkStart.WorkStartOrdersPage"
+             BackgroundColor="#F4F6FA"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="20,18,20,14" HeightRequest="66">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,18,18" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Label Text="‹ 重新扫码" TextColor="White" FontSize="15" VerticalOptions="Center">
+                    <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnRescanTapped" /></Label.GestureRecognizers>
+                </Label>
+                <Label Grid.Column="1" Text="选择工单开工" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" />
+            </Grid>
+        </Border>
+
+        <RefreshView Grid.Row="1" x:Name="RefreshContainer" Refreshing="OnRefreshing">
+            <CollectionView x:Name="OrdersList" Margin="22,14,22,24" EmptyView="暂无可开工工单">
+                <CollectionView.Header>
+                    <Border BackgroundColor="#EAF4FF" Stroke="#BBD8FF" Padding="20,16" Margin="0,0,0,18">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                        <Label x:Name="HeaderLabel" Text="正在查询当前用户机台待执行计划工单..." TextColor="#004AEF" FontSize="15" LineBreakMode="WordWrap" />
+                    </Border>
+                </CollectionView.Header>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="White" Stroke="#DDE6F1" StrokeThickness="1" Padding="20" Margin="0,0,0,14">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                            <VerticalStackLayout Spacing="14">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Label Text="{Binding workOrderNo}" TextColor="#12346A" FontSize="20" FontAttributes="Bold" />
+                                    <Border Grid.Column="1" BackgroundColor="#F3F7FC" StrokeThickness="0" Padding="10,5">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
+                                        <Label Text="{Binding workOrderStatus}" TextColor="#333333" FontAttributes="Bold" FontSize="13" />
+                                    </Border>
+                                </Grid>
+                                <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="12">
+                                    <Label Text="原料规格" TextColor="#4B6688" FontSize="14" />
+                                    <Label Grid.Column="1" Text="{Binding inputSpecification}" TextColor="#001431" FontSize="15" FontAttributes="Bold" />
+                                    <BoxView Grid.Row="1" Grid.ColumnSpan="2" HeightRequest="1" Color="#EEF2F7" />
+                                    <Label Grid.Row="2" Text="下料规格" TextColor="#4B6688" FontSize="14" />
+                                    <Label Grid.Row="2" Grid.Column="1" Text="{Binding targetSpecification}" TextColor="#001431" FontSize="15" FontAttributes="Bold" />
+                                </Grid>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Label Text="生产目标" TextColor="#4B6688" FontSize="14" />
+                                    <Label Grid.Column="1" Text="{Binding plannedWeight, StringFormat='{0} 吨'}" TextColor="#00B050" FontSize="16" FontAttributes="Bold" />
+                                </Grid>
+                                <BoxView HeightRequest="1" Color="#DDE6F1" />
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                                    <Button Text="生产指令卡" BackgroundColor="White" TextColor="#0B3D8B" BorderColor="#0B3D8B" BorderWidth="1" FontAttributes="Bold" CornerRadius="10" HeightRequest="56" />
+                                    <Button Grid.Column="1" Text="确认上机开工" BackgroundColor="#1F447E" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="56" Clicked="OnStartClicked" CommandParameter="{Binding workOrderNo}" />
+                                </Grid>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>
