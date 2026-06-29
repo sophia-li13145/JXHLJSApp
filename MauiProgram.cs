@@ -43,6 +43,7 @@ namespace JXHLJSApp
             builder.Services.AddTransient<AdminViewModel>();
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();
+            builder.Services.AddSingleton<IScanService, ScanService>();
 
             // Core framework and configuration services.
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();

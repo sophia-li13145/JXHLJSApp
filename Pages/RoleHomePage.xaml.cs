@@ -1,4 +1,5 @@
 using JXHLJSApp.Models;
+using JXHLJSApp.Services;
 using JXHLJSApp.Services.WorkOrders;
 using Microsoft.Maui.Controls.Shapes;
 using Microsoft.Maui.Layouts;
@@ -8,10 +9,12 @@ namespace JXHLJSApp.Pages;
 public partial class RoleHomePage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
+    private readonly IScanService _scanService;
 
-    public RoleHomePage(IWorkOrderApi workOrderApi)
+    public RoleHomePage(IWorkOrderApi workOrderApi, IScanService scanService)
     {
         _workOrderApi = workOrderApi;
+        _scanService = scanService;
         InitializeComponent();
         BuildRoleHome();
     }
@@ -251,7 +254,14 @@ public partial class RoleHomePage : ContentPage
             CornerRadius = 10,
             HeightRequest = 56
         };
-        scanButton.Clicked += async (_, _) => await DisplayAlert("扫码上机", "当前环境未接入摄像头扫码，请手动输入机台编号后确认。", "确定");
+        scanButton.Clicked += async (_, _) =>
+        {
+            var code = await _scanService.ScanAsync("扫码机台二维码上机");
+            if (!string.IsNullOrWhiteSpace(code))
+            {
+                await BindMachineAndOpenOrdersAsync(code);
+            }
+        };
 
         var confirmButton = new Button
         {

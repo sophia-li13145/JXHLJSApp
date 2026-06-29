@@ -51,6 +51,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<List<WorkOrderTaskDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
         return data?.result ?? new List<WorkOrderTaskDto>();
     }
 
@@ -61,6 +62,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<bool>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
         return data?.result == true;
     }
 
@@ -71,6 +73,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<List<WorkOrderTaskDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
         return data?.result ?? new List<WorkOrderTaskDto>();
     }
 
@@ -81,7 +84,22 @@ public sealed class WorkOrderApi : IWorkOrderApi
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<bool>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
         return data?.result == true;
+    }
+
+
+    private static void EnsureApiSuccess<T>(ApiResp<T>? response)
+    {
+        if (response?.success == true) return;
+
+        var message = response?.message;
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            message = "接口返回失败，请稍后重试。";
+        }
+
+        throw new WorkOrderApiException(message);
     }
 
     private static string BuildUrlWithQuery(string endpoint, IReadOnlyDictionary<string, string?> query)
@@ -91,5 +109,13 @@ public sealed class WorkOrderApi : IWorkOrderApi
             .Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value!)}");
         var qs = string.Join("&", pairs);
         return string.IsNullOrEmpty(qs) ? endpoint : $"{endpoint}?{qs}";
+    }
+}
+
+
+public sealed class WorkOrderApiException : Exception
+{
+    public WorkOrderApiException(string message) : base(message)
+    {
     }
 }
