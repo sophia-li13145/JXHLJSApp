@@ -1,6 +1,5 @@
 ﻿using JXHLJSApp;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
@@ -20,15 +19,6 @@ namespace JXHLJSApp.Tools
         {
             var path = request.RequestUri?.AbsolutePath?.ToLowerInvariant() ?? string.Empty;
             var skipAuth = path.Contains("/auth/login") || path.Contains("/auth/refresh");
-
-            if (!skipAuth && request.Headers.Authorization is null)
-            {
-                var token = TokenStorage.NormalizeToken(await TokenStorage.LoadAsync().ConfigureAwait(false));
-                if (!string.IsNullOrWhiteSpace(token))
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                }
-            }
 
             var resp = await base.SendAsync(request, ct).ConfigureAwait(false);
 
@@ -84,18 +74,6 @@ namespace JXHLJSApp.Tools
 
             var value = text?.TrimStart();
             return value?.StartsWith('{') == true || value?.StartsWith('[') == true;
-        }
-
-        private static bool IsTokenExpiredCode(string? code)
-        {
-            if (string.IsNullOrWhiteSpace(code)) return false;
-
-            var value = code.Trim();
-            return value is "400" or "4001" or "401" or "40101" or "40301" or "TOKEN_EXPIRED" or "NO_AUTH"
-                   || value.StartsWith("4001", StringComparison.OrdinalIgnoreCase)
-                   || value.StartsWith("401", StringComparison.OrdinalIgnoreCase)
-                   || value.Contains("TOKEN", StringComparison.OrdinalIgnoreCase)
-                   || value.Contains("EXPIRE", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsTokenExpiredCode(string? code)
