@@ -1,6 +1,5 @@
 ﻿using JXHLJSApp;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
@@ -20,15 +19,6 @@ namespace JXHLJSApp.Tools
         {
             var path = request.RequestUri?.AbsolutePath?.ToLowerInvariant() ?? string.Empty;
             var skipAuth = path.Contains("/auth/login") || path.Contains("/auth/refresh");
-
-            if (!skipAuth && request.Headers.Authorization is null)
-            {
-                var token = TokenStorage.NormalizeToken(await TokenStorage.LoadAsync().ConfigureAwait(false));
-                if (!string.IsNullOrWhiteSpace(token))
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                }
-            }
 
             var resp = await base.SendAsync(request, ct).ConfigureAwait(false);
 

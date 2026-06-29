@@ -46,13 +46,16 @@ namespace JXHLJSApp
             builder.Services.AddSingleton<LogService>();
             builder.Services.AddSingleton<IScanService, ScanService>();
             builder.Services.AddSingleton<AuthState>();
+            builder.Services.AddTransient<AuthHeaderHandler>();
             builder.Services.AddTransient<TokenExpiredHandler>();
 
             // Core framework and configuration services.
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();
             builder.Services.AddHttpClient<IAuthApi, AuthApi>(ConfigureBaseAddress)
+                .AddHttpMessageHandler<AuthHeaderHandler>()
                 .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient<IWorkOrderApi, WorkOrderApi>(ConfigureBaseAddress)
+                .AddHttpMessageHandler<AuthHeaderHandler>()
                 .AddHttpMessageHandler<TokenExpiredHandler>();
 
             var app = builder.Build();
