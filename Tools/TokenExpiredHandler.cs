@@ -98,6 +98,20 @@ namespace JXHLJSApp.Tools
                    || value.Contains("EXPIRE", StringComparison.OrdinalIgnoreCase);
         }
 
+        private static bool IsTokenExpiredCode(string? code)
+        {
+            if (string.IsNullOrWhiteSpace(code)) return false;
+
+            var value = code.Trim();
+            return value is "400" or "4001" or "401" or "40101" or "40301" or "TOKEN_EXPIRED" or "NO_AUTH"
+                   || value.StartsWith("4001", StringComparison.OrdinalIgnoreCase)
+                   || value.StartsWith("401", StringComparison.OrdinalIgnoreCase)
+                   || value.Contains("TOKEN", StringComparison.OrdinalIgnoreCase)
+                   || value.Contains("EXPIRE", StringComparison.OrdinalIgnoreCase);
+        }
+
+       
+
         private sealed class ApiBase
         {
             public bool? success { get; set; }
