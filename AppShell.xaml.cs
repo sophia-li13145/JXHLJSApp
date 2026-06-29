@@ -13,6 +13,7 @@ public partial class AppShell : Shell
     public const string RouteLog = "Log";
     public const string RouteWorkOrderTasks = "WorkOrderTasks";
     public const string RouteWorkStartScan = "WorkStartScan";
+    public const string RouteWorkStartOrders = "WorkStartOrders";
 
     public AppShell(IServiceProvider services)
     {
@@ -22,6 +23,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteLog, typeof(LogPage));
         Routing.RegisterRoute(RouteWorkOrderTasks, typeof(WorkOrderTaskListPage));
         Routing.RegisterRoute(RouteWorkStartScan, typeof(WorkStartScanPage));
+        Routing.RegisterRoute(RouteWorkStartOrders, typeof(WorkStartOrdersPage));
         BuildLoginShell();
     }
 

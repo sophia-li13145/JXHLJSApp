@@ -77,6 +77,7 @@ public partial class App : Application
     private async Task InitAsync()
     {
         var token = await TokenStorage.LoadAsync();
+        ApiClient.SetBearer(token);
         bool authed = !string.IsNullOrWhiteSpace(token);
 
         _shell.ApplyAuth(authed);

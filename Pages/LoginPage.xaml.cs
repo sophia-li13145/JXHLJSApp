@@ -75,6 +75,7 @@ public partial class LoginPage : ContentPage
             }
 
             await TokenStorage.SaveAsync(result.Token);
+            ApiClient.SetBearer(result.Token);
             UserSessionStore.Save(result.UserInfo);
             ShowMessage("登录成功", isError: false);
             App.SwitchToLoggedInShell();

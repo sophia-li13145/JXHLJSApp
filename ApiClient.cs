@@ -28,13 +28,14 @@ public static class ApiClient
     /// </summary>
     public static void SetBearer(string? token)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        var normalized = TokenStorage.NormalizeToken(token);
+        if (string.IsNullOrWhiteSpace(normalized))
         {
             Instance.DefaultRequestHeaders.Authorization = null;
         }
         else
         {
-            Instance.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            Instance.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", normalized);
         }
     }
 }
