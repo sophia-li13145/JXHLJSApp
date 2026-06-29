@@ -1,4 +1,6 @@
 using JXHLJSApp.Models;
+using JXHLJSApp.Services;
+using JXHLJSApp.Services.WorkOrders;
 using Microsoft.Maui.Controls.Shapes;
 using Microsoft.Maui.Layouts;
 
@@ -6,8 +8,13 @@ namespace JXHLJSApp.Pages;
 
 public partial class RoleHomePage : ContentPage
 {
-    public RoleHomePage()
+    private readonly IWorkOrderApi _workOrderApi;
+    private readonly IScanService _scanService;
+
+    public RoleHomePage(IWorkOrderApi workOrderApi, IScanService scanService)
     {
+        _workOrderApi = workOrderApi;
+        _scanService = scanService;
         InitializeComponent();
         BuildRoleHome();
     }
@@ -31,6 +38,11 @@ public partial class RoleHomePage : ContentPage
         TitleLabel.Text = role.Title;
         ContentStack.Children.Clear();
         ContentStack.Children.Add(CreateProfileCard(role, realName, workNumber, department, team, shift));
+
+        if (role.RoleCode == "production")
+        {
+            ContentStack.Children.Add(CreateMachineBindCard());
+        }
 
         if (!string.IsNullOrWhiteSpace(role.SectionTitle))
         {
@@ -220,6 +232,98 @@ public partial class RoleHomePage : ContentPage
         };
     }
 
+
+    private View CreateMachineBindCard()
+    {
+        var entry = new Entry
+        {
+            Placeholder = "或手动输入机台编号",
+            PlaceholderColor = Color.FromArgb("#7A8797"),
+            FontSize = 14,
+            BackgroundColor = Color.FromArgb("#F8FAFD"),
+            HeightRequest = 46
+        };
+
+        var scanButton = new Button
+        {
+            Text = "📷  扫码机台二维码上机",
+            BackgroundColor = Color.FromArgb("#1F447E"),
+            TextColor = Colors.White,
+            FontSize = 16,
+            FontAttributes = FontAttributes.Bold,
+            CornerRadius = 10,
+            HeightRequest = 56
+        };
+        scanButton.Clicked += async (_, _) =>
+        {
+            var code = await _scanService.ScanAsync("扫码机台二维码上机");
+            if (!string.IsNullOrWhiteSpace(code))
+            {
+                await BindMachineAndOpenOrdersAsync(code);
+            }
+        };
+
+        var confirmButton = new Button
+        {
+            Text = "确认",
+            BackgroundColor = Colors.White,
+            TextColor = Color.FromArgb("#0B3D8B"),
+            BorderColor = Color.FromArgb("#C8D6EA"),
+            BorderWidth = 1,
+            FontAttributes = FontAttributes.Bold,
+            CornerRadius = 10,
+            HeightRequest = 46
+        };
+        confirmButton.Clicked += async (_, _) => await BindMachineAndOpenOrdersAsync(entry.Text);
+
+        var inputGrid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitionCollection(new ColumnDefinition { Width = GridLength.Star }, new ColumnDefinition { Width = new GridLength(72) }),
+            ColumnSpacing = 10
+        };
+        inputGrid.Add(entry);
+        inputGrid.Add(confirmButton, 1);
+
+        return new Border
+        {
+            BackgroundColor = Colors.White,
+            StrokeThickness = 0,
+            Padding = new Thickness(20),
+            StrokeShape = new RoundRectangle { CornerRadius = 14 },
+            Content = new VerticalStackLayout
+            {
+                Spacing = 16,
+                Children = { scanButton, inputGrid }
+            }
+        };
+    }
+
+    private async Task BindMachineAndOpenOrdersAsync(string? machineCode)
+    {
+        var devCode = machineCode?.Trim();
+        if (string.IsNullOrWhiteSpace(devCode))
+        {
+            await DisplayAlert("提示", "请输入机台编号", "确定");
+            return;
+        }
+
+        try
+        {
+            var result = await _workOrderApi.BindWorkerMachineAsync(devCode);
+            if (!result)
+            {
+                await DisplayAlert("绑定失败", "机台绑定未成功，请确认机台编号后重试。", "确定");
+                return;
+            }
+
+            await Shell.Current.GoToAsync(AppShell.RouteWorkStartOrders);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("绑定失败", ex.Message, "确定");
+        }
+    }
+
     private async void OnLogoutClicked(object sender, EventArgs e)
     {
         await TokenStorage.ClearAsync();
@@ -302,7 +406,6 @@ internal sealed record RoleHomeDefinition(
             }),
             _ => new("production", "生产作业首页", "#14295D", "👷", RoleHomeLayout.Grid, new[]
             {
-                new HomeModule("扫码开工", "📷", Color.FromArgb("#55A8BB"), Route: AppShell.RouteWorkStartScan),
                 new HomeModule("任务列表", "📋", Color.FromArgb("#55ACE3"), Route: AppShell.RouteWorkOrderTasks),
                 new HomeModule("异常上报", "⚠️", Color.FromArgb("#F27655")),
                 new HomeModule("返工上报", "↩️", Color.FromArgb("#DEBC79")),
