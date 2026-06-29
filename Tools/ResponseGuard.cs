@@ -13,7 +13,7 @@ namespace JXHLJSApp.Tools
     {
         private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
         private static readonly HashSet<string> _expiredCodes = new(StringComparer.OrdinalIgnoreCase)
-    { "401", "40101", "40301", "TOKEN_EXPIRED", "NO_AUTH" };
+    { "400", "4001", "401", "40101", "40301", "TOKEN_EXPIRED", "NO_AUTH" };
 
         public static async Task<string> ReadAsStringAndCheckAsync(HttpResponseMessage res, AuthState auth, CancellationToken ct)
         {
@@ -31,7 +31,10 @@ namespace JXHLJSApp.Tools
                 if (api?.success == false)
                 {
                     var code = api.code?.ToString() ?? "";
-                    if (_expiredCodes.Contains(code) || code.StartsWith("401", StringComparison.OrdinalIgnoreCase)
+                    if (_expiredCodes.Contains(code)
+                        || code.StartsWith("4001", StringComparison.OrdinalIgnoreCase)
+                        || code.StartsWith("401", StringComparison.OrdinalIgnoreCase)
+                        || code.Contains("TOKEN", StringComparison.OrdinalIgnoreCase)
                         || code.Contains("EXPIRE", StringComparison.OrdinalIgnoreCase))
                     {
                         _ = auth.LogoutAsync(api?.message ?? "登录状态失效");
