@@ -2,6 +2,7 @@
 using JXHLJSApp.Pages;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.WorkOrders;
+using JXHLJSApp.Tools;
 using JXHLJSApp.ViewModels;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -39,14 +40,20 @@ namespace JXHLJSApp
             builder.Services.AddTransient<RoleHomePage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkOrders.WorkOrderTaskListPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.WorkStartScanPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.WorkStartOrdersPage>();
             builder.Services.AddTransient<AdminViewModel>();
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();
+            builder.Services.AddSingleton<IScanService, ScanService>();
+            builder.Services.AddSingleton<AuthState>();
+            builder.Services.AddTransient<TokenExpiredHandler>();
 
             // Core framework and configuration services.
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();
-            builder.Services.AddHttpClient<IAuthApi, AuthApi>(ConfigureBaseAddress);
-            builder.Services.AddHttpClient<IWorkOrderApi, WorkOrderApi>(ConfigureBaseAddress);
+            builder.Services.AddHttpClient<IAuthApi, AuthApi>(ConfigureBaseAddress)
+                .AddHttpMessageHandler<TokenExpiredHandler>();
+            builder.Services.AddHttpClient<IWorkOrderApi, WorkOrderApi>(ConfigureBaseAddress)
+                .AddHttpMessageHandler<TokenExpiredHandler>();
 
             var app = builder.Build();
             //CrashTrap.Init(); //Debug

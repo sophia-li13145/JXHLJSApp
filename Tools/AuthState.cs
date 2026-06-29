@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.Messaging;
+﻿using JXHLJSApp;
+using CommunityToolkit.Mvvm.Messaging;
 using JXHLJSApp.Pages;
 using System.Threading;
 
