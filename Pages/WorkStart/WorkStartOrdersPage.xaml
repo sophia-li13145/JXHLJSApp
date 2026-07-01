@@ -48,7 +48,7 @@
                                 </Grid>
                                 <BoxView HeightRequest="1" Color="#DDE6F1" />
                                 <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                                    <Button Text="生产指令卡" BackgroundColor="White" TextColor="#0B3D8B" BorderColor="#0B3D8B" BorderWidth="1" FontAttributes="Bold" CornerRadius="10" HeightRequest="56" />
+                                    <Button Text="生产指令卡" BackgroundColor="White" TextColor="#0B3D8B" BorderColor="#0B3D8B" BorderWidth="1" FontAttributes="Bold" CornerRadius="10" HeightRequest="56" Clicked="OnInstructionClicked" CommandParameter="{Binding id}" />
                                     <Button Grid.Column="1" Text="确认上机开工" BackgroundColor="#1F447E" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="56" Clicked="OnStartClicked" CommandParameter="{Binding workOrderNo}" />
                                 </Grid>
                             </VerticalStackLayout>

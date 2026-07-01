@@ -12,6 +12,7 @@ public interface IWorkOrderApi
     Task<bool> BindWorkerMachineAsync(string devCode, CancellationToken ct = default);
     Task<List<WorkOrderTaskDto>> GetCurrentUserMachinesWorkOrdersAsync(CancellationToken ct = default);
     Task<bool> StartWorkOrderAsync(string workOrderNo, CancellationToken ct = default);
+    Task<WorkOrderDetailDto?> GetWorkOrderDetailAsync(string id, CancellationToken ct = default);
 }
 
 public sealed class WorkOrderApi : IWorkOrderApi
@@ -21,6 +22,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _bindWorkerMachineEndpoint;
     private readonly string _currentUserMachinesWorkOrderEndpoint;
     private readonly string _orderStartEndpoint;
+    private readonly string _detailEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public WorkOrderApi(HttpClient http, IConfigLoader configLoader)
@@ -34,7 +36,9 @@ public sealed class WorkOrderApi : IWorkOrderApi
         _currentUserMachinesWorkOrderEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.currentUserMachinesWorkOrder", "/pda/pmsWorkOrder/currentUserMachinesWorkOrder"), servicePath);
         _orderStartEndpoint = ServiceUrlHelper.NormalizeRelative(
-            configLoader.GetApiPath("workOrder.ordersStart", "/pda/pmsWorkOrder/ordersStart"), servicePath);
+            configLoader.GetApiPath("workOrder.orderStart", "/pda/pmsWorkOrder/orderStart"), servicePath);
+        _detailEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrder.detail", "/pda/pmsWorkOrder/getWorkOrderDetail"), servicePath);
     }
 
     public async Task<List<WorkOrderTaskDto>> GetWorkOrderListAsync(string? deviceCode = null, string? machineNo = null, string? workOrderStatus = null, CancellationToken ct = default)
@@ -88,6 +92,20 @@ public sealed class WorkOrderApi : IWorkOrderApi
         return ReadFlexibleBooleanResult(data);
     }
 
+
+    public async Task<WorkOrderDetailDto?> GetWorkOrderDetailAsync(string id, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_detailEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(id)] = id
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<WorkOrderDetailDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return data?.result;
+    }
 
 
     private static bool ReadFlexibleBooleanResult(ApiResp<JsonElement?>? response)
