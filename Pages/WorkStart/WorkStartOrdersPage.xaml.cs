@@ -81,7 +81,10 @@ public partial class WorkStartOrdersPage : ContentPage
         {
             var result = await _workOrderApi.StartWorkOrderAsync(workOrderNo);
             await DisplayAlert(result ? "开工成功" : "开工失败", result ? "已确认上机开工。" : "接口返回开工失败，请稍后重试。", "确定");
-            if (result) await LoadOrdersAsync();
+            if (result)
+            {
+                await Shell.Current.GoToAsync(AppShell.RouteWorkExecution);
+            }
         }
         catch (Exception ex)
         {

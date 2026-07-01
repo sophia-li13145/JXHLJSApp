@@ -13,6 +13,7 @@ public interface IWorkOrderApi
     Task<List<WorkOrderTaskDto>> GetCurrentUserMachinesWorkOrdersAsync(CancellationToken ct = default);
     Task<bool> StartWorkOrderAsync(string workOrderNo, CancellationToken ct = default);
     Task<WorkOrderDetailDto?> GetWorkOrderDetailAsync(string id, CancellationToken ct = default);
+    Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(CancellationToken ct = default);
 }
 
 public sealed class WorkOrderApi : IWorkOrderApi
@@ -23,6 +24,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _currentUserMachinesWorkOrderEndpoint;
     private readonly string _orderStartEndpoint;
     private readonly string _detailEndpoint;
+    private readonly string _inputOutputEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public WorkOrderApi(HttpClient http, IConfigLoader configLoader)
@@ -39,6 +41,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
             configLoader.GetApiPath("workOrder.orderStart", "/pda/pmsWorkOrder/orderStart"), servicePath);
         _detailEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.detail", "/pda/pmsWorkOrder/getWorkOrderDetail"), servicePath);
+        _inputOutputEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrder.inputOutput", "/pda/pmsWorkOrder/getWorkOrderInputOutput"), servicePath);
     }
 
     public async Task<List<WorkOrderTaskDto>> GetWorkOrderListAsync(string? deviceCode = null, string? machineNo = null, string? workOrderStatus = null, CancellationToken ct = default)
@@ -108,6 +112,18 @@ public sealed class WorkOrderApi : IWorkOrderApi
     }
 
 
+    public async Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _inputOutputEndpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return ReadInputOutputResult(data);
+    }
+
+
     private static bool ReadFlexibleBooleanResult(ApiResp<JsonElement?>? response)
     {
         if (response?.result is not { } result)
@@ -126,6 +142,28 @@ public sealed class WorkOrderApi : IWorkOrderApi
             JsonValueKind.Null or JsonValueKind.Undefined => response?.success == true,
             _ => response?.success == true
         };
+    }
+
+
+    private static List<WorkOrderInputOutputDto> ReadInputOutputResult(ApiResp<JsonElement?>? response)
+    {
+        if (response?.result is not { } result || result.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+        {
+            return new List<WorkOrderInputOutputDto>();
+        }
+
+        if (result.ValueKind == JsonValueKind.Array)
+        {
+            return JsonSerializer.Deserialize<List<WorkOrderInputOutputDto>>(result.GetRawText(), JsonOptions) ?? new List<WorkOrderInputOutputDto>();
+        }
+
+        if (result.ValueKind == JsonValueKind.Object)
+        {
+            var item = JsonSerializer.Deserialize<WorkOrderInputOutputDto>(result.GetRawText(), JsonOptions);
+            return item is null ? new List<WorkOrderInputOutputDto>() : new List<WorkOrderInputOutputDto> { item };
+        }
+
+        return new List<WorkOrderInputOutputDto>();
     }
 
     private static void EnsureApiSuccess<T>(ApiResp<T>? response)
