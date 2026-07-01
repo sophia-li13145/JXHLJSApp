@@ -58,6 +58,17 @@ public partial class WorkStartOrdersPage : ContentPage
         await Shell.Current.GoToAsync("..");
     }
 
+    private async void OnInstructionClicked(object sender, EventArgs e)
+    {
+        if (sender is not Button { CommandParameter: string id } || string.IsNullOrWhiteSpace(id))
+        {
+            await DisplayAlert("提示", "工单列表主键为空，无法查看生产作业指令卡。", "确定");
+            return;
+        }
+
+        await Shell.Current.GoToAsync($"{AppShell.RouteWorkOrderInstruction}?id={Uri.EscapeDataString(id)}");
+    }
+
     private async void OnStartClicked(object sender, EventArgs e)
     {
         if (sender is not Button { CommandParameter: string workOrderNo } || string.IsNullOrWhiteSpace(workOrderNo))
