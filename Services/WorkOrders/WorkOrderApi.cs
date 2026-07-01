@@ -25,6 +25,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _orderStartEndpoint;
     private readonly string _detailEndpoint;
     private readonly string _inputOutputEndpoint;
+    private readonly string _dictListEndpoint;
+    private IReadOnlyDictionary<string, string>? _workOrderStatusNames;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public WorkOrderApi(HttpClient http, IConfigLoader configLoader)
@@ -43,6 +45,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
             configLoader.GetApiPath("workOrder.detail", "/pda/pmsWorkOrder/getWorkOrderDetail"), servicePath);
         _inputOutputEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.inputOutput", "/pda/pmsWorkOrder/getWorkOrderInputOutput"), servicePath);
+        _dictListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrder.dictList", "/pda/pmsWorkOrder/getWorkOrderDictList"), servicePath);
     }
 
     public async Task<List<WorkOrderTaskDto>> GetWorkOrderListAsync(string? deviceCode = null, string? machineNo = null, string? workOrderStatus = null, CancellationToken ct = default)
@@ -60,7 +64,9 @@ public sealed class WorkOrderApi : IWorkOrderApi
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<List<WorkOrderTaskDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
-        return data?.result ?? new List<WorkOrderTaskDto>();
+        var orders = data?.result ?? new List<WorkOrderTaskDto>();
+        await ApplyWorkOrderStatusNamesAsync(orders, ct).ConfigureAwait(false);
+        return orders;
     }
 
     public async Task<bool> BindWorkerMachineAsync(string devCode, CancellationToken ct = default)
@@ -82,7 +88,9 @@ public sealed class WorkOrderApi : IWorkOrderApi
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<List<WorkOrderTaskDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
-        return data?.result ?? new List<WorkOrderTaskDto>();
+        var orders = data?.result ?? new List<WorkOrderTaskDto>();
+        await ApplyWorkOrderStatusNamesAsync(orders, ct).ConfigureAwait(false);
+        return orders;
     }
 
     public async Task<bool> StartWorkOrderAsync(string workOrderNo, CancellationToken ct = default)
@@ -108,7 +116,9 @@ public sealed class WorkOrderApi : IWorkOrderApi
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<WorkOrderDetailDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
-        return data?.result;
+        var detail = data?.result;
+        await ApplyWorkOrderStatusNameAsync(detail, ct).ConfigureAwait(false);
+        return detail;
     }
 
 
@@ -123,7 +133,9 @@ public sealed class WorkOrderApi : IWorkOrderApi
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
-        return ReadInputOutputResult(data);
+        var tasks = ReadInputOutputResult(data);
+        await ApplyWorkOrderStatusNamesAsync(tasks, ct).ConfigureAwait(false);
+        return tasks;
     }
 
 
@@ -147,6 +159,67 @@ public sealed class WorkOrderApi : IWorkOrderApi
         };
     }
 
+
+
+    private async Task ApplyWorkOrderStatusNamesAsync(IEnumerable<WorkOrderTaskDto> orders, CancellationToken ct)
+    {
+        var statusNames = await GetWorkOrderStatusNamesAsync(ct).ConfigureAwait(false);
+        foreach (var order in orders)
+        {
+            order.workOrderStatus = MapWorkOrderStatus(order.workOrderStatus, statusNames);
+        }
+    }
+
+    private async Task ApplyWorkOrderStatusNamesAsync(IEnumerable<WorkOrderInputOutputDto> tasks, CancellationToken ct)
+    {
+        var statusNames = await GetWorkOrderStatusNamesAsync(ct).ConfigureAwait(false);
+        foreach (var task in tasks)
+        {
+            task.workOrderStatus = MapWorkOrderStatus(task.workOrderStatus, statusNames);
+        }
+    }
+
+    private async Task ApplyWorkOrderStatusNameAsync(WorkOrderDetailDto? detail, CancellationToken ct)
+    {
+        if (detail is null) return;
+
+        var statusNames = await GetWorkOrderStatusNamesAsync(ct).ConfigureAwait(false);
+        detail.workOrderStatus = MapWorkOrderStatus(detail.workOrderStatus, statusNames);
+    }
+
+    private async Task<IReadOnlyDictionary<string, string>> GetWorkOrderStatusNamesAsync(CancellationToken ct)
+    {
+        if (_workOrderStatusNames is not null)
+        {
+            return _workOrderStatusNames;
+        }
+
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _dictListEndpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<List<WorkOrderDictDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+
+        _workOrderStatusNames = data?.result?
+            .FirstOrDefault(dict => string.Equals(dict.field, "workOrderStatus", StringComparison.OrdinalIgnoreCase))?
+            .dictItems?
+            .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue) && !string.IsNullOrWhiteSpace(item.dictItemName))
+            .ToDictionary(item => item.dictItemValue!, item => item.dictItemName!)
+            ?? new Dictionary<string, string>();
+
+        return _workOrderStatusNames;
+    }
+
+    private static string? MapWorkOrderStatus(string? status, IReadOnlyDictionary<string, string> statusNames)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            return status;
+        }
+
+        return statusNames.TryGetValue(status, out var name) ? name : status;
+    }
 
     private static List<WorkOrderInputOutputDto> ReadInputOutputResult(ApiResp<JsonElement?>? response)
     {
