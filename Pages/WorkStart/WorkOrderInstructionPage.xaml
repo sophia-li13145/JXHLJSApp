@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.WorkStart.WorkOrderInstructionPage"
+             BackgroundColor="#F4F6FA"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="18,18,18,14" HeightRequest="66">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,18,18" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Label Text="‹ 返回" TextColor="White" FontSize="15" VerticalOptions="Center">
+                    <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers>
+                </Label>
+                <Label Grid.Column="1" Text="生产作业指令卡" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" />
+                <BoxView Grid.Column="2" WidthRequest="48" Opacity="0" />
+            </Grid>
+        </Border>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="22,16,22,24" Spacing="14">
+                <ActivityIndicator x:Name="LoadingIndicator" IsVisible="False" IsRunning="False" Color="#244B88" />
+                <Border BackgroundColor="White" Stroke="#244B88" StrokeThickness="2" Padding="20,0,20,16">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="16">
+                        <Grid ColumnDefinitions="*,Auto,Auto" Padding="0,18,0,2" ColumnSpacing="10">
+                            <Label x:Name="WorkOrderNoLabel" Text="--" TextColor="#0A2E69" FontSize="18" FontAttributes="Bold" />
+                            <Border Grid.Column="1" BackgroundColor="#EEF4FF" StrokeThickness="0" Padding="10,4">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="5" /></Border.StrokeShape>
+                                <Label x:Name="OperationLabel" Text="--" TextColor="#004AEF" FontSize="12" FontAttributes="Bold" />
+                            </Border>
+                            <Border Grid.Column="2" BackgroundColor="#EAF9EF" StrokeThickness="0" Padding="10,4">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="5" /></Border.StrokeShape>
+                                <Label x:Name="StatusLabel" Text="--" TextColor="#00A651" FontSize="12" FontAttributes="Bold" />
+                            </Border>
+                        </Grid>
+                        <BoxView HeightRequest="1" Color="#E1E7F0" Margin="-20,0" />
+
+                        <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="14" RowSpacing="12">
+                            <Label Text="当前工序" TextColor="#5C6F8F" />
+                            <Label Grid.Column="1" x:Name="CurrentOperationLabel" Text="--" TextColor="#C45A00" FontAttributes="Bold" />
+                            <Label Grid.Column="2" Text="所属机台" TextColor="#5C6F8F" />
+                            <Label Grid.Column="3" x:Name="MachineLabel" Text="--" TextColor="#001431" FontAttributes="Bold" />
+                            <Label Grid.Row="1" Text="成品要求" TextColor="#5C6F8F" />
+                            <Label Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" x:Name="ProductLabel" Text="--" TextColor="#001431" FontAttributes="Bold" LineBreakMode="WordWrap" />
+                        </Grid>
+
+                        <Label Text="📚 模序要求" TextColor="#001431" FontSize="16" FontAttributes="Bold" />
+                        <Border BackgroundColor="#FFFDF2" Stroke="#FFD86B" Padding="12">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                            <VerticalStackLayout x:Name="MoldSequenceLayout" Spacing="12" />
+                        </Border>
+
+                        <Label Text="⚙️ 工艺基础参数" TextColor="#001431" FontSize="16" FontAttributes="Bold" />
+                        <Border BackgroundColor="#F8FAFD" Stroke="#DDE6F1" Padding="12">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                            <Grid x:Name="ProcessParamsGrid" ColumnDefinitions="Auto,*,Auto,*" RowSpacing="14" ColumnSpacing="8" />
+                        </Border>
+
+                        <Border BackgroundColor="#F0F3F8" StrokeThickness="0" Padding="12" MinimumHeightRequest="60">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="生产备注:" TextColor="#001431" FontAttributes="Bold" />
+                                <Label x:Name="MemoLabel" Text="" TextColor="#001431" LineBreakMode="WordWrap" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>
