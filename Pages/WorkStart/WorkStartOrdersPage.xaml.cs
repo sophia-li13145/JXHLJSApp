@@ -58,6 +58,17 @@ public partial class WorkStartOrdersPage : ContentPage
         await Shell.Current.GoToAsync("..");
     }
 
+    private async void OnInstructionClicked(object sender, EventArgs e)
+    {
+        if (sender is not Button { CommandParameter: string id } || string.IsNullOrWhiteSpace(id))
+        {
+            await DisplayAlert("提示", "工单列表主键为空，无法查看生产作业指令卡。", "确定");
+            return;
+        }
+
+        await Shell.Current.GoToAsync($"{AppShell.RouteWorkOrderInstruction}?id={Uri.EscapeDataString(id)}");
+    }
+
     private async void OnStartClicked(object sender, EventArgs e)
     {
         if (sender is not Button { CommandParameter: string workOrderNo } || string.IsNullOrWhiteSpace(workOrderNo))
@@ -70,7 +81,10 @@ public partial class WorkStartOrdersPage : ContentPage
         {
             var result = await _workOrderApi.StartWorkOrderAsync(workOrderNo);
             await DisplayAlert(result ? "开工成功" : "开工失败", result ? "已确认上机开工。" : "接口返回开工失败，请稍后重试。", "确定");
-            if (result) await LoadOrdersAsync();
+            if (result)
+            {
+                await Shell.Current.GoToAsync(AppShell.RouteWorkExecution);
+            }
         }
         catch (Exception ex)
         {

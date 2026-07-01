@@ -14,6 +14,8 @@ public partial class AppShell : Shell
     public const string RouteWorkOrderTasks = "WorkOrderTasks";
     public const string RouteWorkStartScan = "WorkStartScan";
     public const string RouteWorkStartOrders = "WorkStartOrders";
+    public const string RouteWorkOrderInstruction = "WorkOrderInstruction";
+    public const string RouteWorkExecution = "WorkExecution";
 
     public AppShell(IServiceProvider services)
     {
@@ -24,6 +26,8 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteWorkOrderTasks, typeof(WorkOrderTaskListPage));
         Routing.RegisterRoute(RouteWorkStartScan, typeof(WorkStartScanPage));
         Routing.RegisterRoute(RouteWorkStartOrders, typeof(WorkStartOrdersPage));
+        Routing.RegisterRoute(RouteWorkOrderInstruction, typeof(WorkOrderInstructionPage));
+        Routing.RegisterRoute(RouteWorkExecution, typeof(WorkExecutionPage));
         BuildLoginShell();
     }
 
