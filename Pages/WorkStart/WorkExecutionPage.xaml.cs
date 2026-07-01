@@ -3,10 +3,18 @@ using JXHLJSApp.Services.WorkOrders;
 
 namespace JXHLJSApp.Pages.WorkStart;
 
+[QueryProperty(nameof(WorkOrderNo), "workOrderNo")]
 public partial class WorkExecutionPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
     private List<WorkOrderInputOutputDto> _tasks = new();
+    private string? _workOrderNo;
+
+    public string? WorkOrderNo
+    {
+        get => _workOrderNo;
+        set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty);
+    }
 
     public WorkExecutionPage(IWorkOrderApi workOrderApi)
     {
@@ -29,8 +37,15 @@ public partial class WorkExecutionPage : ContentPage
     {
         try
         {
+            if (string.IsNullOrWhiteSpace(_workOrderNo))
+            {
+                await DisplayAlert("提示", "工单号为空，无法查询当前关联任务池。", "确定");
+                TaskPoolList.ItemsSource = Array.Empty<WorkOrderInputOutputDto>();
+                return;
+            }
+
             RefreshContainer.IsRefreshing = true;
-            _tasks = await _workOrderApi.GetWorkOrderInputOutputAsync();
+            _tasks = await _workOrderApi.GetWorkOrderInputOutputAsync(_workOrderNo);
             TaskPoolList.ItemsSource = _tasks;
         }
         catch (Exception ex)

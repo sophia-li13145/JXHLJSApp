@@ -13,7 +13,7 @@ public interface IWorkOrderApi
     Task<List<WorkOrderTaskDto>> GetCurrentUserMachinesWorkOrdersAsync(CancellationToken ct = default);
     Task<bool> StartWorkOrderAsync(string workOrderNo, CancellationToken ct = default);
     Task<WorkOrderDetailDto?> GetWorkOrderDetailAsync(string id, CancellationToken ct = default);
-    Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(CancellationToken ct = default);
+    Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(string workOrderNo, CancellationToken ct = default);
 }
 
 public sealed class WorkOrderApi : IWorkOrderApi
@@ -112,9 +112,12 @@ public sealed class WorkOrderApi : IWorkOrderApi
     }
 
 
-    public async Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(CancellationToken ct = default)
+    public async Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(string workOrderNo, CancellationToken ct = default)
     {
-        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _inputOutputEndpoint);
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_inputOutputEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(workOrderNo)] = workOrderNo
+        }));
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
