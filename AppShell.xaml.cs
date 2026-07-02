@@ -16,6 +16,7 @@ public partial class AppShell : Shell
     public const string RouteWorkStartOrders = "WorkStartOrders";
     public const string RouteWorkOrderInstruction = "WorkOrderInstruction";
     public const string RouteWorkExecution = "WorkExecution";
+    public const string RouteMaterialLoading = "MaterialLoading";
 
     public AppShell(IServiceProvider services)
     {
@@ -28,6 +29,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteWorkStartOrders, typeof(WorkStartOrdersPage));
         Routing.RegisterRoute(RouteWorkOrderInstruction, typeof(WorkOrderInstructionPage));
         Routing.RegisterRoute(RouteWorkExecution, typeof(WorkExecutionPage));
+        Routing.RegisterRoute(RouteMaterialLoading, typeof(MaterialLoadingPage));
         BuildLoginShell();
     }
 

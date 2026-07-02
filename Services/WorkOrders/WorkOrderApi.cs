@@ -14,6 +14,8 @@ public interface IWorkOrderApi
     Task<bool> StartWorkOrderAsync(string workOrderNo, CancellationToken ct = default);
     Task<WorkOrderDetailDto?> GetWorkOrderDetailAsync(string id, CancellationToken ct = default);
     Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(string workOrderNo, CancellationToken ct = default);
+    Task<MaterialQrCodeInfoDto> ScanQueryMaterialInfoAsync(string qrCode, CancellationToken ct = default);
+    Task<bool> ConfirmMaterialInputAsync(MaterialInputConfirmDto input, CancellationToken ct = default);
 }
 
 public sealed class WorkOrderApi : IWorkOrderApi
@@ -26,6 +28,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _detailEndpoint;
     private readonly string _inputOutputEndpoint;
     private readonly string _dictListEndpoint;
+    private readonly string _materialQrCodeEndpoint;
+    private readonly string _confirmInputEndpoint;
     private IReadOnlyDictionary<string, string>? _workOrderStatusNames;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -47,6 +51,10 @@ public sealed class WorkOrderApi : IWorkOrderApi
             configLoader.GetApiPath("workOrder.inputOutput", "/pda/pmsWorkOrder/getWorkOrderInputOutput"), servicePath);
         _dictListEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.dictList", "/pda/pmsWorkOrder/getWorkOrderDictList"), servicePath);
+        _materialQrCodeEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("materialQrCode.scanQueryMaterialInfo", "/pda/wmsMaterialQrCode/scanQueryMaterialInfo"), servicePath);
+        _confirmInputEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrder.confirmInput", "/pda/pmsWorkOrder/confirmInput"), servicePath);
     }
 
     public async Task<List<WorkOrderTaskDto>> GetWorkOrderListAsync(string? deviceCode = null, string? machineNo = null, string? workOrderStatus = null, CancellationToken ct = default)
@@ -136,6 +144,30 @@ public sealed class WorkOrderApi : IWorkOrderApi
         var tasks = ReadInputOutputResult(data);
         await ApplyWorkOrderStatusNamesAsync(tasks, ct).ConfigureAwait(false);
         return tasks;
+    }
+
+
+    public async Task<MaterialQrCodeInfoDto> ScanQueryMaterialInfoAsync(string qrCode, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _materialQrCodeEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, new { qrCode }, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<MaterialQrCodeInfoDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return data?.result ?? new MaterialQrCodeInfoDto();
+    }
+
+
+    public async Task<bool> ConfirmMaterialInputAsync(MaterialInputConfirmDto input, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _confirmInputEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, input, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return ReadFlexibleBooleanResult(data);
     }
 
 
@@ -271,4 +303,15 @@ public sealed class WorkOrderApiException : Exception
     public WorkOrderApiException(string message) : base(message)
     {
     }
+}
+
+
+public sealed class MaterialInputConfirmDto
+{
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
+    public string? qrCode { get; set; }
+    public string? spec { get; set; }
+    public string? stockBatch { get; set; }
+    public string? workOrderCode { get; set; }
 }

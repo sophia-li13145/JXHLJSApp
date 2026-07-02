@@ -15,38 +15,31 @@ public interface IAuthApi
 public sealed class AuthApi : IAuthApi
 {
     private readonly HttpClient _http;
+    private readonly IConfigLoader _configLoader;
+    private Uri? _baseAddress;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly string _loginEndpoint;
-    private readonly string _allUserEndpoint;
+    private string _loginEndpoint = string.Empty;
+    private string _allUserEndpoint = string.Empty;
 
     public AuthApi(HttpClient http, IConfigLoader configLoader)
     {
         _http = http;
+        _configLoader = configLoader;
         if (_http.Timeout == Timeout.InfiniteTimeSpan)
         {
             _http.Timeout = TimeSpan.FromSeconds(15);
         }
 
-        var baseUrl = configLoader.GetBaseUrl();
-        if (_http.BaseAddress is null)
-        {
-            _http.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
-        }
-
-        var servicePath = _http.BaseAddress.AbsolutePath?.TrimEnd('/') ?? "/normalService";
-
         _http.DefaultRequestHeaders.Accept.Clear();
         _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        _loginEndpoint = ServiceUrlHelper.NormalizeRelative(
-            configLoader.GetApiPath("login", "/pda/auth/login"), servicePath);
-        _allUserEndpoint = ServiceUrlHelper.NormalizeRelative(
-            configLoader.GetApiPath("auth.alluser", "/pda/auth/allUsers"), servicePath);
+        ApplyLatestConfig();
     }
 
     public async Task<LoginResult> LoginAsync(string username, string password, CancellationToken ct = default)
     {
-        var full = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _loginEndpoint);
+        ApplyLatestConfig();
+        var full = ServiceUrlHelper.BuildFullUrl(_baseAddress, _loginEndpoint);
         using var req = new HttpRequestMessage(HttpMethod.Post, full)
         {
             Content = JsonContent.Create(new LoginRequest(username, password), options: JsonOptions)
@@ -69,7 +62,8 @@ public sealed class AuthApi : IAuthApi
 
     public async Task<List<UserInfoDto>> GetAllUsersAsync(CancellationToken ct = default)
     {
-        var full = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _allUserEndpoint);
+        ApplyLatestConfig();
+        var full = ServiceUrlHelper.BuildFullUrl(_baseAddress, _allUserEndpoint);
         using var req = new HttpRequestMessage(HttpMethod.Get, full);
         using var resp = await _http.SendAsync(req, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
@@ -85,6 +79,28 @@ public sealed class AuthApi : IAuthApi
             .GroupBy(u => string.IsNullOrWhiteSpace(u.username) ? u.id : u.username, StringComparer.OrdinalIgnoreCase)
             .Select(g => g.First())
             .ToList();
+    }
+
+    private void ApplyLatestConfig()
+    {
+        var baseUrl = _configLoader.GetBaseUrl();
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            throw new InvalidOperationException("配置文件缺少有效的 BaseUrl。");
+        }
+
+        if (baseUrl.EndsWith("/", StringComparison.Ordinal))
+        {
+            baseUrl = baseUrl.TrimEnd('/');
+        }
+
+        _baseAddress = new Uri(baseUrl, UriKind.Absolute);
+
+        var servicePath = _baseAddress.AbsolutePath?.TrimEnd('/') ?? "/normalService";
+        _loginEndpoint = ServiceUrlHelper.NormalizeRelative(
+            _configLoader.GetApiPath("login", "/pda/auth/login"), servicePath);
+        _allUserEndpoint = ServiceUrlHelper.NormalizeRelative(
+            _configLoader.GetApiPath("auth.alluser", "/pda/auth/allUsers"), servicePath);
     }
 }
 
