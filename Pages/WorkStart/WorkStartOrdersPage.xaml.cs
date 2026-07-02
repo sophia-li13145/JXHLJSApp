@@ -92,15 +92,17 @@ public partial class WorkStartOrdersPage : ContentPage
         try
         {
             var result = await _workOrderApi.StartWorkOrderAsync(order.workOrderNo);
-            await DisplayAlert(result ? "开工成功" : "开工失败", result ? "已确认上机开工。" : "接口返回开工失败，请稍后重试。", "确定");
-            if (result)
+            if (!result)
             {
-                await Shell.Current.GoToAsync(AppShell.RouteWorkExecution, new Dictionary<string, object>
-                {
-                    ["id"] = order.id,
-                    ["workOrderNo"] = order.workOrderNo
-                });
+                await DisplayAlert("开工失败", "接口返回开工失败，请稍后重试。", "确定");
+                return;
             }
+
+            await Shell.Current.GoToAsync(AppShell.RouteWorkExecution, new Dictionary<string, object>
+            {
+                ["id"] = order.id,
+                ["workOrderNo"] = order.workOrderNo
+            });
         }
         catch (Exception ex)
         {
