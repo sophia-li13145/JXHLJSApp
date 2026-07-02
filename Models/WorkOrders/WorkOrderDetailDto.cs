@@ -37,6 +37,25 @@ public sealed class WorkOrderDetailDto
     public string? wireTakeUpSpeed { get; set; }
     public string? workOrderNo { get; set; }
     public string? workOrderStatus { get; set; }
+
+    public string machineDisplay => FirstNonEmpty(machineNo, machineType, deviceName);
+    public string specificationDisplay => FirstNonEmpty(productSpecification, intermediateSpecification);
+    public string completedWeightDisplay => FormatDecimal(moldSequenceList?.Sum(item => item.productionWeight), "吨");
+    public string completedQuantityDisplay => FormatDecimal(moldSequenceList?.Sum(item => item.productionQuantity), "件");
+    public string moldSequenceDisplay => moldSequenceList is { Count: > 0 }
+        ? string.Join("；", moldSequenceList.Select(item => $"{FormatDecimal(item.moldSequence, string.Empty)}# {FormatDecimal(item.pieceWeight, "KG")}/{FormatDecimal(item.productionQuantity, "件")}/{FormatDecimal(item.productionWeight, "吨")}"))
+        : "--";
+
+    private static string FirstNonEmpty(params string?[] values)
+    {
+        return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "--";
+    }
+
+    private static string FormatDecimal(decimal? value, string unit)
+    {
+        var text = value.HasValue ? value.Value.ToString("0.##") : "--";
+        return string.IsNullOrWhiteSpace(unit) || text == "--" ? text : $"{text}{unit}";
+    }
 }
 
 public sealed class WorkOrderMoldSequenceDto
