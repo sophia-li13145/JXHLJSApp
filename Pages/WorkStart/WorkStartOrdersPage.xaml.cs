@@ -71,19 +71,31 @@ public partial class WorkStartOrdersPage : ContentPage
 
     private async void OnStartClicked(object sender, EventArgs e)
     {
-        if (sender is not Button { CommandParameter: string workOrderNo } || string.IsNullOrWhiteSpace(workOrderNo))
+        if (sender is not Button { CommandParameter: WorkOrderTaskDto order })
+        {
+            await DisplayAlert("提示", "工单信息为空，无法开工。", "确定");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(order.workOrderNo))
         {
             await DisplayAlert("提示", "工单号为空，无法开工。", "确定");
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(order.id))
+        {
+            await DisplayAlert("提示", "工单列表主键为空，无法进入生产执行页面。", "确定");
+            return;
+        }
+
         try
         {
-            var result = await _workOrderApi.StartWorkOrderAsync(workOrderNo);
+            var result = await _workOrderApi.StartWorkOrderAsync(order.workOrderNo);
             await DisplayAlert(result ? "开工成功" : "开工失败", result ? "已确认上机开工。" : "接口返回开工失败，请稍后重试。", "确定");
             if (result)
             {
-                await Shell.Current.GoToAsync($"{AppShell.RouteWorkExecution}?workOrderNo={Uri.EscapeDataString(workOrderNo)}");
+                await Shell.Current.GoToAsync($"{AppShell.RouteWorkExecution}?id={Uri.EscapeDataString(order.id)}");
             }
         }
         catch (Exception ex)

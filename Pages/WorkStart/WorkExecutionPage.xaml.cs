@@ -3,17 +3,17 @@ using JXHLJSApp.Services.WorkOrders;
 
 namespace JXHLJSApp.Pages.WorkStart;
 
-[QueryProperty(nameof(WorkOrderNo), "workOrderNo")]
+[QueryProperty(nameof(WorkOrderId), "id")]
 public partial class WorkExecutionPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
-    private List<WorkOrderInputOutputDto> _tasks = new();
-    private string? _workOrderNo;
+    private List<WorkOrderDetailDto> _tasks = new();
+    private string? _workOrderId;
 
-    public string? WorkOrderNo
+    public string? WorkOrderId
     {
-        get => _workOrderNo;
-        set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty);
+        get => _workOrderId;
+        set => _workOrderId = Uri.UnescapeDataString(value ?? string.Empty);
     }
 
     public WorkExecutionPage(IWorkOrderApi workOrderApi)
@@ -37,15 +37,16 @@ public partial class WorkExecutionPage : ContentPage
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(_workOrderNo))
+            if (string.IsNullOrWhiteSpace(_workOrderId))
             {
-                await DisplayAlert("提示", "工单号为空，无法查询当前关联任务池。", "确定");
-                TaskPoolList.ItemsSource = Array.Empty<WorkOrderInputOutputDto>();
+                await DisplayAlert("提示", "工单列表主键为空，无法查询当前关联任务池。", "确定");
+                TaskPoolList.ItemsSource = Array.Empty<WorkOrderDetailDto>();
                 return;
             }
 
             RefreshContainer.IsRefreshing = true;
-            _tasks = await _workOrderApi.GetWorkOrderInputOutputAsync(_workOrderNo);
+            var detail = await _workOrderApi.GetWorkOrderDetailAsync(_workOrderId);
+            _tasks = detail is null ? new List<WorkOrderDetailDto>() : new List<WorkOrderDetailDto> { detail };
             TaskPoolList.ItemsSource = _tasks;
         }
         catch (Exception ex)
