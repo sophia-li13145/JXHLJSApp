@@ -48,6 +48,7 @@
       "orderStart": "/pda/pmsWorkOrder/orderStart",
       "detail": "/pda/pmsWorkOrder/getWorkOrderDetail",
       "inputOutput": "/pda/pmsWorkOrder/getWorkOrderInputOutput",
+      "confirmInput": "/pda/pmsWorkOrder/confirmInput",
       "page": "/pda/pmsWorkOrder/pageWorkOrders",
       "workflow": "/pda/pmsWorkOrder/getWorkOrderWorkflow",
       "processTasks": "/pda/pmsWorkOrder/pageWorkProcessTasks",
@@ -79,6 +80,12 @@
     "warehouse": {
       "queryAll": "/pda/wmsWarehouse/queryAllWarehouse",
       "queryByCode": "/pda/wmsWarehouse/queryLocationByWarehouseCode"
+    },
+    "materialQrCode": {
+      "scanQueryMaterialInfo": "/pda/wmsMaterialQrCode/scanQueryMaterialInfo"
+    },
+    "machineBind": {
+      "scanToWork": "/pda/devUserMachineBindRecord/scanToWork"
     }
   },
   "logging": {
