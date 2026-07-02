@@ -4,16 +4,24 @@ using JXHLJSApp.Services.WorkOrders;
 namespace JXHLJSApp.Pages.WorkStart;
 
 [QueryProperty(nameof(WorkOrderId), "id")]
+[QueryProperty(nameof(WorkOrderNo), "workOrderNo")]
 public partial class WorkExecutionPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
     private List<WorkOrderDetailDto> _tasks = new();
     private string? _workOrderId;
+    private string? _workOrderNo;
 
     public string? WorkOrderId
     {
         get => _workOrderId;
         set => _workOrderId = Uri.UnescapeDataString(value ?? string.Empty);
+    }
+
+    public string? WorkOrderNo
+    {
+        get => _workOrderNo;
+        set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty);
     }
 
     public WorkExecutionPage(IWorkOrderApi workOrderApi)
@@ -59,8 +67,45 @@ public partial class WorkExecutionPage : ContentPage
         }
     }
 
+    private async void OnInstructionTapped(object sender, TappedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_workOrderId))
+        {
+            await DisplayAlert("提示", "工单列表主键为空，无法查看生产作业指令卡。", "确定");
+            return;
+        }
+
+        var query = new Dictionary<string, object>
+        {
+            ["id"] = _workOrderId
+        };
+
+        if (!string.IsNullOrWhiteSpace(_workOrderNo))
+        {
+            query["workOrderNo"] = _workOrderNo;
+        }
+
+        await Shell.Current.GoToAsync(AppShell.RouteWorkOrderInstruction, query);
+    }
+
+    private async void OnMaterialLoadingTapped(object sender, TappedEventArgs e)
+    {
+        var query = new Dictionary<string, object>();
+        if (!string.IsNullOrWhiteSpace(_workOrderId))
+        {
+            query["id"] = _workOrderId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(_workOrderNo))
+        {
+            query["workOrderNo"] = _workOrderNo;
+        }
+
+        await Shell.Current.GoToAsync(AppShell.RouteMaterialLoading, query);
+    }
+
     private async void OnBackHomeTapped(object sender, TappedEventArgs e)
     {
-        await Shell.Current.GoToAsync(AppShell.RouteHome);
+        await Shell.Current.GoToAsync("..");
     }
 }

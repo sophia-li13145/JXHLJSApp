@@ -8,7 +8,7 @@
         <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="18,18,18,14" HeightRequest="66">
             <Border.StrokeShape><RoundRectangle CornerRadius="0,0,18,18" /></Border.StrokeShape>
             <Grid ColumnDefinitions="Auto,*,Auto">
-                <Label Text="‹ 返回主页" TextColor="White" FontSize="15" VerticalOptions="Center">
+                <Label Text="‹ 返回工单" TextColor="White" FontSize="15" VerticalOptions="Center">
                     <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackHomeTapped" /></Label.GestureRecognizers>
                 </Label>
                 <Label Grid.Column="1" Text="生产执行中" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" />
@@ -20,8 +20,23 @@
             <ScrollView>
                 <VerticalStackLayout Padding="17,14,17,24" Spacing="16">
                     <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
-                        <Border BackgroundColor="White" StrokeThickness="0" Padding="12" HeightRequest="103"><Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape><VerticalStackLayout Spacing="10" HorizontalOptions="Center"><Border BackgroundColor="#58AFC3" WidthRequest="44" HeightRequest="44"><Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape><Label Text="📋" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" FontSize="20" /></Border><Label Text="查看指令卡" TextColor="#001431" FontAttributes="Bold" /></VerticalStackLayout></Border>
-                        <Border Grid.Column="1" BackgroundColor="White" StrokeThickness="0" Padding="12" HeightRequest="103"><Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape><VerticalStackLayout Spacing="10" HorizontalOptions="Center"><Border BackgroundColor="#62B884" WidthRequest="44" HeightRequest="44"><Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape><Label Text="📥" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" FontSize="20" /></Border><Label Text="上料" TextColor="#001431" FontAttributes="Bold" /></VerticalStackLayout></Border>
+                        <Border BackgroundColor="White" StrokeThickness="0" Padding="12" HeightRequest="103">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnInstructionTapped" />
+                            </Border.GestureRecognizers>
+                            <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                            <VerticalStackLayout Spacing="10" HorizontalOptions="Center">
+                                <Border BackgroundColor="#58AFC3" WidthRequest="44" HeightRequest="44"><Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape><Label Text="📋" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" FontSize="20" /></Border>
+                                <Label Text="查看指令卡" TextColor="#001431" FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                        </Border>
+                        <Border Grid.Column="1" BackgroundColor="White" StrokeThickness="0" Padding="12" HeightRequest="103">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnMaterialLoadingTapped" />
+                            </Border.GestureRecognizers>
+                            <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                            <VerticalStackLayout Spacing="10" HorizontalOptions="Center"><Border BackgroundColor="#62B884" WidthRequest="44" HeightRequest="44"><Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape><Label Text="📥" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" FontSize="20" /></Border><Label Text="上料" TextColor="#001431" FontAttributes="Bold" /></VerticalStackLayout>
+                        </Border>
                         <Border Grid.Column="2" BackgroundColor="White" StrokeThickness="0" Padding="12" HeightRequest="103"><Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape><VerticalStackLayout Spacing="10" HorizontalOptions="Center"><Border BackgroundColor="#54B4E4" WidthRequest="44" HeightRequest="44"><Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape><Label Text="📤" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" FontSize="20" /></Border><Label Text="下料" TextColor="#001431" FontAttributes="Bold" /></VerticalStackLayout></Border>
                         <Border Grid.Row="1" BackgroundColor="White" StrokeThickness="0" Padding="12" HeightRequest="103"><Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape><VerticalStackLayout Spacing="10" HorizontalOptions="Center"><Border BackgroundColor="#F27655" WidthRequest="44" HeightRequest="44"><Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape><Label Text="⚠️" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" FontSize="20" /></Border><Label Text="异常上报" TextColor="#001431" FontAttributes="Bold" /></VerticalStackLayout></Border>
                         <Border Grid.Row="1" Grid.Column="1" BackgroundColor="White" StrokeThickness="0" Padding="12" HeightRequest="103"><Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape><VerticalStackLayout Spacing="10" HorizontalOptions="Center"><Border BackgroundColor="#DEBC79" WidthRequest="44" HeightRequest="44"><Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape><Label Text="↩️" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" FontSize="20" /></Border><Label Text="返工上报" TextColor="#001431" FontAttributes="Bold" /></VerticalStackLayout></Border>
