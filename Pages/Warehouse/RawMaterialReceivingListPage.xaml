@@ -21,7 +21,7 @@
         </Border>
 
         <RefreshView Grid.Row="1" x:Name="RefreshContainer" Refreshing="OnRefreshing">
-            <CollectionView x:Name="ReceivingList" EmptyView="暂无采购入库单" Margin="18,16,18,0">
+            <CollectionView x:Name="ReceivingList" EmptyView="当前没有采购入库数据" Margin="18,16,18,0">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
                         <Border BackgroundColor="White" StrokeThickness="0" Padding="20,18" Margin="0,0,0,14">

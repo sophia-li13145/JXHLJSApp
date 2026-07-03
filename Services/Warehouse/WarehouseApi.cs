@@ -50,7 +50,16 @@ public sealed class WarehouseApi : IWarehouseApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _rawMaterialReceivingListEndpoint);
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<List<RawMaterialReceivingDto>>(resp, ct).ConfigureAwait(false);
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<List<RawMaterialReceivingDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        if (data is null)
+        {
+            throw new InvalidOperationException("接口返回为空。");
+        }
+        if (data.code.HasValue && data.code.Value != 0)
+        {
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
+        }
         return data.result ?? new List<RawMaterialReceivingDto>();
     }
 
