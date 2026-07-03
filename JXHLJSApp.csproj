@@ -8,7 +8,7 @@
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<ApplicationTitle>JXHLJSApp</ApplicationTitle>
+		<ApplicationTitle>联创数智管家</ApplicationTitle>
 		<ApplicationId>com.jxhljs.app</ApplicationId>
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
@@ -28,11 +28,12 @@
 		<AndroidPackageFormat>apk</AndroidPackageFormat>
 		<AndroidTargetSdkVersion>34</AndroidTargetSdkVersion>
 	</PropertyGroup>
-	<PropertyGroup>
-		<ApplicationTitle>JXHLJSApp</ApplicationTitle>
-	</PropertyGroup>
 	<ItemGroup>
-		<MauiIcon Include="Resources\AppIcon\appicon.png" />
+		<!-- App Icon -->
+		<MauiIcon Include="Resources\AppIcon\appicon.svg"
+				  ForegroundFile="Resources\AppIcon\appiconfg.svg"
+				  Color="#202227"
+				  ForegroundScale="0.52" />
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
 		<MauiImage Include="Resources\Images\*" />
 		<MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
