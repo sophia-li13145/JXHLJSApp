@@ -7,6 +7,6 @@ public sealed class AttachmentDto
     public string? attachmentLocation { get; set; }
     public string? attachmentName { get; set; }
     public string? attachmentRealName { get; set; }
-    public long? attachmentSize { get; set; }
+    public decimal? attachmentSize { get; set; }
     public string? attachmentUrl { get; set; }
 }

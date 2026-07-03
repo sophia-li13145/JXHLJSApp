@@ -4,7 +4,7 @@ public class ApiResp<T>
 {
     public bool success { get; set; }
     public string? message { get; set; }
-    public int? code { get; set; }
-    public long? costTime { get; set; }
+    public decimal? code { get; set; }
+    public decimal? costTime { get; set; }
     public T? result { get; set; }
 }

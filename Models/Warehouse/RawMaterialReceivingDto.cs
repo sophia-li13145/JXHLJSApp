@@ -4,7 +4,7 @@ public sealed class RawMaterialReceivingDto
 {
     public string? arrivalNo { get; set; }
     public string? createdTime { get; set; }
-    public int? detailCount { get; set; }
+    public decimal? detailCount { get; set; }
     public string? id { get; set; }
     public string? instockNo { get; set; }
     public string? instockStatus { get; set; }
@@ -20,7 +20,7 @@ public sealed class RawMaterialReceivingDto
 
     public string instockNoDisplay => string.IsNullOrWhiteSpace(instockNo) ? "--" : instockNo;
     public string materialDisplay => string.IsNullOrWhiteSpace(materialNames) ? "--" : materialNames;
-    public string detailCountDisplay => detailCount.HasValue ? $"共 {detailCount.Value} 件" : "共 -- 件";
+    public string detailCountDisplay => detailCount.HasValue ? $"共 {detailCount.Value:0.##} 件" : "共 -- 件";
     public string warehouseDisplay => string.IsNullOrWhiteSpace(instockWarehouses) ? "--" : instockWarehouses;
     public string statusDisplay => FirstNonEmpty(instockStatusName, instockStatus, "--");
     public bool canCancel => string.Equals(instockStatus, "0", StringComparison.OrdinalIgnoreCase);
