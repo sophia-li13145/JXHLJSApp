@@ -1,6 +1,7 @@
 using JXHLJSApp.Pages;
 using JXHLJSApp.Pages.WorkOrders;
 using JXHLJSApp.Pages.WorkStart;
+using JXHLJSApp.Pages.Warehouse;
 
 namespace JXHLJSApp;
 
@@ -17,6 +18,8 @@ public partial class AppShell : Shell
     public const string RouteWorkOrderInstruction = "WorkOrderInstruction";
     public const string RouteWorkExecution = "WorkExecution";
     public const string RouteMaterialLoading = "MaterialLoading";
+    public const string RouteRawMaterialReceiving = "RawMaterialReceiving";
+    public const string RouteAddRawMaterialReceiving = "AddRawMaterialReceiving";
 
     public AppShell(IServiceProvider services)
     {
@@ -30,6 +33,8 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteWorkOrderInstruction, typeof(WorkOrderInstructionPage));
         Routing.RegisterRoute(RouteWorkExecution, typeof(WorkExecutionPage));
         Routing.RegisterRoute(RouteMaterialLoading, typeof(MaterialLoadingPage));
+        Routing.RegisterRoute(RouteRawMaterialReceiving, typeof(RawMaterialReceivingListPage));
+        Routing.RegisterRoute(RouteAddRawMaterialReceiving, typeof(AddRawMaterialReceivingPage));
         BuildLoginShell();
     }
 

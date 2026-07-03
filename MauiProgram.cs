@@ -2,6 +2,7 @@
 using JXHLJSApp.Pages;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.WorkOrders;
+using JXHLJSApp.Services.Warehouse;
 using JXHLJSApp.Tools;
 using JXHLJSApp.ViewModels;
 using Microsoft.Extensions.Logging;
@@ -44,6 +45,8 @@ namespace JXHLJSApp
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.WorkOrderInstructionPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.WorkExecutionPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.MaterialLoadingPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.RawMaterialReceivingListPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.AddRawMaterialReceivingPage>();
             builder.Services.AddTransient<AdminViewModel>();
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();
@@ -58,6 +61,9 @@ namespace JXHLJSApp
                 .AddHttpMessageHandler<AuthHeaderHandler>()
                 .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient<IWorkOrderApi, WorkOrderApi>(ConfigureBaseAddress)
+                .AddHttpMessageHandler<AuthHeaderHandler>()
+                .AddHttpMessageHandler<TokenExpiredHandler>();
+            builder.Services.AddHttpClient<IWarehouseApi, WarehouseApi>(ConfigureBaseAddress)
                 .AddHttpMessageHandler<AuthHeaderHandler>()
                 .AddHttpMessageHandler<TokenExpiredHandler>();
 
