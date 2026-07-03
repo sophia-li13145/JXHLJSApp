@@ -1,0 +1,280 @@
+using System.Collections.ObjectModel;
+using System.Globalization;
+using JXHLJSApp.Models.Warehouse;
+using JXHLJSApp.Services;
+using JXHLJSApp.Services.Warehouse;
+
+namespace JXHLJSApp.Pages.Warehouse;
+
+public partial class AddRawMaterialReceivingPage : ContentPage
+{
+    private readonly IWarehouseApi _warehouseApi;
+    private readonly IScanService _scanService;
+    private readonly ObservableCollection<RawMaterialOcrDto> _ocrItems = new();
+    private readonly ObservableCollection<MaterialSummaryItem> _summaryItems = new();
+    private RawMaterialOcrDto? _pendingOcr;
+    private RawMaterialOcrDto? _selectedTicket;
+    private string? _instockNo;
+    private string? _pendingQrCode;
+
+    public AddRawMaterialReceivingPage(IWarehouseApi warehouseApi, IScanService scanService)
+    {
+        InitializeComponent();
+        _warehouseApi = warehouseApi;
+        _scanService = scanService;
+        OcrList.ItemsSource = _ocrItems;
+        SummaryList.ItemsSource = _summaryItems;
+        var materialTypes = new[] { "原料", "半成品" };
+        MaterialTypePicker.ItemsSource = materialTypes;
+        BindMaterialTypePicker.ItemsSource = materialTypes;
+        MaterialTypePicker.SelectedIndex = 0;
+        BindMaterialTypePicker.SelectedIndex = 0;
+    }
+
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        if (string.IsNullOrWhiteSpace(_instockNo))
+        {
+            await InitializeBlankInstockAsync();
+        }
+    }
+
+    private async Task InitializeBlankInstockAsync()
+    {
+        try
+        {
+            var blank = await _warehouseApi.AddBlankInstockAsync();
+            _instockNo = blank.instockNo;
+            InstockNoLabel.Text = string.IsNullOrWhiteSpace(_instockNo) ? "--" : _instockNo;
+
+            var warehouses = await _warehouseApi.QueryWarehouseInfoAsync();
+            WarehousePicker.ItemsSource = warehouses;
+            if (warehouses.Count > 0)
+            {
+                WarehousePicker.SelectedIndex = 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("初始化失败", ex.Message, "确定");
+        }
+    }
+
+    private async void OnTakePhotoClicked(object sender, EventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_instockNo))
+        {
+            await DisplayAlert("提示", "入库单号尚未生成，请稍后重试。", "确定");
+            return;
+        }
+
+        try
+        {
+            var permission = await Permissions.RequestAsync<Permissions.Camera>();
+            if (permission != PermissionStatus.Granted)
+            {
+                await DisplayAlert("提示", "未授予摄像头权限。", "确定");
+                return;
+            }
+
+            var photo = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "拍摄票签" });
+            if (photo is null) return;
+
+            ExtractedTextLabel.Text = "图片上传与识别中...";
+            var attachment = await _warehouseApi.UploadAttachmentAsync(photo, "rawMaterialReceiving", _instockNo);
+            var ocr = await _warehouseApi.RecognizeIncomingAsync(attachment, _instockNo);
+            ShowTicketConfirmDialog(ocr);
+        }
+        catch (FeatureNotSupportedException)
+        {
+            await DisplayAlert("提示", "当前设备不支持拍照。", "确定");
+        }
+        catch (Exception ex)
+        {
+            ExtractedTextLabel.Text = "暂无提取的票签内容";
+            await DisplayAlert("识别失败", ex.Message, "确定");
+        }
+    }
+
+    private async void OnCalculateSummaryClicked(object sender, EventArgs e)
+    {
+        _summaryItems.Clear();
+        var summaries = _ocrItems
+            .GroupBy(item => string.IsNullOrWhiteSpace(item.materialName) ? "--" : item.materialName!.Trim())
+            .Select(group =>
+            {
+                var first = group.First();
+                var total = group.Sum(item => ParseWeight(item.pieceWeight));
+                return new MaterialSummaryItem(
+                    group.Key,
+                    string.IsNullOrWhiteSpace(first.materialType) ? "原料" : first.materialType!.Trim(),
+                    string.IsNullOrWhiteSpace(first.originPlace) ? "--" : first.originPlace!.Trim(),
+                    group.Count(),
+                    total);
+            })
+            .OrderBy(item => item.materialName)
+            .ToList();
+
+        foreach (var item in summaries)
+        {
+            _summaryItems.Add(item);
+        }
+
+        if (_summaryItems.Count == 0)
+        {
+            await DisplayAlert("提示", "暂无待入库物料可汇总。", "确定");
+            return;
+        }
+
+        SummaryOverlay.IsVisible = true;
+    }
+
+    private static decimal ParseWeight(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return 0m;
+
+        var isKg = value.Contains("KG", StringComparison.OrdinalIgnoreCase);
+        var text = value.Trim().Replace("吨", string.Empty).Replace("KG", string.Empty, StringComparison.OrdinalIgnoreCase).Trim();
+        var parsed = decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var invariantValue)
+            ? invariantValue
+            : decimal.TryParse(text, NumberStyles.Any, CultureInfo.CurrentCulture, out var currentValue) ? currentValue : 0m;
+        return isKg ? parsed / 1000m : parsed;
+    }
+
+    private void OnCloseSummaryTapped(object sender, TappedEventArgs e) => SummaryOverlay.IsVisible = false;
+
+    private void OnCloseSummaryClicked(object sender, EventArgs e) => SummaryOverlay.IsVisible = false;
+
+    private async void OnScanBindClicked(object sender, EventArgs e)
+    {
+        if (_selectedTicket is null)
+        {
+            await DisplayAlert("提示", "请先拍照识别并确认票签内容。", "确定");
+            return;
+        }
+
+        try
+        {
+            var qsCode = await _scanService.ScanAsync("扫码绑定");
+            if (string.IsNullOrWhiteSpace(qsCode)) return;
+
+            var qrInfo = await _warehouseApi.QueryQrCodeInfoAsync(qsCode.Trim());
+            ShowBindConfirmDialog(qrInfo.qrCode ?? qsCode.Trim(), _selectedTicket);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("扫码绑定失败", ex.Message, "确定");
+        }
+    }
+
+    private void ShowBindConfirmDialog(string qrCode, RawMaterialOcrDto source)
+    {
+        _pendingQrCode = qrCode;
+        BindQrCodeEntry.Text = qrCode;
+        BindMaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(source.materialType) ? "原料" : source.materialType;
+        BindMaterialNameEntry.Text = source.materialName;
+        BindSpecEntry.Text = source.spec;
+        BindFurnaceNoEntry.Text = source.furnaceNo;
+        BindOriginPlaceEntry.Text = source.originPlace;
+        BindPieceWeightEntry.Text = source.pieceWeight;
+        BindConfirmOverlay.IsVisible = true;
+    }
+
+    private void OnConfirmBindClicked(object sender, EventArgs e)
+    {
+        var materialType = BindMaterialTypePicker.SelectedItem?.ToString();
+        var bound = new RawMaterialOcrDto
+        {
+            qrCode = _pendingQrCode,
+            materialType = string.IsNullOrWhiteSpace(materialType) ? _selectedTicket?.materialType : materialType,
+            materialName = BindMaterialNameEntry.Text,
+            spec = BindSpecEntry.Text,
+            furnaceNo = BindFurnaceNoEntry.Text,
+            originPlace = BindOriginPlaceEntry.Text,
+            pieceWeight = BindPieceWeightEntry.Text,
+            pieceWeightUnit = "吨",
+            coilCount = _selectedTicket?.coilCount,
+            coilDiameter = _selectedTicket?.coilDiameter,
+            ocrRawText = _selectedTicket?.ocrRawText,
+            strength = _selectedTicket?.strength
+        };
+
+        _ocrItems.Add(bound);
+        MaterialListTitle.Text = $"待入库列表 ({_ocrItems.Count})";
+        BindConfirmOverlay.IsVisible = false;
+    }
+
+    private void OnCloseBindConfirmTapped(object sender, TappedEventArgs e) => BindConfirmOverlay.IsVisible = false;
+
+    private void OnCancelBindConfirmClicked(object sender, EventArgs e) => BindConfirmOverlay.IsVisible = false;
+
+    private void ShowTicketConfirmDialog(RawMaterialOcrDto ocr)
+    {
+        _pendingOcr = ocr;
+        MaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(ocr.materialType) ? "原料" : ocr.materialType;
+        MaterialNameEntry.Text = ocr.materialName;
+        SpecEntry.Text = ocr.spec;
+        FurnaceNoEntry.Text = ocr.furnaceNo;
+        OriginPlaceEntry.Text = ocr.originPlace;
+        PieceWeightEntry.Text = ocr.pieceWeight;
+        TicketConfirmOverlay.IsVisible = true;
+    }
+
+    private void OnConfirmTicketClicked(object sender, EventArgs e)
+    {
+        var materialType = MaterialTypePicker.SelectedItem?.ToString();
+        _selectedTicket = new RawMaterialOcrDto
+        {
+            materialType = string.IsNullOrWhiteSpace(materialType) ? _pendingOcr?.materialType : materialType,
+            materialName = MaterialNameEntry.Text,
+            spec = SpecEntry.Text,
+            furnaceNo = FurnaceNoEntry.Text,
+            originPlace = OriginPlaceEntry.Text,
+            pieceWeight = PieceWeightEntry.Text,
+            pieceWeightUnit = "吨",
+            coilCount = _pendingOcr?.coilCount,
+            coilDiameter = _pendingOcr?.coilDiameter,
+            ocrRawText = _pendingOcr?.ocrRawText,
+            strength = _pendingOcr?.strength
+        };
+
+        ApplySelectedTicket(_selectedTicket);
+        TicketConfirmOverlay.IsVisible = false;
+    }
+
+    private void ApplySelectedTicket(RawMaterialOcrDto ticket)
+    {
+        ExtractedTextLabel.IsVisible = false;
+        SelectedTicketCard.IsVisible = true;
+        SelectedMaterialTypeLabel.Text = string.IsNullOrWhiteSpace(ticket.materialType) ? "原料" : ticket.materialType;
+        SelectedMaterialNameLabel.Text = ticket.materialNameDisplay;
+        SelectedSpecLabel.Text = ticket.specDisplay;
+        SelectedFurnaceNoLabel.Text = ticket.furnaceNoDisplay;
+        SelectedOriginPlaceLabel.Text = ticket.originPlaceDisplay;
+        SelectedPieceWeightLabel.Text = ticket.pieceWeightDisplay;
+    }
+
+    private void ClearSelectedTicket()
+    {
+        _selectedTicket = null;
+        SelectedTicketCard.IsVisible = false;
+        ExtractedTextLabel.IsVisible = true;
+        ExtractedTextLabel.Text = "暂无提取的票签内容";
+    }
+
+    private void OnDeleteTicketTapped(object sender, TappedEventArgs e) => ClearSelectedTicket();
+
+    private void OnCloseTicketConfirmTapped(object sender, TappedEventArgs e) => TicketConfirmOverlay.IsVisible = false;
+
+    private void OnCancelTicketConfirmClicked(object sender, EventArgs e) => TicketConfirmOverlay.IsVisible = false;
+
+    private async void OnBackLabelTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
+
+    private async void OnCancelClicked(object sender, EventArgs e) => await Shell.Current.GoToAsync("..");
+}
+
+internal sealed record MaterialSummaryItem(string materialName, string materialType, string originPlace, int count, decimal totalWeight)
+{
+    public string totalWeightDisplay => $"{totalWeight:0.00} 吨";
+}

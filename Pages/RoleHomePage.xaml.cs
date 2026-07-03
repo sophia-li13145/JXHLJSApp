@@ -386,7 +386,7 @@ internal sealed record RoleHomeDefinition(
         {
             "warehouseKeeper" => new("warehouseKeeper", "仓储与包装管理", "#159957", "📦", RoleHomeLayout.Grid, new[]
             {
-                new HomeModule("原料入库", "📥", Color.FromArgb("#F3F0FF")),
+                new HomeModule("原料入库", "📥", Color.FromArgb("#F3F0FF"), Route: AppShell.RouteRawMaterialReceiving),
                 new HomeModule("生产入库", "🏭", Color.FromArgb("#EAF4FF")),
                 new HomeModule("生产出库", "🏗️", Color.FromArgb("#FFF7E8")),
                 new HomeModule("发货出库", "🚚", Color.FromArgb("#EFF8F0")),
