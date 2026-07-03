@@ -12,7 +12,7 @@ public sealed class MaterialQrCodeInfoDto
     public string? qrCode { get; set; }
     public string? qrStatus { get; set; }
     public string? qrStatusName { get; set; }
-    public int? qrTimes { get; set; }
+    public decimal? qrTimes { get; set; }
     public string? sourceBizType { get; set; }
     public string? sourceBizTypeName { get; set; }
     public string? spec { get; set; }

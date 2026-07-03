@@ -15,6 +15,18 @@
       "alluser": "/pda/auth/allUsers",
       "userinfo": "/pda/auth/getUserInfo"
     },
+    "rawMaterialReceiving": {
+      "listInStock": "/pda/rawMaterialReceiving/listInStock",
+      "addBlankInstock": "/pda/rawMaterialReceiving/addBlankInstock",
+      "queryWarehouseInfo": "/pda/rawMaterialReceiving/queryWarehouseInfo",
+      "ocrIncoming": "/pda/rawMaterialReceiving/ocrIncoming",
+      "queryQrCodeInfo": "/pda/rawMaterialReceiving/queryQrCodeInfo",
+      "getDictList": "/pda/rawMaterialReceiving/getDictList",
+      "cancelBlankInstock": "/pda/rawMaterialReceiving/cancelBlankInstock"
+    },
+    "attachment": {
+      "uploadAttachment": "/pda/attachment/uploadAttachment"
+    },
     "inbound": {
       "list": "/pda/wmsMaterialInstock/getInStock",
       "detail": "/pda/wmsMaterialInstock/getInStockDetail",
