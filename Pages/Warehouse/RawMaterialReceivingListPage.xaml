@@ -28,14 +28,17 @@
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="16" />
                             </Border.StrokeShape>
-                            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="14">
+                            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="10">
                                 <Label Text="{Binding instockNoDisplay}" TextColor="#051B3D" FontSize="19" FontAttributes="Bold" />
-                                <Border Grid.Column="1" BackgroundColor="#EAFBF0" StrokeThickness="0" Padding="10,4" VerticalOptions="Start">
-                                    <Border.StrokeShape>
-                                        <RoundRectangle CornerRadius="6" />
-                                    </Border.StrokeShape>
-                                    <Label Text="{Binding statusDisplay}" TextColor="#09913A" FontSize="13" FontAttributes="Bold" />
-                                </Border>
+                                <VerticalStackLayout Grid.Column="1" Spacing="8" VerticalOptions="Start">
+                                    <Border BackgroundColor="{Binding statusBackgroundColor}" StrokeThickness="0" Padding="10,4">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="6" />
+                                        </Border.StrokeShape>
+                                        <Label Text="{Binding statusDisplay}" TextColor="{Binding statusTextColor}" FontSize="13" FontAttributes="Bold" />
+                                    </Border>
+                                    <Button Text="取消" IsVisible="{Binding canCancel}" BackgroundColor="#FFECEF" TextColor="#F64148" BorderColor="#FFC5CC" BorderWidth="1" CornerRadius="6" FontAttributes="Bold" FontSize="13" Padding="10,4" HeightRequest="32" Clicked="OnCancelInstockClicked" />
+                                </VerticalStackLayout>
                                 <Label Grid.Row="1" Grid.ColumnSpan="2" TextColor="#38557C" FontSize="14">
                                     <Label.FormattedText>
                                         <FormattedString>

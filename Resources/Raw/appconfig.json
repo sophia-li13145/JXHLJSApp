@@ -20,7 +20,9 @@
       "addBlankInstock": "/pda/rawMaterialReceiving/addBlankInstock",
       "queryWarehouseInfo": "/pda/rawMaterialReceiving/queryWarehouseInfo",
       "ocrIncoming": "/pda/rawMaterialReceiving/ocrIncoming",
-      "queryQrCodeInfo": "/pda/rawMaterialReceiving/queryQrCodeInfo"
+      "queryQrCodeInfo": "/pda/rawMaterialReceiving/queryQrCodeInfo",
+      "getDictList": "/pda/rawMaterialReceiving/getDictList",
+      "cancelBlankInstock": "/pda/rawMaterialReceiving/cancelBlankInstock"
     },
     "attachment": {
       "uploadAttachment": "/pda/attachment/uploadAttachment"

@@ -14,6 +14,7 @@ public interface IWarehouseApi
     Task<AttachmentDto> UploadAttachmentAsync(FileResult photo, string attachmentFolder, string attachmentLocation, CancellationToken ct = default);
     Task<RawMaterialOcrDto> RecognizeIncomingAsync(AttachmentDto fileInfo, string instockNo, CancellationToken ct = default);
     Task<QrCodeInfoDto> QueryQrCodeInfoAsync(string? qsCode, CancellationToken ct = default);
+    Task<bool> CancelBlankInstockAsync(string id, CancellationToken ct = default);
 }
 
 public sealed class WarehouseApi : IWarehouseApi
@@ -25,6 +26,9 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _uploadAttachmentEndpoint;
     private readonly string _ocrIncomingEndpoint;
     private readonly string _queryQrCodeInfoEndpoint;
+    private readonly string _dictListEndpoint;
+    private readonly string _cancelBlankInstockEndpoint;
+    private IReadOnlyDictionary<string, string>? _instockStatusNames;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public WarehouseApi(HttpClient http, IConfigLoader configLoader)
@@ -43,6 +47,10 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("rawMaterialReceiving.ocrIncoming", "/pda/rawMaterialReceiving/ocrIncoming"), servicePath);
         _queryQrCodeInfoEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.queryQrCodeInfo", "/pda/rawMaterialReceiving/queryQrCodeInfo"), servicePath);
+        _dictListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("rawMaterialReceiving.getDictList", "/pda/rawMaterialReceiving/getDictList"), servicePath);
+        _cancelBlankInstockEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("rawMaterialReceiving.cancelBlankInstock", "/pda/rawMaterialReceiving/cancelBlankInstock"), servicePath);
     }
 
     public async Task<List<RawMaterialReceivingDto>> GetRawMaterialReceivingListAsync(CancellationToken ct = default)
@@ -56,11 +64,13 @@ public sealed class WarehouseApi : IWarehouseApi
         {
             throw new InvalidOperationException("接口返回为空。");
         }
-        if (data.success == false)
+        if (data.code.HasValue && data.code.Value != 0)
         {
             throw new InvalidOperationException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
         }
-        return data.result ?? new List<RawMaterialReceivingDto>();
+        var list = data.result ?? new List<RawMaterialReceivingDto>();
+        await ApplyInstockStatusNamesAsync(list, ct).ConfigureAwait(false);
+        return list;
     }
 
     public async Task<BlankInstockDto> AddBlankInstockAsync(CancellationToken ct = default)
@@ -127,6 +137,47 @@ public sealed class WarehouseApi : IWarehouseApi
         return data.result ?? new QrCodeInfoDto();
     }
 
+
+
+    public async Task<bool> CancelBlankInstockAsync(string id, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_cancelBlankInstockEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(id)] = id
+        }));
+        using var resp = await _http.PostAsync(url, new FormUrlEncodedContent(Array.Empty<KeyValuePair<string, string>>()), ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
+        return data.result;
+    }
+
+    private async Task ApplyInstockStatusNamesAsync(IEnumerable<RawMaterialReceivingDto> items, CancellationToken ct)
+    {
+        _instockStatusNames ??= await LoadInstockStatusNamesAsync(ct).ConfigureAwait(false);
+        foreach (var item in items)
+        {
+            if (!string.IsNullOrWhiteSpace(item.instockStatus) && _instockStatusNames.TryGetValue(item.instockStatus, out var name))
+            {
+                item.instockStatusName = name;
+            }
+        }
+    }
+
+    private async Task<IReadOnlyDictionary<string, string>> LoadInstockStatusNamesAsync(CancellationToken ct)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _dictListEndpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<List<DictGroupDto>>(resp, ct).ConfigureAwait(false);
+        return data.result?
+            .FirstOrDefault(group => string.Equals(group.field, "instockStatus", StringComparison.OrdinalIgnoreCase))?
+            .dictItems?
+            .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue))
+            .GroupBy(item => item.dictItemValue!)
+            .ToDictionary(group => group.Key, group => group.First().dictItemName ?? group.Key)
+            ?? new Dictionary<string, string>();
+    }
+
     private static async Task<ApiResp<T>> ReadApiResponseAsync<T>(HttpResponseMessage resp, CancellationToken ct)
     {
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
@@ -135,7 +186,7 @@ public sealed class WarehouseApi : IWarehouseApi
         {
             throw new InvalidOperationException("接口返回为空。");
         }
-        if (data.success == false )
+        if ((data.code.HasValue && data.code.Value != 0) || (data.success == false && data.result is null))
         {
             throw new InvalidOperationException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
         }
