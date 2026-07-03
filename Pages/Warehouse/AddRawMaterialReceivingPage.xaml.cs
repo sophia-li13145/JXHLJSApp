@@ -71,14 +71,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage
 
         try
         {
-            var permission = await Permissions.RequestAsync<Permissions.Camera>();
-            if (permission != PermissionStatus.Granted)
-            {
-                await DisplayAlert("提示", "未授予摄像头权限。", "确定");
-                return;
-            }
-
-            var photo = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "拍摄票签" });
+            var photo = await GetTicketPhotoAsync();
             if (photo is null) return;
 
             ExtractedTextLabel.Text = "图片上传与识别中...";
@@ -86,15 +79,47 @@ public partial class AddRawMaterialReceivingPage : ContentPage
             var ocr = await _warehouseApi.RecognizeIncomingAsync(attachment, _instockNo);
             ShowTicketConfirmDialog(ocr);
         }
-        catch (FeatureNotSupportedException)
-        {
-            await DisplayAlert("提示", "当前设备不支持拍照。", "确定");
-        }
         catch (Exception ex)
         {
             ExtractedTextLabel.Text = "暂无提取的票签内容";
             await DisplayAlert("识别失败", ex.Message, "确定");
         }
+    }
+
+    private async Task<FileResult?> GetTicketPhotoAsync()
+    {
+        var captureSupported = MediaPicker.Default.IsCaptureSupported;
+        var choice = captureSupported
+            ? await DisplayActionSheet("上传票签图片", "取消", null, "拍照", "从相册选择")
+            : await DisplayActionSheet("当前设备不支持直接拍照，可从相册选择票签图片", "取消", null, "从相册选择");
+
+        if (choice == "取消" || string.IsNullOrWhiteSpace(choice)) return null;
+
+        if (choice == "从相册选择")
+        {
+            return await PickTicketPhotoAsync();
+        }
+
+        var permission = await Permissions.RequestAsync<Permissions.Camera>();
+        if (permission != PermissionStatus.Granted)
+        {
+            var fallback = await DisplayActionSheet("未授予摄像头权限，可从相册选择票签图片", "取消", null, "从相册选择");
+            return fallback == "从相册选择" ? await PickTicketPhotoAsync() : null;
+        }
+
+        try
+        {
+            return await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "拍摄票签" });
+        }
+        catch (FeatureNotSupportedException)
+        {
+            return await PickTicketPhotoAsync();
+        }
+    }
+
+    private static async Task<FileResult?> PickTicketPhotoAsync()
+    {
+        return await MediaPicker.Default.PickPhotoAsync(new MediaPickerOptions { Title = "选择票签图片" });
     }
 
     private async void OnCalculateSummaryClicked(object sender, EventArgs e)
