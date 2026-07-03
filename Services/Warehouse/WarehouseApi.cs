@@ -28,7 +28,6 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _queryQrCodeInfoEndpoint;
     private readonly string _dictListEndpoint;
     private readonly string _cancelBlankInstockEndpoint;
-    private IReadOnlyDictionary<string, string>? _instockStatusNames;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public WarehouseApi(HttpClient http, IConfigLoader configLoader)
@@ -55,6 +54,7 @@ public sealed class WarehouseApi : IWarehouseApi
 
     public async Task<List<RawMaterialReceivingDto>> GetRawMaterialReceivingListAsync(CancellationToken ct = default)
     {
+        var instockStatusNames = await LoadInstockStatusNamesAsync(ct).ConfigureAwait(false);
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _rawMaterialReceivingListEndpoint);
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
@@ -69,7 +69,7 @@ public sealed class WarehouseApi : IWarehouseApi
             throw new InvalidOperationException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
         }
         var list = data.result ?? new List<RawMaterialReceivingDto>();
-        await ApplyInstockStatusNamesAsync(list, ct).ConfigureAwait(false);
+        ApplyInstockStatusNames(list, instockStatusNames);
         return list;
     }
 
@@ -138,7 +138,6 @@ public sealed class WarehouseApi : IWarehouseApi
     }
 
 
-
     public async Task<bool> CancelBlankInstockAsync(string id, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_cancelBlankInstockEndpoint, new Dictionary<string, string?>
@@ -151,12 +150,11 @@ public sealed class WarehouseApi : IWarehouseApi
         return data.result;
     }
 
-    private async Task ApplyInstockStatusNamesAsync(IEnumerable<RawMaterialReceivingDto> items, CancellationToken ct)
+    private static void ApplyInstockStatusNames(IEnumerable<RawMaterialReceivingDto> items, IReadOnlyDictionary<string, string> instockStatusNames)
     {
-        _instockStatusNames ??= await LoadInstockStatusNamesAsync(ct).ConfigureAwait(false);
         foreach (var item in items)
         {
-            if (!string.IsNullOrWhiteSpace(item.instockStatus) && _instockStatusNames.TryGetValue(item.instockStatus, out var name))
+            if (!string.IsNullOrWhiteSpace(item.instockStatus) && instockStatusNames.TryGetValue(item.instockStatus, out var name))
             {
                 item.instockStatusName = name;
             }
