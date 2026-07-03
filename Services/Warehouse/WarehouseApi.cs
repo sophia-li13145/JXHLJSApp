@@ -13,6 +13,7 @@ public interface IWarehouseApi
     Task<List<WarehouseInfoDto>> QueryWarehouseInfoAsync(CancellationToken ct = default);
     Task<AttachmentDto> UploadAttachmentAsync(FileResult photo, string attachmentFolder, string attachmentLocation, CancellationToken ct = default);
     Task<RawMaterialOcrDto> RecognizeIncomingAsync(AttachmentDto fileInfo, string instockNo, CancellationToken ct = default);
+    Task<QrCodeInfoDto> QueryQrCodeInfoAsync(string? qsCode, CancellationToken ct = default);
 }
 
 public sealed class WarehouseApi : IWarehouseApi
@@ -23,6 +24,7 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _queryWarehouseInfoEndpoint;
     private readonly string _uploadAttachmentEndpoint;
     private readonly string _ocrIncomingEndpoint;
+    private readonly string _queryQrCodeInfoEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public WarehouseApi(HttpClient http, IConfigLoader configLoader)
@@ -39,6 +41,8 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("attachment.uploadAttachment", "/pda/attachment/uploadAttachment"), servicePath);
         _ocrIncomingEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.ocrIncoming", "/pda/rawMaterialReceiving/ocrIncoming"), servicePath);
+        _queryQrCodeInfoEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("rawMaterialReceiving.queryQrCodeInfo", "/pda/rawMaterialReceiving/queryQrCodeInfo"), servicePath);
     }
 
     public async Task<List<RawMaterialReceivingDto>> GetRawMaterialReceivingListAsync(CancellationToken ct = default)
@@ -100,6 +104,18 @@ public sealed class WarehouseApi : IWarehouseApi
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<RawMaterialOcrDto>(resp, ct).ConfigureAwait(false);
         return data.result ?? new RawMaterialOcrDto();
+    }
+
+    public async Task<QrCodeInfoDto> QueryQrCodeInfoAsync(string? qsCode, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_queryQrCodeInfoEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(qsCode)] = qsCode
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<QrCodeInfoDto>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new QrCodeInfoDto();
     }
 
     private static async Task<ApiResp<T>> ReadApiResponseAsync<T>(HttpResponseMessage resp, CancellationToken ct)

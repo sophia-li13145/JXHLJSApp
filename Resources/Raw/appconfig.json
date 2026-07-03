@@ -19,7 +19,8 @@
       "listInStock": "/pda/rawMaterialReceiving/listInStock",
       "addBlankInstock": "/pda/rawMaterialReceiving/addBlankInstock",
       "queryWarehouseInfo": "/pda/rawMaterialReceiving/queryWarehouseInfo",
-      "ocrIncoming": "/pda/rawMaterialReceiving/ocrIncoming"
+      "ocrIncoming": "/pda/rawMaterialReceiving/ocrIncoming",
+      "queryQrCodeInfo": "/pda/rawMaterialReceiving/queryQrCodeInfo"
     },
     "attachment": {
       "uploadAttachment": "/pda/attachment/uploadAttachment"

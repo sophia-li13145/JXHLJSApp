@@ -2,6 +2,7 @@ namespace JXHLJSApp.Models.Warehouse;
 
 public sealed class RawMaterialOcrDto
 {
+    public string? qrCode { get; set; }
     public string? coilCount { get; set; }
     public string? coilDiameter { get; set; }
     public string? furnaceNo { get; set; }

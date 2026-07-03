@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using JXHLJSApp.Models.Warehouse;
+using JXHLJSApp.Services;
 using JXHLJSApp.Services.Warehouse;
 
 namespace JXHLJSApp.Pages.Warehouse;
@@ -7,18 +9,26 @@ namespace JXHLJSApp.Pages.Warehouse;
 public partial class AddRawMaterialReceivingPage : ContentPage
 {
     private readonly IWarehouseApi _warehouseApi;
+    private readonly IScanService _scanService;
     private readonly ObservableCollection<RawMaterialOcrDto> _ocrItems = new();
+    private readonly ObservableCollection<MaterialSummaryItem> _summaryItems = new();
     private RawMaterialOcrDto? _pendingOcr;
     private RawMaterialOcrDto? _selectedTicket;
     private string? _instockNo;
+    private string? _pendingQrCode;
 
-    public AddRawMaterialReceivingPage(IWarehouseApi warehouseApi)
+    public AddRawMaterialReceivingPage(IWarehouseApi warehouseApi, IScanService scanService)
     {
         InitializeComponent();
         _warehouseApi = warehouseApi;
+        _scanService = scanService;
         OcrList.ItemsSource = _ocrItems;
-        MaterialTypePicker.ItemsSource = new[] { "原料", "半成品" };
+        SummaryList.ItemsSource = _summaryItems;
+        var materialTypes = new[] { "原料", "半成品" };
+        MaterialTypePicker.ItemsSource = materialTypes;
+        BindMaterialTypePicker.ItemsSource = materialTypes;
         MaterialTypePicker.SelectedIndex = 0;
+        BindMaterialTypePicker.SelectedIndex = 0;
     }
 
     protected override async void OnAppearing()
@@ -87,6 +97,118 @@ public partial class AddRawMaterialReceivingPage : ContentPage
         }
     }
 
+    private async void OnCalculateSummaryClicked(object sender, EventArgs e)
+    {
+        _summaryItems.Clear();
+        var summaries = _ocrItems
+            .GroupBy(item => string.IsNullOrWhiteSpace(item.materialName) ? "--" : item.materialName!.Trim())
+            .Select(group =>
+            {
+                var first = group.First();
+                var total = group.Sum(item => ParseWeight(item.pieceWeight));
+                return new MaterialSummaryItem(
+                    group.Key,
+                    string.IsNullOrWhiteSpace(first.materialType) ? "原料" : first.materialType!.Trim(),
+                    string.IsNullOrWhiteSpace(first.originPlace) ? "--" : first.originPlace!.Trim(),
+                    group.Count(),
+                    total);
+            })
+            .OrderBy(item => item.materialName)
+            .ToList();
+
+        foreach (var item in summaries)
+        {
+            _summaryItems.Add(item);
+        }
+
+        if (_summaryItems.Count == 0)
+        {
+            await DisplayAlert("提示", "暂无待入库物料可汇总。", "确定");
+            return;
+        }
+
+        SummaryOverlay.IsVisible = true;
+    }
+
+    private static decimal ParseWeight(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return 0m;
+
+        var isKg = value.Contains("KG", StringComparison.OrdinalIgnoreCase);
+        var text = value.Trim().Replace("吨", string.Empty).Replace("KG", string.Empty, StringComparison.OrdinalIgnoreCase).Trim();
+        var parsed = decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var invariantValue)
+            ? invariantValue
+            : decimal.TryParse(text, NumberStyles.Any, CultureInfo.CurrentCulture, out var currentValue) ? currentValue : 0m;
+        return isKg ? parsed / 1000m : parsed;
+    }
+
+    private void OnCloseSummaryTapped(object sender, TappedEventArgs e) => SummaryOverlay.IsVisible = false;
+
+    private void OnCloseSummaryClicked(object sender, EventArgs e) => SummaryOverlay.IsVisible = false;
+
+    private async void OnScanBindClicked(object sender, EventArgs e)
+    {
+        if (_selectedTicket is null)
+        {
+            await DisplayAlert("提示", "请先拍照识别并确认票签内容。", "确定");
+            return;
+        }
+
+        try
+        {
+            var qsCode = await _scanService.ScanAsync("扫码绑定");
+            if (string.IsNullOrWhiteSpace(qsCode)) return;
+
+            var qrInfo = await _warehouseApi.QueryQrCodeInfoAsync(qsCode.Trim());
+            ShowBindConfirmDialog(qrInfo.qrCode ?? qsCode.Trim(), _selectedTicket);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("扫码绑定失败", ex.Message, "确定");
+        }
+    }
+
+    private void ShowBindConfirmDialog(string qrCode, RawMaterialOcrDto source)
+    {
+        _pendingQrCode = qrCode;
+        BindQrCodeEntry.Text = qrCode;
+        BindMaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(source.materialType) ? "原料" : source.materialType;
+        BindMaterialNameEntry.Text = source.materialName;
+        BindSpecEntry.Text = source.spec;
+        BindFurnaceNoEntry.Text = source.furnaceNo;
+        BindOriginPlaceEntry.Text = source.originPlace;
+        BindPieceWeightEntry.Text = source.pieceWeight;
+        BindConfirmOverlay.IsVisible = true;
+    }
+
+    private void OnConfirmBindClicked(object sender, EventArgs e)
+    {
+        var materialType = BindMaterialTypePicker.SelectedItem?.ToString();
+        var bound = new RawMaterialOcrDto
+        {
+            qrCode = _pendingQrCode,
+            materialType = string.IsNullOrWhiteSpace(materialType) ? _selectedTicket?.materialType : materialType,
+            materialName = BindMaterialNameEntry.Text,
+            spec = BindSpecEntry.Text,
+            furnaceNo = BindFurnaceNoEntry.Text,
+            originPlace = BindOriginPlaceEntry.Text,
+            pieceWeight = BindPieceWeightEntry.Text,
+            pieceWeightUnit = "吨",
+            coilCount = _selectedTicket?.coilCount,
+            coilDiameter = _selectedTicket?.coilDiameter,
+            ocrRawText = _selectedTicket?.ocrRawText,
+            strength = _selectedTicket?.strength
+        };
+
+        _ocrItems.Add(bound);
+        MaterialListTitle.Text = $"待入库列表 ({_ocrItems.Count})";
+        BindConfirmOverlay.IsVisible = false;
+    }
+
+    private void OnCloseBindConfirmTapped(object sender, TappedEventArgs e) => BindConfirmOverlay.IsVisible = false;
+
+    private void OnCancelBindConfirmClicked(object sender, EventArgs e) => BindConfirmOverlay.IsVisible = false;
+
     private void ShowTicketConfirmDialog(RawMaterialOcrDto ocr)
     {
         _pendingOcr = ocr;
@@ -150,4 +272,9 @@ public partial class AddRawMaterialReceivingPage : ContentPage
     private async void OnBackLabelTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
 
     private async void OnCancelClicked(object sender, EventArgs e) => await Shell.Current.GoToAsync("..");
+}
+
+internal sealed record MaterialSummaryItem(string materialName, string materialType, string originPlace, int count, decimal totalWeight)
+{
+    public string totalWeightDisplay => $"{totalWeight:0.00} 吨";
 }
