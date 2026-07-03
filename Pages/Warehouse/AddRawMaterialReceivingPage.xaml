@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.Warehouse.AddRawMaterialReceivingPage"
+             Title="新增采购入库"
+             BackgroundColor="#F4F6F9"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="16,22,16,14" HeightRequest="66">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,16,16" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*">
+                <Label Text="‹ 返回" TextColor="White" FontSize="15" VerticalOptions="Center">
+                    <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackLabelTapped" /></Label.GestureRecognizers>
+                </Label>
+                <Label Grid.Column="1" Text="新增采购入库" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,48,0" />
+            </Grid>
+        </Border>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="18,16,18,24" Spacing="16">
+                <Border BackgroundColor="White" StrokeThickness="0" Padding="20,16">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*" RowSpacing="14">
+                        <Label Text="入库单号" TextColor="#38557C" FontSize="14" />
+                        <Label Grid.Column="1" x:Name="InstockNoLabel" Text="生成中..." TextColor="#0B4FEA" FontSize="16" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                        <Label Grid.Row="1" Text="入库仓库 *" TextColor="#38557C" FontSize="14" VerticalOptions="Center" />
+                        <Picker Grid.Row="1" Grid.Column="1" x:Name="WarehousePicker" Title="请选择" ItemDisplayBinding="{Binding displayName}" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
+                    </Grid>
+                </Border>
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Button Text="📸  拍照" BackgroundColor="#EFFFF4" TextColor="#008C38" BorderColor="#0AA344" BorderWidth="1" CornerRadius="10" HeightRequest="46" Clicked="OnTakePhotoClicked" />
+                    <Button Grid.Column="1" Text="◼  扫码绑定" BackgroundColor="#F4F8FF" TextColor="#0B4FEA" BorderColor="#2263FF" BorderWidth="1" CornerRadius="10" HeightRequest="46" />
+                </Grid>
+
+                <Border BackgroundColor="#FAFCFF" Stroke="#C8D6EA" StrokeDashArray="3,3" StrokeThickness="1" Padding="16" MinimumHeightRequest="106">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="16">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="提取票签内容（待绑码模板）" TextColor="#0A2C61" FontAttributes="Bold" />
+                            <Label Grid.Column="1" Text="点击卡片内容可高亮选中" TextColor="#0B4FEA" FontSize="12" />
+                        </Grid>
+                        <Label x:Name="ExtractedTextLabel" Text="暂无提取的票签内容" TextColor="#8EA0B8" FontSize="15" HorizontalTextAlignment="Center" />
+                        <Border x:Name="SelectedTicketCard" IsVisible="False" BackgroundColor="White" Stroke="#2863FF" StrokeThickness="2" Padding="12">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,*" RowSpacing="8" ColumnSpacing="12">
+                                <HorizontalStackLayout Spacing="8">
+                                    <Label Text="✔ 当前选中" TextColor="#2D54D9" FontAttributes="Bold" />
+                                    <Border BackgroundColor="#F2F4F8" StrokeThickness="0" Padding="8,2">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="5" /></Border.StrokeShape>
+                                        <Label x:Name="SelectedMaterialTypeLabel" Text="原料" FontSize="12" TextColor="#2D3B4F" />
+                                    </Border>
+                                </HorizontalStackLayout>
+                                <Label Grid.Column="1" Text="删除" TextColor="#F64148" FontAttributes="Bold" HorizontalTextAlignment="End">
+                                    <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnDeleteTicketTapped" /></Label.GestureRecognizers>
+                                </Label>
+                                <Label Grid.Row="1" Text="物料名称：" TextColor="#667A99" />
+                                <Label x:Name="SelectedMaterialNameLabel" Grid.Row="1" Text="--" TextColor="#0A2C61" FontAttributes="Bold" Margin="70,0,0,0" />
+                                <Label Grid.Row="1" Grid.Column="1" Text="规格：" TextColor="#667A99" />
+                                <Label x:Name="SelectedSpecLabel" Grid.Row="1" Grid.Column="1" Text="--" TextColor="#0A2C61" FontAttributes="Bold" Margin="44,0,0,0" />
+                                <Label Grid.Row="2" Text="炉号：" TextColor="#667A99" />
+                                <Label x:Name="SelectedFurnaceNoLabel" Grid.Row="2" Text="--" TextColor="#0A2C61" FontAttributes="Bold" Margin="44,0,0,0" />
+                                <Label Grid.Row="2" Grid.Column="1" Text="产地：" TextColor="#667A99" />
+                                <Label x:Name="SelectedOriginPlaceLabel" Grid.Row="2" Grid.Column="1" Text="--" TextColor="#0A2C61" FontAttributes="Bold" Margin="44,0,0,0" />
+                                <Label Grid.Row="3" Text="件重：" TextColor="#667A99" />
+                                <Label x:Name="SelectedPieceWeightLabel" Grid.Row="3" Text="--" TextColor="#D96B00" FontAttributes="Bold" Margin="44,0,0,0" />
+                            </Grid>
+                        </Border>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border BackgroundColor="White" StrokeThickness="0" Padding="16">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label x:Name="MaterialListTitle" Text="待入库列表 (0)" TextColor="#051B3D" FontSize="16" FontAttributes="Bold" VerticalOptions="Center" />
+                            <Button Grid.Column="1" Text="📊  计算汇总" BackgroundColor="#1F447E" TextColor="White" FontAttributes="Bold" CornerRadius="7" HeightRequest="36" Padding="12,0" />
+                        </Grid>
+                        <BoxView HeightRequest="1" Color="#E8EDF5" />
+                        <CollectionView x:Name="OcrList" EmptyView="暂无添加的物料" MinimumHeightRequest="58">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="#FAFCFF" Stroke="#DDE6F2" StrokeThickness="1" Padding="14" Margin="0,0,0,10">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                                        <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,*" RowSpacing="8" ColumnSpacing="12">
+                                            <Label Grid.ColumnSpan="2" Text="{Binding materialTitle}" TextColor="#0A3C7D" FontSize="15" FontAttributes="Bold" />
+                                            <Label Grid.Row="1" Text="{Binding materialNameDisplay, StringFormat='物料名称：{0}'}" TextColor="#38557C" />
+                                            <Label Grid.Row="1" Grid.Column="1" Text="{Binding specDisplay, StringFormat='规格：{0}'}" TextColor="#38557C" />
+                                            <Label Grid.Row="2" Text="{Binding furnaceNoDisplay, StringFormat='炉号：{0}'}" TextColor="#38557C" />
+                                            <Label Grid.Row="2" Grid.Column="1" Text="{Binding originPlaceDisplay, StringFormat='产地：{0}'}" TextColor="#38557C" />
+                                            <Label Grid.Row="3" Text="{Binding pieceWeightDisplay, StringFormat='件重：{0}'}" TextColor="#00A060" FontAttributes="Bold" />
+                                            <Label Grid.Row="3" Grid.Column="1" Text="{Binding coilCountDisplay, StringFormat='圈数：{0}'}" TextColor="#38557C" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Border Grid.Row="2" BackgroundColor="White" StrokeThickness="0" Padding="18,16,18,22">
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Button Text="取消" BackgroundColor="#F64148" TextColor="White" FontSize="17" FontAttributes="Bold" CornerRadius="10" HeightRequest="50" Clicked="OnCancelClicked" />
+                <Button Grid.Column="1" Text="提交入库" BackgroundColor="#1F447E" TextColor="White" FontSize="17" FontAttributes="Bold" CornerRadius="10" HeightRequest="50" />
+            </Grid>
+        </Border>
+
+        <Grid x:Name="TicketConfirmOverlay" Grid.RowSpan="3" IsVisible="False" BackgroundColor="#99000000" Padding="54,0" VerticalOptions="Fill" HorizontalOptions="Fill">
+            <Border BackgroundColor="White" StrokeThickness="0" Padding="20" VerticalOptions="Center">
+                <Border.StrokeShape><RoundRectangle CornerRadius="18" /></Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="票签内容确认" TextColor="#0A2C61" FontSize="18" FontAttributes="Bold" />
+                        <Label Grid.Column="1" Text="×" TextColor="#8EA0B8" FontSize="28">
+                            <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnCloseTicketConfirmTapped" /></Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+                    <BoxView HeightRequest="1" Color="#EDF1F6" />
+                    <Label Text="物料分类 *" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
+                    <Picker x:Name="MaterialTypePicker" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="物料名称" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
+                            <Entry x:Name="MaterialNameEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                            <Label Text="规格" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
+                            <Entry x:Name="SpecEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
+                        </VerticalStackLayout>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="炉号" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
+                            <Entry x:Name="FurnaceNoEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                            <Label Text="产地" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
+                            <Entry x:Name="OriginPlaceEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
+                        </VerticalStackLayout>
+                    </Grid>
+                    <Label Text="件重（吨） *" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
+                    <Entry x:Name="PieceWeightEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" Keyboard="Numeric" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,12,0,0">
+                        <Button Text="取消" BackgroundColor="White" TextColor="#1F447E" BorderColor="#1F447E" BorderWidth="1" CornerRadius="10" HeightRequest="50" Clicked="OnCancelTicketConfirmClicked" />
+                        <Button Grid.Column="1" Text="确认无误" BackgroundColor="#1F447E" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="50" Clicked="OnConfirmTicketClicked" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>
