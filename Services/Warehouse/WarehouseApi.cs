@@ -64,7 +64,7 @@ public sealed class WarehouseApi : IWarehouseApi
         {
             throw new InvalidOperationException("接口返回为空。");
         }
-        if (data.code.HasValue && data.code.Value != 0)
+        if (data.success == false)
         {
             throw new InvalidOperationException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
         }
@@ -184,7 +184,7 @@ public sealed class WarehouseApi : IWarehouseApi
         {
             throw new InvalidOperationException("接口返回为空。");
         }
-        if ((data.code.HasValue && data.code.Value != 0) || (data.success == false && data.result is null))
+        if (data.success == false)
         {
             throw new InvalidOperationException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
         }
