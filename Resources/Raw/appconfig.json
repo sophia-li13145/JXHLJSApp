@@ -18,6 +18,7 @@
     "rawMaterialReceiving": {
       "listInStock": "/pda/rawMaterialReceiving/listInStock",
       "addBlankInstock": "/pda/rawMaterialReceiving/addBlankInstock",
+      "queryDetailByInstockNo": "/pda/rawMaterialReceiving/queryDetailByInstockNo",
       "queryWarehouseInfo": "/pda/rawMaterialReceiving/queryWarehouseInfo",
       "ocrIncoming": "/pda/rawMaterialReceiving/ocrIncoming",
       "queryQrCodeInfo": "/pda/rawMaterialReceiving/queryQrCodeInfo",
