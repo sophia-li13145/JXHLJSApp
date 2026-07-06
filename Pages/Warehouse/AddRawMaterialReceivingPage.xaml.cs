@@ -75,7 +75,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage
             if (photo is null) return;
 
             ExtractedTextLabel.Text = "图片上传与识别中...";
-            var attachment = await _warehouseApi.UploadAttachmentAsync(photo, "rawMaterialReceiving", _instockNo);
+            var attachment = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
             var ocr = await _warehouseApi.RecognizeIncomingAsync(attachment, _instockNo);
             ShowTicketConfirmDialog(ocr);
         }
