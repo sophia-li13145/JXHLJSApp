@@ -93,14 +93,13 @@ public sealed class WarehouseApi : IWarehouseApi
 
     public async Task<AttachmentDto> UploadAttachmentAsync(FileResult photo, string attachmentFolder, string attachmentLocation, CancellationToken ct = default)
     {
-        var query = new Dictionary<string, string?>
-        {
-            [nameof(attachmentFolder)] = attachmentFolder,
-            [nameof(attachmentLocation)] = attachmentLocation
-        };
-        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_uploadAttachmentEndpoint, query));
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _uploadAttachmentEndpoint);
         await using var stream = await photo.OpenReadAsync().ConfigureAwait(false);
-        using var content = new MultipartFormDataContent();
+        using var content = new MultipartFormDataContent
+        {
+            { new StringContent(attachmentFolder), nameof(attachmentFolder) },
+            { new StringContent(attachmentLocation), nameof(attachmentLocation) }
+        };
         using var fileContent = new StreamContent(stream);
         fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(photo.ContentType ?? "image/jpeg");
         content.Add(fileContent, "file", photo.FileName);
