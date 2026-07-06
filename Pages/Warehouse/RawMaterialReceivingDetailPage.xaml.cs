@@ -1,4 +1,6 @@
+using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Services.Warehouse;
+using Microsoft.Maui.ApplicationModel;
 
 namespace JXHLJSApp.Pages.Warehouse;
 
@@ -55,6 +57,36 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
         finally
         {
             RefreshContainer.IsRefreshing = false;
+        }
+    }
+
+    private async void OnAttachmentTapped(object sender, TappedEventArgs e)
+    {
+        if ((sender as BindableObject)?.BindingContext is not AttachmentDto attachment)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(attachment.attachmentUrl))
+        {
+            await DisplayAlert("提示", "当前附件暂无可预览图片。", "确定");
+            return;
+        }
+
+        try
+        {
+            var previewUrl = await _warehouseApi.PreviewAttachmentAsync(attachment.attachmentUrl);
+            if (string.IsNullOrWhiteSpace(previewUrl))
+            {
+                await DisplayAlert("提示", "附件预览地址为空。", "确定");
+                return;
+            }
+
+            await Browser.Default.OpenAsync(previewUrl, BrowserLaunchMode.SystemPreferred);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("预览失败", ex.Message, "确定");
         }
     }
 

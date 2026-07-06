@@ -69,19 +69,14 @@ public partial class RawMaterialReceivingListPage : ContentPage
             return;
         }
 
-        if (item.canCancel)
-        {
-            return;
-        }
-
-        var instockNo = item.instockNoDisplay;
         if (string.IsNullOrWhiteSpace(item.instockNo))
         {
             await DisplayAlert("提示", "未找到入库单号，无法查看详情。", "确定");
             return;
         }
 
-        await Shell.Current.GoToAsync($"{AppShell.RouteRawMaterialReceivingDetail}?InstockNo={Uri.EscapeDataString(instockNo)}");
+        var targetRoute = item.canCancel ? AppShell.RouteAddRawMaterialReceiving : AppShell.RouteRawMaterialReceivingDetail;
+        await Shell.Current.GoToAsync($"{targetRoute}?InstockNo={Uri.EscapeDataString(item.instockNo)}");
     }
 
     private async void OnAddClicked(object sender, EventArgs e) => await Shell.Current.GoToAsync(AppShell.RouteAddRawMaterialReceiving);

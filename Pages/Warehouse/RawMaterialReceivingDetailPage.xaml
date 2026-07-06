@@ -75,6 +75,9 @@
                             <CollectionView.ItemTemplate>
                                 <DataTemplate>
                                     <Border BackgroundColor="#F8FAFD" Stroke="#BFD1E8" Padding="12" Margin="0,0,12,0" WidthRequest="82" HeightRequest="82">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnAttachmentTapped" />
+                                        </Border.GestureRecognizers>
                                         <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
                                         <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="6">
                                             <Label Text="📄" FontSize="20" HorizontalTextAlignment="Center" />

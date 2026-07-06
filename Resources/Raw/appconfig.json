@@ -26,7 +26,8 @@
       "cancelBlankInstock": "/pda/rawMaterialReceiving/cancelBlankInstock"
     },
     "attachment": {
-      "uploadAttachment": "/pda/attachment/uploadAttachment"
+      "uploadAttachment": "/pda/attachment/uploadAttachment",
+      "previewAttachment": "/pda/attachment/previewAttachment"
     },
     "inbound": {
       "list": "/pda/wmsMaterialInstock/getInStock",

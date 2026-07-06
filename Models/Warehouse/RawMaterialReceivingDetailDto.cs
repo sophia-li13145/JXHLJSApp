@@ -33,6 +33,26 @@ public sealed class RawMaterialReceivingDetailDto
         .SelectMany(ocr => ocr.attachmentList ?? new List<AttachmentDto>())
         .Where(file => string.Equals(file.attachmentLocation, "main", StringComparison.OrdinalIgnoreCase))
         .ToList() ?? new List<AttachmentDto>();
+    public IReadOnlyList<RawMaterialOcrDto> ocrItemsForEdit => ocrList?
+        .Select(ocr => new RawMaterialOcrDto
+        {
+            coilCount = FormatDecimal(ocr.coilCount),
+            coilDiameter = FormatDecimal(ocr.coilDiameter),
+            furnaceNo = ocr.furnaceNo,
+            materialName = ocr.materialName,
+            materialType = ocr.materialType,
+            ocrRawText = ocr.ocrRawText,
+            originPlace = ocr.originPlace,
+            pieceWeight = FormatDecimal(ocr.pieceWeight),
+            pieceWeightUnit = ocr.pieceWeightUnit,
+            spec = ocr.spec,
+            strength = ocr.strength,
+            attachmentName = ocr.attachmentList?.FirstOrDefault()?.attachmentName,
+            attachmentUrl = ocr.attachmentList?.FirstOrDefault()?.attachmentUrl
+        })
+        .ToList() ?? new List<RawMaterialOcrDto>();
+
+    private static string? FormatDecimal(decimal? value) => value?.ToString("0.##");
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "--";
 }
@@ -77,6 +97,8 @@ public sealed class RawMaterialReceivingDetailItemDto
         var text = string.Join(" ", values.Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value!.Trim()));
         return string.IsNullOrWhiteSpace(text) ? "--" : text;
     }
+
+    private static string? FormatDecimal(decimal? value) => value?.ToString("0.##");
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "--";
 }

@@ -3,9 +3,11 @@ using System.Globalization;
 using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.Warehouse;
+using Microsoft.Maui.ApplicationModel;
 
 namespace JXHLJSApp.Pages.Warehouse;
 
+[QueryProperty(nameof(InstockNo), nameof(InstockNo))]
 public partial class AddRawMaterialReceivingPage : ContentPage
 {
     private readonly IWarehouseApi _warehouseApi;
@@ -16,6 +18,17 @@ public partial class AddRawMaterialReceivingPage : ContentPage
     private RawMaterialOcrDto? _selectedTicket;
     private string? _instockNo;
     private string? _pendingQrCode;
+    private bool _loadedExistingInstock;
+
+    public string? InstockNo
+    {
+        get => _instockNo;
+        set
+        {
+            _instockNo = Uri.UnescapeDataString(value ?? string.Empty);
+            _loadedExistingInstock = false;
+        }
+    }
 
     public AddRawMaterialReceivingPage(IWarehouseApi warehouseApi, IScanService scanService)
     {
@@ -37,6 +50,32 @@ public partial class AddRawMaterialReceivingPage : ContentPage
         if (string.IsNullOrWhiteSpace(_instockNo))
         {
             await InitializeBlankInstockAsync();
+            return;
+        }
+
+        if (!_loadedExistingInstock)
+        {
+            await InitializeExistingInstockAsync(_instockNo);
+        }
+    }
+
+    private async Task InitializeExistingInstockAsync(string instockNo)
+    {
+        try
+        {
+            InstockNoLabel.Text = instockNo;
+            await LoadWarehousesAsync();
+
+            var detail = await _warehouseApi.GetRawMaterialReceivingDetailAsync(instockNo);
+            _instockNo = string.IsNullOrWhiteSpace(detail.instockNo) ? instockNo : detail.instockNo;
+            InstockNoLabel.Text = _instockNo;
+            SelectWarehouse(detail.warehouseDisplay);
+            ApplyExistingOcrItems(detail);
+            _loadedExistingInstock = true;
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("加载失败", ex.Message, "确定");
         }
     }
 
@@ -48,17 +87,55 @@ public partial class AddRawMaterialReceivingPage : ContentPage
             _instockNo = blank.instockNo;
             InstockNoLabel.Text = string.IsNullOrWhiteSpace(_instockNo) ? "--" : _instockNo;
 
-            var warehouses = await _warehouseApi.QueryWarehouseInfoAsync();
-            WarehousePicker.ItemsSource = warehouses;
-            if (warehouses.Count > 0)
-            {
-                WarehousePicker.SelectedIndex = 0;
-            }
+            await LoadWarehousesAsync();
+            _loadedExistingInstock = true;
         }
         catch (Exception ex)
         {
             await DisplayAlert("初始化失败", ex.Message, "确定");
         }
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        var warehouses = await _warehouseApi.QueryWarehouseInfoAsync();
+        WarehousePicker.ItemsSource = warehouses;
+        if (warehouses.Count > 0 && WarehousePicker.SelectedIndex < 0)
+        {
+            WarehousePicker.SelectedIndex = 0;
+        }
+    }
+
+    private void SelectWarehouse(string? warehouseName)
+    {
+        if (WarehousePicker.ItemsSource is not IEnumerable<WarehouseInfoDto> warehouses || string.IsNullOrWhiteSpace(warehouseName))
+        {
+            return;
+        }
+
+        var index = warehouses
+            .Select((warehouse, itemIndex) => new { warehouse, itemIndex })
+            .FirstOrDefault(item => string.Equals(item.warehouse.displayName, warehouseName, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(item.warehouse.warehouseName, warehouseName, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(item.warehouse.warehouseCode, warehouseName, StringComparison.OrdinalIgnoreCase))?
+            .itemIndex;
+
+        if (index.HasValue)
+        {
+            WarehousePicker.SelectedIndex = index.Value;
+        }
+    }
+
+    private void ApplyExistingOcrItems(RawMaterialReceivingDetailDto detail)
+    {
+        _ocrItems.Clear();
+        foreach (var item in detail.ocrItemsForEdit)
+        {
+            _ocrItems.Add(item);
+        }
+
+        MaterialListTitle.Text = $"待入库列表 ({_ocrItems.Count})";
+        ClearSelectedTicket();
     }
 
     private async void OnTakePhotoClicked(object sender, EventArgs e)
@@ -77,6 +154,8 @@ public partial class AddRawMaterialReceivingPage : ContentPage
             ExtractedTextLabel.Text = "图片上传与识别中...";
             var attachment = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
             var ocr = await _warehouseApi.RecognizeIncomingAsync(attachment, _instockNo);
+            ocr.attachmentName = attachment.attachmentName ?? attachment.attachmentRealName;
+            ocr.attachmentUrl = attachment.attachmentUrl;
             ShowTicketConfirmDialog(ocr);
         }
         catch (Exception ex)
@@ -222,7 +301,9 @@ public partial class AddRawMaterialReceivingPage : ContentPage
             coilCount = _selectedTicket?.coilCount,
             coilDiameter = _selectedTicket?.coilDiameter,
             ocrRawText = _selectedTicket?.ocrRawText,
-            strength = _selectedTicket?.strength
+            strength = _selectedTicket?.strength,
+            attachmentName = _selectedTicket?.attachmentName,
+            attachmentUrl = _selectedTicket?.attachmentUrl
         };
 
         _ocrItems.Add(bound);
@@ -261,7 +342,9 @@ public partial class AddRawMaterialReceivingPage : ContentPage
             coilCount = _pendingOcr?.coilCount,
             coilDiameter = _pendingOcr?.coilDiameter,
             ocrRawText = _pendingOcr?.ocrRawText,
-            strength = _pendingOcr?.strength
+            strength = _pendingOcr?.strength,
+            attachmentName = _pendingOcr?.attachmentName,
+            attachmentUrl = _pendingOcr?.attachmentUrl
         };
 
         ApplySelectedTicket(_selectedTicket);
@@ -286,6 +369,49 @@ public partial class AddRawMaterialReceivingPage : ContentPage
         SelectedTicketCard.IsVisible = false;
         ExtractedTextLabel.IsVisible = true;
         ExtractedTextLabel.Text = "暂无提取的票签内容";
+    }
+
+    private async void OnPreviewSelectedTicketTapped(object sender, TappedEventArgs e)
+    {
+        if (_selectedTicket is null)
+        {
+            return;
+        }
+
+        await PreviewAttachmentAsync(_selectedTicket.attachmentUrl);
+    }
+
+    private async void OnPreviewOcrItemTapped(object sender, TappedEventArgs e)
+    {
+        if ((sender as BindableObject)?.BindingContext is RawMaterialOcrDto item)
+        {
+            await PreviewAttachmentAsync(item.attachmentUrl);
+        }
+    }
+
+    private async Task PreviewAttachmentAsync(string? attachmentUrl)
+    {
+        if (string.IsNullOrWhiteSpace(attachmentUrl))
+        {
+            await DisplayAlert("提示", "当前票签暂无可预览图片。", "确定");
+            return;
+        }
+
+        try
+        {
+            var previewUrl = await _warehouseApi.PreviewAttachmentAsync(attachmentUrl);
+            if (string.IsNullOrWhiteSpace(previewUrl))
+            {
+                await DisplayAlert("提示", "附件预览地址为空。", "确定");
+                return;
+            }
+
+            await Browser.Default.OpenAsync(previewUrl, BrowserLaunchMode.SystemPreferred);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("预览失败", ex.Message, "确定");
+        }
     }
 
     private void OnDeleteTicketTapped(object sender, TappedEventArgs e) => ClearSelectedTicket();
