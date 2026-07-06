@@ -47,6 +47,7 @@ namespace JXHLJSApp
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.MaterialLoadingPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.RawMaterialReceivingListPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.AddRawMaterialReceivingPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.RawMaterialReceivingDetailPage>();
             builder.Services.AddTransient<AdminViewModel>();
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();

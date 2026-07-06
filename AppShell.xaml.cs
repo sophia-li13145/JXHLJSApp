@@ -20,6 +20,7 @@ public partial class AppShell : Shell
     public const string RouteMaterialLoading = "MaterialLoading";
     public const string RouteRawMaterialReceiving = "RawMaterialReceiving";
     public const string RouteAddRawMaterialReceiving = "AddRawMaterialReceiving";
+    public const string RouteRawMaterialReceivingDetail = "RawMaterialReceivingDetail";
 
     public AppShell(IServiceProvider services)
     {
@@ -35,6 +36,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteMaterialLoading, typeof(MaterialLoadingPage));
         Routing.RegisterRoute(RouteRawMaterialReceiving, typeof(RawMaterialReceivingListPage));
         Routing.RegisterRoute(RouteAddRawMaterialReceiving, typeof(AddRawMaterialReceivingPage));
+        Routing.RegisterRoute(RouteRawMaterialReceivingDetail, typeof(RawMaterialReceivingDetailPage));
         BuildLoginShell();
     }
 

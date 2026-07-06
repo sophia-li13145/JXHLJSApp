@@ -9,6 +9,7 @@ namespace JXHLJSApp.Services.Warehouse;
 public interface IWarehouseApi
 {
     Task<List<RawMaterialReceivingDto>> GetRawMaterialReceivingListAsync(CancellationToken ct = default);
+    Task<RawMaterialReceivingDetailDto> GetRawMaterialReceivingDetailAsync(string instockNo, CancellationToken ct = default);
     Task<BlankInstockDto> AddBlankInstockAsync(CancellationToken ct = default);
     Task<List<WarehouseInfoDto>> QueryWarehouseInfoAsync(CancellationToken ct = default);
     Task<AttachmentDto> UploadAttachmentAsync(FileResult photo, string attachmentFolder, string attachmentLocation, CancellationToken ct = default);
@@ -22,6 +23,7 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly HttpClient _http;
     private readonly string _rawMaterialReceivingListEndpoint;
     private readonly string _addBlankInstockEndpoint;
+    private readonly string _rawMaterialReceivingDetailEndpoint;
     private readonly string _queryWarehouseInfoEndpoint;
     private readonly string _uploadAttachmentEndpoint;
     private readonly string _ocrIncomingEndpoint;
@@ -38,6 +40,8 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("rawMaterialReceiving.listInStock", "/pda/rawMaterialReceiving/listInStock"), servicePath);
         _addBlankInstockEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.addBlankInstock", "/pda/rawMaterialReceiving/addBlankInstock"), servicePath);
+        _rawMaterialReceivingDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("rawMaterialReceiving.queryDetailByInstockNo", "/pda/rawMaterialReceiving/queryDetailByInstockNo"), servicePath);
         _queryWarehouseInfoEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.queryWarehouseInfo", "/pda/rawMaterialReceiving/queryWarehouseInfo"), servicePath);
         _uploadAttachmentEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -71,6 +75,18 @@ public sealed class WarehouseApi : IWarehouseApi
         var list = data.result ?? new List<RawMaterialReceivingDto>();
         ApplyInstockStatusNames(list, instockStatusNames);
         return list;
+    }
+
+    public async Task<RawMaterialReceivingDetailDto> GetRawMaterialReceivingDetailAsync(string instockNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_rawMaterialReceivingDetailEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(instockNo)] = instockNo
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<RawMaterialReceivingDetailDto>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new RawMaterialReceivingDetailDto();
     }
 
     public async Task<BlankInstockDto> AddBlankInstockAsync(CancellationToken ct = default)
