@@ -14,6 +14,8 @@ public sealed class RawMaterialOcrDto
     public string? pieceWeightUnit { get; set; }
     public string? spec { get; set; }
     public string? strength { get; set; }
+    public string? attachmentName { get; set; }
+    public string? attachmentUrl { get; set; }
 
     public string materialTitle => $"物料编号： {FirstNonEmpty(materialType, materialName, "--")}";
     public string materialNameDisplay => FirstNonEmpty(materialName, "--");
@@ -24,6 +26,8 @@ public sealed class RawMaterialOcrDto
     public string coilCountDisplay => FirstNonEmpty(coilCount, "--");
     public string pieceWeightDisplay => JoinNonEmpty(pieceWeight, pieceWeightUnit);
     public string materialTypeDisplay => FirstNonEmpty(materialType, "--");
+    public bool hasAttachment => !string.IsNullOrWhiteSpace(attachmentUrl);
+    public string attachmentNameDisplay => FirstNonEmpty(attachmentName, "票签图片");
 
     private static string JoinNonEmpty(params string?[] values)
     {

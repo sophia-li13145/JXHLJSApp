@@ -18,6 +18,7 @@
     "rawMaterialReceiving": {
       "listInStock": "/pda/rawMaterialReceiving/listInStock",
       "addBlankInstock": "/pda/rawMaterialReceiving/addBlankInstock",
+      "queryDetailByInstockNo": "/pda/rawMaterialReceiving/queryDetailByInstockNo",
       "queryWarehouseInfo": "/pda/rawMaterialReceiving/queryWarehouseInfo",
       "ocrIncoming": "/pda/rawMaterialReceiving/ocrIncoming",
       "queryQrCodeInfo": "/pda/rawMaterialReceiving/queryQrCodeInfo",
@@ -25,7 +26,8 @@
       "cancelBlankInstock": "/pda/rawMaterialReceiving/cancelBlankInstock"
     },
     "attachment": {
-      "uploadAttachment": "/pda/attachment/uploadAttachment"
+      "uploadAttachment": "/pda/attachment/uploadAttachment",
+      "previewAttachment": "/pda/attachment/previewAttachment"
     },
     "inbound": {
       "list": "/pda/wmsMaterialInstock/getInStock",
