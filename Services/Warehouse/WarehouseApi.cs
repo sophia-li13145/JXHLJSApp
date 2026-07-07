@@ -121,7 +121,16 @@ public sealed class WarehouseApi : IWarehouseApi
         content.Add(fileContent, "file", photo.FileName);
         using var resp = await _http.PostAsync(url, content, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<AttachmentDto>(resp, ct).ConfigureAwait(false);
+        var json = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        var data = JsonSerializer.Deserialize<ApiResp<AttachmentDto>>(json, JsonOptions);
+        if (data is null)
+        {
+            throw new InvalidOperationException("接口返回为空。");
+        }
+        if (data.success == false)
+        {
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
+        }
         return data.result ?? new AttachmentDto
         {
             attachmentFolder = attachmentFolder,
