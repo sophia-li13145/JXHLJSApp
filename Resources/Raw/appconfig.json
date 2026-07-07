@@ -29,6 +29,12 @@
     "attachment": {
       "uploadAttachment": "/pda/attachment/uploadAttachment"
     },
+    "deliveryOrder": {
+      "listNeedDeliveryOrders": "/pda/deliveryOrder/listNeedDeliveryOrders",
+      "detail": "/pda/deliveryOrder/detail",
+      "scanActual": "/pda/deliveryOrder/scanActual",
+      "confirmDeliveryCompletion": "/pda/deliveryOrder/confirmDeliveryCompletion"
+    },
     "inbound": {
       "list": "/pda/wmsMaterialInstock/getInStock",
       "detail": "/pda/wmsMaterialInstock/getInStockDetail",
