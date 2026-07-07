@@ -59,6 +59,32 @@ public partial class MaterialLoadingPage : ContentPage
         var code = await _scanService.ScanAsync("扫描机台二维码");
         if (string.IsNullOrWhiteSpace(code)) return;
 
+        await ConfirmMachineAsync(code);
+    }
+
+    private async void OnManualMachineConfirmClicked(object sender, EventArgs e)
+    {
+        if (_isBusy) return;
+
+        await ConfirmMachineAsync(MachineCodeEntry.Text);
+    }
+
+    private async void OnManualMachineCompleted(object sender, EventArgs e)
+    {
+        if (_isBusy) return;
+
+        await ConfirmMachineAsync(MachineCodeEntry.Text);
+    }
+
+    private async Task ConfirmMachineAsync(string? machineCode)
+    {
+        var devCode = machineCode?.Trim();
+        if (string.IsNullOrWhiteSpace(devCode))
+        {
+            await DisplayAlert("提示", "请输入机台码", "确定");
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(_workOrderNo))
         {
             await DisplayAlert("提示", "工单号为空，无法扫码开工。", "确定");
@@ -68,14 +94,15 @@ public partial class MaterialLoadingPage : ContentPage
         try
         {
             _isBusy = true;
-            var result = await _workOrderApi.ScanToWorkAsync(code.Trim(), _workOrderNo);
+            var result = await _workOrderApi.ScanToWorkAsync(devCode, _workOrderNo);
             if (!result)
             {
-                await DisplayAlert("识别失败", "机台识别未成功，请重新扫描。", "确定");
+                await DisplayAlert("识别失败", "机台识别未成功，请确认机台码后重试。", "确定");
                 return;
             }
 
             _machineConfirmed = true;
+            MachineCodeEntry.Text = devCode;
             ShowMaterialScanStep();
         }
         catch (Exception ex)
@@ -116,6 +143,7 @@ public partial class MaterialLoadingPage : ContentPage
         ScanIconLabel.Text = "📦";
         ScanTitleLabel.Text = "2. 机台识别确认";
         ScanHintLabel.Text = "点击扫描上料物料二维码";
+        ManualMachinePanel.IsVisible = false;
     }
 
     private void ShowResultStep()

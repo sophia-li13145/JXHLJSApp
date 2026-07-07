@@ -28,6 +28,17 @@
                     </VerticalStackLayout>
                 </Border>
 
+                <Border x:Name="ManualMachinePanel" BackgroundColor="White" Stroke="#DDE6F1" StrokeThickness="1" Padding="12">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="测试用：手动输入机台码" TextColor="#0B3D8B" FontSize="15" FontAttributes="Bold" />
+                        <Grid ColumnDefinitions="*,72" ColumnSpacing="10" VerticalOptions="Center">
+                            <Entry x:Name="MachineCodeEntry" Placeholder="输入机台码后确认" PlaceholderColor="#7A8797" FontSize="15" BackgroundColor="#F8FAFD" Completed="OnManualMachineCompleted" />
+                            <Button Grid.Column="1" Text="确认" FontSize="16" FontAttributes="Bold" BackgroundColor="#244B88" TextColor="White" CornerRadius="10" Padding="0" Clicked="OnManualMachineConfirmClicked" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
                 <Border x:Name="SuccessBanner" IsVisible="False" BackgroundColor="#F0FFF7" Stroke="#9BE7B4" StrokeThickness="1" Padding="18,14">
                     <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                     <Label Text="✅ 扫码成功，已记录上料信息！" TextColor="#168A3A" FontSize="15" />
