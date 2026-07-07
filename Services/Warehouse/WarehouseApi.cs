@@ -40,6 +40,7 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _deliveryOrderDetailEndpoint;
     private readonly string _deliveryOrderScanActualEndpoint;
     private readonly string _confirmDeliveryCompletionEndpoint;
+    private readonly string _deliveryOrderDictListEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public WarehouseApi(HttpClient http, IConfigLoader configLoader)
@@ -74,6 +75,8 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("deliveryOrder.scanActual", "/pda/deliveryOrder/scanActual"), servicePath);
         _confirmDeliveryCompletionEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("deliveryOrder.confirmDeliveryCompletion", "/pda/deliveryOrder/confirmDeliveryCompletion"), servicePath);
+        _deliveryOrderDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("deliveryOrder.getDictList", "/pda/deliveryOrder/getDictList"), servicePath);
     }
 
     public async Task<List<RawMaterialReceivingDto>> GetRawMaterialReceivingListAsync(CancellationToken ct = default)
@@ -100,11 +103,14 @@ public sealed class WarehouseApi : IWarehouseApi
 
     public async Task<List<DeliveryOrderDto>> GetNeedDeliveryOrdersAsync(CancellationToken ct = default)
     {
+        var auditStatusNames = await LoadDeliveryAuditStatusNamesAsync(ct).ConfigureAwait(false);
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _needDeliveryOrdersEndpoint);
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<List<DeliveryOrderDto>>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new List<DeliveryOrderDto>();
+        var list = data.result ?? new List<DeliveryOrderDto>();
+        ApplyDeliveryAuditStatusNames(list, auditStatusNames);
+        return list;
     }
 
 
@@ -244,6 +250,32 @@ public sealed class WarehouseApi : IWarehouseApi
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
         return data.result;
+    }
+
+    private static void ApplyDeliveryAuditStatusNames(IEnumerable<DeliveryOrderDto> items, IReadOnlyDictionary<string, string> auditStatusNames)
+    {
+        foreach (var item in items)
+        {
+            if (!string.IsNullOrWhiteSpace(item.auditStatus) && auditStatusNames.TryGetValue(item.auditStatus, out var name))
+            {
+                item.auditStatusName = name;
+            }
+        }
+    }
+
+    private async Task<IReadOnlyDictionary<string, string>> LoadDeliveryAuditStatusNamesAsync(CancellationToken ct)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _deliveryOrderDictListEndpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<List<DictGroupDto>>(resp, ct).ConfigureAwait(false);
+        return data.result?
+            .FirstOrDefault(group => string.Equals(group.field, "auditStatus", StringComparison.OrdinalIgnoreCase))?
+            .dictItems?
+            .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue))
+            .GroupBy(item => item.dictItemValue!)
+            .ToDictionary(group => group.Key, group => group.First().dictItemName ?? group.Key)
+            ?? new Dictionary<string, string>();
     }
 
     private static void ApplyInstockStatusNames(IEnumerable<RawMaterialReceivingDto> items, IReadOnlyDictionary<string, string> instockStatusNames)
