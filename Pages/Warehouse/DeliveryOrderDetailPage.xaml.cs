@@ -76,13 +76,7 @@ public partial class DeliveryOrderDetailPage : ContentPage
 
     private async void OnScanMaterialClicked(object sender, EventArgs e)
     {
-        var choice = await DisplayActionSheet("物料扫码确认", "取消", null, "摄像头扫码", "从相册选择");
-        if (choice == "取消") return;
-
-        var code = choice == "从相册选择"
-            ? await _scanService.ScanFromPhotoAsync("选择物料码图片")
-            : await _scanService.ScanAsync("扫描物料码");
-
+        var code = await _scanService.ScanAsync("扫描物料码");
         if (string.IsNullOrWhiteSpace(code)) return;
 
         await ScanActualAsync(code.Trim());
