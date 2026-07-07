@@ -16,6 +16,7 @@ public interface IWarehouseApi
     Task<RawMaterialOcrDto> RecognizeIncomingAsync(AttachmentDto fileInfo, string instockNo, CancellationToken ct = default);
     Task<QrCodeInfoDto> QueryQrCodeInfoAsync(string? qsCode, CancellationToken ct = default);
     Task<bool> CancelBlankInstockAsync(string id, CancellationToken ct = default);
+    Task<bool> QuickInstockAsync(QuickInstockRequestDto request, CancellationToken ct = default);
 }
 
 public sealed class WarehouseApi : IWarehouseApi
@@ -30,6 +31,7 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _queryQrCodeInfoEndpoint;
     private readonly string _dictListEndpoint;
     private readonly string _cancelBlankInstockEndpoint;
+    private readonly string _quickInstockEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public WarehouseApi(HttpClient http, IConfigLoader configLoader)
@@ -54,6 +56,8 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("rawMaterialReceiving.getDictList", "/pda/rawMaterialReceiving/getDictList"), servicePath);
         _cancelBlankInstockEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.cancelBlankInstock", "/pda/rawMaterialReceiving/cancelBlankInstock"), servicePath);
+        _quickInstockEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("rawMaterialReceiving.quickInstock", "/pda/rawMaterialReceiving/quickInstock"), servicePath);
     }
 
     public async Task<List<RawMaterialReceivingDto>> GetRawMaterialReceivingListAsync(CancellationToken ct = default)
@@ -169,6 +173,15 @@ public sealed class WarehouseApi : IWarehouseApi
             [nameof(id)] = id
         }));
         using var resp = await _http.PostAsync(url, new FormUrlEncodedContent(Array.Empty<KeyValuePair<string, string>>()), ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
+        return data.result;
+    }
+
+    public async Task<bool> QuickInstockAsync(QuickInstockRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _quickInstockEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
         return data.result;

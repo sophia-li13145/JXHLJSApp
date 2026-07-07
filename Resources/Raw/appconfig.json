@@ -23,7 +23,8 @@
       "ocrIncoming": "/pda/rawMaterialReceiving/ocrIncoming",
       "queryQrCodeInfo": "/pda/rawMaterialReceiving/queryQrCodeInfo",
       "getDictList": "/pda/rawMaterialReceiving/getDictList",
-      "cancelBlankInstock": "/pda/rawMaterialReceiving/cancelBlankInstock"
+      "cancelBlankInstock": "/pda/rawMaterialReceiving/cancelBlankInstock",
+      "quickInstock": "/pda/rawMaterialReceiving/quickInstock"
     },
     "attachment": {
       "uploadAttachment": "/pda/attachment/uploadAttachment"

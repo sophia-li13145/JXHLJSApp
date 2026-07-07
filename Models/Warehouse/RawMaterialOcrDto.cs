@@ -6,6 +6,7 @@ public sealed class RawMaterialOcrDto
     public string? coilCount { get; set; }
     public string? coilDiameter { get; set; }
     public string? furnaceNo { get; set; }
+    public string? materialCode { get; set; }
     public string? materialName { get; set; }
     public string? materialType { get; set; }
     public string? ocrRawText { get; set; }
@@ -15,7 +16,7 @@ public sealed class RawMaterialOcrDto
     public string? spec { get; set; }
     public string? strength { get; set; }
 
-    public string materialTitle => $"物料编号： {FirstNonEmpty(materialType, materialName, "--")}";
+    public string materialTitle => $"物料编号： {FirstNonEmpty(materialCode, materialName, "--")}";
     public string materialNameDisplay => FirstNonEmpty(materialName, "--");
     public string specDisplay => FirstNonEmpty(spec, "--");
     public string furnaceNoDisplay => FirstNonEmpty(furnaceNo, "--");
