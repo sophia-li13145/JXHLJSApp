@@ -67,6 +67,7 @@
       "currentUserMachinesWorkOrder": "/pda/pmsWorkOrder/currentUserMachinesWorkOrder",
       "orderStart": "/pda/pmsWorkOrder/orderStart",
       "detail": "/pda/pmsWorkOrder/getWorkOrderDetail",
+      "currentTaskPool": "/pda/pmsWorkOrder/getCurrentTaskPool",
       "inputOutput": "/pda/pmsWorkOrder/getWorkOrderInputOutput",
       "confirmInput": "/pda/pmsWorkOrder/confirmInput",
       "page": "/pda/pmsWorkOrder/pageWorkOrders",

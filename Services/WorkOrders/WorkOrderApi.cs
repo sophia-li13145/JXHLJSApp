@@ -14,6 +14,7 @@ public interface IWorkOrderApi
     Task<List<WorkOrderTaskDto>> GetCurrentUserMachinesWorkOrdersAsync(CancellationToken ct = default);
     Task<bool> StartWorkOrderAsync(string workOrderNo, CancellationToken ct = default);
     Task<WorkOrderDetailDto?> GetWorkOrderDetailAsync(string id, CancellationToken ct = default);
+    Task<List<WorkOrderDetailDto>> GetCurrentTaskPoolAsync(string workOrderNo, CancellationToken ct = default);
     Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(string workOrderNo, CancellationToken ct = default);
     Task<MaterialQrCodeInfoDto> ScanQueryMaterialInfoAsync(string qrCode, CancellationToken ct = default);
     Task<bool> ConfirmMaterialInputAsync(MaterialInputConfirmDto input, CancellationToken ct = default);
@@ -28,6 +29,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _currentUserMachinesWorkOrderEndpoint;
     private readonly string _orderStartEndpoint;
     private readonly string _detailEndpoint;
+    private readonly string _currentTaskPoolEndpoint;
     private readonly string _inputOutputEndpoint;
     private readonly string _dictListEndpoint;
     private readonly string _materialQrCodeEndpoint;
@@ -51,6 +53,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
             configLoader.GetApiPath("workOrder.orderStart", "/pda/pmsWorkOrder/orderStart"), servicePath);
         _detailEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.detail", "/pda/pmsWorkOrder/getWorkOrderDetail"), servicePath);
+        _currentTaskPoolEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrder.currentTaskPool", "/pda/pmsWorkOrder/getCurrentTaskPool"), servicePath);
         _inputOutputEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.inputOutput", "/pda/pmsWorkOrder/getWorkOrderInputOutput"), servicePath);
         _dictListEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -146,6 +150,23 @@ public sealed class WorkOrderApi : IWorkOrderApi
     }
 
 
+    public async Task<List<WorkOrderDetailDto>> GetCurrentTaskPoolAsync(string workOrderNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_currentTaskPoolEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(workOrderNo)] = workOrderNo
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        var tasks = ReadWorkOrderDetailResult(data);
+        await ApplyWorkOrderStatusNamesAsync(tasks, ct).ConfigureAwait(false);
+        return tasks;
+    }
+
+
     public async Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(string workOrderNo, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_inputOutputEndpoint, new Dictionary<string, string?>
@@ -218,6 +239,15 @@ public sealed class WorkOrderApi : IWorkOrderApi
         }
     }
 
+    private async Task ApplyWorkOrderStatusNamesAsync(IEnumerable<WorkOrderDetailDto> tasks, CancellationToken ct)
+    {
+        var statusNames = await GetWorkOrderStatusNamesAsync(ct).ConfigureAwait(false);
+        foreach (var task in tasks)
+        {
+            task.workOrderStatus = MapWorkOrderStatus(task.workOrderStatus, statusNames);
+        }
+    }
+
     private async Task ApplyWorkOrderStatusNamesAsync(IEnumerable<WorkOrderInputOutputDto> tasks, CancellationToken ct)
     {
         var statusNames = await GetWorkOrderStatusNamesAsync(ct).ConfigureAwait(false);
@@ -267,6 +297,28 @@ public sealed class WorkOrderApi : IWorkOrderApi
         }
 
         return statusNames.TryGetValue(status, out var name) ? name : status;
+    }
+
+
+    private static List<WorkOrderDetailDto> ReadWorkOrderDetailResult(ApiResp<JsonElement?>? response)
+    {
+        if (response?.result is not { } result || result.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+        {
+            return new List<WorkOrderDetailDto>();
+        }
+
+        if (result.ValueKind == JsonValueKind.Array)
+        {
+            return JsonSerializer.Deserialize<List<WorkOrderDetailDto>>(result.GetRawText(), JsonOptions) ?? new List<WorkOrderDetailDto>();
+        }
+
+        if (result.ValueKind == JsonValueKind.Object)
+        {
+            var item = JsonSerializer.Deserialize<WorkOrderDetailDto>(result.GetRawText(), JsonOptions);
+            return item is null ? new List<WorkOrderDetailDto>() : new List<WorkOrderDetailDto> { item };
+        }
+
+        return new List<WorkOrderDetailDto>();
     }
 
     private static List<WorkOrderInputOutputDto> ReadInputOutputResult(ApiResp<JsonElement?>? response)
