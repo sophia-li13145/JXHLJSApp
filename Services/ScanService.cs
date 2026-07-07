@@ -20,7 +20,7 @@ public sealed class ScanService : IScanService
         if (navigation is null) return null;
 
         var permission = await Permissions.RequestAsync<Permissions.Camera>();
-        var scannerPage = new ScannerModalPage(title, permission == PermissionStatus.Granted);
+        var scannerPage = new ScannerModalPage(title, permission == PermissionStatus.Granted, () => ScanFromPhotoAsync("选择二维码图片", ct));
         await navigation.PushModalAsync(scannerPage);
 
         using var registration = ct.Register(() => scannerPage.Cancel());
@@ -68,7 +68,7 @@ public sealed class ScanService : IScanService
         private readonly Entry _hardwareScanEntry;
         private bool _completed;
 
-        public ScannerModalPage(string title, bool enableCamera)
+        public ScannerModalPage(string title, bool enableCamera, Func<Task<string?>> pickPhotoAsync)
         {
             Title = title;
             BackgroundColor = Color.FromArgb("#0B1220");
@@ -114,7 +114,7 @@ public sealed class ScanService : IScanService
                 {
                     CreateHeader(title),
                     CreateCameraFrame(enableCamera),
-                    CreateHardwareInputPanel()
+                    CreateHardwareInputPanel(pickPhotoAsync)
                 }
             };
             Grid.SetRow(_cameraView, 1);
@@ -181,20 +181,65 @@ public sealed class ScanService : IScanService
             return frame;
         }
 
-        private View CreateHardwareInputPanel()
+        private View CreateHardwareInputPanel(Func<Task<string?>> pickPhotoAsync)
         {
-            var panel = new VerticalStackLayout
+            var pickPhotoButton = new Button
+            {
+                Text = "从相册选择",
+                BackgroundColor = Colors.Transparent,
+                TextColor = Color.FromArgb("#DDE8FF"),
+                FontSize = 14,
+                Padding = new Thickness(0),
+                HorizontalOptions = LayoutOptions.Start
+            };
+            pickPhotoButton.Clicked += async (_, _) => await PickPhotoAsync(pickPhotoAsync);
+
+            var panel = new Grid
             {
                 Padding = new Thickness(22, 12, 22, 26),
-                Spacing = 10,
-                Children =
-                {
-                    new Label { Text = "兼容安卓手机摄像头扫码和手持机扫码枪输入", TextColor = Color.FromArgb("#DDE8FF"), FontSize = 13, HorizontalTextAlignment = TextAlignment.Center },
-                    _hardwareScanEntry
-                }
+                RowDefinitions = new RowDefinitionCollection(
+                    new RowDefinition { Height = GridLength.Auto },
+                    new RowDefinition { Height = GridLength.Auto },
+                    new RowDefinition { Height = GridLength.Auto }),
+                RowSpacing = 10
             };
+            panel.Add(pickPhotoButton, 0, 0);
+            panel.Add(new Label { Text = "兼容安卓手机摄像头扫码和手持机扫码枪输入", TextColor = Color.FromArgb("#DDE8FF"), FontSize = 13, HorizontalTextAlignment = TextAlignment.Center }, 0, 1);
+            panel.Add(_hardwareScanEntry, 0, 2);
             Grid.SetRow(panel, 2);
             return panel;
+        }
+
+        private async Task PickPhotoAsync(Func<Task<string?>> pickPhotoAsync)
+        {
+            if (_completed) return;
+
+            var shouldResumeDetecting = _cameraView.IsDetecting;
+            _cameraView.IsDetecting = false;
+
+            try
+            {
+                var code = await pickPhotoAsync();
+                if (!string.IsNullOrWhiteSpace(code))
+                {
+                    Complete(code);
+                    return;
+                }
+
+                await DisplayAlert("提示", "未从所选图片中识别到二维码。", "确定");
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("图片识别失败", ex.Message, "确定");
+            }
+            finally
+            {
+                if (!_completed)
+                {
+                    _cameraView.IsDetecting = shouldResumeDetecting;
+                    _hardwareScanEntry.Focus();
+                }
+            }
         }
 
         private void OnBarcodesDetected(object? sender, BarcodeDetectionEventArgs e)

@@ -183,12 +183,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage
 
         try
         {
-            var choice = await DisplayActionSheet("扫码绑定", "取消", null, "摄像头扫码", "从相册选择");
-            if (choice == "取消" || string.IsNullOrWhiteSpace(choice)) return;
-
-            var qsCode = choice == "从相册选择"
-                ? await _scanService.ScanFromPhotoAsync("选择追溯码图片")
-                : await _scanService.ScanAsync("扫码绑定");
+            var qsCode = await _scanService.ScanAsync("扫码绑定");
             if (string.IsNullOrWhiteSpace(qsCode)) return;
 
             var qrInfo = await _warehouseApi.QueryQrCodeInfoAsync(qsCode.Trim());
