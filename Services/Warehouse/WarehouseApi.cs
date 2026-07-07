@@ -9,6 +9,10 @@ namespace JXHLJSApp.Services.Warehouse;
 public interface IWarehouseApi
 {
     Task<List<RawMaterialReceivingDto>> GetRawMaterialReceivingListAsync(CancellationToken ct = default);
+    Task<List<DeliveryOrderDto>> GetNeedDeliveryOrdersAsync(CancellationToken ct = default);
+    Task<DeliveryOrderDetailDto> GetDeliveryOrderDetailAsync(string deliveryNo, CancellationToken ct = default);
+    Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default);
+    Task<bool> ConfirmDeliveryCompletionAsync(string deliveryOrderNo, CancellationToken ct = default);
     Task<RawMaterialReceivingDetailDto> GetRawMaterialReceivingDetailAsync(string instockNo, CancellationToken ct = default);
     Task<BlankInstockDto> AddBlankInstockAsync(CancellationToken ct = default);
     Task<List<WarehouseInfoDto>> QueryWarehouseInfoAsync(CancellationToken ct = default);
@@ -32,6 +36,10 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _dictListEndpoint;
     private readonly string _cancelBlankInstockEndpoint;
     private readonly string _quickInstockEndpoint;
+    private readonly string _needDeliveryOrdersEndpoint;
+    private readonly string _deliveryOrderDetailEndpoint;
+    private readonly string _deliveryOrderScanActualEndpoint;
+    private readonly string _confirmDeliveryCompletionEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public WarehouseApi(HttpClient http, IConfigLoader configLoader)
@@ -58,6 +66,14 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("rawMaterialReceiving.cancelBlankInstock", "/pda/rawMaterialReceiving/cancelBlankInstock"), servicePath);
         _quickInstockEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.quickInstock", "/pda/rawMaterialReceiving/quickInstock"), servicePath);
+        _needDeliveryOrdersEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("deliveryOrder.listNeedDeliveryOrders", "/pda/deliveryOrder/listNeedDeliveryOrders"), servicePath);
+        _deliveryOrderDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("deliveryOrder.detail", "/pda/deliveryOrder/detail"), servicePath);
+        _deliveryOrderScanActualEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("deliveryOrder.scanActual", "/pda/deliveryOrder/scanActual"), servicePath);
+        _confirmDeliveryCompletionEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("deliveryOrder.confirmDeliveryCompletion", "/pda/deliveryOrder/confirmDeliveryCompletion"), servicePath);
     }
 
     public async Task<List<RawMaterialReceivingDto>> GetRawMaterialReceivingListAsync(CancellationToken ct = default)
@@ -79,6 +95,49 @@ public sealed class WarehouseApi : IWarehouseApi
         var list = data.result ?? new List<RawMaterialReceivingDto>();
         ApplyInstockStatusNames(list, instockStatusNames);
         return list;
+    }
+
+
+    public async Task<List<DeliveryOrderDto>> GetNeedDeliveryOrdersAsync(CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _needDeliveryOrdersEndpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<List<DeliveryOrderDto>>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new List<DeliveryOrderDto>();
+    }
+
+
+    public async Task<DeliveryOrderDetailDto> GetDeliveryOrderDetailAsync(string deliveryNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_deliveryOrderDetailEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(deliveryNo)] = deliveryNo
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<DeliveryOrderDetailDto>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new DeliveryOrderDetailDto();
+    }
+
+
+    public async Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _deliveryOrderScanActualEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<DeliveryOrderScanActualResultDto>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new DeliveryOrderScanActualResultDto();
+    }
+
+
+    public async Task<bool> ConfirmDeliveryCompletionAsync(string deliveryOrderNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _confirmDeliveryCompletionEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, new { deliveryOrderNo }, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
+        return data.result;
     }
 
     public async Task<RawMaterialReceivingDetailDto> GetRawMaterialReceivingDetailAsync(string instockNo, CancellationToken ct = default)

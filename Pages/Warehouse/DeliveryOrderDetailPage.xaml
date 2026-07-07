@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.Warehouse.DeliveryOrderDetailPage"
+             Title="发货单详情"
+             BackgroundColor="#F4F6F9"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="16,22,16,14" HeightRequest="66">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,16,16" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*">
+                <Label Text="‹ 返回" TextColor="White" FontSize="15" VerticalOptions="Center">
+                    <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers>
+                </Label>
+                <Label Grid.Column="1" Text="发货单详情" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,48,0" />
+            </Grid>
+        </Border>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="17,24,17,24" Spacing="16">
+                <Button Text="📷  物料扫码确认" BackgroundColor="White" TextColor="#0A2E69" BorderColor="#244B88" BorderWidth="1" CornerRadius="10" HeightRequest="52" FontSize="17" FontAttributes="Bold" Clicked="OnScanMaterialClicked" />
+
+                <Border BackgroundColor="White" StrokeThickness="0" Padding="18,18">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="14">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="发货单明细" TextColor="#0A2E69" FontSize="20" FontAttributes="Bold" />
+                            <Border Grid.Column="1" BackgroundColor="#FFF0DF" StrokeThickness="0" Padding="9,4">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
+                                <Label x:Name="AuditStatusLabel" Text="待发货复核" TextColor="#F06423" FontSize="13" FontAttributes="Bold" />
+                            </Border>
+                        </Grid>
+                        <BoxView HeightRequest="1" Color="#E1E7F0" />
+                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*" RowSpacing="17" ColumnSpacing="16">
+                            <Label Text="发货单号" TextColor="#4B6688" /><Label x:Name="DeliveryNoLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="1" Text="客户名称" TextColor="#4B6688" /><Label x:Name="CustomerLabel" Grid.Row="1" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="2" Text="收货地址" TextColor="#4B6688" /><Label x:Name="AddressLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="3" Text="联系人" TextColor="#4B6688" /><Label x:Name="ContactLabel" Grid.Row="3" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="4" Text="发货日期" TextColor="#4B6688" /><Label x:Name="DeliveryDateLabel" Grid.Row="4" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="5" Text="承运人" TextColor="#4B6688" /><Label x:Name="CarrierLabel" Grid.Row="5" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="6" Text="承运车牌号" TextColor="#4B6688" /><Label x:Name="CarrierLicenseLabel" Grid.Row="6" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="7" Text="物流单号" TextColor="#4B6688" /><Label x:Name="LogisticsNumberLabel" Grid.Row="7" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border BackgroundColor="White" StrokeThickness="0" Padding="16,16">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="14">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="实发扫码记录" TextColor="#001431" FontSize="17" FontAttributes="Bold" />
+                            <Label x:Name="ScanProgressLabel" Grid.Column="1" TextColor="#00A86B" FontSize="17" FontAttributes="Bold" />
+                        </Grid>
+                        <BoxView HeightRequest="1" Color="#E8EDF4" />
+                        <CollectionView x:Name="MaterialList" EmptyView="请扫描货物进行复核">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="White" Stroke="#D9E0EA" StrokeThickness="1" Padding="12" Margin="0,0,0,10">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                                        <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="8" ColumnSpacing="12">
+                                            <Label Text="{Binding materialCodeDisplay, StringFormat='产品编码：{0}'}" TextColor="#0A2E69" FontSize="15" FontAttributes="Bold" />
+                                            <Label Grid.Column="1" Text="{Binding scanStatusDisplay}" TextColor="{Binding scanStatusColor}" FontSize="15" FontAttributes="Bold" />
+                                            <Label Grid.Row="1" Text="{Binding materialNameDisplay, StringFormat='产品名称：{0}'}" TextColor="#4B6688" />
+                                            <Label Grid.Row="1" Grid.Column="1" Text="{Binding specDisplay, StringFormat='规格：{0}'}" TextColor="#4B6688" />
+                                            <Label Grid.Row="2" Text="{Binding modelDisplay, StringFormat='件数：{0}'}" TextColor="#4B6688" />
+                                            <Label Grid.Row="2" Grid.Column="1" Text="{Binding needDeliveryQtyDisplay, StringFormat='重量：{0}'}" TextColor="#4B6688" />
+                                            <Label Grid.Row="3" Text="{Binding stockBatchDisplay, StringFormat='下单日期：{0}'}" TextColor="#4B6688" FontAttributes="Bold" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Border Grid.Row="2" BackgroundColor="White" StrokeThickness="0" Padding="17,16,17,16">
+            <Button Text="确认发货完成" BackgroundColor="#1F447E" TextColor="White" FontSize="17" FontAttributes="Bold" CornerRadius="10" HeightRequest="50" Clicked="OnConfirmDeliveryClicked" />
+        </Border>
+    </Grid>
+</ContentPage>
