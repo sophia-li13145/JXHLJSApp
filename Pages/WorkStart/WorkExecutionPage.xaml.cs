@@ -45,16 +45,15 @@ public partial class WorkExecutionPage : ContentPage
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(_workOrderId))
+            if (string.IsNullOrWhiteSpace(_workOrderNo))
             {
-                await DisplayAlert("提示", "工单列表主键为空，无法查询当前关联任务池。", "确定");
+                await DisplayAlert("提示", "工单号为空，无法查询当前关联任务池。", "确定");
                 TaskPoolList.ItemsSource = Array.Empty<WorkOrderDetailDto>();
                 return;
             }
 
             RefreshContainer.IsRefreshing = true;
-            var detail = await _workOrderApi.GetWorkOrderDetailAsync(_workOrderId);
-            _tasks = detail is null ? new List<WorkOrderDetailDto>() : new List<WorkOrderDetailDto> { detail };
+            _tasks = await _workOrderApi.GetCurrentTaskPoolAsync(_workOrderNo);
             TaskPoolList.ItemsSource = _tasks;
         }
         catch (Exception ex)
