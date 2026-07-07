@@ -29,7 +29,7 @@
                 </Border>
 
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                    <Button Text="📸  拍照" BackgroundColor="#EFFFF4" TextColor="#008C38" BorderColor="#0AA344" BorderWidth="1" CornerRadius="10" HeightRequest="46" Clicked="OnTakePhotoClicked" />
+                    <Button Text="✍  手动录入票签" BackgroundColor="#EFFFF4" TextColor="#008C38" BorderColor="#0AA344" BorderWidth="1" CornerRadius="10" HeightRequest="46" Clicked="OnTakePhotoClicked" />
                     <Button Grid.Column="1" Text="◼  扫码绑定" BackgroundColor="#F4F8FF" TextColor="#0B4FEA" BorderColor="#2263FF" BorderWidth="1" CornerRadius="10" HeightRequest="46" Clicked="OnScanBindClicked" />
                 </Grid>
 
@@ -37,10 +37,10 @@
                     <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
                     <VerticalStackLayout Spacing="16">
                         <Grid ColumnDefinitions="*,Auto">
-                            <Label Text="提取票签内容（待绑码模板）" TextColor="#0A2C61" FontAttributes="Bold" />
+                            <Label Text="票签内容（待绑码模板）" TextColor="#0A2C61" FontAttributes="Bold" />
                             <Label Grid.Column="1" Text="点击卡片内容可高亮选中" TextColor="#0B4FEA" FontSize="12" />
                         </Grid>
-                        <Label x:Name="ExtractedTextLabel" Text="暂无提取的票签内容" TextColor="#8EA0B8" FontSize="15" HorizontalTextAlignment="Center" />
+                        <Label x:Name="ExtractedTextLabel" Text="暂无票签内容，请先手动录入" TextColor="#8EA0B8" FontSize="15" HorizontalTextAlignment="Center" />
                         <Border x:Name="SelectedTicketCard" IsVisible="False" BackgroundColor="White" Stroke="#2863FF" StrokeThickness="2" Padding="12">
                             <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                             <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,*" RowSpacing="8" ColumnSpacing="12">
