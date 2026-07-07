@@ -16,6 +16,7 @@ public interface IWarehouseApi
     Task<RawMaterialOcrDto> RecognizeIncomingAsync(AttachmentDto fileInfo, string instockNo, CancellationToken ct = default);
     Task<QrCodeInfoDto> QueryQrCodeInfoAsync(string? qsCode, CancellationToken ct = default);
     Task<bool> CancelBlankInstockAsync(string id, CancellationToken ct = default);
+    Task<bool> QuickInstockAsync(QuickInstockRequestDto request, CancellationToken ct = default);
 }
 
 public sealed class WarehouseApi : IWarehouseApi
@@ -30,6 +31,7 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _queryQrCodeInfoEndpoint;
     private readonly string _dictListEndpoint;
     private readonly string _cancelBlankInstockEndpoint;
+    private readonly string _quickInstockEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public WarehouseApi(HttpClient http, IConfigLoader configLoader)
@@ -54,6 +56,8 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("rawMaterialReceiving.getDictList", "/pda/rawMaterialReceiving/getDictList"), servicePath);
         _cancelBlankInstockEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.cancelBlankInstock", "/pda/rawMaterialReceiving/cancelBlankInstock"), servicePath);
+        _quickInstockEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("rawMaterialReceiving.quickInstock", "/pda/rawMaterialReceiving/quickInstock"), servicePath);
     }
 
     public async Task<List<RawMaterialReceivingDto>> GetRawMaterialReceivingListAsync(CancellationToken ct = default)
@@ -109,19 +113,28 @@ public sealed class WarehouseApi : IWarehouseApi
 
     public async Task<AttachmentDto> UploadAttachmentAsync(FileResult photo, string attachmentFolder, string attachmentLocation, CancellationToken ct = default)
     {
-        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _uploadAttachmentEndpoint);
-        await using var stream = await photo.OpenReadAsync().ConfigureAwait(false);
-        using var content = new MultipartFormDataContent
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_uploadAttachmentEndpoint, new Dictionary<string, string?>
         {
-            { new StringContent(attachmentFolder), nameof(attachmentFolder) },
-            { new StringContent(attachmentLocation), nameof(attachmentLocation) }
-        };
+            [nameof(attachmentFolder)] = attachmentFolder,
+            [nameof(attachmentLocation)] = attachmentLocation
+        }));
+        await using var stream = await photo.OpenReadAsync().ConfigureAwait(false);
+        using var content = new MultipartFormDataContent();
         using var fileContent = new StreamContent(stream);
         fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(photo.ContentType ?? "image/jpeg");
         content.Add(fileContent, "file", photo.FileName);
         using var resp = await _http.PostAsync(url, content, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<AttachmentDto>(resp, ct).ConfigureAwait(false);
+        var json = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        var data = JsonSerializer.Deserialize<ApiResp<AttachmentDto>>(json, JsonOptions);
+        if (data is null)
+        {
+            throw new InvalidOperationException("接口返回为空。");
+        }
+        if (data.success == false)
+        {
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
+        }
         return data.result ?? new AttachmentDto
         {
             attachmentFolder = attachmentFolder,
@@ -160,6 +173,15 @@ public sealed class WarehouseApi : IWarehouseApi
             [nameof(id)] = id
         }));
         using var resp = await _http.PostAsync(url, new FormUrlEncodedContent(Array.Empty<KeyValuePair<string, string>>()), ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
+        return data.result;
+    }
+
+    public async Task<bool> QuickInstockAsync(QuickInstockRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _quickInstockEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
         return data.result;

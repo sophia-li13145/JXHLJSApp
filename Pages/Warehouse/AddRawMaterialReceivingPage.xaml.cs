@@ -69,21 +69,8 @@ public partial class AddRawMaterialReceivingPage : ContentPage
             return;
         }
 
-        try
-        {
-            var photo = await GetTicketPhotoAsync();
-            if (photo is null) return;
-
-            ExtractedTextLabel.Text = "图片上传与识别中...";
-            var attachment = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
-            var ocr = await _warehouseApi.RecognizeIncomingAsync(attachment, _instockNo);
-            ShowTicketConfirmDialog(ocr);
-        }
-        catch (Exception ex)
-        {
-            ExtractedTextLabel.Text = "暂无提取的票签内容";
-            await DisplayAlert("识别失败", ex.Message, "确定");
-        }
+        // 图片上传和 OCR 识别接口暂不可用，先让用户直接手动录入票签内容。
+        ShowTicketConfirmDialog(new RawMaterialOcrDto());
     }
 
     private async Task<FileResult?> GetTicketPhotoAsync()
@@ -167,6 +154,21 @@ public partial class AddRawMaterialReceivingPage : ContentPage
         return isKg ? parsed / 1000m : parsed;
     }
 
+
+    private static decimal? ParseNullableDecimal(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        return decimal.TryParse(value.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var invariantValue)
+            ? invariantValue
+            : decimal.TryParse(value.Trim(), NumberStyles.Any, CultureInfo.CurrentCulture, out var currentValue) ? currentValue : null;
+    }
+
+    private static int? ParseNullableInt(string? value)
+    {
+        var parsed = ParseNullableDecimal(value);
+        return parsed.HasValue ? (int?)decimal.ToInt32(decimal.Truncate(parsed.Value)) : null;
+    }
+
     private void OnCloseSummaryTapped(object sender, TappedEventArgs e) => SummaryOverlay.IsVisible = false;
 
     private void OnCloseSummaryClicked(object sender, EventArgs e) => SummaryOverlay.IsVisible = false;
@@ -175,13 +177,18 @@ public partial class AddRawMaterialReceivingPage : ContentPage
     {
         if (_selectedTicket is null)
         {
-            await DisplayAlert("提示", "请先拍照识别并确认票签内容。", "确定");
+            await DisplayAlert("提示", "请先手动录入并确认票签内容。", "确定");
             return;
         }
 
         try
         {
-            var qsCode = await _scanService.ScanAsync("扫码绑定");
+            var choice = await DisplayActionSheet("扫码绑定", "取消", null, "摄像头扫码", "从相册选择");
+            if (choice == "取消" || string.IsNullOrWhiteSpace(choice)) return;
+
+            var qsCode = choice == "从相册选择"
+                ? await _scanService.ScanFromPhotoAsync("选择追溯码图片")
+                : await _scanService.ScanAsync("扫码绑定");
             if (string.IsNullOrWhiteSpace(qsCode)) return;
 
             var qrInfo = await _warehouseApi.QueryQrCodeInfoAsync(qsCode.Trim());
@@ -197,6 +204,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage
     {
         _pendingQrCode = qrCode;
         BindQrCodeEntry.Text = qrCode;
+        BindMaterialCodeEntry.Text = source.materialCode;
         BindMaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(source.materialType) ? "原料" : source.materialType;
         BindMaterialNameEntry.Text = source.materialName;
         BindSpecEntry.Text = source.spec;
@@ -213,6 +221,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage
         {
             qrCode = _pendingQrCode,
             materialType = string.IsNullOrWhiteSpace(materialType) ? _selectedTicket?.materialType : materialType,
+            materialCode = BindMaterialCodeEntry.Text,
             materialName = BindMaterialNameEntry.Text,
             spec = BindSpecEntry.Text,
             furnaceNo = BindFurnaceNoEntry.Text,
@@ -238,6 +247,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage
     {
         _pendingOcr = ocr;
         MaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(ocr.materialType) ? "原料" : ocr.materialType;
+        MaterialCodeEntry.Text = ocr.materialCode;
         MaterialNameEntry.Text = ocr.materialName;
         SpecEntry.Text = ocr.spec;
         FurnaceNoEntry.Text = ocr.furnaceNo;
@@ -252,6 +262,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage
         _selectedTicket = new RawMaterialOcrDto
         {
             materialType = string.IsNullOrWhiteSpace(materialType) ? _pendingOcr?.materialType : materialType,
+            materialCode = MaterialCodeEntry.Text,
             materialName = MaterialNameEntry.Text,
             spec = SpecEntry.Text,
             furnaceNo = FurnaceNoEntry.Text,
@@ -285,7 +296,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage
         _selectedTicket = null;
         SelectedTicketCard.IsVisible = false;
         ExtractedTextLabel.IsVisible = true;
-        ExtractedTextLabel.Text = "暂无提取的票签内容";
+        ExtractedTextLabel.Text = "暂无票签内容，请先手动录入";
     }
 
     private void OnDeleteTicketTapped(object sender, TappedEventArgs e) => ClearSelectedTicket();
@@ -293,6 +304,78 @@ public partial class AddRawMaterialReceivingPage : ContentPage
     private void OnCloseTicketConfirmTapped(object sender, TappedEventArgs e) => TicketConfirmOverlay.IsVisible = false;
 
     private void OnCancelTicketConfirmClicked(object sender, EventArgs e) => TicketConfirmOverlay.IsVisible = false;
+
+
+    private async void OnSubmitInstockClicked(object sender, EventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_instockNo))
+        {
+            await DisplayAlert("提示", "入库单号尚未生成，请稍后重试。", "确定");
+            return;
+        }
+
+        if (WarehousePicker.SelectedItem is not WarehouseInfoDto warehouse)
+        {
+            await DisplayAlert("提示", "请选择入库仓库。", "确定");
+            return;
+        }
+
+        if (_ocrItems.Count == 0)
+        {
+            await DisplayAlert("提示", "请先扫码绑定至少一条待入库物料。", "确定");
+            return;
+        }
+
+        var missingRequired = _ocrItems.FirstOrDefault(item =>
+            string.IsNullOrWhiteSpace(item.qrCode) ||
+            string.IsNullOrWhiteSpace(item.materialCode) ||
+            ParseWeight(item.pieceWeight) <= 0m);
+        if (missingRequired is not null)
+        {
+            await DisplayAlert("提示", "请确认每条明细都已填写二维码、物料编码和有效件重。", "确定");
+            return;
+        }
+
+        try
+        {
+            var request = new QuickInstockRequestDto
+            {
+                detailList = _ocrItems.Select((item, index) => new QuickInstockDetailDto
+                {
+                    coilCount = ParseNullableInt(item.coilCount),
+                    coilDiameter = ParseNullableDecimal(item.coilDiameter),
+                    count = 1,
+                    countSeq = index + 1,
+                    furnaceNo = item.furnaceNo,
+                    instockNo = _instockNo,
+                    instockQty = ParseWeight(item.pieceWeight),
+                    instockWarehouse = warehouse.warehouseName,
+                    instockWarehouseCode = warehouse.warehouseCode,
+                    materialCode = item.materialCode,
+                    materialName = item.materialName,
+                    origin = item.originPlace,
+                    qrCode = item.qrCode,
+                    spec = item.spec,
+                    strength = item.strength,
+                    unit = "吨"
+                }).ToList()
+            };
+
+            var success = await _warehouseApi.QuickInstockAsync(request);
+            if (!success)
+            {
+                await DisplayAlert("提交失败", "接口返回失败，请稍后重试。", "确定");
+                return;
+            }
+
+            await DisplayAlert("提交成功", "采购入库已提交。", "确定");
+            await Shell.Current.GoToAsync("..");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("提交失败", ex.Message, "确定");
+        }
+    }
 
     private async void OnBackLabelTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
 

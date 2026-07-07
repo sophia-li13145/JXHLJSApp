@@ -1,11 +1,15 @@
+using SkiaSharp;
+using ZXing.Common;
 using ZXing.Net.Maui;
 using ZXing.Net.Maui.Controls;
+using SkiaBarcodeReader = ZXing.SkiaSharp.BarcodeReader;
 
 namespace JXHLJSApp.Services;
 
 public interface IScanService
 {
     Task<string?> ScanAsync(string title = "扫码", CancellationToken ct = default);
+    Task<string?> ScanFromPhotoAsync(string title = "选择二维码图片", CancellationToken ct = default);
 }
 
 public sealed class ScanService : IScanService
@@ -31,6 +35,30 @@ public sealed class ScanService : IScanService
         });
 
         return result;
+    }
+
+
+    public async Task<string?> ScanFromPhotoAsync(string title = "选择二维码图片", CancellationToken ct = default)
+    {
+        var photo = await MediaPicker.Default.PickPhotoAsync(new MediaPickerOptions { Title = title }).ConfigureAwait(false);
+        if (photo is null) return null;
+
+        await using var stream = await photo.OpenReadAsync().ConfigureAwait(false);
+        using var bitmap = SKBitmap.Decode(stream);
+        if (bitmap is null)
+        {
+            throw new InvalidOperationException("无法读取所选图片。");
+        }
+
+        var reader = new SkiaBarcodeReader
+        {
+            AutoRotate = true,
+            Options = new DecodingOptions
+            {
+                TryHarder = true
+            }
+        };
+        return reader.Decode(bitmap)?.Text?.Trim();
     }
 
     private sealed class ScannerModalPage : ContentPage
