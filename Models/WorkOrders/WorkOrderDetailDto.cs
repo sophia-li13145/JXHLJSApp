@@ -2,6 +2,8 @@ namespace JXHLJSApp.Models.WorkOrders;
 
 public sealed class WorkOrderDetailDto
 {
+    public decimal? actualQuantity { get; set; }
+    public decimal? actualWeight { get; set; }
     public string? billetLowerTolerance { get; set; }
     public string? billetUpperTolerance { get; set; }
     public string? coilDiameterControl { get; set; }
@@ -29,6 +31,8 @@ public sealed class WorkOrderDetailDto
     public string? packageWeight { get; set; }
     public string? packagingClothColor { get; set; }
     public string? pitchControl { get; set; }
+    public decimal? plannedQuantity { get; set; }
+    public decimal? plannedWeight { get; set; }
     public string? productSpecification { get; set; }
     public string? saleMode { get; set; }
     public string? steelGrade { get; set; }
@@ -40,10 +44,10 @@ public sealed class WorkOrderDetailDto
 
     public string machineDisplay => FirstNonEmpty(machineNo, machineType, deviceName);
     public string specificationDisplay => FirstNonEmpty(productSpecification, intermediateSpecification);
-    public string completedWeightDisplay => FormatDecimal(moldSequenceList?.Sum(item => item.productionWeight), "吨");
-    public string completedQuantityDisplay => FormatDecimal(moldSequenceList?.Sum(item => item.productionQuantity), "件");
+    public string completedWeightDisplay => FormatProgress(actualWeight, plannedWeight, "吨");
+    public string completedQuantityDisplay => FormatProgress(actualQuantity, plannedQuantity, "件");
     public string moldSequenceDisplay => moldSequenceList is { Count: > 0 }
-        ? string.Join("；", moldSequenceList.Select(item => $"{FormatDecimal(item.moldSequence, string.Empty)}# {FormatDecimal(item.pieceWeight, "KG")}/{FormatDecimal(item.productionQuantity, "件")}/{FormatDecimal(item.productionWeight, "吨")}"))
+        ? string.Join("-", moldSequenceList.Select(item => FormatDecimal(item.moldSequence, string.Empty)))
         : "--";
 
     private static string FirstNonEmpty(params string?[] values)
@@ -55,6 +59,11 @@ public sealed class WorkOrderDetailDto
     {
         var text = value.HasValue ? value.Value.ToString("0.##") : "--";
         return string.IsNullOrWhiteSpace(unit) || text == "--" ? text : $"{text}{unit}";
+    }
+
+    private static string FormatProgress(decimal? actualValue, decimal? plannedValue, string unit)
+    {
+        return $"{FormatDecimal(actualValue, unit)} / {FormatDecimal(plannedValue, unit)}";
     }
 }
 
