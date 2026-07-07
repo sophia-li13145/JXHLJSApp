@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace JXHLJSApp.Models.Warehouse;
 
 public sealed class DeliveryOrderDto
@@ -6,7 +8,8 @@ public sealed class DeliveryOrderDto
     public string? auditStatus { get; set; }
     public string? customer { get; set; }
     public string? deliveryNo { get; set; }
-    public int? deliveryQty { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? deliveryQty { get; set; }
 
     public string deliveryNoDisplay => string.IsNullOrWhiteSpace(deliveryNo) ? "--" : deliveryNo!;
     public string customerDisplay => string.IsNullOrWhiteSpace(customer) ? "--" : customer!;

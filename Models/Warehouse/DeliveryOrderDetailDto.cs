@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace JXHLJSApp.Models.Warehouse;
 
 public sealed class DeliveryOrderDetailDto
@@ -38,14 +40,18 @@ public sealed class DeliveryOrderDetailDto
 
 public sealed class DeliveryOrderMaterialDetailDto
 {
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? curDeliveryQty { get; set; }
     public string? deliveryNo { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? deliveryQty { get; set; }
     public string? id { get; set; }
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
     public string? model { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? needDeliveryQty { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? scannedQty { get; set; }
     public string? spec { get; set; }
     public string? stockBatch { get; set; }
@@ -74,6 +80,7 @@ public sealed class DeliveryOrderMaterialDetailDto
 
 public sealed class DeliveryOrderScanDetailDto
 {
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? actualQty { get; set; }
     public string? barcode { get; set; }
     public string? barcodeType { get; set; }
@@ -96,6 +103,7 @@ public sealed class DeliveryOrderScanDetailDto
 
 public sealed class DeliveryOrderScanActualRequestDto
 {
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? actualQty { get; set; }
     public string? barcode { get; set; }
     public string? deliveryNo { get; set; }
@@ -105,13 +113,16 @@ public sealed class DeliveryOrderScanActualRequestDto
 
 public sealed class DeliveryOrderScanActualResultDto
 {
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? actualQty { get; set; }
     public string? barcode { get; set; }
     public string? deliveryNo { get; set; }
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? needDeliveryQty { get; set; }
     public string? scanDetailId { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? scannedQty { get; set; }
     public string? stockBatch { get; set; }
 }
