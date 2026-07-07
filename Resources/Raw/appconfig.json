@@ -33,7 +33,8 @@
       "listNeedDeliveryOrders": "/pda/deliveryOrder/listNeedDeliveryOrders",
       "detail": "/pda/deliveryOrder/detail",
       "scanActual": "/pda/deliveryOrder/scanActual",
-      "confirmDeliveryCompletion": "/pda/deliveryOrder/confirmDeliveryCompletion"
+      "confirmDeliveryCompletion": "/pda/deliveryOrder/confirmDeliveryCompletion",
+      "getDictList": "/pda/deliveryOrder/getDictList"
     },
     "inbound": {
       "list": "/pda/wmsMaterialInstock/getInStock",
