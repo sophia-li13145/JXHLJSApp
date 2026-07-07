@@ -49,7 +49,7 @@ public partial class WorkStartOrdersPage : ContentPage
         if (orders.Count == 0) return "当前绑定机台暂无待执行计划工单。";
 
         var first = orders[0];
-        var machine = string.IsNullOrWhiteSpace(first.machineNo) ? "--" : first.machineNo;
+        var machine = string.IsNullOrWhiteSpace(first.deviceCode) ? "--" : first.deviceCode;
         return $"机台 {machine} 待执行计划工单。请选择 {orders.Count} 个工单开工。";
     }
 
