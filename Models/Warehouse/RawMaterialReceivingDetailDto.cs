@@ -15,7 +15,7 @@ public sealed class RawMaterialReceivingDetailDto
     public string? instockStatusName { get; set; }
     public string? memo { get; set; }
     public List<RawMaterialReceivingOcrDto>? ocrList { get; set; }
-    public string? operator { get; set; }
+    public string? @operator { get; set; }
     public string? orderType { get; set; }
     public string? orderTypeName { get; set; }
     public string? purchaseNo { get; set; }
