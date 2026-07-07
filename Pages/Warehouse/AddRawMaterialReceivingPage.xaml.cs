@@ -69,21 +69,8 @@ public partial class AddRawMaterialReceivingPage : ContentPage
             return;
         }
 
-        try
-        {
-            var photo = await GetTicketPhotoAsync();
-            if (photo is null) return;
-
-            ExtractedTextLabel.Text = "图片上传与识别中...";
-            var attachment = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
-            var ocr = await _warehouseApi.RecognizeIncomingAsync(attachment, _instockNo);
-            ShowTicketConfirmDialog(ocr);
-        }
-        catch (Exception ex)
-        {
-            ExtractedTextLabel.Text = "暂无提取的票签内容";
-            await DisplayAlert("识别失败", ex.Message, "确定");
-        }
+        // 图片上传和 OCR 识别接口暂不可用，先让用户直接手动录入票签内容。
+        ShowTicketConfirmDialog(new RawMaterialOcrDto());
     }
 
     private async Task<FileResult?> GetTicketPhotoAsync()
@@ -175,7 +162,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage
     {
         if (_selectedTicket is null)
         {
-            await DisplayAlert("提示", "请先拍照识别并确认票签内容。", "确定");
+            await DisplayAlert("提示", "请先手动录入并确认票签内容。", "确定");
             return;
         }
 
@@ -285,7 +272,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage
         _selectedTicket = null;
         SelectedTicketCard.IsVisible = false;
         ExtractedTextLabel.IsVisible = true;
-        ExtractedTextLabel.Text = "暂无提取的票签内容";
+        ExtractedTextLabel.Text = "暂无票签内容，请先手动录入";
     }
 
     private void OnDeleteTicketTapped(object sender, TappedEventArgs e) => ClearSelectedTicket();
