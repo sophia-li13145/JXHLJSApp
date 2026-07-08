@@ -1,4 +1,5 @@
 using JXHLJSApp.Models.WorkOrders;
+using JXHLJSApp.Services;
 using JXHLJSApp.Services.WorkOrders;
 
 namespace JXHLJSApp.Pages.WorkStart;
@@ -8,6 +9,7 @@ namespace JXHLJSApp.Pages.WorkStart;
 public partial class WorkExecutionPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
+    private readonly IScanService _scanService;
     private List<WorkOrderDetailDto> _tasks = new();
     private string? _workOrderId;
     private string? _workOrderNo;
@@ -24,10 +26,11 @@ public partial class WorkExecutionPage : ContentPage
         set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty);
     }
 
-    public WorkExecutionPage(IWorkOrderApi workOrderApi)
+    public WorkExecutionPage(IWorkOrderApi workOrderApi, IScanService scanService)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
+        _scanService = scanService;
     }
 
     protected override async void OnAppearing()
@@ -170,6 +173,48 @@ public partial class WorkExecutionPage : ContentPage
         }
 
         await Shell.Current.GoToAsync(AppShell.RouteWorkCompletion, query);
+    }
+
+    private async void OnSwitchMachineTapped(object sender, TappedEventArgs e)
+    {
+        var code = await _scanService.ScanAsync("扫码切换机台");
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return;
+        }
+
+        await BindMachineAndReturnHomeAsync(code);
+    }
+
+    private async Task BindMachineAndReturnHomeAsync(string machineCode)
+    {
+        var devCode = machineCode.Trim();
+        if (string.IsNullOrWhiteSpace(devCode))
+        {
+            await DisplayAlert("提示", "机台编号为空，无法切换机台。", "确定");
+            return;
+        }
+
+        try
+        {
+            RefreshContainer.IsRefreshing = true;
+            var success = await _workOrderApi.BindWorkerMachineAsync(devCode);
+            if (!success)
+            {
+                await DisplayAlert("切换失败", "机台绑定未成功，请确认机台编号后重试。", "确定");
+                return;
+            }
+
+            await Shell.Current.GoToAsync(AppShell.RouteHome);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("切换失败", ex.Message, "确定");
+        }
+        finally
+        {
+            RefreshContainer.IsRefreshing = false;
+        }
     }
 
     private async void OnBackHomeTapped(object sender, TappedEventArgs e)
