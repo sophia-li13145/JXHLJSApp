@@ -10,7 +10,7 @@ namespace JXHLJSApp.Services.Quality;
 public interface IQualityApi
 {
     Task<List<IncomingQualityStatusFilter>> GetIncomingQualityStatusFiltersAsync(CancellationToken ct = default);
-    Task<List<IncomingQualityOrderDto>> GetIncomingQualityOrdersAsync(string? delStatus, CancellationToken ct = default);
+    Task<List<IncomingQualityOrderDto>> GetIncomingQualityOrdersAsync(string? status, CancellationToken ct = default);
     Task<IncomingQualityOrderDetailDto> GetIncomingQualityOrderDetailAsync(string incomingQualityNo, CancellationToken ct = default);
     Task<IncomingQualityScanMaterialDto> ScanIncomingQualityMaterialAsync(string qrCode, CancellationToken ct = default);
     Task<List<QualityDictOption>> GetInspectResultOptionsAsync(CancellationToken ct = default);
@@ -52,13 +52,14 @@ public sealed class QualityApi : IQualityApi
         return filters;
     }
 
-    public async Task<List<IncomingQualityOrderDto>> GetIncomingQualityOrdersAsync(string? delStatus, CancellationToken ct = default)
+    public async Task<List<IncomingQualityOrderDto>> GetIncomingQualityOrdersAsync(string? status, CancellationToken ct = default)
     {
         var statusNames = await LoadDelStatusNamesAsync(ct).ConfigureAwait(false);
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _incomingQualityListEndpoint);
-        var request = string.IsNullOrWhiteSpace(delStatus)
-            ? new Dictionary<string, string>()
-            : new Dictionary<string, string> { [nameof(delStatus)] = delStatus! };
+        var request = new Dictionary<string, string>
+        {
+            [nameof(status)] = status ?? string.Empty
+        };
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<List<IncomingQualityOrderDto>>(resp, ct).ConfigureAwait(false);
