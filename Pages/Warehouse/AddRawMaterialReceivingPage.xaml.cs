@@ -74,9 +74,10 @@ public partial class AddRawMaterialReceivingPage : ContentPage
             var photo = await GetTicketPhotoAsync();
             if (photo is null) return;
 
-            var attachment = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
-            var ocr = await _warehouseApi.RecognizeIncomingAsync(attachment, _instockNo);
-            ShowTicketConfirmDialog(ocr);
+            _ = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
+
+            // OCR 识别接口暂不参与当前联调，附件上传成功后先进入手动录入流程。
+            ShowTicketConfirmDialog(new RawMaterialOcrDto());
         }
         catch (Exception ex)
         {
