@@ -63,8 +63,8 @@
                                                 <Grid ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="8">
                                                     <Label Text="所属机台" TextColor="#5C6F8F" />
                                                     <Label Grid.Column="1" Text="{Binding machineDisplay}" TextColor="#001431" FontAttributes="Bold" />
-                                                    <Label Grid.Column="2" Text="产品/规格" TextColor="#5C6F8F" />
-                                                    <Label Grid.Column="3" Text="{Binding specificationDisplay}" TextColor="#001431" FontAttributes="Bold" />
+                                                    <Label Grid.Column="2" Text="钢号/规格" TextColor="#5C6F8F" />
+                                                    <Label Grid.Column="3" Text="{Binding steelGradeSpecificationDisplay}" TextColor="#001431" FontAttributes="Bold" />
                                                 </Grid>
                                                 <Grid ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="8">
                                                     <Label Text="生产重量" TextColor="#5C6F8F" />

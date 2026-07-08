@@ -44,6 +44,7 @@ public sealed class WorkOrderDetailDto
 
     public string machineDisplay => FirstNonEmpty(machineNo, machineType, deviceName);
     public string specificationDisplay => FirstNonEmpty(productSpecification, intermediateSpecification);
+    public string steelGradeSpecificationDisplay => JoinNonEmpty(steelGrade, FirstNonEmptyOrDefault(productSpecification, intermediateSpecification));
     public string completedWeightDisplay => FormatProgress(actualWeight, plannedWeight, "吨");
     public string completedQuantityDisplay => FormatProgress(actualQuantity, plannedQuantity, "件");
     public string moldSequenceDisplay => moldSequenceList is { Count: > 0 }
@@ -52,7 +53,18 @@ public sealed class WorkOrderDetailDto
 
     private static string FirstNonEmpty(params string?[] values)
     {
-        return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "--";
+        return FirstNonEmptyOrDefault(values) ?? "--";
+    }
+
+    private static string? FirstNonEmptyOrDefault(params string?[] values)
+    {
+        return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+    }
+
+    private static string JoinNonEmpty(params string?[] values)
+    {
+        var text = string.Join(" ", values.Where(value => !string.IsNullOrWhiteSpace(value)));
+        return string.IsNullOrWhiteSpace(text) ? "--" : text;
     }
 
     private static string FormatDecimal(decimal? value, string unit)
