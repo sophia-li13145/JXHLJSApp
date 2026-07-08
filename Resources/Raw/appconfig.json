@@ -112,6 +112,10 @@
     },
     "machineBind": {
       "scanToWork": "/pda/devUserMachineBindRecord/scanToWork"
+    },
+    "transportOrder": {
+      "scan": "/pda/transportOrder/scanTransportOrder",
+      "complete": "/pda/transportOrder/completeTransportOrder"
     }
   },
   "logging": {

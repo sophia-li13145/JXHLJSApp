@@ -398,7 +398,7 @@ internal sealed record RoleHomeDefinition(
             }, "请选择业务模块"),
             "forkliftOperator" => new("forkliftOperator", "叉车运输工作台", "#E07700", "🚚", RoleHomeLayout.List, new[]
             {
-                new HomeModule("工序间转运", "🔄", Color.FromArgb("#EAF2FF"), "扫码获取物料下道工序并转运"),
+                new HomeModule("工序间转运", "🔄", Color.FromArgb("#EAF2FF"), "扫码获取物料下道工序并转运", Route: AppShell.RouteProcessTransferScan),
                 new HomeModule("出库运输查看", "🚚", Color.FromArgb("#EFF8F0"), "查看领料单及出库详情信息"),
                 new HomeModule("成品入库查看", "📥", Color.FromArgb("#F3F0FF"), "查看倒推生成的成品入库单据")
             }),

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="JXHLJSApp.Pages.Transport.ProcessTransferConfirmPage" Title="转运任务确认" BackgroundColor="#F4F6F9" Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="16,22,16,14" HeightRequest="66"><Border.StrokeShape><RoundRectangle CornerRadius="0,0,16,16" /></Border.StrokeShape><Grid ColumnDefinitions="Auto,*"><Label Text="‹ 取消" TextColor="White" FontSize="15" VerticalOptions="Center"><Label.GestureRecognizers><TapGestureRecognizer Tapped="OnCancelTapped" /></Label.GestureRecognizers></Label><Label Grid.Column="1" Text="转运任务确认" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,48,0" /></Grid></Border>
+        <ScrollView Grid.Row="1"><VerticalStackLayout Padding="18,18,18,0"><Border Stroke="#00BD74" StrokeThickness="2" BackgroundColor="White" Padding="20,18"><Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape><VerticalStackLayout Spacing="16">
+            <Grid ColumnDefinitions="*,Auto"><VerticalStackLayout Spacing="4"><Label Text="识别物料" TextColor="#667A96" FontSize="14" /><Label x:Name="MaterialNameLabel" TextColor="#001A43" FontSize="18" FontAttributes="Bold" /></VerticalStackLayout><Border BackgroundColor="#EAFBF1" StrokeThickness="0" Padding="10,4" VerticalOptions="Start"><Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape><Label Text="✅ 允许转运" TextColor="#28985A" FontSize="13" FontAttributes="Bold" /></Border></Grid>
+            <BoxView HeightRequest="1" Color="#E6ECF2" />
+            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="16">
+                <Label Text="当前工序" TextColor="#536984" FontSize="14" /><Label x:Name="CurrentProcessLabel" Grid.Column="1" TextColor="#001431" FontSize="15" FontAttributes="Bold" />
+                <Label Grid.Row="1" Text="下一道工序" TextColor="#C85B00" FontSize="15" /><Label x:Name="NextProcessLabel" Grid.Row="1" Grid.Column="1" TextColor="#C85B00" FontSize="18" FontAttributes="Bold" />
+                <Label Grid.Row="2" Text="总件数" TextColor="#536984" FontSize="14" /><Label x:Name="TotalQuantityLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontSize="15" FontAttributes="Bold" />
+                <Label Grid.Row="3" Text="总重量" TextColor="#536984" FontSize="14" /><Label x:Name="TotalWeightLabel" Grid.Row="3" Grid.Column="1" TextColor="#001431" FontSize="15" FontAttributes="Bold" />
+                <Label Grid.Row="4" Text="关联工单" TextColor="#536984" FontSize="14" /><Label x:Name="WorkOrderNoLabel" Grid.Row="4" Grid.Column="1" TextColor="#001431" FontSize="15" FontAttributes="Bold" />
+            </Grid>
+        </VerticalStackLayout></Border></VerticalStackLayout></ScrollView>
+        <Border Grid.Row="2" BackgroundColor="White" Stroke="#E1E6EE" StrokeThickness="1" Padding="18,14,18,26"><Button Text="确认完成转运" BackgroundColor="#1F447E" TextColor="White" FontSize="18" FontAttributes="Bold" CornerRadius="10" HeightRequest="54" Clicked="OnConfirmClicked" /></Border>
+    </Grid>
+</ContentPage>

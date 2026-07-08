@@ -2,6 +2,7 @@ using JXHLJSApp.Pages;
 using JXHLJSApp.Pages.WorkOrders;
 using JXHLJSApp.Pages.WorkStart;
 using JXHLJSApp.Pages.Warehouse;
+using JXHLJSApp.Pages.Transport;
 
 namespace JXHLJSApp;
 
@@ -26,6 +27,9 @@ public partial class AppShell : Shell
     public const string RouteDeliveryCompletionSuccess = "DeliveryCompletionSuccess";
     public const string RoutePackagingSubTasks = "PackagingSubTasks";
     public const string RoutePackagingSubTaskDetail = "PackagingSubTaskDetail";
+    public const string RouteProcessTransferScan = "ProcessTransferScan";
+    public const string RouteProcessTransferConfirm = "ProcessTransferConfirm";
+    public const string RouteProcessTransferSuccess = "ProcessTransferSuccess";
 
     public AppShell(IServiceProvider services)
     {
@@ -47,6 +51,9 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteDeliveryCompletionSuccess, typeof(DeliveryCompletionSuccessPage));
         Routing.RegisterRoute(RoutePackagingSubTasks, typeof(PackagingSubTaskListPage));
         Routing.RegisterRoute(RoutePackagingSubTaskDetail, typeof(PackagingSubTaskDetailPage));
+        Routing.RegisterRoute(RouteProcessTransferScan, typeof(ProcessTransferScanPage));
+        Routing.RegisterRoute(RouteProcessTransferConfirm, typeof(ProcessTransferConfirmPage));
+        Routing.RegisterRoute(RouteProcessTransferSuccess, typeof(ProcessTransferSuccessPage));
         BuildLoginShell();
     }
 

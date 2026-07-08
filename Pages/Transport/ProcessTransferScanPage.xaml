@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.Transport.ProcessTransferScanPage"
+             Title="工序间转运"
+             BackgroundColor="#F4F6F9"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="16,22,16,14" HeightRequest="66">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,16,16" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*">
+                <Label Text="‹ 返回" TextColor="White" FontSize="15" VerticalOptions="Center"><Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers></Label>
+                <Label Grid.Column="1" Text="工序间转运" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,48,0" />
+            </Grid>
+        </Border>
+        <VerticalStackLayout Grid.Row="1" Padding="20,14,20,0" Spacing="40">
+            <Border BackgroundColor="#EEF6FF" Stroke="#B5D2FF" StrokeThickness="1" Padding="18" HeightRequest="76"><Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape><Label Text="请扫描产出物料上的二维码标签，系统将自动识别并展示需运往的下一道工序信息。" TextColor="#0051FF" FontSize="14" LineBreakMode="WordWrap" /></Border>
+            <Border Stroke="#C8D4E3" StrokeThickness="2" StrokeDashArray="6,5" BackgroundColor="White" HeightRequest="228" Padding="24"><Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="14">
+                    <Label Text="📷" FontSize="36" HorizontalTextAlignment="Center" />
+                    <Label Text="点击此处模拟扫描物料条码" TextColor="#223B5D" FontSize="17" HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+                <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanTapped" /></Border.GestureRecognizers>
+            </Border>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>
