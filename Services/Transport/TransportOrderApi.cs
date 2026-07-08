@@ -11,6 +11,8 @@ public interface ITransportOrderApi
     Task<bool> CompleteTransportOrderAsync(string transportOrderNo, CancellationToken ct = default);
     Task<List<MaterialOutstockTransportOrderDto>> GetMaterialOutstockTransportOrdersAsync(CancellationToken ct = default);
     Task<MaterialOutstockTransportOrderDetailDto> GetMaterialOutstockTransportOrderDetailAsync(string transportOrderNo, CancellationToken ct = default);
+    Task<List<ProductInstockTransportOrderDto>> GetProductInstockTransportOrdersAsync(CancellationToken ct = default);
+    Task<ProductInstockTransportOrderDetailDto> GetProductInstockTransportOrderDetailAsync(string transportOrderNo, CancellationToken ct = default);
 }
 
 public sealed class TransportOrderApi : ITransportOrderApi
@@ -20,6 +22,8 @@ public sealed class TransportOrderApi : ITransportOrderApi
     private readonly string _completeEndpoint;
     private readonly string _outstockListEndpoint;
     private readonly string _outstockDetailEndpoint;
+    private readonly string _productInstockListEndpoint;
+    private readonly string _productInstockDetailEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public TransportOrderApi(HttpClient http, IConfigLoader configLoader)
@@ -34,6 +38,10 @@ public sealed class TransportOrderApi : ITransportOrderApi
             configLoader.GetApiPath("transportOrder.listMaterialOutstockTransportOrders", "/pda/transportOrder/listMaterialOutstockTransportOrders"), servicePath);
         _outstockDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("transportOrder.detailMaterialOutstockTransportOrder", "/pda/transportOrder/detailMaterialOutstockTransportOrder"), servicePath);
+        _productInstockListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("transportOrder.listProductInstockTransportOrders", "/pda/transportOrder/listProductInstockTransportOrders"), servicePath);
+        _productInstockDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("transportOrder.detailProductInstockTransportOrder", "/pda/transportOrder/detailProductInstockTransportOrder"), servicePath);
     }
 
     public async Task<TransportOrderDto> ScanTransportOrderAsync(string qrCode, CancellationToken ct = default)
@@ -71,6 +79,34 @@ public sealed class TransportOrderApi : ITransportOrderApi
         var data = await JsonSerializer.DeserializeAsync<ApiResp<MaterialOutstockTransportOrderDetailDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
         return data?.result ?? new MaterialOutstockTransportOrderDetailDto();
+    }
+
+
+
+    public async Task<List<ProductInstockTransportOrderDto>> GetProductInstockTransportOrdersAsync(CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productInstockListEndpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<List<ProductInstockTransportOrderDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return data?.result ?? new List<ProductInstockTransportOrderDto>();
+    }
+
+    public async Task<ProductInstockTransportOrderDetailDto> GetProductInstockTransportOrderDetailAsync(string transportOrderNo, CancellationToken ct = default)
+    {
+        var endpoint = BuildUrlWithQuery(_productInstockDetailEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(transportOrderNo)] = transportOrderNo
+        });
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, endpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<ProductInstockTransportOrderDetailDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return data?.result ?? new ProductInstockTransportOrderDetailDto();
     }
 
     public async Task<bool> CompleteTransportOrderAsync(string transportOrderNo, CancellationToken ct = default)

@@ -109,3 +109,84 @@ public sealed class MaterialOutstockTransportOrderDetailItemDto
 
     private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
 }
+
+public sealed class ProductInstockTransportOrderDto
+{
+    public string? fromWarehouseName { get; set; }
+    public string? id { get; set; }
+    public string? materialName { get; set; }
+    public string? materialRequisitionNo { get; set; }
+    public string? productionAddress { get; set; }
+    public string? sourceBizNo { get; set; }
+    public string? spec { get; set; }
+    public string? steelGrade { get; set; }
+    public string? taskStatus { get; set; }
+    public string? toWarehouseName { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? totalQuantity { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? totalWeight { get; set; }
+    public string? transportOrderNo { get; set; }
+
+    public string orderNoDisplay => Display(transportOrderNo);
+    public string statusDisplay => string.IsNullOrWhiteSpace(taskStatus) ? "入库完成" : taskStatus!;
+    public string routeDisplay => string.IsNullOrWhiteSpace(fromWarehouseName) && string.IsNullOrWhiteSpace(toWarehouseName)
+        ? "--"
+        : $"{Display(fromWarehouseName)} → {Display(toWarehouseName)}";
+    public string summaryDisplay
+    {
+        get
+        {
+            var material = string.Join(" ", new[] { steelGrade, spec, materialName }.Where(v => !string.IsNullOrWhiteSpace(v)));
+            var parts = new[] { routeDisplay == "--" ? null : routeDisplay, string.IsNullOrWhiteSpace(material) ? null : material }
+                .Where(part => !string.IsNullOrWhiteSpace(part));
+            var text = string.Join(" | ", parts);
+            return string.IsNullOrWhiteSpace(text) ? "--" : text;
+        }
+    }
+
+    public Color statusBackgroundColor => Color.FromArgb("#EAFBEF");
+    public Color statusTextColor => Color.FromArgb("#00A86B");
+
+    private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
+}
+
+public sealed class ProductInstockTransportOrderDetailDto
+{
+    public List<ProductInstockTransportOrderDetailItemDto>? detailList { get; set; }
+    public string? fromLocationName { get; set; }
+    public string? fromWarehouseName { get; set; }
+    public string? id { get; set; }
+    public string? instockNo { get; set; }
+    public string? materialRequisitionNo { get; set; }
+    public string? routeCode { get; set; }
+    public string? routeName { get; set; }
+    public string? taskStatus { get; set; }
+    public string? toLocationName { get; set; }
+    public string? toWarehouseName { get; set; }
+    public string? transportOrderNo { get; set; }
+
+    public string orderNoDisplay => Display(transportOrderNo);
+    public string statusDisplay => string.IsNullOrWhiteSpace(taskStatus) ? "入库完成" : taskStatus!;
+    public string routeDisplay => string.IsNullOrWhiteSpace(routeName) ? $"{Display(fromWarehouseName)} → {Display(toWarehouseName)}" : routeName!;
+
+    private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
+}
+
+public sealed class ProductInstockTransportOrderDetailItemDto
+{
+    public string? id { get; set; }
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? quantity { get; set; }
+    public string? spec { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? weight { get; set; }
+
+    public string materialCodeDisplay => Display(materialCode);
+    public string weightKgDisplay => weight.HasValue ? $"{weight.Value:0,0.##}kg" : "--";
+    public string toLocationDisplay => Display(materialName);
+
+    private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
+}
