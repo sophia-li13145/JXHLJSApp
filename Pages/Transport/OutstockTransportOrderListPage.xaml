@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.Transport.OutstockTransportOrderListPage"
+             Title="出库运输记录"
+             BackgroundColor="#F4F6F9"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="16,22,16,14" HeightRequest="66">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,16,16" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*">
+                <Label Text="‹ 返回" TextColor="White" FontSize="15" VerticalOptions="Center">
+                    <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers>
+                </Label>
+                <Label Grid.Column="1" Text="出库运输记录" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,48,0" />
+            </Grid>
+        </Border>
+
+        <RefreshView Grid.Row="1" x:Name="RefreshContainer" Refreshing="OnRefreshing">
+            <ScrollView>
+                <VerticalStackLayout Padding="20,14,20,0" Spacing="16">
+                    <Border BackgroundColor="#EAF4FF" Stroke="#A8CCFF" StrokeThickness="1" Padding="18,14">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                        <Label Text="📋 来源于领料单。该页面仅展示单据与明细信息，供查询核对。" TextColor="#0B5CFF" FontSize="14" LineBreakMode="WordWrap" />
+                    </Border>
+
+                    <CollectionView x:Name="OrderList" EmptyView="当前没有出库运输记录">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border BackgroundColor="White" StrokeThickness="0" Padding="20,18" Margin="0,0,0,14">
+                                    <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnOrderTapped" /></Border.GestureRecognizers>
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="12" ColumnSpacing="12">
+                                        <Label Text="{Binding orderNoDisplay}" TextColor="#051B3D" FontSize="19" FontAttributes="Bold" />
+                                        <Border Grid.Column="1" BackgroundColor="{Binding statusBackgroundColor}" StrokeThickness="0" Padding="10,4" VerticalOptions="Start">
+                                            <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
+                                            <Label Text="{Binding statusDisplay}" TextColor="{Binding statusTextColor}" FontSize="13" FontAttributes="Bold" />
+                                        </Border>
+                                        <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding summaryDisplay}" TextColor="#38557C" FontSize="14" LineBreakMode="TailTruncation" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+    </Grid>
+</ContentPage>

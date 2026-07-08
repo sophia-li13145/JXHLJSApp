@@ -28,6 +28,8 @@ public partial class AppShell : Shell
     public const string RoutePackagingSubTasks = "PackagingSubTasks";
     public const string RoutePackagingSubTaskDetail = "PackagingSubTaskDetail";
     public const string RouteProcessTransferScan = "ProcessTransferScan";
+    public const string RouteOutstockTransportOrders = "OutstockTransportOrders";
+    public const string RouteOutstockTransportOrderDetail = "OutstockTransportOrderDetail";
     public const string RouteProcessTransferConfirm = "ProcessTransferConfirm";
     public const string RouteProcessTransferSuccess = "ProcessTransferSuccess";
 
@@ -52,6 +54,8 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RoutePackagingSubTasks, typeof(PackagingSubTaskListPage));
         Routing.RegisterRoute(RoutePackagingSubTaskDetail, typeof(PackagingSubTaskDetailPage));
         Routing.RegisterRoute(RouteProcessTransferScan, typeof(ProcessTransferScanPage));
+        Routing.RegisterRoute(RouteOutstockTransportOrders, typeof(OutstockTransportOrderListPage));
+        Routing.RegisterRoute(RouteOutstockTransportOrderDetail, typeof(OutstockTransportOrderDetailPage));
         Routing.RegisterRoute(RouteProcessTransferConfirm, typeof(ProcessTransferConfirmPage));
         Routing.RegisterRoute(RouteProcessTransferSuccess, typeof(ProcessTransferSuccessPage));
         BuildLoginShell();

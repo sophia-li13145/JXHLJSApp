@@ -9,6 +9,8 @@ public interface ITransportOrderApi
 {
     Task<TransportOrderDto> ScanTransportOrderAsync(string qrCode, CancellationToken ct = default);
     Task<bool> CompleteTransportOrderAsync(string transportOrderNo, CancellationToken ct = default);
+    Task<List<MaterialOutstockTransportOrderDto>> GetMaterialOutstockTransportOrdersAsync(CancellationToken ct = default);
+    Task<MaterialOutstockTransportOrderDetailDto> GetMaterialOutstockTransportOrderDetailAsync(string transportOrderNo, CancellationToken ct = default);
 }
 
 public sealed class TransportOrderApi : ITransportOrderApi
@@ -16,6 +18,8 @@ public sealed class TransportOrderApi : ITransportOrderApi
     private readonly HttpClient _http;
     private readonly string _scanEndpoint;
     private readonly string _completeEndpoint;
+    private readonly string _outstockListEndpoint;
+    private readonly string _outstockDetailEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public TransportOrderApi(HttpClient http, IConfigLoader configLoader)
@@ -26,6 +30,10 @@ public sealed class TransportOrderApi : ITransportOrderApi
             configLoader.GetApiPath("transportOrder.scan", "/pda/transportOrder/scanTransportOrder"), servicePath);
         _completeEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("transportOrder.complete", "/pda/transportOrder/completeTransportOrder"), servicePath);
+        _outstockListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("transportOrder.listMaterialOutstockTransportOrders", "/pda/transportOrder/listMaterialOutstockTransportOrders"), servicePath);
+        _outstockDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("transportOrder.detailMaterialOutstockTransportOrder", "/pda/transportOrder/detailMaterialOutstockTransportOrder"), servicePath);
     }
 
     public async Task<TransportOrderDto> ScanTransportOrderAsync(string qrCode, CancellationToken ct = default)
@@ -39,6 +47,32 @@ public sealed class TransportOrderApi : ITransportOrderApi
         return data?.result ?? new TransportOrderDto();
     }
 
+    public async Task<List<MaterialOutstockTransportOrderDto>> GetMaterialOutstockTransportOrdersAsync(CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _outstockListEndpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<List<MaterialOutstockTransportOrderDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return data?.result ?? new List<MaterialOutstockTransportOrderDto>();
+    }
+
+    public async Task<MaterialOutstockTransportOrderDetailDto> GetMaterialOutstockTransportOrderDetailAsync(string transportOrderNo, CancellationToken ct = default)
+    {
+        var endpoint = BuildUrlWithQuery(_outstockDetailEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(transportOrderNo)] = transportOrderNo
+        });
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, endpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<MaterialOutstockTransportOrderDetailDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return data?.result ?? new MaterialOutstockTransportOrderDetailDto();
+    }
+
     public async Task<bool> CompleteTransportOrderAsync(string transportOrderNo, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _completeEndpoint);
@@ -48,6 +82,15 @@ public sealed class TransportOrderApi : ITransportOrderApi
         var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
         return ReadFlexibleBooleanResult(data);
+    }
+
+    private static string BuildUrlWithQuery(string endpoint, IReadOnlyDictionary<string, string?> query)
+    {
+        var pairs = query
+            .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+            .Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value!)}")
+            .ToArray();
+        return pairs.Length == 0 ? endpoint : $"{endpoint}?{string.Join("&", pairs)}";
     }
 
     private static void EnsureApiSuccess<T>(ApiResp<T>? response)

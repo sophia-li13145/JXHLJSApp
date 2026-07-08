@@ -115,7 +115,9 @@
     },
     "transportOrder": {
       "scan": "/pda/transportOrder/scanTransportOrder",
-      "complete": "/pda/transportOrder/completeTransportOrder"
+      "complete": "/pda/transportOrder/completeTransportOrder",
+      "listMaterialOutstockTransportOrders": "/pda/transportOrder/listMaterialOutstockTransportOrders",
+      "detailMaterialOutstockTransportOrder": "/pda/transportOrder/detailMaterialOutstockTransportOrder"
     }
   },
   "logging": {
