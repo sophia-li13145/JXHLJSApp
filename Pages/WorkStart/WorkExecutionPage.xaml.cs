@@ -125,6 +125,17 @@ public partial class WorkExecutionPage : ContentPage
         await Shell.Current.GoToAsync(AppShell.RouteReworkReport, query);
     }
 
+    private async void OnWorkCompletionTapped(object sender, TappedEventArgs e)
+    {
+        var query = new Dictionary<string, object>();
+        if (!string.IsNullOrWhiteSpace(_workOrderNo))
+        {
+            query["workOrderNo"] = _workOrderNo;
+        }
+
+        await Shell.Current.GoToAsync(AppShell.RouteWorkCompletion, query);
+    }
+
     private async void OnBackHomeTapped(object sender, TappedEventArgs e)
     {
         await Shell.Current.GoToAsync("..");
