@@ -29,6 +29,10 @@
     "attachment": {
       "uploadAttachment": "/pda/attachment/uploadAttachment"
     },
+    "packagingSubTask": {
+      "list": "/pda/pmsWorkOrder/getPackagingSubTaskList",
+      "detail": "/pda/pmsWorkOrder/getPackagingSubTaskDetail"
+    },
     "deliveryOrder": {
       "listNeedDeliveryOrders": "/pda/deliveryOrder/listNeedDeliveryOrders",
       "detail": "/pda/deliveryOrder/detail",

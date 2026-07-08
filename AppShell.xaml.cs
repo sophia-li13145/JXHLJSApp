@@ -24,6 +24,8 @@ public partial class AppShell : Shell
     public const string RouteDeliveryOrders = "DeliveryOrders";
     public const string RouteDeliveryOrderDetail = "DeliveryOrderDetail";
     public const string RouteDeliveryCompletionSuccess = "DeliveryCompletionSuccess";
+    public const string RoutePackagingSubTasks = "PackagingSubTasks";
+    public const string RoutePackagingSubTaskDetail = "PackagingSubTaskDetail";
 
     public AppShell(IServiceProvider services)
     {
@@ -43,6 +45,8 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteDeliveryOrders, typeof(DeliveryOrderListPage));
         Routing.RegisterRoute(RouteDeliveryOrderDetail, typeof(DeliveryOrderDetailPage));
         Routing.RegisterRoute(RouteDeliveryCompletionSuccess, typeof(DeliveryCompletionSuccessPage));
+        Routing.RegisterRoute(RoutePackagingSubTasks, typeof(PackagingSubTaskListPage));
+        Routing.RegisterRoute(RoutePackagingSubTaskDetail, typeof(PackagingSubTaskDetailPage));
         BuildLoginShell();
     }
 
