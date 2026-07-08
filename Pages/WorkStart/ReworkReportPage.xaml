@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.WorkStart.ReworkReportPage"
+             BackgroundColor="#F4F6FA" Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="18,18,18,14" HeightRequest="66">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,18,18" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Label Text="‹ 取消" TextColor="White" VerticalOptions="Center"><Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers></Label>
+                <Label Grid.Column="1" Text="新增返工上报" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                <BoxView Grid.Column="2" WidthRequest="48" Opacity="0" />
+            </Grid>
+        </Border>
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,16" Spacing="16">
+                <Border x:Name="ScanPanel" BackgroundColor="White" Stroke="#BFD0E8" StrokeThickness="2" StrokeDashArray="7,4" Padding="24" HeightRequest="186">
+                    <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanTapped" /></Border.GestureRecognizers>
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="14" HorizontalOptions="Center" VerticalOptions="Center">
+                        <Label Text="📷" FontSize="34" HorizontalTextAlignment="Center" />
+                        <Label Text="1. 扫描下料物料二维码提取信息" TextColor="#0A2E69" FontSize="16" />
+                    </VerticalStackLayout>
+                </Border>
+                <Border x:Name="SuccessBanner" IsVisible="False" BackgroundColor="#F0FFF6" Stroke="#B8F0CF" Padding="14">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                    <Label Text="✅ 物料识别成功，已带出生产信息" TextColor="#11884A" FontSize="14" />
+                </Border>
+                <Border x:Name="FormCard" IsVisible="False" BackgroundColor="White" StrokeThickness="0" Padding="18">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="16">
+                        <Label Text="关联工单 *" TextColor="#001431" FontAttributes="Bold" />
+                        <Border BackgroundColor="#F4F7FB" Stroke="#D8E3F3" Padding="14" HeightRequest="52"><Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape><Label x:Name="WorkOrderLabel" TextColor="#536984" VerticalTextAlignment="Center" /></Border>
+                        <Border BackgroundColor="#EEF3FA" StrokeThickness="0" Padding="12"><Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+                                <Label Text="物料:" TextColor="#536984" /><Label x:Name="MaterialCodeLabel" TextColor="#0A2E69" FontAttributes="Bold" Margin="38,0,0,0" />
+                                <Label Grid.Column="1" Text="钢号:" TextColor="#536984" /><Label x:Name="SteelLabel" Grid.Column="1" TextColor="#0A2E69" HorizontalTextAlignment="End" />
+                                <Label Grid.Row="1" Text="规格:" TextColor="#536984" /><Label x:Name="SpecLabel" Grid.Row="1" TextColor="#0A2E69" Margin="38,0,0,0" />
+                                <Label Grid.Row="2" Text="下料件数:" TextColor="#536984" /><Label x:Name="OutputCountLabel" Grid.Row="2" TextColor="#0A2E69" FontAttributes="Bold" Margin="72,0,0,0" />
+                            </Grid>
+                        </Border>
+                        <Label Text="返工原因 *" TextColor="#001431" FontAttributes="Bold" />
+                        <FlexLayout x:Name="ReworkReasonContainer" Wrap="Wrap" Direction="Row" AlignItems="Start" />
+                        <Label Text="现场拍照 *" TextColor="#001431" FontAttributes="Bold" />
+                        <Border x:Name="PhotoPanel" BackgroundColor="#F8FBFF" Stroke="#BFD0E8" StrokeThickness="2" StrokeDashArray="7,4" Padding="18" HeightRequest="140">
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnPhotoTapped" /></Border.GestureRecognizers>
+                            <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                            <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="10"><Label Text="📷" FontSize="30" HorizontalTextAlignment="Center" /><Label x:Name="PhotoHintLabel" Text="点击调用相机拍照" TextColor="#5C6F8F" /></VerticalStackLayout>
+                        </Border>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+        <Border x:Name="SubmitBar" Grid.Row="2" IsVisible="False" BackgroundColor="White" Padding="20,16"><Button Text="确认提交返工" BackgroundColor="#F6A000" TextColor="White" FontSize="17" FontAttributes="Bold" CornerRadius="10" HeightRequest="56" Clicked="OnSubmitClicked" /></Border>
+    </Grid>
+</ContentPage>

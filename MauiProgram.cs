@@ -48,6 +48,7 @@ namespace JXHLJSApp
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.WorkExecutionPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.MaterialLoadingPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.AbnormalReportPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.ReworkReportPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.AbnormalReportSuccessPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.RawMaterialReceivingListPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.AddRawMaterialReceivingPage>();

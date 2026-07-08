@@ -32,7 +32,8 @@
     "workOrderAbnormalRecord": {
       "getDictList": "/pda/qsWorkOrderAbnormalRecord/getDictList",
       "add": "/pda/qsWorkOrderAbnormalRecord/add",
-      "scanQrCode": "/pda/pmsWorkOrder/scanAbnormalReportQrCode"
+      "scanQrCode": "/pda/pmsWorkOrder/scanAbnormalReportQrCode",
+      "scanReworkQrCode": "/pda/pmsWorkOrder/scanReworkReportQrCode"
     },
     "packagingSubTask": {
       "list": "/pda/pmsWorkOrder/getPackagingSubTaskList",
