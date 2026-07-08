@@ -1,5 +1,6 @@
 using JXHLJSApp.Models;
 using JXHLJSApp.Models.WorkOrders;
+using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Services.Common;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -18,6 +19,10 @@ public interface IWorkOrderApi
     Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(string workOrderNo, CancellationToken ct = default);
     Task<MaterialQrCodeInfoDto> ScanQueryMaterialInfoAsync(string qrCode, CancellationToken ct = default);
     Task<bool> ConfirmMaterialInputAsync(MaterialInputConfirmDto input, CancellationToken ct = default);
+    Task<List<WorkOrderAbnormalOptionDto>> GetAbnormalTypeOptionsAsync(CancellationToken ct = default);
+    Task<MaterialQrCodeInfoDto> ScanAbnormalMaterialAsync(string qrCode, CancellationToken ct = default);
+    Task<AttachmentDto> UploadAbnormalAttachmentAsync(FileResult photo, CancellationToken ct = default);
+    Task<bool> AddAbnormalRecordAsync(WorkOrderAbnormalAddRequestDto request, CancellationToken ct = default);
 }
 
 public sealed class WorkOrderApi : IWorkOrderApi
@@ -34,6 +39,10 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _dictListEndpoint;
     private readonly string _materialQrCodeEndpoint;
     private readonly string _confirmInputEndpoint;
+    private readonly string _abnormalDictListEndpoint;
+    private readonly string _abnormalAddEndpoint;
+    private readonly string _abnormalScanQrCodeEndpoint;
+    private readonly string _uploadAttachmentEndpoint;
     private IReadOnlyDictionary<string, string>? _workOrderStatusNames;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -63,6 +72,14 @@ public sealed class WorkOrderApi : IWorkOrderApi
             configLoader.GetApiPath("materialQrCode.scanQueryMaterialInfo", "/pda/wmsMaterialQrCode/scanQueryMaterialInfo"), servicePath);
         _confirmInputEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.confirmInput", "/pda/pmsWorkOrder/confirmInput"), servicePath);
+        _abnormalDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrderAbnormalRecord.getDictList", "/pda/qsWorkOrderAbnormalRecord/getDictList"), servicePath);
+        _abnormalAddEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrderAbnormalRecord.add", "/pda/qsWorkOrderAbnormalRecord/add"), servicePath);
+        _abnormalScanQrCodeEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrderAbnormalRecord.scanQrCode", "/pda/pmsWorkOrder/scanAbnormalReportQrCode"), servicePath);
+        _uploadAttachmentEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("attachment.uploadAttachment", "/pda/attachment/uploadAttachment"), servicePath);
     }
 
     public async Task<List<WorkOrderTaskDto>> GetWorkOrderListAsync(string? deviceCode = null, string? machineNo = null, string? workOrderStatus = null, CancellationToken ct = default)
@@ -200,6 +217,66 @@ public sealed class WorkOrderApi : IWorkOrderApi
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _confirmInputEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, input, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return ReadFlexibleBooleanResult(data);
+    }
+
+
+    public async Task<List<WorkOrderAbnormalOptionDto>> GetAbnormalTypeOptionsAsync(CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _abnormalDictListEndpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<List<WorkOrderDictDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return data?.result?
+            .FirstOrDefault(dict => string.Equals(dict.field, "abnormalType", StringComparison.OrdinalIgnoreCase))?
+            .dictItems?
+            .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue) && !string.IsNullOrWhiteSpace(item.dictItemName))
+            .Select(item => new WorkOrderAbnormalOptionDto { value = item.dictItemValue, name = item.dictItemName })
+            .ToList() ?? new List<WorkOrderAbnormalOptionDto>();
+    }
+
+    public async Task<MaterialQrCodeInfoDto> ScanAbnormalMaterialAsync(string qrCode, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_abnormalScanQrCodeEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(qrCode)] = qrCode
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<MaterialQrCodeInfoDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return data?.result ?? new MaterialQrCodeInfoDto();
+    }
+
+    public async Task<AttachmentDto> UploadAbnormalAttachmentAsync(FileResult photo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _uploadAttachmentEndpoint);
+        await using var stream = await photo.OpenReadAsync().ConfigureAwait(false);
+        using var content = new MultipartFormDataContent();
+        using var fileContent = new StreamContent(stream);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(string.IsNullOrWhiteSpace(photo.ContentType) ? "image/jpeg" : photo.ContentType);
+        content.Add(fileContent, "file", photo.FileName);
+        content.Add(new StringContent("abnormalRecord"), "attachmentFolder");
+        content.Add(new StringContent("images"), "attachmentLocation");
+        using var resp = await _http.PostAsync(url, content, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var respStream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<AttachmentDto>>(respStream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return data?.result ?? new AttachmentDto { attachmentFolder = "abnormalRecord", attachmentLocation = "images", attachmentName = photo.FileName, attachmentRealName = photo.FileName };
+    }
+
+    public async Task<bool> AddAbnormalRecordAsync(WorkOrderAbnormalAddRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _abnormalAddEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);

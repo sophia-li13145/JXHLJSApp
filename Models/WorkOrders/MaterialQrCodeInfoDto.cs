@@ -9,6 +9,12 @@ public sealed class MaterialQrCodeInfoDto
     public string? materialName { get; set; }
     public string? materialState { get; set; }
     public string? materialStateName { get; set; }
+    public string? materialType { get; set; }
+    public string? originPlace { get; set; }
+    public string? specification { get; set; }
+    public string? steelGrade { get; set; }
+    public string? unit { get; set; }
+    public decimal? weight { get; set; }
     public string? qrCode { get; set; }
     public string? qrStatus { get; set; }
     public string? qrStatusName { get; set; }

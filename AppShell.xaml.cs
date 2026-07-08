@@ -20,6 +20,8 @@ public partial class AppShell : Shell
     public const string RouteWorkOrderInstruction = "WorkOrderInstruction";
     public const string RouteWorkExecution = "WorkExecution";
     public const string RouteMaterialLoading = "MaterialLoading";
+    public const string RouteAbnormalReport = "AbnormalReport";
+    public const string RouteAbnormalReportSuccess = "AbnormalReportSuccess";
     public const string RouteRawMaterialReceiving = "RawMaterialReceiving";
     public const string RouteAddRawMaterialReceiving = "AddRawMaterialReceiving";
     public const string RouteRawMaterialReceivingDetail = "RawMaterialReceivingDetail";
@@ -51,6 +53,8 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteWorkOrderInstruction, typeof(WorkOrderInstructionPage));
         Routing.RegisterRoute(RouteWorkExecution, typeof(WorkExecutionPage));
         Routing.RegisterRoute(RouteMaterialLoading, typeof(MaterialLoadingPage));
+        Routing.RegisterRoute(RouteAbnormalReport, typeof(AbnormalReportPage));
+        Routing.RegisterRoute(RouteAbnormalReportSuccess, typeof(AbnormalReportSuccessPage));
         Routing.RegisterRoute(RouteRawMaterialReceiving, typeof(RawMaterialReceivingListPage));
         Routing.RegisterRoute(RouteAddRawMaterialReceiving, typeof(AddRawMaterialReceivingPage));
         Routing.RegisterRoute(RouteRawMaterialReceivingDetail, typeof(RawMaterialReceivingDetailPage));
