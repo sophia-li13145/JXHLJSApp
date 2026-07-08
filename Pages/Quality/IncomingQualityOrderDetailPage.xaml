@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.Quality.IncomingQualityOrderDetailPage"
+             Title="质检任务详情"
+             BackgroundColor="#F4F6F9"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="16,22,16,14" HeightRequest="66">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,16,16" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*">
+                <Label Text="‹ 返回列表" TextColor="White" FontSize="15" VerticalOptions="Center">
+                    <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers>
+                </Label>
+                <Label Grid.Column="1" Text="质检任务详情" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,74,0" />
+            </Grid>
+        </Border>
+        <RefreshView Grid.Row="1" x:Name="RefreshContainer" Refreshing="OnRefreshing">
+            <ScrollView>
+                <VerticalStackLayout Padding="20,16" Spacing="18">
+                    <Border BackgroundColor="White" StrokeThickness="0" Padding="18">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                        <VerticalStackLayout Spacing="14">
+                            <Label Text="来料任务信息" TextColor="#00346F" FontSize="16" FontAttributes="Bold" />
+                            <BoxView HeightRequest="1" Color="#C8D2DF" />
+                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" RowSpacing="18" ColumnSpacing="16">
+                                <Label TextColor="#38557C" FontSize="14">
+                                    <Label.FormattedText><FormattedString><Span Text="质检单号&#10;" /><Span x:Name="QualityNoSpan" TextColor="#051B3D" FontAttributes="Bold" /></FormattedString></Label.FormattedText>
+                                </Label>
+                                <Label Grid.Column="1" TextColor="#38557C" FontSize="14">
+                                    <Label.FormattedText><FormattedString><Span Text="入库单号&#10;" /><Span x:Name="InstockNoSpan" TextColor="#051B3D" FontAttributes="Bold" /></FormattedString></Label.FormattedText>
+                                </Label>
+                                <HorizontalStackLayout Grid.Row="1" Spacing="12">
+                                    <Label Text="当前状态" TextColor="#38557C" FontSize="14" VerticalOptions="Center" />
+                                    <Border BackgroundColor="#F2F4F8" StrokeThickness="0" Padding="10,4">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
+                                        <Label x:Name="StatusLabel" TextColor="#051B3D" FontSize="13" FontAttributes="Bold" />
+                                    </Border>
+                                </HorizontalStackLayout>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="多次扫码检验记录" TextColor="#00346F" FontSize="16" FontAttributes="Bold" />
+                        <Label x:Name="ScanCountLabel" Grid.Column="1" TextColor="#38557C" FontSize="14" />
+                    </Grid>
+                    <CollectionView x:Name="ScanRecordList" EmptyView="暂无扫码检验记录">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border BackgroundColor="White" StrokeThickness="0" Padding="16" Margin="0,0,0,12">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="8">
+                                        <Label Text="{Binding qrCodeDisplay, StringFormat='条码：{0}'}" TextColor="#00346F" FontAttributes="Bold" />
+                                        <Label Grid.Column="1" Text="{Binding inspectResultDisplay}" TextColor="{Binding inspectResultColor}" FontAttributes="Bold" />
+                                        <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding problemPointDisplay, StringFormat='问题点：{0}'}" TextColor="#38557C" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+        <Grid Grid.Row="2" ColumnDefinitions="*,*" Padding="20,16" ColumnSpacing="12" BackgroundColor="White">
+            <Button Text="删除" TextColor="#FF4D5E" BackgroundColor="#FFF2F2" BorderColor="#FFB7BE" BorderWidth="1" CornerRadius="10" HeightRequest="56" Clicked="OnDeleteClicked" />
+            <Button Grid.Column="1" Text="质检扫码" TextColor="White" BackgroundColor="#1E427C" CornerRadius="10" HeightRequest="56" FontAttributes="Bold" Clicked="OnScanClicked" />
+        </Grid>
+    </Grid>
+</ContentPage>
