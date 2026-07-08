@@ -1,6 +1,7 @@
 using JXHLJSApp.Pages;
 using JXHLJSApp.Pages.WorkOrders;
 using JXHLJSApp.Pages.WorkStart;
+using JXHLJSApp.Pages.Quality;
 using JXHLJSApp.Pages.Warehouse;
 using JXHLJSApp.Pages.Transport;
 
@@ -34,6 +35,9 @@ public partial class AppShell : Shell
     public const string RouteProductInstockTransportOrderDetail = "ProductInstockTransportOrderDetail";
     public const string RouteProcessTransferConfirm = "ProcessTransferConfirm";
     public const string RouteProcessTransferSuccess = "ProcessTransferSuccess";
+    public const string RouteIncomingQualityOrders = "IncomingQualityOrders";
+    public const string RouteIncomingQualityOrderDetail = "IncomingQualityOrderDetail";
+    public const string RouteIncomingQualityScan = "IncomingQualityScan";
 
     public AppShell(IServiceProvider services)
     {
@@ -62,6 +66,9 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteProductInstockTransportOrderDetail, typeof(ProductInstockTransportOrderDetailPage));
         Routing.RegisterRoute(RouteProcessTransferConfirm, typeof(ProcessTransferConfirmPage));
         Routing.RegisterRoute(RouteProcessTransferSuccess, typeof(ProcessTransferSuccessPage));
+        Routing.RegisterRoute(RouteIncomingQualityOrders, typeof(IncomingQualityOrderListPage));
+        Routing.RegisterRoute(RouteIncomingQualityOrderDetail, typeof(IncomingQualityOrderDetailPage));
+        Routing.RegisterRoute(RouteIncomingQualityScan, typeof(IncomingQualityScanPage));
         BuildLoginShell();
     }
 

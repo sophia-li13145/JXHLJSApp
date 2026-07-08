@@ -4,6 +4,7 @@ using JXHLJSApp.Services;
 using JXHLJSApp.Services.WorkOrders;
 using JXHLJSApp.Services.Transport;
 using JXHLJSApp.Services.Warehouse;
+using JXHLJSApp.Services.Quality;
 using JXHLJSApp.Tools;
 using JXHLJSApp.ViewModels;
 using Microsoft.Extensions.Logging;
@@ -61,6 +62,9 @@ namespace JXHLJSApp
             builder.Services.AddTransient<JXHLJSApp.Pages.Transport.ProductInstockTransportOrderDetailPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Transport.ProcessTransferConfirmPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Transport.ProcessTransferSuccessPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.Quality.IncomingQualityOrderListPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.Quality.IncomingQualityOrderDetailPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.Quality.IncomingQualityScanPage>();
             builder.Services.AddTransient<AdminViewModel>();
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();
@@ -81,6 +85,9 @@ namespace JXHLJSApp
                 .AddHttpMessageHandler<AuthHeaderHandler>()
                 .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient<ITransportOrderApi, TransportOrderApi>(ConfigureBaseAddress)
+                .AddHttpMessageHandler<AuthHeaderHandler>()
+                .AddHttpMessageHandler<TokenExpiredHandler>();
+            builder.Services.AddHttpClient<IQualityApi, QualityApi>(ConfigureBaseAddress)
                 .AddHttpMessageHandler<AuthHeaderHandler>()
                 .AddHttpMessageHandler<TokenExpiredHandler>();
 
