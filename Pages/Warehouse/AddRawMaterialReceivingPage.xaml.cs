@@ -69,8 +69,19 @@ public partial class AddRawMaterialReceivingPage : ContentPage
             return;
         }
 
-        // 图片上传和 OCR 识别接口暂不可用，先让用户直接手动录入票签内容。
-        ShowTicketConfirmDialog(new RawMaterialOcrDto());
+        try
+        {
+            var photo = await GetTicketPhotoAsync();
+            if (photo is null) return;
+
+            var attachment = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
+            var ocr = await _warehouseApi.RecognizeIncomingAsync(attachment, _instockNo);
+            ShowTicketConfirmDialog(ocr);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("附件上传失败", ex.Message, "确定");
+        }
     }
 
     private async Task<FileResult?> GetTicketPhotoAsync()
