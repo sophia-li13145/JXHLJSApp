@@ -38,7 +38,8 @@
       "list": "/pda/qs/qslIncomingQualityOrder/list",
       "detail": "/pda/qs/qslIncomingQualityOrder/detail",
       "scan": "/pda/qs/qslIncomingQualityOrder/scan",
-      "saveResult": "/pda/qs/qslIncomingQualityOrder/saveResult"
+      "saveResult": "/pda/qs/qslIncomingQualityOrder/saveResult",
+      "delete": "/pda/qs/qslIncomingQualityOrder/delete"
     },
     "deliveryOrder": {
       "listNeedDeliveryOrders": "/pda/deliveryOrder/listNeedDeliveryOrders",

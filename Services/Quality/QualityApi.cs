@@ -16,6 +16,7 @@ public interface IQualityApi
     Task<List<QualityDictOption>> GetInspectResultOptionsAsync(CancellationToken ct = default);
     Task<List<QualityDictOption>> GetProblemPointOptionsAsync(CancellationToken ct = default);
     Task<bool> SaveIncomingQualityResultAsync(IncomingQualitySaveResultRequestDto request, CancellationToken ct = default);
+    Task<bool> DeleteIncomingQualityOrderAsync(string incomingQualityNo, CancellationToken ct = default);
 }
 
 public sealed class QualityApi : IQualityApi
@@ -26,6 +27,7 @@ public sealed class QualityApi : IQualityApi
     private readonly string _incomingQualityDetailEndpoint;
     private readonly string _incomingQualityScanEndpoint;
     private readonly string _incomingQualitySaveResultEndpoint;
+    private readonly string _incomingQualityDeleteEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public QualityApi(HttpClient http, IConfigLoader configLoader)
@@ -42,6 +44,8 @@ public sealed class QualityApi : IQualityApi
             configLoader.GetApiPath("incomingQualityOrder.scan", "/pda/qs/qslIncomingQualityOrder/scan"), servicePath);
         _incomingQualitySaveResultEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("incomingQualityOrder.saveResult", "/pda/qs/qslIncomingQualityOrder/saveResult"), servicePath);
+        _incomingQualityDeleteEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("incomingQualityOrder.delete", "/pda/qs/qslIncomingQualityOrder/delete"), servicePath);
     }
 
     public async Task<List<IncomingQualityStatusFilter>> GetIncomingQualityStatusFiltersAsync(CancellationToken ct = default)
@@ -120,6 +124,15 @@ public sealed class QualityApi : IQualityApi
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _incomingQualitySaveResultEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
+        return data.result;
+    }
+
+    public async Task<bool> DeleteIncomingQualityOrderAsync(string incomingQualityNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _incomingQualityDeleteEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, new { incomingQualityNo }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
         return data.result;

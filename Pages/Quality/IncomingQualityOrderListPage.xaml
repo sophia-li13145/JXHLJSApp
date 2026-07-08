@@ -52,7 +52,10 @@
                                         </Label.FormattedText>
                                     </Label>
                                     <Label Grid.Row="1" Text="{Binding totalDisplay, StringFormat='总数量：{0}'}" TextColor="#38557C" FontSize="14" />
-                                    <Label Grid.Row="1" Grid.Column="1" Text="{Binding doneDisplay}" TextColor="#38557C" FontSize="14" />
+                                    <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="10" HorizontalOptions="End">
+                                        <Label Text="{Binding doneDisplay}" TextColor="#38557C" FontSize="14" VerticalOptions="Center" />
+                                        <Button Text="删除" TextColor="#FF4D5E" BackgroundColor="#FFF2F2" BorderColor="#FFB7BE" BorderWidth="1" CornerRadius="8" HeightRequest="32" Padding="12,0" FontSize="13" Clicked="OnDeleteClicked" />
+                                    </HorizontalStackLayout>
                                 </Grid>
                             </Grid>
                         </Border>

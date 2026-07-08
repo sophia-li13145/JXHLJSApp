@@ -83,7 +83,34 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
         }
     }
 
-    private async void OnDeleteClicked(object sender, EventArgs e) => await DisplayAlert("提示", "当前未提供删除接口，暂无法删除。", "确定");
+    private async void OnDeleteClicked(object sender, EventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_incomingQualityNo))
+        {
+            await DisplayAlert("提示", "来料质检单号为空，无法删除。", "确定");
+            return;
+        }
+
+        var confirm = await DisplayAlert("确认删除", $"确定删除来料质检单 {_incomingQualityNo} 吗？", "删除", "取消");
+        if (!confirm) return;
+
+        try
+        {
+            var deleted = await _qualityApi.DeleteIncomingQualityOrderAsync(_incomingQualityNo);
+            if (!deleted)
+            {
+                await DisplayAlert("删除失败", "接口未返回删除成功，请稍后重试。", "确定");
+                return;
+            }
+
+            await DisplayAlert("删除成功", "来料质检单已删除。", "确定");
+            await Shell.Current.GoToAsync("..");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("删除失败", ex.Message, "确定");
+        }
+    }
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
 }
