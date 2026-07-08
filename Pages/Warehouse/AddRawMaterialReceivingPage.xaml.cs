@@ -6,7 +6,7 @@ using JXHLJSApp.Services.Warehouse;
 
 namespace JXHLJSApp.Pages.Warehouse;
 
-public partial class AddRawMaterialReceivingPage : ContentPage
+public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributable
 {
     private readonly IWarehouseApi _warehouseApi;
     private readonly IScanService _scanService;
@@ -16,6 +16,8 @@ public partial class AddRawMaterialReceivingPage : ContentPage
     private RawMaterialOcrDto? _selectedTicket;
     private string? _instockNo;
     private string? _pendingQrCode;
+    private bool _isExistingInstock;
+    private bool _loadedExistingInstock;
 
     public AddRawMaterialReceivingPage(IWarehouseApi warehouseApi, IScanService scanService)
     {
@@ -31,9 +33,27 @@ public partial class AddRawMaterialReceivingPage : ContentPage
         BindMaterialTypePicker.SelectedIndex = 0;
     }
 
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (query.TryGetValue("InstockNo", out var value))
+        {
+            _instockNo = Uri.UnescapeDataString(value?.ToString() ?? string.Empty);
+            _isExistingInstock = !string.IsNullOrWhiteSpace(_instockNo);
+        }
+    }
+
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        if (_isExistingInstock && !string.IsNullOrWhiteSpace(_instockNo))
+        {
+            if (!_loadedExistingInstock)
+            {
+                await LoadExistingInstockAsync(_instockNo);
+            }
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(_instockNo))
         {
             await InitializeBlankInstockAsync();
@@ -48,17 +68,108 @@ public partial class AddRawMaterialReceivingPage : ContentPage
             _instockNo = blank.instockNo;
             InstockNoLabel.Text = string.IsNullOrWhiteSpace(_instockNo) ? "--" : _instockNo;
 
-            var warehouses = await _warehouseApi.QueryWarehouseInfoAsync();
-            WarehousePicker.ItemsSource = warehouses;
-            if (warehouses.Count > 0)
-            {
-                WarehousePicker.SelectedIndex = 0;
-            }
+            await LoadWarehousesAsync();
         }
         catch (Exception ex)
         {
             await DisplayAlert("初始化失败", ex.Message, "确定");
         }
+    }
+
+
+    private async Task LoadExistingInstockAsync(string instockNo)
+    {
+        try
+        {
+            PageTitleLabel.Text = "新增采购入库";
+            InstockNoLabel.Text = instockNo;
+            await LoadWarehousesAsync();
+
+            var detail = await _warehouseApi.GetRawMaterialReceivingDetailAsync(instockNo);
+            _instockNo = detail.instockNo ?? instockNo;
+            InstockNoLabel.Text = string.IsNullOrWhiteSpace(_instockNo) ? "--" : _instockNo;
+            SelectWarehouse(detail.detailItems.FirstOrDefault());
+            ApplyOcrList(detail.ocrList);
+            ApplyDetailList(detail.detailItems);
+            _loadedExistingInstock = true;
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("加载失败", ex.Message, "确定");
+        }
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        var warehouses = await _warehouseApi.QueryWarehouseInfoAsync();
+        WarehousePicker.ItemsSource = warehouses;
+        if (warehouses.Count > 0 && WarehousePicker.SelectedIndex < 0)
+        {
+            WarehousePicker.SelectedIndex = 0;
+        }
+    }
+
+    private void SelectWarehouse(RawMaterialReceivingDetailItemDto? firstDetail)
+    {
+        if (firstDetail is null || WarehousePicker.ItemsSource is not IList<WarehouseInfoDto> warehouses) return;
+
+        var index = warehouses.ToList().FindIndex(warehouse =>
+            string.Equals(warehouse.warehouseCode, firstDetail.instockWarehouseCode, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(warehouse.warehouseName, firstDetail.instockWarehouse, StringComparison.OrdinalIgnoreCase));
+        if (index >= 0)
+        {
+            WarehousePicker.SelectedIndex = index;
+        }
+    }
+
+    private void ApplyOcrList(IEnumerable<RawMaterialReceivingOcrDto>? ocrList)
+    {
+        var firstOcr = ocrList?.FirstOrDefault();
+        if (firstOcr is null)
+        {
+            ClearSelectedTicket();
+            return;
+        }
+
+        _selectedTicket = new RawMaterialOcrDto
+        {
+            coilCount = FormatDecimal(firstOcr.coilCount),
+            coilDiameter = FormatDecimal(firstOcr.coilDiameter),
+            furnaceNo = firstOcr.furnaceNo,
+            materialName = firstOcr.materialName,
+            materialType = firstOcr.materialType,
+            ocrRawText = firstOcr.ocrRawText,
+            originPlace = firstOcr.originPlace,
+            pieceWeight = FormatDecimal(firstOcr.pieceWeight),
+            pieceWeightUnit = string.IsNullOrWhiteSpace(firstOcr.pieceWeightUnit) ? "吨" : firstOcr.pieceWeightUnit,
+            spec = firstOcr.spec,
+            strength = firstOcr.strength
+        };
+        ApplySelectedTicket(_selectedTicket);
+    }
+
+    private void ApplyDetailList(IEnumerable<RawMaterialReceivingDetailItemDto> detailItems)
+    {
+        _ocrItems.Clear();
+        foreach (var item in detailItems)
+        {
+            _ocrItems.Add(new RawMaterialOcrDto
+            {
+                qrCode = FirstNonEmpty(item.qrCode, item.coilNo, item.id),
+                coilCount = FormatDecimal(item.count),
+                furnaceNo = item.furnaceNo,
+                materialCode = item.materialCode,
+                materialName = item.materialName,
+                materialType = item.materialTypeDisplay,
+                originPlace = item.origin,
+                pieceWeight = FormatDecimal(item.instockQty ?? item.pieceWeight),
+                pieceWeightUnit = string.IsNullOrWhiteSpace(item.unit) ? "吨" : item.unit,
+                spec = item.spec,
+                strength = item.weight
+            });
+        }
+
+        MaterialListTitle.Text = $"待入库列表 ({_ocrItems.Count})";
     }
 
     private async void OnTakePhotoClicked(object sender, EventArgs e)
@@ -69,8 +180,20 @@ public partial class AddRawMaterialReceivingPage : ContentPage
             return;
         }
 
-        // 图片上传和 OCR 识别接口暂不可用，先让用户直接手动录入票签内容。
-        ShowTicketConfirmDialog(new RawMaterialOcrDto());
+        try
+        {
+            var photo = await GetTicketPhotoAsync();
+            if (photo is null) return;
+
+            _ = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
+
+            // OCR 识别接口暂不参与当前联调，附件上传成功后先进入手动录入流程。
+            ShowTicketConfirmDialog(new RawMaterialOcrDto());
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("附件上传失败", ex.Message, "确定");
+        }
     }
 
     private async Task<FileResult?> GetTicketPhotoAsync()
@@ -154,6 +277,10 @@ public partial class AddRawMaterialReceivingPage : ContentPage
         return isKg ? parsed / 1000m : parsed;
     }
 
+
+    private static string? FormatDecimal(decimal? value) => value?.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
 
     private static decimal? ParseNullableDecimal(string? value)
     {

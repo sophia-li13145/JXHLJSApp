@@ -57,6 +57,7 @@ public sealed class RawMaterialReceivingDetailItemDto
     public decimal? pieceWeight { get; set; }
     public string? productionBatch { get; set; }
     public string? productionDate { get; set; }
+    public string? qrCode { get; set; }
     public string? spec { get; set; }
     public string? stockBatch { get; set; }
     public string? unit { get; set; }
