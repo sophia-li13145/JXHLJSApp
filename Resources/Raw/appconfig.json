@@ -29,6 +29,11 @@
     "attachment": {
       "uploadAttachment": "/pda/attachment/uploadAttachment"
     },
+    "workOrderAbnormalRecord": {
+      "getDictList": "/pda/qsWorkOrderAbnormalRecord/getDictList",
+      "add": "/pda/qsWorkOrderAbnormalRecord/add",
+      "scanQrCode": "/pda/pmsWorkOrder/scanAbnormalReportQrCode"
+    },
     "packagingSubTask": {
       "list": "/pda/pmsWorkOrder/getPackagingSubTaskList",
       "detail": "/pda/pmsWorkOrder/getPackagingSubTaskDetail"
