@@ -388,7 +388,7 @@ internal sealed record RoleHomeDefinition(
             {
                 new HomeModule("采购入库", "📥", Color.FromArgb("#F3F0FF"), Route: AppShell.RouteRawMaterialReceiving),
                 new HomeModule("发货出库", "🚚", Color.FromArgb("#EFF8F0"), Route: AppShell.RouteDeliveryOrders),
-                new HomeModule("包装作业", "🎁", Color.FromArgb("#FFF5F5"))
+                new HomeModule("包装作业", "🎁", Color.FromArgb("#FFF5F5"), Route: AppShell.RoutePackagingSubTasks)
             }),
             "qualityInspector" => new("qualityInspector", "质检管理工作台", "#14295D", "👨‍🔬", RoleHomeLayout.List, new[]
             {

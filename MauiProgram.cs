@@ -51,6 +51,8 @@ namespace JXHLJSApp
             builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.DeliveryOrderListPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.DeliveryOrderDetailPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.DeliveryCompletionSuccessPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.PackagingSubTaskListPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.PackagingSubTaskDetailPage>();
             builder.Services.AddTransient<AdminViewModel>();
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();
