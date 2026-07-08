@@ -7,6 +7,10 @@ public sealed class MaterialQrCodeInfoDto
     public string? coilWeight { get; set; }
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
+    public string? operationCode { get; set; }
+    public string? operationName { get; set; }
+    public decimal? outputCount { get; set; }
+    public string? workOrderNo { get; set; }
     public string? materialState { get; set; }
     public string? materialStateName { get; set; }
     public string? materialType { get; set; }

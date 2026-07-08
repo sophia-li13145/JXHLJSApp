@@ -20,8 +20,11 @@ public interface IWorkOrderApi
     Task<MaterialQrCodeInfoDto> ScanQueryMaterialInfoAsync(string qrCode, CancellationToken ct = default);
     Task<bool> ConfirmMaterialInputAsync(MaterialInputConfirmDto input, CancellationToken ct = default);
     Task<List<WorkOrderAbnormalOptionDto>> GetAbnormalTypeOptionsAsync(CancellationToken ct = default);
+    Task<List<WorkOrderAbnormalOptionDto>> GetReworkReasonOptionsAsync(CancellationToken ct = default);
     Task<MaterialQrCodeInfoDto> ScanAbnormalMaterialAsync(string qrCode, CancellationToken ct = default);
+    Task<MaterialQrCodeInfoDto> ScanReworkMaterialAsync(string qrCode, CancellationToken ct = default);
     Task<AttachmentDto> UploadAbnormalAttachmentAsync(FileResult photo, CancellationToken ct = default);
+    Task<AttachmentDto> UploadReworkAttachmentAsync(FileResult photo, CancellationToken ct = default);
     Task<bool> AddAbnormalRecordAsync(WorkOrderAbnormalAddRequestDto request, CancellationToken ct = default);
 }
 
@@ -42,6 +45,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _abnormalDictListEndpoint;
     private readonly string _abnormalAddEndpoint;
     private readonly string _abnormalScanQrCodeEndpoint;
+    private readonly string _reworkScanQrCodeEndpoint;
     private readonly string _uploadAttachmentEndpoint;
     private IReadOnlyDictionary<string, string>? _workOrderStatusNames;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -78,6 +82,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
             configLoader.GetApiPath("workOrderAbnormalRecord.add", "/pda/qsWorkOrderAbnormalRecord/add"), servicePath);
         _abnormalScanQrCodeEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrderAbnormalRecord.scanQrCode", "/pda/pmsWorkOrder/scanAbnormalReportQrCode"), servicePath);
+        _reworkScanQrCodeEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrderAbnormalRecord.scanReworkQrCode", "/pda/pmsWorkOrder/scanReworkReportQrCode"), servicePath);
         _uploadAttachmentEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("attachment.uploadAttachment", "/pda/attachment/uploadAttachment"), servicePath);
     }
@@ -225,7 +231,13 @@ public sealed class WorkOrderApi : IWorkOrderApi
     }
 
 
-    public async Task<List<WorkOrderAbnormalOptionDto>> GetAbnormalTypeOptionsAsync(CancellationToken ct = default)
+    public Task<List<WorkOrderAbnormalOptionDto>> GetAbnormalTypeOptionsAsync(CancellationToken ct = default) =>
+        GetAbnormalRecordOptionsAsync("abnormalType", ct);
+
+    public Task<List<WorkOrderAbnormalOptionDto>> GetReworkReasonOptionsAsync(CancellationToken ct = default) =>
+        GetAbnormalRecordOptionsAsync("reworkReason", ct);
+
+    private async Task<List<WorkOrderAbnormalOptionDto>> GetAbnormalRecordOptionsAsync(string field, CancellationToken ct)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _abnormalDictListEndpoint);
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
@@ -234,16 +246,22 @@ public sealed class WorkOrderApi : IWorkOrderApi
         var data = await JsonSerializer.DeserializeAsync<ApiResp<List<WorkOrderDictDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
         return data?.result?
-            .FirstOrDefault(dict => string.Equals(dict.field, "abnormalType", StringComparison.OrdinalIgnoreCase))?
+            .FirstOrDefault(dict => string.Equals(dict.field, field, StringComparison.OrdinalIgnoreCase))?
             .dictItems?
             .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue) && !string.IsNullOrWhiteSpace(item.dictItemName))
             .Select(item => new WorkOrderAbnormalOptionDto { value = item.dictItemValue, name = item.dictItemName })
             .ToList() ?? new List<WorkOrderAbnormalOptionDto>();
     }
 
-    public async Task<MaterialQrCodeInfoDto> ScanAbnormalMaterialAsync(string qrCode, CancellationToken ct = default)
+    public Task<MaterialQrCodeInfoDto> ScanAbnormalMaterialAsync(string qrCode, CancellationToken ct = default) =>
+        ScanMaterialAsync(_abnormalScanQrCodeEndpoint, qrCode, ct);
+
+    public Task<MaterialQrCodeInfoDto> ScanReworkMaterialAsync(string qrCode, CancellationToken ct = default) =>
+        ScanMaterialAsync(_reworkScanQrCodeEndpoint, qrCode, ct);
+
+    private async Task<MaterialQrCodeInfoDto> ScanMaterialAsync(string endpoint, string qrCode, CancellationToken ct)
     {
-        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_abnormalScanQrCodeEndpoint, new Dictionary<string, string?>
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(endpoint, new Dictionary<string, string?>
         {
             [nameof(qrCode)] = qrCode
         }));
@@ -255,7 +273,13 @@ public sealed class WorkOrderApi : IWorkOrderApi
         return data?.result ?? new MaterialQrCodeInfoDto();
     }
 
-    public async Task<AttachmentDto> UploadAbnormalAttachmentAsync(FileResult photo, CancellationToken ct = default)
+    public Task<AttachmentDto> UploadAbnormalAttachmentAsync(FileResult photo, CancellationToken ct = default) =>
+        UploadAttachmentAsync(photo, "abnormalRecord", "images", ct);
+
+    public Task<AttachmentDto> UploadReworkAttachmentAsync(FileResult photo, CancellationToken ct = default) =>
+        UploadAttachmentAsync(photo, "toolingManager", "images", ct);
+
+    private async Task<AttachmentDto> UploadAttachmentAsync(FileResult photo, string attachmentFolder, string attachmentLocation, CancellationToken ct)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _uploadAttachmentEndpoint);
         await using var stream = await photo.OpenReadAsync().ConfigureAwait(false);
@@ -263,14 +287,14 @@ public sealed class WorkOrderApi : IWorkOrderApi
         using var fileContent = new StreamContent(stream);
         fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(string.IsNullOrWhiteSpace(photo.ContentType) ? "image/jpeg" : photo.ContentType);
         content.Add(fileContent, "file", photo.FileName);
-        content.Add(new StringContent("abnormalRecord"), "attachmentFolder");
-        content.Add(new StringContent("images"), "attachmentLocation");
+        content.Add(new StringContent(attachmentFolder), "attachmentFolder");
+        content.Add(new StringContent(attachmentLocation), "attachmentLocation");
         using var resp = await _http.PostAsync(url, content, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         await using var respStream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<AttachmentDto>>(respStream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
-        return data?.result ?? new AttachmentDto { attachmentFolder = "abnormalRecord", attachmentLocation = "images", attachmentName = photo.FileName, attachmentRealName = photo.FileName };
+        return data?.result ?? new AttachmentDto { attachmentFolder = attachmentFolder, attachmentLocation = attachmentLocation, attachmentName = photo.FileName, attachmentRealName = photo.FileName };
     }
 
     public async Task<bool> AddAbnormalRecordAsync(WorkOrderAbnormalAddRequestDto request, CancellationToken ct = default)
