@@ -20,6 +20,7 @@ public partial class AppShell : Shell
     public const string RouteWorkOrderInstruction = "WorkOrderInstruction";
     public const string RouteWorkExecution = "WorkExecution";
     public const string RouteMaterialLoading = "MaterialLoading";
+    public const string RouteWorkCompletion = "WorkCompletion";
     public const string RouteAbnormalReport = "AbnormalReport";
     public const string RouteReworkReport = "ReworkReport";
     public const string RouteAbnormalReportSuccess = "AbnormalReportSuccess";
@@ -54,6 +55,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteWorkOrderInstruction, typeof(WorkOrderInstructionPage));
         Routing.RegisterRoute(RouteWorkExecution, typeof(WorkExecutionPage));
         Routing.RegisterRoute(RouteMaterialLoading, typeof(MaterialLoadingPage));
+        Routing.RegisterRoute(RouteWorkCompletion, typeof(WorkCompletionPage));
         Routing.RegisterRoute(RouteAbnormalReport, typeof(AbnormalReportPage));
         Routing.RegisterRoute(RouteReworkReport, typeof(ReworkReportPage));
         Routing.RegisterRoute(RouteAbnormalReportSuccess, typeof(AbnormalReportSuccessPage));

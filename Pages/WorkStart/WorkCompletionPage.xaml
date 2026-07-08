@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.WorkStart.WorkCompletionPage"
+             BackgroundColor="#F4F6FA"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="20,18,20,14" HeightRequest="66">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,18,18" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Label Text="‹ 返回" TextColor="White" FontSize="15" VerticalOptions="Center">
+                    <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers>
+                </Label>
+                <Label Grid.Column="1" Text="完工作业" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" />
+                <BoxView Grid.Column="2" WidthRequest="48" Opacity="0" />
+            </Grid>
+        </Border>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="22,18,22,28" Spacing="16">
+                <Border x:Name="ScanPanel" BackgroundColor="White" Stroke="#C7D6EA" StrokeThickness="2" StrokeDashArray="6,4" Padding="24" HeightRequest="186">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanPanelTapped" /></Border.GestureRecognizers>
+                    <VerticalStackLayout Spacing="16" HorizontalOptions="Center" VerticalOptions="Center">
+                        <Label Text="▣" TextColor="#5A4773" FontSize="48" HorizontalTextAlignment="Center" />
+                        <Label Text="1. 扫描机台二维码验证完工" TextColor="#001431" FontSize="16" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border x:Name="ManualMachinePanel" BackgroundColor="White" Stroke="#DDE6F1" StrokeThickness="1" Padding="12">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="测试用：手动输入机台码" TextColor="#0B3D8B" FontSize="15" FontAttributes="Bold" />
+                        <Grid ColumnDefinitions="*,72" ColumnSpacing="10" VerticalOptions="Center">
+                            <Entry x:Name="MachineCodeEntry" Placeholder="输入机台码后确认" PlaceholderColor="#7A8797" FontSize="15" BackgroundColor="#F8FAFD" Completed="OnManualMachineCompleted" />
+                            <Button Grid.Column="1" Text="确认" FontSize="16" FontAttributes="Bold" BackgroundColor="#244B88" TextColor="White" CornerRadius="10" Padding="0" Clicked="OnManualMachineConfirmClicked" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border x:Name="SuccessBanner" IsVisible="False" BackgroundColor="#F0FFF7" Stroke="#9BE7B4" StrokeThickness="1" Padding="18,14">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                    <Label Text="✅ 机台验证成功" TextColor="#168A3A" FontSize="15" />
+                </Border>
+
+                <Border x:Name="ConfirmCard" IsVisible="False" BackgroundColor="White" StrokeThickness="0" Padding="20,24">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="18">
+                        <Label Text="完工确认工单" TextColor="#0A2E69" FontSize="19" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                        <Label Text="当前执行中工单" TextColor="#001431" FontSize="22" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                        <Grid ColumnDefinitions="*,Auto" Padding="0,14,0,0">
+                            <Label Text="系统状态" TextColor="#4B6688" FontSize="15" />
+                            <Label Grid.Column="1" Text="目标已达成" TextColor="#001431" FontSize="16" FontAttributes="Bold" />
+                        </Grid>
+                        <BoxView HeightRequest="1" Color="#DDE6F1" />
+                        <Button x:Name="ConfirmButton" Text="确认完工" BackgroundColor="#18BE82" TextColor="White" FontSize="18" FontAttributes="Bold" CornerRadius="10" HeightRequest="54" Clicked="OnConfirmCompletionClicked" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>
