@@ -27,6 +27,7 @@ public interface IWorkOrderApi
     Task<AttachmentDto> UploadReworkAttachmentAsync(FileResult photo, CancellationToken ct = default);
     Task<bool> AddAbnormalRecordAsync(WorkOrderAbnormalAddRequestDto request, CancellationToken ct = default);
     Task<bool> ConfirmCompletionAsync(string workOrderNo, CancellationToken ct = default);
+    Task<bool> StopWorkOrderAsync(string workOrderNo, CancellationToken ct = default);
 }
 
 public sealed class WorkOrderApi : IWorkOrderApi
@@ -49,6 +50,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _reworkScanQrCodeEndpoint;
     private readonly string _uploadAttachmentEndpoint;
     private readonly string _confirmCompletionEndpoint;
+    private readonly string _orderStopEndpoint;
     private IReadOnlyDictionary<string, string>? _workOrderStatusNames;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -90,6 +92,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
             configLoader.GetApiPath("attachment.uploadAttachment", "/pda/attachment/uploadAttachment"), servicePath);
         _confirmCompletionEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.confirmCompletion", "/pda/pmsWorkOrder/confirmCompletion"), servicePath);
+        _orderStopEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrder.orderStop", "/pda/pmsWorkOrder/orderStop"), servicePath);
     }
 
     public async Task<List<WorkOrderTaskDto>> GetWorkOrderListAsync(string? deviceCode = null, string? machineNo = null, string? workOrderStatus = null, CancellationToken ct = default)
@@ -323,6 +327,18 @@ public sealed class WorkOrderApi : IWorkOrderApi
         return ReadFlexibleBooleanResult(data);
     }
 
+
+
+    public async Task<bool> StopWorkOrderAsync(string workOrderNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _orderStopEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, new { workOrderNo }, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return ReadFlexibleBooleanResult(data);
+    }
 
     private static bool ReadFlexibleBooleanResult(ApiResp<JsonElement?>? response)
     {

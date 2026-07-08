@@ -47,9 +47,18 @@ public sealed class WorkOrderDetailDto
     public string steelGradeSpecificationDisplay => JoinNonEmpty(steelGrade, FirstNonEmptyOrDefault(productSpecification, intermediateSpecification));
     public string completedWeightDisplay => FormatProgress(actualWeight, plannedWeight, "吨");
     public string completedQuantityDisplay => FormatProgress(actualQuantity, plannedQuantity, "件");
+    public string statusBackgroundColor => IsPausedStatus ? "#FFF8E8" : "#F2FFF8";
+    public string statusBorderColor => IsPausedStatus ? "#F5A623" : "#18C77A";
+    public string statusTextColor => IsPausedStatus ? "#C47A00" : "#00A651";
+    public string statusSeparatorColor => IsPausedStatus ? "#F3D9A6" : "#CDEEDC";
     public string moldSequenceDisplay => moldSequenceList is { Count: > 0 }
         ? string.Join("-", moldSequenceList.Select(item => FormatDecimal(item.moldSequence, string.Empty)))
         : "--";
+
+    private bool IsPausedStatus => !string.IsNullOrWhiteSpace(workOrderStatus)
+        && (workOrderStatus.Contains("暂停", StringComparison.OrdinalIgnoreCase)
+            || workOrderStatus.Contains("stop", StringComparison.OrdinalIgnoreCase)
+            || workOrderStatus.Contains("pause", StringComparison.OrdinalIgnoreCase));
 
     private static string FirstNonEmpty(params string?[] values)
     {

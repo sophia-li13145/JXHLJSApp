@@ -125,6 +125,42 @@ public partial class WorkExecutionPage : ContentPage
         await Shell.Current.GoToAsync(AppShell.RouteReworkReport, query);
     }
 
+    private async void OnPauseTapped(object sender, TappedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_workOrderNo))
+        {
+            await DisplayAlert("提示", "工单号为空，无法暂停生产工单。", "确定");
+            return;
+        }
+
+        var confirm = await DisplayAlert("确认暂停", $"确认暂停工单 {_workOrderNo} 吗？", "确认", "取消");
+        if (!confirm)
+        {
+            return;
+        }
+
+        try
+        {
+            RefreshContainer.IsRefreshing = true;
+            var success = await _workOrderApi.StopWorkOrderAsync(_workOrderNo);
+            if (!success)
+            {
+                await DisplayAlert("暂停失败", "接口未返回成功，请稍后重试。", "确定");
+                return;
+            }
+
+            await LoadTaskPoolAsync();
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("暂停失败", ex.Message, "确定");
+        }
+        finally
+        {
+            RefreshContainer.IsRefreshing = false;
+        }
+    }
+
     private async void OnWorkCompletionTapped(object sender, TappedEventArgs e)
     {
         var query = new Dictionary<string, object>();

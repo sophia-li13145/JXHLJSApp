@@ -85,6 +85,7 @@
       "bindWorkerMachine": "/pda/devUserMachineBindRecord/workerBindDev",
       "currentUserMachinesWorkOrder": "/pda/pmsWorkOrder/currentUserMachinesWorkOrder",
       "orderStart": "/pda/pmsWorkOrder/orderStart",
+      "orderStop": "/pda/pmsWorkOrder/orderStop",
       "detail": "/pda/pmsWorkOrder/getWorkOrderDetail",
       "currentTaskPool": "/pda/pmsWorkOrder/getCurrentTaskPool",
       "inputOutput": "/pda/pmsWorkOrder/getWorkOrderInputOutput",
