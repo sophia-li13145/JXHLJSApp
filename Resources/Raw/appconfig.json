@@ -33,6 +33,13 @@
       "list": "/pda/pmsWorkOrder/getPackagingSubTaskList",
       "detail": "/pda/pmsWorkOrder/getPackagingSubTaskDetail"
     },
+    "incomingQualityOrder": {
+      "getDictList": "/pda/qs/qslIncomingQualityOrder/getDictList",
+      "list": "/pda/qs/qslIncomingQualityOrder/list",
+      "detail": "/pda/qs/qslIncomingQualityOrder/detail",
+      "scan": "/pda/qs/qslIncomingQualityOrder/scan",
+      "saveResult": "/pda/qs/qslIncomingQualityOrder/saveResult"
+    },
     "deliveryOrder": {
       "listNeedDeliveryOrders": "/pda/deliveryOrder/listNeedDeliveryOrders",
       "detail": "/pda/deliveryOrder/detail",
