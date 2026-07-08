@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.Quality.IncomingQualityOrderListPage"
+             Title="来料检验记录"
+             BackgroundColor="#F4F6F9"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,Auto,*">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="16,22,16,14" HeightRequest="66">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,16,16" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*">
+                <Label Text="‹ 返回主页" TextColor="White" FontSize="15" VerticalOptions="Center">
+                    <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers>
+                </Label>
+                <Label Grid.Column="1" Text="来料检验记录" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,74,0" />
+            </Grid>
+        </Border>
+
+        <ScrollView Grid.Row="1" Orientation="Horizontal" HorizontalScrollBarVisibility="Never" Margin="16,14,16,0">
+            <HorizontalStackLayout x:Name="StatusFilterStack" Spacing="12" />
+        </ScrollView>
+
+        <RefreshView Grid.Row="2" x:Name="RefreshContainer" Refreshing="OnRefreshing">
+            <CollectionView x:Name="OrderList" EmptyView="当前没有来料检验记录" Margin="16,14,16,0">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="White" StrokeThickness="0" Padding="20,18" Margin="0,0,0,14">
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnOrderTapped" /></Border.GestureRecognizers>
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="8" ColumnSpacing="12">
+                                <Label Text="{Binding incomingQualityNoDisplay}" TextColor="#051B3D" FontSize="18" FontAttributes="Bold" />
+                                <Border Grid.Column="1" BackgroundColor="#EEF3FA" StrokeThickness="0" Padding="9,4" VerticalOptions="Start">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
+                                    <Label Text="{Binding statusDisplay}" TextColor="#244B88" FontSize="13" FontAttributes="Bold" />
+                                </Border>
+                                <Label Grid.Row="1" Grid.ColumnSpan="2" TextColor="#38557C" FontSize="14">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="关联入库单: " />
+                                            <Span Text="{Binding instockNoDisplay}" TextColor="#00346F" FontAttributes="Bold" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                                <BoxView Grid.Row="2" Grid.ColumnSpan="2" HeightRequest="1" Color="#E6ECF3" Margin="0,4" />
+                                <Grid Grid.Row="3" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="8">
+                                    <Label TextColor="#38557C" FontSize="14">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="物料: " />
+                                                <Span Text="{Binding materialDisplay}" TextColor="#00346F" FontAttributes="Bold" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                    <Label Grid.Row="1" Text="{Binding totalDisplay, StringFormat='总数量：{0}'}" TextColor="#38557C" FontSize="14" />
+                                    <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="10" HorizontalOptions="End">
+                                        <Label Text="{Binding doneDisplay}" TextColor="#38557C" FontSize="14" VerticalOptions="Center" />
+                                        <Button Text="删除" TextColor="#FF4D5E" BackgroundColor="#FFF2F2" BorderColor="#FFB7BE" BorderWidth="1" CornerRadius="8" HeightRequest="32" Padding="12,0" FontSize="13" Clicked="OnDeleteClicked" />
+                                    </HorizontalStackLayout>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>

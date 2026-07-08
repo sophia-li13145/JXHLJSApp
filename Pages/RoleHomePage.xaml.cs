@@ -394,7 +394,7 @@ internal sealed record RoleHomeDefinition(
             {
                 new HomeModule("机台质检 (快捷取)", "🏭", Color.FromArgb("#DCEBFF"), "扫码机台，直达该机台质检任务", true),
                 new HomeModule("生产质检记录 (PQC)", "⚙️", Color.FromArgb("#FFF1F1"), "首检 · 抽检 · 热处理 · 酸洗 任务池"),
-                new HomeModule("来料质检记录 (IQC)", "📥", Color.FromArgb("#FFFBEA"), "原材料/辅料 到货质量检验")
+                new HomeModule("来料质检记录 (IQC)", "📥", Color.FromArgb("#FFFBEA"), "基于入库单的原材料质检记录", Route: AppShell.RouteIncomingQualityOrders)
             }, "请选择业务模块"),
             "forkliftOperator" => new("forkliftOperator", "叉车运输工作台", "#E07700", "🚚", RoleHomeLayout.List, new[]
             {
