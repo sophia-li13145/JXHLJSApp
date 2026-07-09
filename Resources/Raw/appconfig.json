@@ -21,6 +21,7 @@
       "queryDetailByInstockNo": "/pda/rawMaterialReceiving/queryDetailByInstockNo",
       "queryWarehouseInfo": "/pda/rawMaterialReceiving/queryWarehouseInfo",
       "ocrIncoming": "/pda/rawMaterialReceiving/ocrIncoming",
+      "saveOcrIncomingImage": "/pda/rawMaterialReceiving/saveOcrIncomingImage",
       "queryQrCodeInfo": "/pda/rawMaterialReceiving/queryQrCodeInfo",
       "getDictList": "/pda/rawMaterialReceiving/getDictList",
       "cancelBlankInstock": "/pda/rawMaterialReceiving/cancelBlankInstock",
