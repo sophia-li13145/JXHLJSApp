@@ -407,7 +407,7 @@ internal sealed record RoleHomeDefinition(
                 new HomeModule("任务列表", "📋", Color.FromArgb("#55ACE3"), Route: AppShell.RouteWorkOrderTasks),
                 new HomeModule("异常上报", "⚠️", Color.FromArgb("#F27655"), Route: AppShell.RouteAbnormalReport),
                 new HomeModule("返工上报", "↩️", Color.FromArgb("#DEBC79"), Route: AppShell.RouteReworkReport),
-                new HomeModule("生产统计", "📈", Color.FromArgb("#9B632A"))
+                new HomeModule("生产统计", "📈", Color.FromArgb("#9B632A"), Route: AppShell.RouteProductionStatistics)
             })
         };
     }

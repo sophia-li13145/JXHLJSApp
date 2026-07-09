@@ -29,6 +29,7 @@ public interface IWorkOrderApi
     Task<bool> AddAbnormalRecordAsync(WorkOrderAbnormalAddRequestDto request, CancellationToken ct = default);
     Task<bool> ConfirmCompletionAsync(string workOrderNo, CancellationToken ct = default);
     Task<bool> StopWorkOrderAsync(string workOrderNo, CancellationToken ct = default);
+    Task<ProductionStatisticsDto?> GetProductionStatisticsAsync(string date, CancellationToken ct = default);
 }
 
 public sealed class WorkOrderApi : IWorkOrderApi
@@ -53,6 +54,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _uploadAttachmentEndpoint;
     private readonly string _confirmCompletionEndpoint;
     private readonly string _orderStopEndpoint;
+    private readonly string _productionStatisticsEndpoint;
     private IReadOnlyDictionary<string, string>? _workOrderStatusNames;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -98,6 +100,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
             configLoader.GetApiPath("workOrder.confirmCompletion", "/pda/pmsWorkOrder/confirmCompletion"), servicePath);
         _orderStopEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.orderStop", "/pda/pmsWorkOrder/orderStop"), servicePath);
+        _productionStatisticsEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrder.productionStatistics", "/pda/pmsWorkOrder/getProductionStatistics"), servicePath);
     }
 
     public async Task<List<WorkOrderTaskDto>> GetWorkOrderListAsync(string? deviceCode = null, string? machineNo = null, string? workOrderStatus = null, CancellationToken ct = default)
@@ -380,6 +384,23 @@ public sealed class WorkOrderApi : IWorkOrderApi
 
 
 
+
+    public async Task<ProductionStatisticsDto?> GetProductionStatisticsAsync(string date, CancellationToken ct = default)
+    {
+        var query = new Dictionary<string, string?>
+        {
+            [nameof(date)] = date
+        };
+
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_productionStatisticsEndpoint, query));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<ProductionStatisticsDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccessOrCodeZero(data);
+        return data?.result;
+    }
+
     private async Task ApplyWorkOrderStatusNamesAsync(IEnumerable<WorkOrderTaskDto> orders, CancellationToken ct)
     {
         var statusNames = await GetWorkOrderStatusNamesAsync(ct).ConfigureAwait(false);
@@ -495,6 +516,19 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private static void EnsureApiSuccess<T>(ApiResp<T>? response)
     {
         if (response?.success == true) return;
+
+        var message = response?.message;
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            message = "接口返回失败，请稍后重试。";
+        }
+
+        throw new WorkOrderApiException(message);
+    }
+
+    private static void EnsureApiSuccessOrCodeZero<T>(ApiResp<T>? response)
+    {
+        if (response?.success == true || response?.code == 0) return;
 
         var message = response?.message;
         if (string.IsNullOrWhiteSpace(message))

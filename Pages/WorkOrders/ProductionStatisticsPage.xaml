@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.WorkOrders.ProductionStatisticsPage"
+             Title="生产统计"
+             BackgroundColor="#F3F6FA">
+    <RefreshView x:Name="RefreshContainer" Refreshing="OnRefreshing">
+        <ScrollView>
+            <VerticalStackLayout x:Name="ContentStack" Padding="20,14,20,24" Spacing="14" />
+        </ScrollView>
+    </RefreshView>
+</ContentPage>
