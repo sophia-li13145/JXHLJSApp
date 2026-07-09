@@ -160,17 +160,17 @@ public partial class MaterialLoadingPage : ContentPage
             materialCode = material.materialCode,
             materialName = material.materialName,
             qrCode = string.IsNullOrWhiteSpace(material.qrCode) ? _lastMaterialQrCode : material.qrCode,
-            spec = material.spec,
+            spec = FirstNonEmpty(material.specification, material.spec),
             stockBatch = string.IsNullOrWhiteSpace(material.stockBatch) ? material.bizBatchNo : material.stockBatch,
             workOrderCode = _workOrderNo
         };
 
-        MaterialCodeLabel.Text = ValueOrDash(_confirmInput.materialCode);
-        MaterialNameLabel.Text = ValueOrDash(_confirmInput.materialName);
-        QrCodeLabel.Text = ValueOrDash(_confirmInput.qrCode);
+        MaterialCodeLabel.Text = ValueOrDash(material.materialCode);
+        SteelGradeLabel.Text = ValueOrDash(material.steelGrade);
+        OriginPlaceLabel.Text = ValueOrDash(material.originPlace);
         SpecLabel.Text = ValueOrDash(_confirmInput.spec);
-        StockBatchLabel.Text = ValueOrDash(_confirmInput.stockBatch);
-        WorkOrderCodeLabel.Text = ValueOrDash(_confirmInput.workOrderCode);
+        WeightLabel.Text = FormatDecimalWithUnit(material.weight, FirstNonEmpty(material.weightUnit, material.unit, "KG"));
+        LengthLabel.Text = FormatDecimalWithUnit(material.length, FirstNonEmpty(material.lengthUnit, "m"));
     }
 
     private async void OnConfirmBackClicked(object sender, EventArgs e)
@@ -226,4 +226,15 @@ public partial class MaterialLoadingPage : ContentPage
     }
 
     private static string ValueOrDash(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value;
+
+    private static string FirstNonEmpty(params string?[] values) =>
+        values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
+
+    private static string FormatDecimalWithUnit(decimal? value, string? unit)
+    {
+        if (!value.HasValue) return "--";
+
+        var text = value.Value % 1 == 0 ? value.Value.ToString("0") : value.Value.ToString("0.##");
+        return string.IsNullOrWhiteSpace(unit) ? text : $"{text} {unit}";
+    }
 }

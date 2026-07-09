@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using JXHLJSApp.Models.Warehouse;
+
 namespace JXHLJSApp.Models.WorkOrders;
 
 public sealed class MaterialQrCodeInfoDto
@@ -18,6 +21,7 @@ public sealed class MaterialQrCodeInfoDto
     public string? specification { get; set; }
     public string? steelGrade { get; set; }
     public string? unit { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? weight { get; set; }
     public string? qrCode { get; set; }
     public string? qrStatus { get; set; }
@@ -27,6 +31,7 @@ public sealed class MaterialQrCodeInfoDto
     public string? sourceBizTypeName { get; set; }
     public string? spec { get; set; }
     public string? weightUnit { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? length { get; set; }
     public string? lengthUnit { get; set; }
 }

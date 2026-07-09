@@ -51,11 +51,11 @@
                         <BoxView HeightRequest="1" Color="#DDE6F1" />
                         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="92,*" RowSpacing="0" ColumnSpacing="10">
                             <Label Text="物料编号" TextColor="#4B6688" Padding="0,10" /><Label x:Name="MaterialCodeLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="1" Text="物料名称" TextColor="#4B6688" Padding="0,10" /><Label x:Name="MaterialNameLabel" Grid.Row="1" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="2" Text="二维码" TextColor="#4B6688" Padding="0,10" /><Label x:Name="QrCodeLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="1" Text="钢号" TextColor="#4B6688" Padding="0,10" /><Label x:Name="SteelGradeLabel" Grid.Row="1" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="2" Text="产地" TextColor="#4B6688" Padding="0,10" /><Label x:Name="OriginPlaceLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
                             <Label Grid.Row="3" Text="规格" TextColor="#4B6688" Padding="0,10" /><Label x:Name="SpecLabel" Grid.Row="3" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="4" Text="库存批次" TextColor="#4B6688" Padding="0,10" /><Label x:Name="StockBatchLabel" Grid.Row="4" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="5" Text="工单号" TextColor="#4B6688" Padding="0,10" /><Label x:Name="WorkOrderCodeLabel" Grid.Row="5" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="4" Text="件重 (KG)" TextColor="#4B6688" Padding="0,10" /><Label x:Name="WeightLabel" Grid.Row="4" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="5" Text="长度 (米)" TextColor="#4B6688" Padding="0,10" /><Label x:Name="LengthLabel" Grid.Row="5" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
                         </Grid>
                         <Button x:Name="ConfirmButton" Text="确认并返回" BackgroundColor="#244B88" TextColor="White" FontSize="17" FontAttributes="Bold" CornerRadius="10" HeightRequest="54" Clicked="OnConfirmBackClicked" />
                     </VerticalStackLayout>
