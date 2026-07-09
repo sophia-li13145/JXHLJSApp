@@ -89,12 +89,47 @@ public partial class ProductionStatisticsPage : ContentPage
 
     private IReadOnlyList<(string Label, string Value)> BuildMonthOptions()
     {
+        var apiMonths = _statistics?.dateList?
+            .Select(item => (Label: BuildMonthLabel(item), Value: NormalizeMonthValue(item)))
+            .Where(item => !string.IsNullOrWhiteSpace(item.Value))
+            .DistinctBy(item => item.Value)
+            .ToList();
+
+        if (apiMonths?.Count > 0)
+        {
+            return apiMonths!;
+        }
+
         var current = DateTime.Today;
         return Enumerable.Range(0, 2)
             .Select(offset => current.AddMonths(-offset))
             .Select(date => ($"{date.Month}月", date.ToString("yyyy-MM", CultureInfo.InvariantCulture)))
             .Reverse()
             .ToList();
+    }
+
+    private static string BuildMonthLabel(ProductionStatisticsDateDto item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.monthName))
+        {
+            return item.monthName!;
+        }
+
+        var value = NormalizeMonthValue(item);
+        return DateTime.TryParseExact(value, "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+            ? $"{date.Month}月"
+            : value;
+    }
+
+    private static string NormalizeMonthValue(ProductionStatisticsDateDto item)
+    {
+        var raw = FirstNonEmpty(item.date, item.monthName);
+        if (DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        {
+            return date.ToString("yyyy-MM", CultureInfo.InvariantCulture);
+        }
+
+        return raw;
     }
 
     private void AddSummaryCard()
