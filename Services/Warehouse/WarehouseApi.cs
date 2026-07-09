@@ -18,6 +18,7 @@ public interface IWarehouseApi
     Task<RawMaterialReceivingDetailDto> GetRawMaterialReceivingDetailAsync(string instockNo, CancellationToken ct = default);
     Task<BlankInstockDto> AddBlankInstockAsync(CancellationToken ct = default);
     Task<List<WarehouseInfoDto>> QueryWarehouseInfoAsync(CancellationToken ct = default);
+    Task<List<DictGroupDto>> GetRawMaterialReceivingDictListAsync(CancellationToken ct = default);
     Task<AttachmentDto> UploadAttachmentAsync(FileResult photo, string attachmentFolder, string attachmentLocation, CancellationToken ct = default);
     Task<RawMaterialOcrDto> RecognizeIncomingAsync(AttachmentDto fileInfo, string instockNo, CancellationToken ct = default);
     Task<bool?> SaveOcrIncomingImageAsync(SaveOcrIncomingImageRequestDto request, CancellationToken ct = default);
@@ -207,6 +208,15 @@ public sealed class WarehouseApi : IWarehouseApi
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<List<WarehouseInfoDto>>(resp, ct).ConfigureAwait(false);
         return data.result ?? new List<WarehouseInfoDto>();
+    }
+
+    public async Task<List<DictGroupDto>> GetRawMaterialReceivingDictListAsync(CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _dictListEndpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<List<DictGroupDto>>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new List<DictGroupDto>();
     }
 
     public async Task<AttachmentDto> UploadAttachmentAsync(FileResult photo, string attachmentFolder, string attachmentLocation, CancellationToken ct = default)

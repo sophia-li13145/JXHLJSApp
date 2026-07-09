@@ -16,6 +16,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private RawMaterialOcrDto? _selectedTicket;
     private AttachmentDto? _pendingTicketAttachment;
     private List<WarehouseInfoDto> _warehouses = new();
+    private List<DictItemDto> _materialClassOptions = CreateDefaultMaterialClassOptions();
     private string? _instockNo;
     private string? _pendingQrCode;
     private bool _isExistingInstock;
@@ -28,11 +29,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         _scanService = scanService;
         OcrList.ItemsSource = _ocrItems;
         SummaryList.ItemsSource = _summaryItems;
-        var materialTypes = new[] { "原料", "半成品" };
-        MaterialTypePicker.ItemsSource = materialTypes;
-        BindMaterialTypePicker.ItemsSource = materialTypes;
-        MaterialTypePicker.SelectedIndex = 0;
-        BindMaterialTypePicker.SelectedIndex = 0;
+        ApplyMaterialClassOptions(_materialClassOptions);
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -70,6 +67,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             _instockNo = blank.instockNo;
             InstockNoLabel.Text = string.IsNullOrWhiteSpace(_instockNo) ? "--" : _instockNo;
 
+            await LoadMaterialClassOptionsAsync();
             await LoadWarehousesAsync();
         }
         catch (Exception ex)
@@ -85,6 +83,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         {
             PageTitleLabel.Text = "新增采购入库";
             InstockNoLabel.Text = instockNo;
+            await LoadMaterialClassOptionsAsync();
             await LoadWarehousesAsync();
 
             var detail = await _warehouseApi.GetRawMaterialReceivingDetailAsync(instockNo);
@@ -98,6 +97,57 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         catch (Exception ex)
         {
             await DisplayAlert("加载失败", ex.Message, "确定");
+        }
+    }
+
+    private async Task LoadMaterialClassOptionsAsync()
+    {
+        try
+        {
+            var dictGroups = await _warehouseApi.GetRawMaterialReceivingDictListAsync();
+            var options = dictGroups
+                .FirstOrDefault(group => IsMaterialClassField(group.field))?
+                .dictItems?
+                .Where(item => !string.IsNullOrWhiteSpace(item.dictItemName) || !string.IsNullOrWhiteSpace(item.dictItemValue))
+                .ToList();
+
+            if (options?.Count > 0)
+            {
+                _materialClassOptions = options;
+                ApplyMaterialClassOptions(_materialClassOptions);
+            }
+        }
+        catch
+        {
+            ApplyMaterialClassOptions(_materialClassOptions);
+        }
+    }
+
+    private static bool IsMaterialClassField(string? field)
+    {
+        if (string.IsNullOrWhiteSpace(field)) return false;
+
+        var normalized = field.Replace("_", string.Empty).Replace("-", string.Empty);
+        return string.Equals(normalized, "materialClass", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(normalized, "materialType", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void ApplyMaterialClassOptions(List<DictItemDto> options)
+    {
+        MaterialTypePicker.ItemsSource = options;
+        BindMaterialTypePicker.ItemsSource = options;
+        if (options.Count == 0) return;
+
+        if (MaterialTypePicker.SelectedItem is not DictItemDto)
+        {
+            MaterialTypePicker.SelectedIndex = 0;
+            MaterialTypePicker.SelectedItem = options[0];
+        }
+
+        if (BindMaterialTypePicker.SelectedItem is not DictItemDto)
+        {
+            BindMaterialTypePicker.SelectedIndex = 0;
+            BindMaterialTypePicker.SelectedItem = options[0];
         }
     }
 
@@ -141,6 +191,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             coilDiameter = FormatDecimal(firstOcr.coilDiameter),
             furnaceNo = firstOcr.furnaceNo,
             materialClass = firstOcr.materialClass,
+            materialClassName = ResolveMaterialClassName(firstOcr.materialClass),
             materialName = firstOcr.materialName,
             materialType = firstOcr.materialType,
             ocrRawText = firstOcr.ocrRawText,
@@ -164,6 +215,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                 coilCount = FormatDecimal(item.count),
                 furnaceNo = item.furnaceNo,
                 materialClass = item.materialClass,
+                materialClassName = ResolveMaterialClassName(item.materialClass),
                 materialCode = item.materialCode,
                 materialName = item.materialName,
                 materialType = item.materialTypeDisplay,
@@ -333,7 +385,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         _pendingQrCode = qrCode;
         BindQrCodeEntry.Text = qrCode;
         BindMaterialCodeEntry.Text = source.materialCode;
-        BindMaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(source.materialClass) ? "原料" : source.materialClass;
+        SelectMaterialClass(BindMaterialTypePicker, source.materialClass);
         BindMaterialNameEntry.Text = source.materialName;
         BindSpecEntry.Text = source.spec;
         BindFurnaceNoEntry.Text = source.furnaceNo;
@@ -347,12 +399,13 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private void OnConfirmBindClicked(object sender, EventArgs e)
     {
-        var materialType = BindMaterialTypePicker.SelectedItem?.ToString();
+        var materialClass = GetSelectedMaterialClass(BindMaterialTypePicker, _selectedTicket?.materialClass);
         var bound = new RawMaterialOcrDto
         {
             qrCode = _pendingQrCode,
-            materialClass = string.IsNullOrWhiteSpace(materialType) ? _selectedTicket?.materialClass : materialType,
-            materialType = NormalizeMaterialType(string.IsNullOrWhiteSpace(materialType) ? _selectedTicket?.materialType : materialType),
+            materialClass = materialClass?.dictItemValue ?? _selectedTicket?.materialClass,
+            materialClassName = materialClass?.dictItemName ?? ResolveMaterialClassName(_selectedTicket?.materialClass),
+            materialType = materialClass?.dictItemValue ?? _selectedTicket?.materialType,
             materialCode = BindMaterialCodeEntry.Text,
             materialName = BindMaterialNameEntry.Text,
             spec = BindSpecEntry.Text,
@@ -378,7 +431,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private void ShowTicketConfirmDialog(RawMaterialOcrDto ocr)
     {
         _pendingOcr = ocr;
-        MaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(ocr.materialClass) ? "原料" : ocr.materialClass;
+        SelectMaterialClass(MaterialTypePicker, ocr.materialClass);
         MaterialCodeEntry.Text = ocr.materialCode;
         MaterialNameEntry.Text = ocr.materialName;
         SpecEntry.Text = ocr.spec;
@@ -393,11 +446,12 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private async void OnConfirmTicketClicked(object sender, EventArgs e)
     {
-        var materialType = MaterialTypePicker.SelectedItem?.ToString();
+        var materialClass = GetSelectedMaterialClass(MaterialTypePicker, _pendingOcr?.materialClass);
         _selectedTicket = new RawMaterialOcrDto
         {
-            materialClass = string.IsNullOrWhiteSpace(materialType) ? _pendingOcr?.materialClass : materialType,
-            materialType = NormalizeMaterialType(string.IsNullOrWhiteSpace(materialType) ? _pendingOcr?.materialType : materialType),
+            materialClass = materialClass?.dictItemValue ?? _pendingOcr?.materialClass,
+            materialClassName = materialClass?.dictItemName ?? ResolveMaterialClassName(_pendingOcr?.materialClass),
+            materialType = materialClass?.dictItemValue ?? _pendingOcr?.materialType,
             materialCode = MaterialCodeEntry.Text,
             materialName = MaterialNameEntry.Text,
             spec = SpecEntry.Text,
@@ -457,21 +511,54 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         _pendingTicketAttachment = null;
     }
 
-    private static string? NormalizeMaterialType(string? value)
+    private void SelectMaterialClass(Picker picker, string? value)
     {
-        return value switch
+        var option = FindMaterialClassOption(value);
+        if (option is not null)
         {
-            "原料" => "raw_material",
-            "半成品" => "semi_finished",
-            _ => value
-        };
+            picker.SelectedItem = option;
+            return;
+        }
+
+        if (_materialClassOptions.Count > 0)
+        {
+            picker.SelectedIndex = 0;
+            picker.SelectedItem = _materialClassOptions[0];
+        }
     }
+
+    private DictItemDto? GetSelectedMaterialClass(Picker picker, string? fallbackValue)
+    {
+        if (picker.SelectedItem is DictItemDto selected)
+        {
+            return selected;
+        }
+
+        return FindMaterialClassOption(fallbackValue) ?? _materialClassOptions.FirstOrDefault();
+    }
+
+    private DictItemDto? FindMaterialClassOption(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+
+        return _materialClassOptions.FirstOrDefault(option =>
+            string.Equals(option.dictItemValue, value, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(option.dictItemName, value, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string? ResolveMaterialClassName(string? value) => FindMaterialClassOption(value)?.dictItemName ?? value;
+
+    private static List<DictItemDto> CreateDefaultMaterialClassOptions() => new()
+    {
+        new DictItemDto { dictItemName = "原料", dictItemValue = "raw_material" },
+        new DictItemDto { dictItemName = "半成品", dictItemValue = "semi_finished" }
+    };
 
     private void ApplySelectedTicket(RawMaterialOcrDto ticket)
     {
         ExtractedTextLabel.IsVisible = false;
         SelectedTicketCard.IsVisible = true;
-        SelectedMaterialTypeLabel.Text = string.IsNullOrWhiteSpace(ticket.materialClass) ? "原料" : ticket.materialClass;
+        SelectedMaterialTypeLabel.Text = ticket.materialClassDisplay;
         SelectedMaterialNameLabel.Text = ticket.materialNameDisplay;
         SelectedSpecLabel.Text = ticket.specDisplay;
         SelectedFurnaceNoLabel.Text = ticket.furnaceNoDisplay;
