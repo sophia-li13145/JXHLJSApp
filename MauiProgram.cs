@@ -42,6 +42,7 @@ namespace JXHLJSApp
             builder.Services.AddTransient<LogPage>();
             builder.Services.AddTransient<RoleHomePage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkOrders.WorkOrderTaskListPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.WorkOrders.ProductionStatisticsPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.WorkStartScanPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.WorkStartOrdersPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.WorkOrderInstructionPage>();
