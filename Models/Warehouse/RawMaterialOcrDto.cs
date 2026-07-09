@@ -25,6 +25,7 @@ public sealed class RawMaterialOcrDto
     public string originPlaceDisplay => FirstNonEmpty(originPlace, "--");
     public string strengthDisplay => FirstNonEmpty(strength, "--");
     public string coilCountDisplay => FirstNonEmpty(coilCount, "--");
+    public string coilDiameterDisplay => FirstNonEmpty(coilDiameter, "--");
     public string pieceWeightDisplay => JoinNonEmpty(pieceWeight, pieceWeightUnit);
     public string materialTypeDisplay => FirstNonEmpty(materialType, "--");
 
