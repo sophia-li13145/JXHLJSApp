@@ -155,7 +155,7 @@ public partial class DeliveryOrderDetailPage : ContentPage
         try
         {
             var success = await _warehouseApi.ConfirmDeliveryCompletionAsync(_deliveryNo);
-            if (!success)
+            if (success is false)
             {
                 await DisplayAlert("确认失败", "接口返回确认失败，请稍后重试。", "确定");
                 return;
