@@ -15,6 +15,7 @@ public partial class AppShell : Shell
     public const string RouteAdmin = "Admin";
     public const string RouteLog = "Log";
     public const string RouteWorkOrderTasks = "WorkOrderTasks";
+    public const string RouteProductionStatistics = "ProductionStatistics";
     public const string RouteWorkStartScan = "WorkStartScan";
     public const string RouteWorkStartOrders = "WorkStartOrders";
     public const string RouteWorkOrderInstruction = "WorkOrderInstruction";
@@ -51,6 +52,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteAdmin, typeof(AdminPage));
         Routing.RegisterRoute(RouteLog, typeof(LogPage));
         Routing.RegisterRoute(RouteWorkOrderTasks, typeof(WorkOrderTaskListPage));
+        Routing.RegisterRoute(RouteProductionStatistics, typeof(ProductionStatisticsPage));
         Routing.RegisterRoute(RouteWorkStartScan, typeof(WorkStartScanPage));
         Routing.RegisterRoute(RouteWorkStartOrders, typeof(WorkStartOrdersPage));
         Routing.RegisterRoute(RouteWorkOrderInstruction, typeof(WorkOrderInstructionPage));
