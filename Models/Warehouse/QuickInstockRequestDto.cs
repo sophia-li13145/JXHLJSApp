@@ -16,6 +16,7 @@ public sealed class QuickInstockDetailDto
     public decimal? instockQty { get; set; }
     public string? instockWarehouse { get; set; }
     public string? instockWarehouseCode { get; set; }
+    public string? materialClass { get; set; }
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
     public string? memo { get; set; }

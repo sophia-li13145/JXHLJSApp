@@ -14,15 +14,16 @@ public interface IWarehouseApi
     Task<List<PackagingSubTaskDto>> GetPackagingSubTaskListAsync(CancellationToken ct = default);
     Task<PackagingSubTaskDetailDto> GetPackagingSubTaskDetailAsync(string id, CancellationToken ct = default);
     Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default);
-    Task<bool> ConfirmDeliveryCompletionAsync(string deliveryOrderNo, CancellationToken ct = default);
+    Task<bool?> ConfirmDeliveryCompletionAsync(string deliveryOrderNo, CancellationToken ct = default);
     Task<RawMaterialReceivingDetailDto> GetRawMaterialReceivingDetailAsync(string instockNo, CancellationToken ct = default);
     Task<BlankInstockDto> AddBlankInstockAsync(CancellationToken ct = default);
     Task<List<WarehouseInfoDto>> QueryWarehouseInfoAsync(CancellationToken ct = default);
     Task<AttachmentDto> UploadAttachmentAsync(FileResult photo, string attachmentFolder, string attachmentLocation, CancellationToken ct = default);
     Task<RawMaterialOcrDto> RecognizeIncomingAsync(AttachmentDto fileInfo, string instockNo, CancellationToken ct = default);
+    Task<bool?> SaveOcrIncomingImageAsync(SaveOcrIncomingImageRequestDto request, CancellationToken ct = default);
     Task<QrCodeInfoDto> QueryQrCodeInfoAsync(string? qsCode, CancellationToken ct = default);
-    Task<bool> CancelBlankInstockAsync(string id, CancellationToken ct = default);
-    Task<bool> QuickInstockAsync(QuickInstockRequestDto request, CancellationToken ct = default);
+    Task<bool?> CancelBlankInstockAsync(string id, CancellationToken ct = default);
+    Task<bool?> QuickInstockAsync(QuickInstockRequestDto request, CancellationToken ct = default);
 }
 
 public sealed class WarehouseApi : IWarehouseApi
@@ -34,6 +35,7 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _queryWarehouseInfoEndpoint;
     private readonly string _uploadAttachmentEndpoint;
     private readonly string _ocrIncomingEndpoint;
+    private readonly string _saveOcrIncomingImageEndpoint;
     private readonly string _queryQrCodeInfoEndpoint;
     private readonly string _dictListEndpoint;
     private readonly string _cancelBlankInstockEndpoint;
@@ -63,6 +65,8 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("attachment.uploadAttachment", "/pda/attachment/uploadAttachment"), servicePath);
         _ocrIncomingEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.ocrIncoming", "/pda/rawMaterialReceiving/ocrIncoming"), servicePath);
+        _saveOcrIncomingImageEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("rawMaterialReceiving.saveOcrIncomingImage", "/pda/rawMaterialReceiving/saveOcrIncomingImage"), servicePath);
         _queryQrCodeInfoEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.queryQrCodeInfo", "/pda/rawMaterialReceiving/queryQrCodeInfo"), servicePath);
         _dictListEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -166,12 +170,12 @@ public sealed class WarehouseApi : IWarehouseApi
     }
 
 
-    public async Task<bool> ConfirmDeliveryCompletionAsync(string deliveryOrderNo, CancellationToken ct = default)
+    public async Task<bool?> ConfirmDeliveryCompletionAsync(string deliveryOrderNo, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _confirmDeliveryCompletionEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new { deliveryOrderNo }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
         return data.result;
     }
 
@@ -246,6 +250,15 @@ public sealed class WarehouseApi : IWarehouseApi
         return data.result ?? new RawMaterialOcrDto();
     }
 
+    public async Task<bool?> SaveOcrIncomingImageAsync(SaveOcrIncomingImageRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _saveOcrIncomingImageEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        return data.result;
+    }
+
     public async Task<QrCodeInfoDto> QueryQrCodeInfoAsync(string? qsCode, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_queryQrCodeInfoEndpoint, new Dictionary<string, string?>
@@ -259,7 +272,7 @@ public sealed class WarehouseApi : IWarehouseApi
     }
 
 
-    public async Task<bool> CancelBlankInstockAsync(string id, CancellationToken ct = default)
+    public async Task<bool?> CancelBlankInstockAsync(string id, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_cancelBlankInstockEndpoint, new Dictionary<string, string?>
         {
@@ -267,16 +280,16 @@ public sealed class WarehouseApi : IWarehouseApi
         }));
         using var resp = await _http.PostAsync(url, new FormUrlEncodedContent(Array.Empty<KeyValuePair<string, string>>()), ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
         return data.result;
     }
 
-    public async Task<bool> QuickInstockAsync(QuickInstockRequestDto request, CancellationToken ct = default)
+    public async Task<bool?> QuickInstockAsync(QuickInstockRequestDto request, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _quickInstockEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
         return data.result;
     }
 

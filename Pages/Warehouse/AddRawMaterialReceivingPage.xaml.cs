@@ -14,6 +14,8 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private readonly ObservableCollection<MaterialSummaryItem> _summaryItems = new();
     private RawMaterialOcrDto? _pendingOcr;
     private RawMaterialOcrDto? _selectedTicket;
+    private AttachmentDto? _pendingTicketAttachment;
+    private List<WarehouseInfoDto> _warehouses = new();
     private string? _instockNo;
     private string? _pendingQrCode;
     private bool _isExistingInstock;
@@ -101,24 +103,26 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private async Task LoadWarehousesAsync()
     {
-        var warehouses = await _warehouseApi.QueryWarehouseInfoAsync();
-        WarehousePicker.ItemsSource = warehouses;
-        if (warehouses.Count > 0 && WarehousePicker.SelectedIndex < 0)
+        _warehouses = await _warehouseApi.QueryWarehouseInfoAsync();
+        WarehousePicker.ItemsSource = _warehouses;
+        if (_warehouses.Count > 0 && WarehousePicker.SelectedItem is not WarehouseInfoDto)
         {
             WarehousePicker.SelectedIndex = 0;
+            WarehousePicker.SelectedItem = _warehouses[0];
         }
     }
 
     private void SelectWarehouse(RawMaterialReceivingDetailItemDto? firstDetail)
     {
-        if (firstDetail is null || WarehousePicker.ItemsSource is not IList<WarehouseInfoDto> warehouses) return;
+        if (firstDetail is null || _warehouses.Count == 0) return;
 
-        var index = warehouses.ToList().FindIndex(warehouse =>
-            string.Equals(warehouse.warehouseCode, firstDetail.instockWarehouseCode, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(warehouse.warehouseName, firstDetail.instockWarehouse, StringComparison.OrdinalIgnoreCase));
+        var index = _warehouses.FindIndex(warehouse =>
+            string.Equals(warehouse.selectedCode, firstDetail.instockWarehouseCode, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(warehouse.selectedName, firstDetail.instockWarehouse, StringComparison.OrdinalIgnoreCase));
         if (index >= 0)
         {
             WarehousePicker.SelectedIndex = index;
+            WarehousePicker.SelectedItem = _warehouses[index];
         }
     }
 
@@ -136,6 +140,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             coilCount = FormatDecimal(firstOcr.coilCount),
             coilDiameter = FormatDecimal(firstOcr.coilDiameter),
             furnaceNo = firstOcr.furnaceNo,
+            materialClass = firstOcr.materialClass,
             materialName = firstOcr.materialName,
             materialType = firstOcr.materialType,
             ocrRawText = firstOcr.ocrRawText,
@@ -158,6 +163,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                 qrCode = FirstNonEmpty(item.qrCode, item.coilNo, item.id),
                 coilCount = FormatDecimal(item.count),
                 furnaceNo = item.furnaceNo,
+                materialClass = item.materialClass,
                 materialCode = item.materialCode,
                 materialName = item.materialName,
                 materialType = item.materialTypeDisplay,
@@ -185,7 +191,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             var photo = await GetTicketPhotoAsync();
             if (photo is null) return;
 
-            _ = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
+            _pendingTicketAttachment = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
 
             // OCR 识别接口暂不参与当前联调，附件上传成功后先进入手动录入流程。
             ShowTicketConfirmDialog(new RawMaterialOcrDto());
@@ -327,11 +333,14 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         _pendingQrCode = qrCode;
         BindQrCodeEntry.Text = qrCode;
         BindMaterialCodeEntry.Text = source.materialCode;
-        BindMaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(source.materialType) ? "原料" : source.materialType;
+        BindMaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(source.materialClass) ? "原料" : source.materialClass;
         BindMaterialNameEntry.Text = source.materialName;
         BindSpecEntry.Text = source.spec;
         BindFurnaceNoEntry.Text = source.furnaceNo;
         BindOriginPlaceEntry.Text = source.originPlace;
+        BindStrengthEntry.Text = source.strength;
+        BindCoilCountEntry.Text = source.coilCount;
+        BindCoilDiameterEntry.Text = source.coilDiameter;
         BindPieceWeightEntry.Text = source.pieceWeight;
         BindConfirmOverlay.IsVisible = true;
     }
@@ -342,7 +351,8 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         var bound = new RawMaterialOcrDto
         {
             qrCode = _pendingQrCode,
-            materialType = string.IsNullOrWhiteSpace(materialType) ? _selectedTicket?.materialType : materialType,
+            materialClass = string.IsNullOrWhiteSpace(materialType) ? _selectedTicket?.materialClass : materialType,
+            materialType = NormalizeMaterialType(string.IsNullOrWhiteSpace(materialType) ? _selectedTicket?.materialType : materialType),
             materialCode = BindMaterialCodeEntry.Text,
             materialName = BindMaterialNameEntry.Text,
             spec = BindSpecEntry.Text,
@@ -350,10 +360,10 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             originPlace = BindOriginPlaceEntry.Text,
             pieceWeight = BindPieceWeightEntry.Text,
             pieceWeightUnit = "吨",
-            coilCount = _selectedTicket?.coilCount,
-            coilDiameter = _selectedTicket?.coilDiameter,
+            coilCount = BindCoilCountEntry.Text,
+            coilDiameter = BindCoilDiameterEntry.Text,
             ocrRawText = _selectedTicket?.ocrRawText,
-            strength = _selectedTicket?.strength
+            strength = BindStrengthEntry.Text
         };
 
         _ocrItems.Add(bound);
@@ -368,22 +378,26 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private void ShowTicketConfirmDialog(RawMaterialOcrDto ocr)
     {
         _pendingOcr = ocr;
-        MaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(ocr.materialType) ? "原料" : ocr.materialType;
+        MaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(ocr.materialClass) ? "原料" : ocr.materialClass;
         MaterialCodeEntry.Text = ocr.materialCode;
         MaterialNameEntry.Text = ocr.materialName;
         SpecEntry.Text = ocr.spec;
         FurnaceNoEntry.Text = ocr.furnaceNo;
         OriginPlaceEntry.Text = ocr.originPlace;
+        StrengthEntry.Text = ocr.strength;
+        CoilCountEntry.Text = ocr.coilCount;
+        CoilDiameterEntry.Text = ocr.coilDiameter;
         PieceWeightEntry.Text = ocr.pieceWeight;
         TicketConfirmOverlay.IsVisible = true;
     }
 
-    private void OnConfirmTicketClicked(object sender, EventArgs e)
+    private async void OnConfirmTicketClicked(object sender, EventArgs e)
     {
         var materialType = MaterialTypePicker.SelectedItem?.ToString();
         _selectedTicket = new RawMaterialOcrDto
         {
-            materialType = string.IsNullOrWhiteSpace(materialType) ? _pendingOcr?.materialType : materialType,
+            materialClass = string.IsNullOrWhiteSpace(materialType) ? _pendingOcr?.materialClass : materialType,
+            materialType = NormalizeMaterialType(string.IsNullOrWhiteSpace(materialType) ? _pendingOcr?.materialType : materialType),
             materialCode = MaterialCodeEntry.Text,
             materialName = MaterialNameEntry.Text,
             spec = SpecEntry.Text,
@@ -391,21 +405,73 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             originPlace = OriginPlaceEntry.Text,
             pieceWeight = PieceWeightEntry.Text,
             pieceWeightUnit = "吨",
-            coilCount = _pendingOcr?.coilCount,
-            coilDiameter = _pendingOcr?.coilDiameter,
+            coilCount = CoilCountEntry.Text,
+            coilDiameter = CoilDiameterEntry.Text,
             ocrRawText = _pendingOcr?.ocrRawText,
-            strength = _pendingOcr?.strength
+            strength = StrengthEntry.Text
         };
+
+        try
+        {
+            await SaveOcrIncomingImageAsync(_selectedTicket);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("保存票签失败", ex.Message, "确定");
+            return;
+        }
 
         ApplySelectedTicket(_selectedTicket);
         TicketConfirmOverlay.IsVisible = false;
+    }
+
+
+    private async Task SaveOcrIncomingImageAsync(RawMaterialOcrDto ticket)
+    {
+        if (_pendingTicketAttachment is null || string.IsNullOrWhiteSpace(_instockNo))
+        {
+            return;
+        }
+
+        var success = await _warehouseApi.SaveOcrIncomingImageAsync(new SaveOcrIncomingImageRequestDto
+        {
+            coilCount = ParseNullableInt(ticket.coilCount),
+            coilDiameter = ParseNullableDecimal(ticket.coilDiameter),
+            fileInfo = _pendingTicketAttachment,
+            furnaceNo = ticket.furnaceNo,
+            instockNo = _instockNo,
+            materialClass = ticket.materialClass,
+            materialName = ticket.materialName,
+            materialType = ticket.materialType,
+            originPlace = ticket.originPlace,
+            pieceWeight = ParseNullableDecimal(ticket.pieceWeight),
+            spec = ticket.spec,
+            strength = ticket.strength
+        });
+
+        if (success is false)
+        {
+            throw new InvalidOperationException("保存OCR识别图片接口返回失败。");
+        }
+
+        _pendingTicketAttachment = null;
+    }
+
+    private static string? NormalizeMaterialType(string? value)
+    {
+        return value switch
+        {
+            "原料" => "raw_material",
+            "半成品" => "semi_finished",
+            _ => value
+        };
     }
 
     private void ApplySelectedTicket(RawMaterialOcrDto ticket)
     {
         ExtractedTextLabel.IsVisible = false;
         SelectedTicketCard.IsVisible = true;
-        SelectedMaterialTypeLabel.Text = string.IsNullOrWhiteSpace(ticket.materialType) ? "原料" : ticket.materialType;
+        SelectedMaterialTypeLabel.Text = string.IsNullOrWhiteSpace(ticket.materialClass) ? "原料" : ticket.materialClass;
         SelectedMaterialNameLabel.Text = ticket.materialNameDisplay;
         SelectedSpecLabel.Text = ticket.specDisplay;
         SelectedFurnaceNoLabel.Text = ticket.furnaceNoDisplay;
@@ -428,6 +494,21 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private void OnCancelTicketConfirmClicked(object sender, EventArgs e) => TicketConfirmOverlay.IsVisible = false;
 
 
+    private WarehouseInfoDto? GetSelectedWarehouse()
+    {
+        if (WarehousePicker.SelectedItem is WarehouseInfoDto selected)
+        {
+            return selected;
+        }
+
+        if (WarehousePicker.SelectedIndex >= 0 && WarehousePicker.SelectedIndex < _warehouses.Count)
+        {
+            return _warehouses[WarehousePicker.SelectedIndex];
+        }
+
+        return _warehouses.FirstOrDefault();
+    }
+
     private async void OnSubmitInstockClicked(object sender, EventArgs e)
     {
         if (string.IsNullOrWhiteSpace(_instockNo))
@@ -436,9 +517,10 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             return;
         }
 
-        if (WarehousePicker.SelectedItem is not WarehouseInfoDto warehouse)
+        var warehouse = GetSelectedWarehouse();
+        if (warehouse is null || string.IsNullOrWhiteSpace(warehouse.selectedName) || string.IsNullOrWhiteSpace(warehouse.selectedCode))
         {
-            await DisplayAlert("提示", "请选择入库仓库。", "确定");
+            await DisplayAlert("提示", "请选择有效的入库仓库。", "确定");
             return;
         }
 
@@ -450,11 +532,12 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
         var missingRequired = _ocrItems.FirstOrDefault(item =>
             string.IsNullOrWhiteSpace(item.qrCode) ||
+            string.IsNullOrWhiteSpace(item.materialClass) ||
             string.IsNullOrWhiteSpace(item.materialCode) ||
             ParseWeight(item.pieceWeight) <= 0m);
         if (missingRequired is not null)
         {
-            await DisplayAlert("提示", "请确认每条明细都已填写二维码、物料编码和有效件重。", "确定");
+            await DisplayAlert("提示", "请确认每条明细都已填写二维码、物料分类、物料编码和有效件重。", "确定");
             return;
         }
 
@@ -471,8 +554,9 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                     furnaceNo = item.furnaceNo,
                     instockNo = _instockNo,
                     instockQty = ParseWeight(item.pieceWeight),
-                    instockWarehouse = warehouse.warehouseName,
-                    instockWarehouseCode = warehouse.warehouseCode,
+                    instockWarehouse = warehouse.selectedName,
+                    instockWarehouseCode = warehouse.selectedCode,
+                    materialClass = item.materialClass,
                     materialCode = item.materialCode,
                     materialName = item.materialName,
                     origin = item.originPlace,
@@ -484,7 +568,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             };
 
             var success = await _warehouseApi.QuickInstockAsync(request);
-            if (!success)
+            if (success is false)
             {
                 await DisplayAlert("提交失败", "接口返回失败，请稍后重试。", "确定");
                 return;
