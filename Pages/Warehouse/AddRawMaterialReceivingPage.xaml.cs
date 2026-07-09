@@ -440,7 +440,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             strength = ticket.strength
         });
 
-        if (!success)
+        if (success is false)
         {
             throw new InvalidOperationException("保存OCR识别图片接口返回失败。");
         }
@@ -543,7 +543,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             };
 
             var success = await _warehouseApi.QuickInstockAsync(request);
-            if (!success)
+            if (success is false)
             {
                 await DisplayAlert("提交失败", "接口返回失败，请稍后重试。", "确定");
                 return;
