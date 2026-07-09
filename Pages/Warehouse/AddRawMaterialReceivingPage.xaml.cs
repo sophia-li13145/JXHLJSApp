@@ -15,6 +15,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private RawMaterialOcrDto? _pendingOcr;
     private RawMaterialOcrDto? _selectedTicket;
     private AttachmentDto? _pendingTicketAttachment;
+    private List<WarehouseInfoDto> _warehouses = new();
     private string? _instockNo;
     private string? _pendingQrCode;
     private bool _isExistingInstock;
@@ -102,24 +103,26 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private async Task LoadWarehousesAsync()
     {
-        var warehouses = await _warehouseApi.QueryWarehouseInfoAsync();
-        WarehousePicker.ItemsSource = warehouses;
-        if (warehouses.Count > 0 && WarehousePicker.SelectedIndex < 0)
+        _warehouses = await _warehouseApi.QueryWarehouseInfoAsync();
+        WarehousePicker.ItemsSource = _warehouses;
+        if (_warehouses.Count > 0 && WarehousePicker.SelectedItem is not WarehouseInfoDto)
         {
             WarehousePicker.SelectedIndex = 0;
+            WarehousePicker.SelectedItem = _warehouses[0];
         }
     }
 
     private void SelectWarehouse(RawMaterialReceivingDetailItemDto? firstDetail)
     {
-        if (firstDetail is null || WarehousePicker.ItemsSource is not IList<WarehouseInfoDto> warehouses) return;
+        if (firstDetail is null || _warehouses.Count == 0) return;
 
-        var index = warehouses.ToList().FindIndex(warehouse =>
-            string.Equals(warehouse.warehouseCode, firstDetail.instockWarehouseCode, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(warehouse.warehouseName, firstDetail.instockWarehouse, StringComparison.OrdinalIgnoreCase));
+        var index = _warehouses.FindIndex(warehouse =>
+            string.Equals(warehouse.selectedCode, firstDetail.instockWarehouseCode, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(warehouse.selectedName, firstDetail.instockWarehouse, StringComparison.OrdinalIgnoreCase));
         if (index >= 0)
         {
             WarehousePicker.SelectedIndex = index;
+            WarehousePicker.SelectedItem = _warehouses[index];
         }
     }
 
@@ -335,6 +338,9 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         BindSpecEntry.Text = source.spec;
         BindFurnaceNoEntry.Text = source.furnaceNo;
         BindOriginPlaceEntry.Text = source.originPlace;
+        BindStrengthEntry.Text = source.strength;
+        BindCoilCountEntry.Text = source.coilCount;
+        BindCoilDiameterEntry.Text = source.coilDiameter;
         BindPieceWeightEntry.Text = source.pieceWeight;
         BindConfirmOverlay.IsVisible = true;
     }
@@ -354,10 +360,10 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             originPlace = BindOriginPlaceEntry.Text,
             pieceWeight = BindPieceWeightEntry.Text,
             pieceWeightUnit = "吨",
-            coilCount = _selectedTicket?.coilCount,
-            coilDiameter = _selectedTicket?.coilDiameter,
+            coilCount = BindCoilCountEntry.Text,
+            coilDiameter = BindCoilDiameterEntry.Text,
             ocrRawText = _selectedTicket?.ocrRawText,
-            strength = _selectedTicket?.strength
+            strength = BindStrengthEntry.Text
         };
 
         _ocrItems.Add(bound);
@@ -378,6 +384,9 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         SpecEntry.Text = ocr.spec;
         FurnaceNoEntry.Text = ocr.furnaceNo;
         OriginPlaceEntry.Text = ocr.originPlace;
+        StrengthEntry.Text = ocr.strength;
+        CoilCountEntry.Text = ocr.coilCount;
+        CoilDiameterEntry.Text = ocr.coilDiameter;
         PieceWeightEntry.Text = ocr.pieceWeight;
         TicketConfirmOverlay.IsVisible = true;
     }
@@ -396,10 +405,10 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             originPlace = OriginPlaceEntry.Text,
             pieceWeight = PieceWeightEntry.Text,
             pieceWeightUnit = "吨",
-            coilCount = _pendingOcr?.coilCount,
-            coilDiameter = _pendingOcr?.coilDiameter,
+            coilCount = CoilCountEntry.Text,
+            coilDiameter = CoilDiameterEntry.Text,
             ocrRawText = _pendingOcr?.ocrRawText,
-            strength = _pendingOcr?.strength
+            strength = StrengthEntry.Text
         };
 
         try
@@ -485,6 +494,21 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private void OnCancelTicketConfirmClicked(object sender, EventArgs e) => TicketConfirmOverlay.IsVisible = false;
 
 
+    private WarehouseInfoDto? GetSelectedWarehouse()
+    {
+        if (WarehousePicker.SelectedItem is WarehouseInfoDto selected)
+        {
+            return selected;
+        }
+
+        if (WarehousePicker.SelectedIndex >= 0 && WarehousePicker.SelectedIndex < _warehouses.Count)
+        {
+            return _warehouses[WarehousePicker.SelectedIndex];
+        }
+
+        return _warehouses.FirstOrDefault();
+    }
+
     private async void OnSubmitInstockClicked(object sender, EventArgs e)
     {
         if (string.IsNullOrWhiteSpace(_instockNo))
@@ -493,9 +517,10 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             return;
         }
 
-        if (WarehousePicker.SelectedItem is not WarehouseInfoDto warehouse)
+        var warehouse = GetSelectedWarehouse();
+        if (warehouse is null || string.IsNullOrWhiteSpace(warehouse.selectedName) || string.IsNullOrWhiteSpace(warehouse.selectedCode))
         {
-            await DisplayAlert("提示", "请选择入库仓库。", "确定");
+            await DisplayAlert("提示", "请选择有效的入库仓库。", "确定");
             return;
         }
 
@@ -529,8 +554,8 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                     furnaceNo = item.furnaceNo,
                     instockNo = _instockNo,
                     instockQty = ParseWeight(item.pieceWeight),
-                    instockWarehouse = warehouse.warehouseName,
-                    instockWarehouseCode = warehouse.warehouseCode,
+                    instockWarehouse = warehouse.selectedName,
+                    instockWarehouseCode = warehouse.selectedCode,
                     materialClass = item.materialClass,
                     materialCode = item.materialCode,
                     materialName = item.materialName,
