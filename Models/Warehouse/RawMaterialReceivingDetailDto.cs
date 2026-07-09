@@ -49,6 +49,7 @@ public sealed class RawMaterialReceivingDetailItemDto
     public string? instockWarehouseCode { get; set; }
     public string? location { get; set; }
     public string? manufactureName { get; set; }
+    public string? materialClass { get; set; }
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
     public string? memo { get; set; }
@@ -71,7 +72,7 @@ public sealed class RawMaterialReceivingDetailItemDto
     public string strengthDisplay => FirstNonEmpty(pieceWeight?.ToString("0.##"), "--");
     public string coilCountDisplay => FirstNonEmpty(count?.ToString("0.##"), "--");
     public string pieceWeightDisplay => JoinNonEmpty(FirstNonEmpty(instockQty?.ToString("0.##"), weight), unit);
-    public string materialTypeDisplay => FirstNonEmpty(manufactureName, "原料");
+    public string materialTypeDisplay => FirstNonEmpty(materialClass, manufactureName, "原料");
 
     private static string JoinNonEmpty(params string?[] values)
     {
@@ -91,6 +92,7 @@ public sealed class RawMaterialReceivingOcrDto
     public string? furnaceNo { get; set; }
     public string? id { get; set; }
     public string? instockNo { get; set; }
+    public string? materialClass { get; set; }
     public string? materialName { get; set; }
     public string? materialType { get; set; }
     public string? memo { get; set; }

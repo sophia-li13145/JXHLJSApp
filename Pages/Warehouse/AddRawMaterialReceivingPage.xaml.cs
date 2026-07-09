@@ -14,6 +14,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private readonly ObservableCollection<MaterialSummaryItem> _summaryItems = new();
     private RawMaterialOcrDto? _pendingOcr;
     private RawMaterialOcrDto? _selectedTicket;
+    private AttachmentDto? _pendingTicketAttachment;
     private string? _instockNo;
     private string? _pendingQrCode;
     private bool _isExistingInstock;
@@ -136,6 +137,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             coilCount = FormatDecimal(firstOcr.coilCount),
             coilDiameter = FormatDecimal(firstOcr.coilDiameter),
             furnaceNo = firstOcr.furnaceNo,
+            materialClass = firstOcr.materialClass,
             materialName = firstOcr.materialName,
             materialType = firstOcr.materialType,
             ocrRawText = firstOcr.ocrRawText,
@@ -158,6 +160,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                 qrCode = FirstNonEmpty(item.qrCode, item.coilNo, item.id),
                 coilCount = FormatDecimal(item.count),
                 furnaceNo = item.furnaceNo,
+                materialClass = item.materialClass,
                 materialCode = item.materialCode,
                 materialName = item.materialName,
                 materialType = item.materialTypeDisplay,
@@ -185,7 +188,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             var photo = await GetTicketPhotoAsync();
             if (photo is null) return;
 
-            _ = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
+            _pendingTicketAttachment = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
 
             // OCR 识别接口暂不参与当前联调，附件上传成功后先进入手动录入流程。
             ShowTicketConfirmDialog(new RawMaterialOcrDto());
@@ -327,7 +330,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         _pendingQrCode = qrCode;
         BindQrCodeEntry.Text = qrCode;
         BindMaterialCodeEntry.Text = source.materialCode;
-        BindMaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(source.materialType) ? "原料" : source.materialType;
+        BindMaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(source.materialClass) ? "原料" : source.materialClass;
         BindMaterialNameEntry.Text = source.materialName;
         BindSpecEntry.Text = source.spec;
         BindFurnaceNoEntry.Text = source.furnaceNo;
@@ -342,7 +345,8 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         var bound = new RawMaterialOcrDto
         {
             qrCode = _pendingQrCode,
-            materialType = string.IsNullOrWhiteSpace(materialType) ? _selectedTicket?.materialType : materialType,
+            materialClass = string.IsNullOrWhiteSpace(materialType) ? _selectedTicket?.materialClass : materialType,
+            materialType = NormalizeMaterialType(string.IsNullOrWhiteSpace(materialType) ? _selectedTicket?.materialType : materialType),
             materialCode = BindMaterialCodeEntry.Text,
             materialName = BindMaterialNameEntry.Text,
             spec = BindSpecEntry.Text,
@@ -368,7 +372,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private void ShowTicketConfirmDialog(RawMaterialOcrDto ocr)
     {
         _pendingOcr = ocr;
-        MaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(ocr.materialType) ? "原料" : ocr.materialType;
+        MaterialTypePicker.SelectedItem = string.IsNullOrWhiteSpace(ocr.materialClass) ? "原料" : ocr.materialClass;
         MaterialCodeEntry.Text = ocr.materialCode;
         MaterialNameEntry.Text = ocr.materialName;
         SpecEntry.Text = ocr.spec;
@@ -378,12 +382,13 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         TicketConfirmOverlay.IsVisible = true;
     }
 
-    private void OnConfirmTicketClicked(object sender, EventArgs e)
+    private async void OnConfirmTicketClicked(object sender, EventArgs e)
     {
         var materialType = MaterialTypePicker.SelectedItem?.ToString();
         _selectedTicket = new RawMaterialOcrDto
         {
-            materialType = string.IsNullOrWhiteSpace(materialType) ? _pendingOcr?.materialType : materialType,
+            materialClass = string.IsNullOrWhiteSpace(materialType) ? _pendingOcr?.materialClass : materialType,
+            materialType = NormalizeMaterialType(string.IsNullOrWhiteSpace(materialType) ? _pendingOcr?.materialType : materialType),
             materialCode = MaterialCodeEntry.Text,
             materialName = MaterialNameEntry.Text,
             spec = SpecEntry.Text,
@@ -397,15 +402,67 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             strength = _pendingOcr?.strength
         };
 
+        try
+        {
+            await SaveOcrIncomingImageAsync(_selectedTicket);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("保存票签失败", ex.Message, "确定");
+            return;
+        }
+
         ApplySelectedTicket(_selectedTicket);
         TicketConfirmOverlay.IsVisible = false;
+    }
+
+
+    private async Task SaveOcrIncomingImageAsync(RawMaterialOcrDto ticket)
+    {
+        if (_pendingTicketAttachment is null || string.IsNullOrWhiteSpace(_instockNo))
+        {
+            return;
+        }
+
+        var success = await _warehouseApi.SaveOcrIncomingImageAsync(new SaveOcrIncomingImageRequestDto
+        {
+            coilCount = ParseNullableInt(ticket.coilCount),
+            coilDiameter = ParseNullableDecimal(ticket.coilDiameter),
+            fileInfo = _pendingTicketAttachment,
+            furnaceNo = ticket.furnaceNo,
+            instockNo = _instockNo,
+            materialClass = ticket.materialClass,
+            materialName = ticket.materialName,
+            materialType = ticket.materialType,
+            originPlace = ticket.originPlace,
+            pieceWeight = ParseNullableDecimal(ticket.pieceWeight),
+            spec = ticket.spec,
+            strength = ticket.strength
+        });
+
+        if (!success)
+        {
+            throw new InvalidOperationException("保存OCR识别图片接口返回失败。");
+        }
+
+        _pendingTicketAttachment = null;
+    }
+
+    private static string? NormalizeMaterialType(string? value)
+    {
+        return value switch
+        {
+            "原料" => "raw_material",
+            "半成品" => "semi_finished",
+            _ => value
+        };
     }
 
     private void ApplySelectedTicket(RawMaterialOcrDto ticket)
     {
         ExtractedTextLabel.IsVisible = false;
         SelectedTicketCard.IsVisible = true;
-        SelectedMaterialTypeLabel.Text = string.IsNullOrWhiteSpace(ticket.materialType) ? "原料" : ticket.materialType;
+        SelectedMaterialTypeLabel.Text = string.IsNullOrWhiteSpace(ticket.materialClass) ? "原料" : ticket.materialClass;
         SelectedMaterialNameLabel.Text = ticket.materialNameDisplay;
         SelectedSpecLabel.Text = ticket.specDisplay;
         SelectedFurnaceNoLabel.Text = ticket.furnaceNoDisplay;
@@ -450,11 +507,12 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
         var missingRequired = _ocrItems.FirstOrDefault(item =>
             string.IsNullOrWhiteSpace(item.qrCode) ||
+            string.IsNullOrWhiteSpace(item.materialClass) ||
             string.IsNullOrWhiteSpace(item.materialCode) ||
             ParseWeight(item.pieceWeight) <= 0m);
         if (missingRequired is not null)
         {
-            await DisplayAlert("提示", "请确认每条明细都已填写二维码、物料编码和有效件重。", "确定");
+            await DisplayAlert("提示", "请确认每条明细都已填写二维码、物料分类、物料编码和有效件重。", "确定");
             return;
         }
 
@@ -473,6 +531,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                     instockQty = ParseWeight(item.pieceWeight),
                     instockWarehouse = warehouse.warehouseName,
                     instockWarehouseCode = warehouse.warehouseCode,
+                    materialClass = item.materialClass,
                     materialCode = item.materialCode,
                     materialName = item.materialName,
                     origin = item.originPlace,
