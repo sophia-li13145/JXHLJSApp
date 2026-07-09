@@ -25,8 +25,8 @@ public sealed class DeliveryOrderDetailDto
     public string logisticsNumberDisplay => ValueOrDash(logisticsNumber);
     public string expectedDeliveryDateDisplay => FormatDate(expectedDeliveryTime);
     public string auditStatusDisplay => string.IsNullOrWhiteSpace(auditStatus) ? "待发货复核" : auditStatus!;
-    public int needScanCount => detailList?.Count ?? 0;
-    public int scannedCount => detailList?.Count(item => item.isScanned) ?? 0;
+    public int? needScanCount => detailList?.Count ?? 0;
+    public int? scannedCount => detailList?.Count(item => item.isScanned) ?? 0;
     public string scanProgressDisplay => $"{scannedCount} / {needScanCount} 件";
 
     private static string ValueOrDash(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;

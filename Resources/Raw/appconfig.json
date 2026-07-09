@@ -125,7 +125,7 @@
       "queryByCode": "/pda/wmsWarehouse/queryLocationByWarehouseCode"
     },
     "materialQrCode": {
-      "scanQueryMaterialInfo": "/pda/wmsMaterialQrCode/scanQueryMaterialInfo"
+      "scanQueryMaterialInfo": "/pda/pmsWorkOrder/scanInputQrCode"
     },
     "machineBind": {
       "scanToWork": "/pda/devUserMachineBindRecord/scanToWork"

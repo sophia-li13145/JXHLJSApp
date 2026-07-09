@@ -77,7 +77,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
         _dictListEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.dictList", "/pda/pmsWorkOrder/getWorkOrderDictList"), servicePath);
         _materialQrCodeEndpoint = ServiceUrlHelper.NormalizeRelative(
-            configLoader.GetApiPath("materialQrCode.scanQueryMaterialInfo", "/pda/wmsMaterialQrCode/scanQueryMaterialInfo"), servicePath);
+            configLoader.GetApiPath("materialQrCode.scanQueryMaterialInfo", "/pda/pmsWorkOrder/scanInputQrCode"), servicePath);
         _confirmInputEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.confirmInput", "/pda/pmsWorkOrder/confirmInput"), servicePath);
         _abnormalDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -217,8 +217,11 @@ public sealed class WorkOrderApi : IWorkOrderApi
 
     public async Task<MaterialQrCodeInfoDto> ScanQueryMaterialInfoAsync(string qrCode, CancellationToken ct = default)
     {
-        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _materialQrCodeEndpoint);
-        using var resp = await _http.PostAsJsonAsync(url, new { qrCode }, JsonOptions, ct).ConfigureAwait(false);
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_materialQrCodeEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(qrCode)] = qrCode
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<MaterialQrCodeInfoDto>>(stream, JsonOptions, ct).ConfigureAwait(false);

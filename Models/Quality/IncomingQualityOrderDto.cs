@@ -43,7 +43,7 @@ public sealed class IncomingQualityOrderDetailDto
     public string incomingQualityNoDisplay => string.IsNullOrWhiteSpace(incomingQualityNo) ? "-" : incomingQualityNo!;
     public string instockNoDisplay => string.IsNullOrWhiteSpace(instockNo) ? "-" : instockNo!;
     public string statusDisplay => string.IsNullOrWhiteSpace(delStatusName) ? (delStatus ?? "未提交") : delStatusName!;
-    public int scanCount => detailList?.Count ?? 0;
+    public int? scanCount => detailList?.Count ?? 0;
 }
 
 public sealed class IncomingQualityScanDetailDto
