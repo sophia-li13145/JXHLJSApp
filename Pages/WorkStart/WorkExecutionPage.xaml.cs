@@ -106,6 +106,29 @@ public partial class WorkExecutionPage : ContentPage
         await Shell.Current.GoToAsync(AppShell.RouteMaterialLoading, query);
     }
 
+    private async void OnMaterialUnloadingTapped(object sender, TappedEventArgs e)
+    {
+        try
+        {
+            var query = new Dictionary<string, object>();
+            if (!string.IsNullOrWhiteSpace(_workOrderId))
+            {
+                query["id"] = _workOrderId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_workOrderNo))
+            {
+                query["workOrderNo"] = _workOrderNo;
+            }
+
+            await Shell.Current.GoToAsync(AppShell.RouteMaterialUnloading, query);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("跳转失败", ex.Message, "确定");
+        }
+    }
+
     private async void OnAbnormalReportTapped(object sender, TappedEventArgs e)
     {
         var query = new Dictionary<string, object>();
