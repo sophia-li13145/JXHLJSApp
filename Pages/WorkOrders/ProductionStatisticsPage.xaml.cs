@@ -34,7 +34,6 @@ public partial class ProductionStatisticsPage : ContentPage
         {
             RefreshContainer.IsRefreshing = true;
             _statistics = await _workOrderApi.GetProductionStatisticsAsync(_month);
-            _month = string.IsNullOrWhiteSpace(_statistics?.month) ? _month : _statistics!.month!;
             BuildContent();
         }
         catch (Exception ex)
@@ -77,20 +76,27 @@ public partial class ProductionStatisticsPage : ContentPage
                 BorderColor = Color.FromArgb("#D6E0EC"),
                 BorderWidth = selected ? 0 : 1
             };
-            button.Clicked += async (_, _) =>
-            {
-                _month = month.Value;
-                await LoadStatisticsAsync();
-            };
+            button.Clicked += async (_, _) => await SelectMonthAndReloadAsync(month.Value);
             row.Children.Add(button);
         }
         ContentStack.Children.Add(row);
     }
 
+    private async Task SelectMonthAndReloadAsync(string month)
+    {
+        if (string.IsNullOrWhiteSpace(month))
+        {
+            return;
+        }
+
+        _month = month;
+        await LoadStatisticsAsync();
+    }
+
     private IReadOnlyList<(string Label, string Value)> BuildMonthOptions()
     {
         var apiMonths = _statistics?.dateList?
-            .Select(item => (Label: BuildMonthLabel(item), Value: NormalizeMonthValue(item)))
+            .Select(item => (Label: BuildMonthLabel(item), Value: BuildMonthRequestValue(item)))
             .Where(item => !string.IsNullOrWhiteSpace(item.Value))
             .DistinctBy(item => item.Value)
             .ToList();
@@ -115,21 +121,55 @@ public partial class ProductionStatisticsPage : ContentPage
             return item.monthName!;
         }
 
-        var value = NormalizeMonthValue(item);
+        var value = NormalizeMonth(item.date);
         return DateTime.TryParseExact(value, "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
             ? $"{date.Month}月"
             : value;
     }
 
-    private static string NormalizeMonthValue(ProductionStatisticsDateDto item)
+    private string BuildMonthRequestValue(ProductionStatisticsDateDto item)
     {
-        var raw = FirstNonEmpty(item.date, item.monthName);
-        if (DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        var normalizedDate = NormalizeMonth(item.date);
+        if (!string.IsNullOrWhiteSpace(normalizedDate))
+        {
+            return normalizedDate;
+        }
+
+        return NormalizeMonthName(item.monthName, _month);
+    }
+
+    private static string NormalizeMonth(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
         {
             return date.ToString("yyyy-MM", CultureInfo.InvariantCulture);
         }
 
-        return raw;
+        return value;
+    }
+
+    private static string NormalizeMonthName(string? monthName, string currentMonth)
+    {
+        if (string.IsNullOrWhiteSpace(monthName))
+        {
+            return string.Empty;
+        }
+
+        var digits = new string(monthName.Where(char.IsDigit).ToArray());
+        if (!int.TryParse(digits, out var month) || month < 1 || month > 12)
+        {
+            return NormalizeMonth(monthName);
+        }
+
+        var year = DateTime.TryParseExact(currentMonth, "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out var current)
+            ? current.Year
+            : DateTime.Today.Year;
+        return new DateTime(year, month, 1).ToString("yyyy-MM", CultureInfo.InvariantCulture);
     }
 
     private void AddSummaryCard()
