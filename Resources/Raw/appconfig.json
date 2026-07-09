@@ -91,6 +91,7 @@
       "currentTaskPool": "/pda/pmsWorkOrder/getCurrentTaskPool",
       "inputOutput": "/pda/pmsWorkOrder/getWorkOrderInputOutput",
       "confirmInput": "/pda/pmsWorkOrder/confirmInput",
+      "confirmOutput": "/pda/pmsWorkOrder/confirmOutput",
       "confirmCompletion": "/pda/pmsWorkOrder/confirmCompletion",
       "page": "/pda/pmsWorkOrder/pageWorkOrders",
       "workflow": "/pda/pmsWorkOrder/getWorkOrderWorkflow",

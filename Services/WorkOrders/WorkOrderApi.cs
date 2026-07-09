@@ -19,6 +19,7 @@ public interface IWorkOrderApi
     Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(string workOrderNo, CancellationToken ct = default);
     Task<MaterialQrCodeInfoDto> ScanQueryMaterialInfoAsync(string qrCode, CancellationToken ct = default);
     Task<bool> ConfirmMaterialInputAsync(MaterialInputConfirmDto input, CancellationToken ct = default);
+    Task<bool> ConfirmMaterialOutputAsync(MaterialOutputConfirmDto output, CancellationToken ct = default);
     Task<List<WorkOrderAbnormalOptionDto>> GetAbnormalTypeOptionsAsync(CancellationToken ct = default);
     Task<List<WorkOrderAbnormalOptionDto>> GetReworkReasonOptionsAsync(CancellationToken ct = default);
     Task<MaterialQrCodeInfoDto> ScanAbnormalMaterialAsync(string qrCode, CancellationToken ct = default);
@@ -44,6 +45,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _dictListEndpoint;
     private readonly string _materialQrCodeEndpoint;
     private readonly string _confirmInputEndpoint;
+    private readonly string _confirmOutputEndpoint;
     private readonly string _abnormalDictListEndpoint;
     private readonly string _abnormalAddEndpoint;
     private readonly string _abnormalScanQrCodeEndpoint;
@@ -80,6 +82,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
             configLoader.GetApiPath("materialQrCode.scanQueryMaterialInfo", "/pda/pmsWorkOrder/scanInputQrCode"), servicePath);
         _confirmInputEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.confirmInput", "/pda/pmsWorkOrder/confirmInput"), servicePath);
+        _confirmOutputEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrder.confirmOutput", "/pda/pmsWorkOrder/confirmOutput"), servicePath);
         _abnormalDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrderAbnormalRecord.getDictList", "/pda/qsWorkOrderAbnormalRecord/getDictList"), servicePath);
         _abnormalAddEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -234,6 +238,17 @@ public sealed class WorkOrderApi : IWorkOrderApi
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _confirmInputEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, input, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return ReadFlexibleBooleanResult(data);
+    }
+
+    public async Task<bool> ConfirmMaterialOutputAsync(MaterialOutputConfirmDto output, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _confirmOutputEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, output, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
@@ -517,4 +532,13 @@ public sealed class MaterialInputConfirmDto
     public string? spec { get; set; }
     public string? stockBatch { get; set; }
     public string? workOrderCode { get; set; }
+}
+
+public sealed class MaterialOutputConfirmDto
+{
+    public decimal? outputLength { get; set; }
+    public decimal? pieceWeight { get; set; }
+    public string? productInspectStatus { get; set; }
+    public string? qrCode { get; set; }
+    public string? workOrderNo { get; set; }
 }

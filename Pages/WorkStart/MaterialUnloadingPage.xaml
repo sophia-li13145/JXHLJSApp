@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.WorkStart.MaterialUnloadingPage"
+             BackgroundColor="#F4F6FA"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="20,18,20,14" HeightRequest="66">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,18,18" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Label Text="‹ 返回" TextColor="White" FontSize="15" VerticalOptions="Center">
+                    <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers>
+                </Label>
+                <Label Grid.Column="1" Text="下料作业" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" />
+                <BoxView Grid.Column="2" WidthRequest="48" Opacity="0" />
+            </Grid>
+        </Border>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="22,18,22,28" Spacing="14">
+                <Border x:Name="ScanPanel" BackgroundColor="#EEF6FF" Stroke="#244B88" StrokeThickness="2" StrokeDashArray="6,4" Padding="24" HeightRequest="228">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanPanelTapped" /></Border.GestureRecognizers>
+                    <VerticalStackLayout Spacing="18" HorizontalOptions="Center" VerticalOptions="Center">
+                        <Label x:Name="ScanIconLabel" Text="▣" TextColor="#5A4773" FontSize="48" HorizontalTextAlignment="Center" />
+                        <Label x:Name="ScanTitleLabel" Text="1. 扫描机台二维码" TextColor="#001431" FontSize="16" HorizontalTextAlignment="Center" />
+                        <Label x:Name="ScanHintLabel" Text="" TextColor="#0057FF" FontSize="16" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border x:Name="ManualMachinePanel" BackgroundColor="White" Stroke="#DDE6F1" StrokeThickness="1" Padding="12">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="测试用：手动输入机台码" TextColor="#0B3D8B" FontSize="15" FontAttributes="Bold" />
+                        <Grid ColumnDefinitions="*,72" ColumnSpacing="10" VerticalOptions="Center">
+                            <Entry x:Name="MachineCodeEntry" Placeholder="输入机台码后确认" PlaceholderColor="#7A8797" FontSize="15" BackgroundColor="#F8FAFD" Completed="OnManualMachineCompleted" />
+                            <Button Grid.Column="1" Text="确认" FontSize="16" FontAttributes="Bold" BackgroundColor="#244B88" TextColor="White" CornerRadius="10" Padding="0" Clicked="OnManualMachineConfirmClicked" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border x:Name="SuccessBanner" IsVisible="False" BackgroundColor="#F0FFF7" Stroke="#9BE7B4" StrokeThickness="1" Padding="18,14">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                    <Label Text="✅ 扫码成功，已记录下料信息！" TextColor="#168A3A" FontSize="15" />
+                </Border>
+
+                <Border x:Name="ResultCard" IsVisible="False" BackgroundColor="White" StrokeThickness="0" Padding="20,18">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="14">
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <Button Text="返工上报" BackgroundColor="#FF9800" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="46" Clicked="OnReworkReportClicked" />
+                            <Button Grid.Column="1" Text="异常上报" BackgroundColor="#F43F4B" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="46" Clicked="OnAbnormalReportClicked" />
+                        </Grid>
+                        <Label Text="产品检验状态（系统智能判定）*" TextColor="#001431" FontSize="14" FontAttributes="Bold" />
+                        <Border BackgroundColor="#F4F7FB" Stroke="#D8E3F3" Padding="12" HeightRequest="46"><Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape><Label x:Name="InspectStatusLabel" Text="合格品" TextColor="#00A86B" FontAttributes="Bold" VerticalTextAlignment="Center" /></Border>
+                        <Label Text="产出长度（m）*" TextColor="#001431" FontSize="14" FontAttributes="Bold" />
+                        <Border BackgroundColor="#F4F7FB" Stroke="#D8E3F3" Padding="12" HeightRequest="46"><Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape><Label x:Name="OutputLengthLabel" TextColor="#001431" FontAttributes="Bold" VerticalTextAlignment="Center" /></Border>
+                        <Label Text="件重（KG）*" TextColor="#001431" FontSize="14" FontAttributes="Bold" />
+                        <Border BackgroundColor="#F4F7FB" Stroke="#D8E3F3" Padding="12" HeightRequest="46"><Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape><Label x:Name="PieceWeightLabel" TextColor="#001431" FontAttributes="Bold" VerticalTextAlignment="Center" /></Border>
+                        <Label Text="上下料对照" TextColor="#001431" FontSize="17" FontAttributes="Bold" />
+                        <BoxView HeightRequest="1" Color="#DDE6F1" />
+                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="92,*" RowSpacing="0" ColumnSpacing="10">
+                            <Label Text="下料物料" TextColor="#4B6688" Padding="0,10" /><Label x:Name="MaterialCodeLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="1" Text="机台" TextColor="#4B6688" Padding="0,10" /><Label x:Name="SteelGradeLabel" Grid.Row="1" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="2" Text="产地" TextColor="#4B6688" Padding="0,10" /><Label x:Name="OriginPlaceLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="3" Text="规格" TextColor="#4B6688" Padding="0,10" /><Label x:Name="SpecLabel" Grid.Row="3" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="4" Text="件重 (KG)" TextColor="#4B6688" Padding="0,10" /><Label x:Name="WeightLabel" Grid.Row="4" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="5" Text="长度 (米)" TextColor="#4B6688" Padding="0,10" /><Label x:Name="LengthLabel" Grid.Row="5" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
+                        </Grid>
+                        <Button x:Name="ConfirmButton" Text="确认提交下料" BackgroundColor="#244B88" TextColor="White" FontSize="17" FontAttributes="Bold" CornerRadius="10" HeightRequest="54" Clicked="OnConfirmBackClicked" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

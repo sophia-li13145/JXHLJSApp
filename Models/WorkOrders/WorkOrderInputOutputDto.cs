@@ -6,6 +6,17 @@ public sealed class WorkOrderInputOutputDto
     public string? workOrderNo { get; set; }
     public string? workOrderStatus { get; set; }
     public string? machineNo { get; set; }
+    public string? customerCode { get; set; }
+    public string? inputMaterialCode { get; set; }
+    public string? inputMaterialName { get; set; }
+    public string? inputOriginPlace { get; set; }
+    public string? inputSpecification { get; set; }
+    public string? outputMaterialCode { get; set; }
+    public string? outputMaterialName { get; set; }
+    public string? outputOriginPlace { get; set; }
+    public string? outputSpecification { get; set; }
+    public string? wireTakeUpLength { get; set; }
+    public decimal? currentSequenceNo { get; set; }
     public string? machineType { get; set; }
     public string? deviceName { get; set; }
     public string? operationName { get; set; }
@@ -24,6 +35,8 @@ public sealed class WorkOrderInputOutputDto
     public string completedWeightDisplay => FormatProgress(completedWeight, productionWeight ?? plannedWeight, "吨");
     public string completedQuantityDisplay => FormatProgress(completedQuantity, productionQuantity ?? plannedQuantity, "件");
     public string moldSequenceDisplay => string.IsNullOrWhiteSpace(moldSequence) ? "--" : moldSequence;
+    public string inputMaterialDisplay => FirstNonEmpty(inputMaterialCode, inputMaterialName);
+    public string outputMaterialDisplay => FirstNonEmpty(outputMaterialCode, outputMaterialName);
 
     private static string FirstNonEmpty(params string?[] values)
     {
