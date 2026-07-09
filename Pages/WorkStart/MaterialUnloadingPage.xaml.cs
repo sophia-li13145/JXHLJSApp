@@ -125,12 +125,11 @@ public partial class MaterialUnloadingPage : ContentPage
         {
             _isBusy = true;
             _lastMaterialQrCode = code.Trim();
-            var material = await _workOrderApi.ScanQueryMaterialInfoAsync(_lastMaterialQrCode);
             var inputOutputs = string.IsNullOrWhiteSpace(_workOrderNo)
                 ? new List<WorkOrderInputOutputDto>()
                 : await _workOrderApi.GetWorkOrderInputOutputAsync(_workOrderNo);
             _inputOutput = inputOutputs.FirstOrDefault();
-            BindMaterial(material, _inputOutput);
+            BindInputOutput(_inputOutput);
             ShowResultStep();
         }
         catch (Exception ex)
@@ -158,28 +157,28 @@ public partial class MaterialUnloadingPage : ContentPage
         ResultCard.IsVisible = true;
     }
 
-    private void BindMaterial(MaterialQrCodeInfoDto material, WorkOrderInputOutputDto? inputOutput)
+    private void BindInputOutput(WorkOrderInputOutputDto? inputOutput)
     {
-        var outputLength = material.length ?? TryParseDecimal(inputOutput?.wireTakeUpLength);
-        var pieceWeight = material.weight;
+        var outputLength = TryParseDecimal(inputOutput?.wireTakeUpLength);
+        var pieceWeight = CalculatePieceWeight(outputLength, inputOutput?.outputSpecification);
         _confirmOutput = new MaterialOutputConfirmDto
         {
             outputLength = outputLength,
             pieceWeight = pieceWeight,
             productInspectStatus = "合格品",
-            qrCode = string.IsNullOrWhiteSpace(material.qrCode) ? _lastMaterialQrCode : material.qrCode,
+            qrCode = _lastMaterialQrCode,
             workOrderNo = _workOrderNo
         };
 
-        InspectStatusLabel.Text = _confirmOutput.productInspectStatus;
-        OutputLengthLabel.Text = FormatDecimal(outputLength);
-        PieceWeightLabel.Text = FormatDecimal(pieceWeight);
-        MaterialCodeLabel.Text = ValueOrDash(FirstNonEmpty(inputOutput?.outputMaterialCode, material.materialCode));
+        InspectStatusEntry.Text = _confirmOutput.productInspectStatus;
+        OutputLengthEntry.Text = FormatDecimalInput(outputLength);
+        PieceWeightEntry.Text = FormatDecimalInput(pieceWeight);
+        MaterialCodeLabel.Text = ValueOrDash(inputOutput?.outputMaterialCode);
         SteelGradeLabel.Text = ValueOrDash(inputOutput?.machineNo);
-        OriginPlaceLabel.Text = ValueOrDash(FirstNonEmpty(inputOutput?.customerCode, inputOutput?.outputOriginPlace, material.originPlace));
-        SpecLabel.Text = ValueOrDash(FirstNonEmpty(inputOutput?.outputSpecification, material.specification, material.spec));
-        WeightLabel.Text = FormatDecimalWithUnit(pieceWeight, FirstNonEmpty(material.weightUnit, material.unit, "KG"));
-        LengthLabel.Text = FormatDecimalWithUnit(outputLength, FirstNonEmpty(material.lengthUnit, "m"));
+        OriginPlaceLabel.Text = ValueOrDash(FirstNonEmpty(inputOutput?.customerCode, inputOutput?.outputOriginPlace));
+        SpecLabel.Text = ValueOrDash(inputOutput?.outputSpecification);
+        WeightLabel.Text = FormatDecimalWithUnit(pieceWeight, "KG");
+        LengthLabel.Text = FormatDecimalWithUnit(outputLength, "m");
     }
 
     private async void OnConfirmBackClicked(object sender, EventArgs e)
@@ -192,6 +191,8 @@ public partial class MaterialUnloadingPage : ContentPage
             return;
         }
 
+        ApplyManualOutputValues();
+
         if (string.IsNullOrWhiteSpace(_confirmOutput.qrCode))
         {
             await DisplayAlert("提示", "二维码为空，无法确认下料。", "确定");
@@ -201,6 +202,24 @@ public partial class MaterialUnloadingPage : ContentPage
         if (string.IsNullOrWhiteSpace(_confirmOutput.workOrderNo))
         {
             await DisplayAlert("提示", "工单号为空，无法确认下料。", "确定");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_confirmOutput.productInspectStatus))
+        {
+            await DisplayAlert("提示", "请输入产品检验状态。", "确定");
+            return;
+        }
+
+        if (!_confirmOutput.outputLength.HasValue)
+        {
+            await DisplayAlert("提示", "请输入产出长度。", "确定");
+            return;
+        }
+
+        if (!_confirmOutput.pieceWeight.HasValue)
+        {
+            await DisplayAlert("提示", "请输入件重。", "确定");
             return;
         }
 
@@ -258,6 +277,32 @@ public partial class MaterialUnloadingPage : ContentPage
 
     private static string FormatDecimal(decimal? value) => value.HasValue ? value.Value.ToString("0.##") : "--";
 
+    private static string FormatDecimalInput(decimal? value) => value.HasValue ? value.Value.ToString("0.##") : string.Empty;
+
     private static decimal? TryParseDecimal(string? value) =>
         decimal.TryParse(value, out var result) ? result : null;
+
+    private void OnManualOutputCompleted(object sender, EventArgs e) => ApplyManualOutputValues();
+
+    private void ApplyManualOutputValues()
+    {
+        if (_confirmOutput is null)
+        {
+            return;
+        }
+
+        _confirmOutput.productInspectStatus = string.IsNullOrWhiteSpace(InspectStatusEntry.Text)
+            ? null
+            : InspectStatusEntry.Text.Trim();
+        _confirmOutput.outputLength = TryParseDecimal(OutputLengthEntry.Text);
+        _confirmOutput.pieceWeight = TryParseDecimal(PieceWeightEntry.Text);
+    }
+
+    private static decimal? CalculatePieceWeight(decimal? outputLength, string? outputSpecification)
+    {
+        var spec = TryParseDecimal(outputSpecification);
+        return outputLength.HasValue && spec.HasValue
+            ? Math.Round(outputLength.Value * 0.00617m * spec.Value, 2)
+            : null;
+    }
 }
