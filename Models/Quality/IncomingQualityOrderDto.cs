@@ -7,6 +7,7 @@ public sealed class IncomingQualityOrderDto
     public string? instockNo { get; set; }
     public string? materialNames { get; set; }
     public string? status { get; set; }
+    public string? statusName { get; set; }
     public int? total { get; set; }
     public string? delStatus { get; set; }
     public string? delStatusName { get; set; }
@@ -16,7 +17,7 @@ public sealed class IncomingQualityOrderDto
 
     public string incomingQualityNoDisplay => string.IsNullOrWhiteSpace(incomingQualityNo) ? "未生成来料质检单" : incomingQualityNo!;
     public string instockNoDisplay => string.IsNullOrWhiteSpace(instockNo) ? "-" : instockNo!;
-    public string statusDisplay => FirstNonEmpty(status, delStatusName, delStatus, "未提交");
+    public string statusDisplay => FirstNonEmpty(statusName, delStatusName, status, delStatus, "未提交");
     public string statusBackground => statusDisplay switch
     {
         "待质检" => "#FFF6E8",
