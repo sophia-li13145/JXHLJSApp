@@ -17,6 +17,9 @@ public interface IQualityApi
     Task<List<QualityDictOption>> GetProblemPointOptionsAsync(CancellationToken ct = default);
     Task<bool> SaveIncomingQualityResultAsync(IncomingQualitySaveResultRequestDto request, CancellationToken ct = default);
     Task<bool> DeleteIncomingQualityOrderAsync(string incomingQualityNo, CancellationToken ct = default);
+    Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersByResourceAsync(string resourceCode, CancellationToken ct = default);
+    Task<ProductionQualityDetailDto> GetProductionQualityDetailAsync(string qualityNo, string workOrderNo, CancellationToken ct = default);
+    Task<bool> CommitProductionQualityAsync(ProductionQualityCommitRequestDto request, CancellationToken ct = default);
 }
 
 public sealed class QualityApi : IQualityApi
@@ -28,6 +31,9 @@ public sealed class QualityApi : IQualityApi
     private readonly string _incomingQualityScanEndpoint;
     private readonly string _incomingQualitySaveResultEndpoint;
     private readonly string _incomingQualityDeleteEndpoint;
+    private readonly string _productionQualityListEndpoint;
+    private readonly string _productionQualityDetailByNoEndpoint;
+    private readonly string _productionQualityCommitEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public QualityApi(HttpClient http, IConfigLoader configLoader)
@@ -46,6 +52,12 @@ public sealed class QualityApi : IQualityApi
             configLoader.GetApiPath("incomingQualityOrder.saveResult", "/pda/qs/qsIncomingQualityOrder/saveResult"), servicePath);
         _incomingQualityDeleteEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("incomingQualityOrder.delete", "/pda/qs/qsIncomingQualityOrder/delete"), servicePath);
+        _productionQualityListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("productionQualityOrder.list", "/pda/qsOrderQuality/list"), servicePath);
+        _productionQualityDetailByNoEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("productionQualityOrder.detailByNo", "/pda/qsOrderQuality/detailByNo"), servicePath);
+        _productionQualityCommitEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("productionQualityOrder.commit", "/pda/qsOrderQuality/commit"), servicePath);
     }
 
     public async Task<List<IncomingQualityStatusFilter>> GetIncomingQualityStatusFiltersAsync(CancellationToken ct = default)
@@ -133,6 +145,34 @@ public sealed class QualityApi : IQualityApi
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _incomingQualityDeleteEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new { incomingQualityNo }, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
+        return data.result;
+    }
+
+    public async Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersByResourceAsync(string resourceCode, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityListEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, new { resourceCode }, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<List<ProductionQualityOrderDto>>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new List<ProductionQualityOrderDto>();
+    }
+
+    public async Task<ProductionQualityDetailDto> GetProductionQualityDetailAsync(string qualityNo, string workOrderNo, CancellationToken ct = default)
+    {
+        var endpoint = $"{_productionQualityDetailByNoEndpoint}?qualityNo={Uri.EscapeDataString(qualityNo)}&workOrderNo={Uri.EscapeDataString(workOrderNo)}";
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, endpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<ProductionQualityDetailDto>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new ProductionQualityDetailDto { workOrderNo = workOrderNo };
+    }
+
+    public async Task<bool> CommitProductionQualityAsync(ProductionQualityCommitRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityCommitEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
         return data.result;

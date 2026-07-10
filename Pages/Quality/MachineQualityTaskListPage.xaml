@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.Quality.MachineQualityTaskListPage"
+             BackgroundColor="#F4F6FA"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,Auto,*">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="16,22,16,14" HeightRequest="80">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,18,18" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*">
+                <Label Text="‹ 重新扫码" TextColor="White" FontSize="15" VerticalOptions="Center">
+                    <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnRescanTapped" /></Label.GestureRecognizers>
+                </Label>
+                <Label x:Name="TitleLabel" Grid.Column="1" Text="机台任务" TextColor="White" FontSize="22" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,84,0" />
+            </Grid>
+        </Border>
+        <Label Grid.Row="1" Text="当前机台正在执行的质检任务如下:" TextColor="#38557C" FontSize="16" Margin="24,20,24,8" />
+        <CollectionView Grid.Row="2" x:Name="TaskList" EmptyView="当前机台暂无质检任务" Margin="24,0">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="White" StrokeThickness="0" Padding="24,22" Margin="0,0,0,14">
+                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnTaskTapped" /></Border.GestureRecognizers>
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="8">
+                            <Label Text="{Binding titleDisplay}" TextColor="#051B3D" FontSize="19" FontAttributes="Bold" />
+                            <Border Grid.Column="1" BackgroundColor="#FFF9E8" StrokeThickness="0" Padding="10,5">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
+                                <Label Text="{Binding statusDisplay}" TextColor="#D87500" FontSize="13" FontAttributes="Bold" />
+                            </Border>
+                            <Label Grid.Row="1" TextColor="#38557C" FontSize="15">
+                                <Label.FormattedText><FormattedString><Span Text="机台: " /><Span Text="{Binding machineDisplay}" /></FormattedString></Label.FormattedText>
+                            </Label>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

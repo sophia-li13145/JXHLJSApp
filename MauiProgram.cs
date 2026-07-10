@@ -71,6 +71,9 @@ namespace JXHLJSApp
             builder.Services.AddTransient<JXHLJSApp.Pages.Quality.IncomingQualityOrderListPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Quality.IncomingQualityOrderDetailPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Quality.IncomingQualityScanPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.Quality.MachineQualityScanPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.Quality.MachineQualityTaskListPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.Quality.MachineQualityDetailPage>();
             builder.Services.AddTransient<AdminViewModel>();
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();
