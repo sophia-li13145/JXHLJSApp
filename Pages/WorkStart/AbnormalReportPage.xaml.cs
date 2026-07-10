@@ -52,23 +52,30 @@ public partial class AbnormalReportPage : ContentPage
     private void RenderOptions()
     {
         AbnormalTypeContainer.Children.Clear();
-        foreach (var option in _options)
+        AbnormalTypeContainer.RowDefinitions.Clear();
+
+        for (var index = 0; index < _options.Count; index++)
         {
+            if (index % 2 == 0)
+            {
+                AbnormalTypeContainer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            }
+
+            var option = _options[index];
             var button = new Button
             {
                 Text = $"○ {option.name}",
                 CommandParameter = option.value,
-                Margin = new Thickness(0, 0, 12, 10),
-                WidthRequest = 160,
                 HeightRequest = 54,
                 CornerRadius = 10,
                 BackgroundColor = Colors.White,
                 TextColor = Color.FromArgb("#244B88"),
                 BorderColor = Color.FromArgb("#D8E3F3"),
-                BorderWidth = 1
+                BorderWidth = 1,
+                HorizontalOptions = LayoutOptions.Fill
             };
             button.Clicked += OnAbnormalTypeClicked;
-            AbnormalTypeContainer.Children.Add(button);
+            AbnormalTypeContainer.Add(button, index % 2, index / 2);
         }
         UpdateOptionStyles();
     }
