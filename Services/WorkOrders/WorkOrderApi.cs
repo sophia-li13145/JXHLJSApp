@@ -590,8 +590,7 @@ public sealed class MaterialInputConfirmDto
     public string? materialName { get; set; }
     public string? qrCode { get; set; }
     public string? spec { get; set; }
-    public string? stockBatch { get; set; }
-    public string? workOrderCode { get; set; }
+    public string? workOrderNo { get; set; }
 }
 
 public sealed class MaterialOutputConfirmDto

@@ -172,8 +172,7 @@ public partial class MaterialLoadingPage : ContentPage
             materialName = material.materialName,
             qrCode = string.IsNullOrWhiteSpace(material.qrCode) ? _lastMaterialQrCode : material.qrCode,
             spec = FirstNonEmpty(material.specification, material.spec),
-            stockBatch = string.IsNullOrWhiteSpace(material.stockBatch) ? material.bizBatchNo : material.stockBatch,
-            workOrderCode = _productionContext.Current?.WorkOrderNo
+            workOrderNo = _productionContext.Current?.WorkOrderNo
         };
 
         MaterialCodeLabel.Text = ValueOrDash(material.materialCode);
@@ -206,7 +205,7 @@ public partial class MaterialLoadingPage : ContentPage
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(_confirmInput.workOrderCode))
+        if (string.IsNullOrWhiteSpace(_confirmInput.workOrderNo))
         {
             await DisplayAlert("提示", "工单号为空，无法确认上料。", "确定");
             return;

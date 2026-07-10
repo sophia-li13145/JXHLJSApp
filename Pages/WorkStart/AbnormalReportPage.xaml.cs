@@ -7,6 +7,8 @@ namespace JXHLJSApp.Pages.WorkStart;
 
 public partial class AbnormalReportPage : ContentPage
 {
+    private const string ReportModeAbnormal = "abnormal";
+
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
     private readonly IProductionContextService _productionContext;
@@ -174,7 +176,7 @@ public partial class AbnormalReportPage : ContentPage
                 materialCode = _material.materialCode,
                 materialName = _material.materialName,
                 materialType = _material.materialType,
-                reportMode = "abnormal",
+                reportMode = ReportModeAbnormal,
                 supplementaryDescription = DescriptionEditor.Text,
                 weight = _material.weight ?? (decimal.TryParse(_material.coilWeight, out var weight) ? weight : null),
                 workOrderNo = workOrderNo

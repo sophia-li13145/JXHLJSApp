@@ -7,6 +7,8 @@ namespace JXHLJSApp.Pages.WorkStart;
 
 public partial class ReworkReportPage : ContentPage
 {
+    private const string ReportModeRework = "rework";
+
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
     private readonly IProductionContextService _productionContext;
@@ -168,7 +170,7 @@ public partial class ReworkReportPage : ContentPage
                 materialCode = _material.materialCode,
                 materialName = _material.materialName,
                 materialType = _material.materialType,
-                reportMode = "rework",
+                reportMode = ReportModeRework,
                 reworkReason = _selectedReworkReason,
                 weight = _material.weight ?? (decimal.TryParse(_material.coilWeight, out var weight) ? weight : null),
                 workOrderNo = workOrderNo
