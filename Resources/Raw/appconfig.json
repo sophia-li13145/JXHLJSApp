@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 11,
+  "schemaVersion": 12,
   "server": {
     "scheme": "http",
     "ipAddress": "221.216.53.191:9128"
@@ -140,6 +140,11 @@
       "detailMaterialOutstockTransportOrder": "/pda/transportOrder/detailMaterialOutstockTransportOrder",
       "listProductInstockTransportOrders": "/pda/transportOrder/listProductInstockTransportOrders",
       "detailProductInstockTransportOrder": "/pda/transportOrder/detailProductInstockTransportOrder"
+    },
+    "productionQualityOrder": {
+      "list": "/pda/qsOrderQuality/list",
+      "detailByNo": "/pda/qsOrderQuality/detailByNo",
+      "commit": "/pda/qsOrderQuality/commit"
     }
   },
   "logging": {
