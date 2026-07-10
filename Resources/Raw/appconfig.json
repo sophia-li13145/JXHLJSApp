@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 10,
+  "schemaVersion": 11,
   "server": {
     "scheme": "http",
-    "ipAddress": "114.250.17.252:9128"
+    "ipAddress": "221.216.53.191:9128"
   },
   "services": {
     "normalService": "/normalService",
