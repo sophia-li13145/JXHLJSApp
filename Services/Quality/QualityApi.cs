@@ -35,17 +35,17 @@ public sealed class QualityApi : IQualityApi
         _http = http;
         var servicePath = _http.BaseAddress?.AbsolutePath?.TrimEnd('/') ?? "/jxhljszpService";
         _incomingQualityDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
-            configLoader.GetApiPath("incomingQualityOrder.getDictList", "/pda/qs/qslIncomingQualityOrder/getDictList"), servicePath);
+            configLoader.GetApiPath("incomingQualityOrder.getDictList", "/pda/qs/qsIncomingQualityOrder/getDictList"), servicePath);
         _incomingQualityListEndpoint = ServiceUrlHelper.NormalizeRelative(
-            configLoader.GetApiPath("incomingQualityOrder.list", "/pda/qs/qslIncomingQualityOrder/list"), servicePath);
+            configLoader.GetApiPath("incomingQualityOrder.list", "/pda/qs/qsIncomingQualityOrder/list"), servicePath);
         _incomingQualityDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
-            configLoader.GetApiPath("incomingQualityOrder.detail", "/pda/qs/qslIncomingQualityOrder/detail"), servicePath);
+            configLoader.GetApiPath("incomingQualityOrder.detail", "/pda/qs/qsIncomingQualityOrder/detail"), servicePath);
         _incomingQualityScanEndpoint = ServiceUrlHelper.NormalizeRelative(
-            configLoader.GetApiPath("incomingQualityOrder.scan", "/pda/qs/qslIncomingQualityOrder/scan"), servicePath);
+            configLoader.GetApiPath("incomingQualityOrder.scan", "/pda/qs/qsIncomingQualityOrder/scan"), servicePath);
         _incomingQualitySaveResultEndpoint = ServiceUrlHelper.NormalizeRelative(
-            configLoader.GetApiPath("incomingQualityOrder.saveResult", "/pda/qs/qslIncomingQualityOrder/saveResult"), servicePath);
+            configLoader.GetApiPath("incomingQualityOrder.saveResult", "/pda/qs/qsIncomingQualityOrder/saveResult"), servicePath);
         _incomingQualityDeleteEndpoint = ServiceUrlHelper.NormalizeRelative(
-            configLoader.GetApiPath("incomingQualityOrder.delete", "/pda/qs/qslIncomingQualityOrder/delete"), servicePath);
+            configLoader.GetApiPath("incomingQualityOrder.delete", "/pda/qs/qsIncomingQualityOrder/delete"), servicePath);
     }
 
     public async Task<List<IncomingQualityStatusFilter>> GetIncomingQualityStatusFiltersAsync(CancellationToken ct = default)

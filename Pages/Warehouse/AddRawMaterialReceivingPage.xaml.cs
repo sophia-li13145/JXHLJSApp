@@ -617,16 +617,16 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             return;
         }
 
-        var missingRequired = _ocrItems.FirstOrDefault(item =>
-            string.IsNullOrWhiteSpace(item.qrCode) ||
-            string.IsNullOrWhiteSpace(item.materialClass) ||
-            string.IsNullOrWhiteSpace(item.materialCode) ||
-            ParseWeight(item.pieceWeight) <= 0m);
-        if (missingRequired is not null)
-        {
-            await DisplayAlert("提示", "请确认每条明细都已填写二维码、物料分类、物料编码和有效件重。", "确定");
-            return;
-        }
+        //var missingRequired = _ocrItems.FirstOrDefault(item =>
+        //    string.IsNullOrWhiteSpace(item.qrCode) ||
+        //    string.IsNullOrWhiteSpace(item.materialClass) ||
+        //    string.IsNullOrWhiteSpace(item.materialCode) ||
+        //    ParseWeight(item.pieceWeight) <= 0m);
+        //if (missingRequired is not null)
+        //{
+        //    await DisplayAlert("提示", "请确认每条明细都已填写二维码、物料分类、物料编码和有效件重。", "确定");
+        //    return;
+        //}
 
         try
         {
