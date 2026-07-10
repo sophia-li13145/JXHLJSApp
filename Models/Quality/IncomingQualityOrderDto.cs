@@ -5,6 +5,9 @@ public sealed class IncomingQualityOrderDto
     public int? done { get; set; }
     public string? incomingQualityNo { get; set; }
     public string? instockNo { get; set; }
+    public string? materialNames { get; set; }
+    public string? status { get; set; }
+    public string? statusName { get; set; }
     public int? total { get; set; }
     public string? delStatus { get; set; }
     public string? delStatusName { get; set; }
@@ -14,19 +17,36 @@ public sealed class IncomingQualityOrderDto
 
     public string incomingQualityNoDisplay => string.IsNullOrWhiteSpace(incomingQualityNo) ? "未生成来料质检单" : incomingQualityNo!;
     public string instockNoDisplay => string.IsNullOrWhiteSpace(instockNo) ? "-" : instockNo!;
-    public string statusDisplay => string.IsNullOrWhiteSpace(delStatusName) ? (delStatus ?? "未提交") : delStatusName!;
+    public string statusDisplay => FirstNonEmpty(statusName, delStatusName, status, delStatus, "未提交");
+    public string statusBackground => statusDisplay switch
+    {
+        "待质检" => "#FFF6E8",
+        "检验完成" => "#E9FBEF",
+        "未提交" => "#F1F3F7",
+        _ => "#EEF3FA"
+    };
+    public string statusColor => statusDisplay switch
+    {
+        "待质检" => "#D97706",
+        "检验完成" => "#16A34A",
+        "未提交" => "#4B5563",
+        _ => "#244B88"
+    };
     public string totalDisplay => total.HasValue ? $"{total}件" : "-";
     public string doneDisplay => done.HasValue ? $"已扫记录：{done} 条" : "已扫记录：-";
     public string materialDisplay
     {
         get
         {
-            var parts = new[] { materialName, materialCode, specification }.Where(v => !string.IsNullOrWhiteSpace(v));
-            var text = string.Join(" ", parts);
+            var text = !string.IsNullOrWhiteSpace(materialNames)
+                ? materialNames
+                : string.Join(" ", new[] { materialName, materialCode, specification }.Where(v => !string.IsNullOrWhiteSpace(v)));
             return string.IsNullOrWhiteSpace(text) ? "-" : text;
         }
     }
     public bool hasMaterial => !string.IsNullOrWhiteSpace(materialDisplay) && materialDisplay != "-";
+
+    private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
 }
 
 public sealed class IncomingQualityOrderDetailDto

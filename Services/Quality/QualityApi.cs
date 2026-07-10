@@ -63,7 +63,7 @@ public sealed class QualityApi : IQualityApi
 
     public async Task<List<IncomingQualityStatusFilter>> GetIncomingQualityStatusFiltersAsync(CancellationToken ct = default)
     {
-        var names = await LoadDelStatusNamesAsync(ct).ConfigureAwait(false);
+        var names = await LoadIncomingQualityStatusNamesAsync(ct).ConfigureAwait(false);
         var filters = new List<IncomingQualityStatusFilter> { new() { Name = "全部", Value = null, IsSelected = true } };
         filters.AddRange(names.Select(item => new IncomingQualityStatusFilter { Name = item.Value, Value = item.Key }));
         return filters;
@@ -71,7 +71,7 @@ public sealed class QualityApi : IQualityApi
 
     public async Task<List<IncomingQualityOrderDto>> GetIncomingQualityOrdersAsync(string? status, CancellationToken ct = default)
     {
-        var statusNames = await LoadDelStatusNamesAsync(ct).ConfigureAwait(false);
+        var statusNames = await LoadIncomingQualityStatusNamesAsync(ct).ConfigureAwait(false);
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _incomingQualityListEndpoint);
         var request = new Dictionary<string, string>
         {
@@ -83,9 +83,13 @@ public sealed class QualityApi : IQualityApi
         var list = data.result ?? new List<IncomingQualityOrderDto>();
         foreach (var item in list)
         {
-            if (!string.IsNullOrWhiteSpace(item.delStatus) && statusNames.TryGetValue(item.delStatus, out var name))
+            if (!string.IsNullOrWhiteSpace(item.status) && statusNames.TryGetValue(item.status, out var statusName))
             {
-                item.delStatusName = name;
+                item.statusName = statusName;
+            }
+            if (!string.IsNullOrWhiteSpace(item.delStatus) && statusNames.TryGetValue(item.delStatus, out var delStatusName))
+            {
+                item.delStatusName = delStatusName;
             }
         }
         return list;
@@ -93,7 +97,7 @@ public sealed class QualityApi : IQualityApi
 
     public async Task<IncomingQualityOrderDetailDto> GetIncomingQualityOrderDetailAsync(string incomingQualityNo, CancellationToken ct = default)
     {
-        var statusNames = await LoadDelStatusNamesAsync(ct).ConfigureAwait(false);
+        var statusNames = await LoadIncomingQualityStatusNamesAsync(ct).ConfigureAwait(false);
         var inspectResultNames = await LoadDictOptionsAsync("inspectResult", ct).ConfigureAwait(false);
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _incomingQualityDetailEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new { incomingQualityNo }, JsonOptions, ct).ConfigureAwait(false);
@@ -203,14 +207,15 @@ public sealed class QualityApi : IQualityApi
         return data.result == true;
     }
 
-    private async Task<IReadOnlyDictionary<string, string>> LoadDelStatusNamesAsync(CancellationToken ct)
+    private async Task<IReadOnlyDictionary<string, string>> LoadIncomingQualityStatusNamesAsync(CancellationToken ct)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _incomingQualityDictListEndpoint);
         using var resp = await _http.PostAsync(url, new FormUrlEncodedContent(Array.Empty<KeyValuePair<string, string>>()), ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<List<DictGroupDto>>(resp, ct).ConfigureAwait(false);
         return data.result?
-            .FirstOrDefault(group => string.Equals(group.field, "delStatus", StringComparison.OrdinalIgnoreCase))?
+            .FirstOrDefault(group => string.Equals(group.field, "status", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(group.field, "delStatus", StringComparison.OrdinalIgnoreCase))?
             .dictItems?
             .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue) && !string.IsNullOrWhiteSpace(item.dictItemName))
             .GroupBy(item => item.dictItemValue!)
