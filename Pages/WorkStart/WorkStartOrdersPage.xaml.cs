@@ -6,12 +6,16 @@ namespace JXHLJSApp.Pages.WorkStart;
 public partial class WorkStartOrdersPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
+    private readonly IProductionContextService _productionContext;
     private List<WorkOrderTaskDto> _orders = new();
 
-    public WorkStartOrdersPage(IWorkOrderApi workOrderApi)
+    public WorkStartOrdersPage(
+        IWorkOrderApi workOrderApi,
+        IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
+        _productionContext = productionContext;
     }
 
     protected override async void OnAppearing()
@@ -98,11 +102,18 @@ public partial class WorkStartOrdersPage : ContentPage
                 return;
             }
 
-            await Shell.Current.GoToAsync(AppShell.RouteWorkExecution, new Dictionary<string, object>
+            var context = new ProductionContext
             {
-                ["id"] = order.id,
-                ["workOrderNo"] = order.workOrderNo
-            });
+                WorkOrderId = order.id,
+                WorkOrderNo = order.workOrderNo,
+                MachineCode = order.deviceCode,
+                Status = "Running",
+                StartedAt = DateTime.Now
+            };
+
+            _productionContext.Set(context);
+
+            await Shell.Current.GoToAsync(AppShell.RouteWorkExecution);
         }
         catch (Exception ex)
         {

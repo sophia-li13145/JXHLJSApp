@@ -75,6 +75,7 @@ namespace JXHLJSApp
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();
             builder.Services.AddSingleton<IScanService, ScanService>();
+            builder.Services.AddSingleton<IProductionContextService, ProductionContextService>();
             builder.Services.AddSingleton<AuthState>();
             builder.Services.AddTransient<AuthHeaderHandler>();
             builder.Services.AddTransient<TokenExpiredHandler>();
