@@ -116,6 +116,7 @@ public partial class AbnormalReportPage : ContentPage
         OriginLabel.Text = ValueOrDash(_material?.originPlace);
         SpecLabel.Text = ValueOrDash(FirstNonEmpty(_material?.specification, _material?.spec));
         WeightLabel.Text = FormatWeight(_material);
+        WorkOrderLabel.Text = ValueOrDash(FirstNonEmpty(_material?.workOrderNo, _productionContext.Current?.WorkOrderNo));
     }
 
     private async void OnPhotoTapped(object sender, TappedEventArgs e)
