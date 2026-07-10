@@ -4,37 +4,25 @@ using JXHLJSApp.Services.WorkOrders;
 
 namespace JXHLJSApp.Pages.WorkStart;
 
-[QueryProperty(nameof(WorkOrderId), "id")]
-[QueryProperty(nameof(WorkOrderNo), "workOrderNo")]
 public partial class MaterialLoadingPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
-    private string? _workOrderId;
-    private string? _workOrderNo;
+    private readonly IProductionContextService _productionContext;
     private bool _machineConfirmed;
     private bool _isBusy;
     private string? _lastMaterialQrCode;
     private MaterialInputConfirmDto? _confirmInput;
 
-    public string? WorkOrderId
-    {
-        get => _workOrderId;
-        set => _workOrderId = Uri.UnescapeDataString(value ?? string.Empty);
-    }
 
-    public string? WorkOrderNo
-    {
-        get => _workOrderNo;
-        set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty);
-    }
-
-    public MaterialLoadingPage(IWorkOrderApi workOrderApi, IScanService scanService)
+    public MaterialLoadingPage(IWorkOrderApi workOrderApi, IScanService scanService, IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
         _scanService = scanService;
+        _productionContext = productionContext;
     }
+
 
     private async void OnBackTapped(object sender, TappedEventArgs e)
     {
@@ -85,16 +73,17 @@ public partial class MaterialLoadingPage : ContentPage
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(_workOrderNo))
+        var workOrderNo = _productionContext.Current?.WorkOrderNo;
+        if (string.IsNullOrWhiteSpace(workOrderNo))
         {
-            await DisplayAlert("提示", "工单号为空，无法扫码开工。", "确定");
+            await DisplayAlert("提示", "当前生产工单为空，无法扫码开工。", "确定");
             return;
         }
 
         try
         {
             _isBusy = true;
-            var result = await _workOrderApi.ScanToWorkAsync(devCode, _workOrderNo);
+            var result = await _workOrderApi.ScanToWorkAsync(devCode, workOrderNo);
             if (!result)
             {
                 await DisplayAlert("识别失败", "机台识别未成功，请确认机台码后重试。", "确定");
@@ -103,6 +92,7 @@ public partial class MaterialLoadingPage : ContentPage
 
             _machineConfirmed = true;
             MachineCodeEntry.Text = devCode;
+            UpdateProductionContextMachine(devCode);
             ShowMaterialScanStep();
         }
         catch (Exception ex)
@@ -113,6 +103,27 @@ public partial class MaterialLoadingPage : ContentPage
         {
             _isBusy = false;
         }
+    }
+
+    private void UpdateProductionContextMachine(string machineCode)
+    {
+        var current = _productionContext.Current;
+        if (current is not null)
+        {
+            _productionContext.Set(new ProductionContext
+            {
+                WorkOrderId = current.WorkOrderId,
+                WorkOrderNo = current.WorkOrderNo,
+                ExecutionId = current.ExecutionId,
+                MachineCode = machineCode,
+                Status = current.Status,
+                StartedAt = current.StartedAt,
+                SessionId = current.SessionId
+            });
+            return;
+        }
+
+
     }
 
     private async Task ScanMaterialAsync()
@@ -161,8 +172,7 @@ public partial class MaterialLoadingPage : ContentPage
             materialName = material.materialName,
             qrCode = string.IsNullOrWhiteSpace(material.qrCode) ? _lastMaterialQrCode : material.qrCode,
             spec = FirstNonEmpty(material.specification, material.spec),
-            stockBatch = string.IsNullOrWhiteSpace(material.stockBatch) ? material.bizBatchNo : material.stockBatch,
-            workOrderCode = _workOrderNo
+            workOrderNo = _productionContext.Current?.WorkOrderNo
         };
 
         MaterialCodeLabel.Text = ValueOrDash(material.materialCode);
@@ -195,7 +205,7 @@ public partial class MaterialLoadingPage : ContentPage
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(_confirmInput.workOrderCode))
+        if (string.IsNullOrWhiteSpace(_confirmInput.workOrderNo))
         {
             await DisplayAlert("提示", "工单号为空，无法确认上料。", "确定");
             return;

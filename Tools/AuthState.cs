@@ -1,14 +1,21 @@
 ﻿using JXHLJSApp;
 using CommunityToolkit.Mvvm.Messaging;
 using JXHLJSApp.Pages;
+using JXHLJSApp.Services.WorkOrders;
 using System.Threading;
 
 namespace JXHLJSApp.Tools
 {
     public sealed class AuthState
     {
+        private readonly IProductionContextService _productionContext;
         private readonly SemaphoreSlim _once = new(1, 1);
         private int _loggingOut = 0;
+
+        public AuthState(IProductionContextService productionContext)
+        {
+            _productionContext = productionContext;
+        }
 
         public async Task LogoutAsync(string reason = "登录状态已过期，请重新登录")
         {
@@ -24,6 +31,7 @@ namespace JXHLJSApp.Tools
                 Preferences.Remove("WorkshopScope");
                 Preferences.Set("RememberPassword", false);
                 UserSessionStore.Clear();
+                _productionContext.Clear();
 
                 // 2)（可选）全局通知：用于各页面收起弹窗/停止轮询
                 WeakReferenceMessenger.Default.Send(new LoggedOutMessage(reason));

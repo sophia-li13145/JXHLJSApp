@@ -4,33 +4,21 @@ using JXHLJSApp.Services.WorkOrders;
 
 namespace JXHLJSApp.Pages.WorkStart;
 
-[QueryProperty(nameof(WorkOrderId), "id")]
-[QueryProperty(nameof(WorkOrderNo), "workOrderNo")]
 public partial class WorkExecutionPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
+    private readonly IProductionContextService _productionContext;
     private List<WorkOrderDetailDto> _tasks = new();
-    private string? _workOrderId;
-    private string? _workOrderNo;
-
-    public string? WorkOrderId
-    {
-        get => _workOrderId;
-        set => _workOrderId = Uri.UnescapeDataString(value ?? string.Empty);
-    }
-
-    public string? WorkOrderNo
-    {
-        get => _workOrderNo;
-        set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty);
-    }
-
-    public WorkExecutionPage(IWorkOrderApi workOrderApi, IScanService scanService)
+    public WorkExecutionPage(
+        IWorkOrderApi workOrderApi,
+        IScanService scanService,
+        IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
         _scanService = scanService;
+        _productionContext = productionContext;
     }
 
     protected override async void OnAppearing()
@@ -48,15 +36,16 @@ public partial class WorkExecutionPage : ContentPage
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(_workOrderNo))
+            var workOrderNo = _productionContext.Current?.WorkOrderNo;
+            if (string.IsNullOrWhiteSpace(workOrderNo))
             {
-                await DisplayAlert("提示", "工单号为空，无法查询当前关联任务池。", "确定");
+                await DisplayAlert("提示", "当前生产工单为空，无法查询当前关联任务池。", "确定");
                 TaskPoolList.ItemsSource = Array.Empty<WorkOrderDetailDto>();
                 return;
             }
 
             RefreshContainer.IsRefreshing = true;
-            _tasks = await _workOrderApi.GetCurrentTaskPoolAsync(_workOrderNo);
+            _tasks = await _workOrderApi.GetCurrentTaskPoolAsync(workOrderNo);
             TaskPoolList.ItemsSource = _tasks;
         }
         catch (Exception ex)
@@ -69,59 +58,68 @@ public partial class WorkExecutionPage : ContentPage
         }
     }
 
-    private async void OnInstructionTapped(object sender, TappedEventArgs e)
+    private void UpdateProductionContextMachine(string machineCode)
     {
-        if (string.IsNullOrWhiteSpace(_workOrderId))
+        var current = _productionContext.Current;
+        if (current is null)
         {
-            await DisplayAlert("提示", "工单列表主键为空，无法查看生产作业指令卡。", "确定");
             return;
         }
 
-        var query = new Dictionary<string, object>
+        _productionContext.Set(new ProductionContext
         {
-            ["id"] = _workOrderId
-        };
+            WorkOrderId = current.WorkOrderId,
+            WorkOrderNo = current.WorkOrderNo,
+            ExecutionId = current.ExecutionId,
+            MachineCode = machineCode,
+            Status = current.Status,
+            StartedAt = current.StartedAt,
+            SessionId = current.SessionId
+        });
+    }
 
-        if (!string.IsNullOrWhiteSpace(_workOrderNo))
+    private void UpdateProductionContextStatus(string status)
+    {
+        var current = _productionContext.Current;
+        if (current is null)
         {
-            query["workOrderNo"] = _workOrderNo;
+            return;
         }
 
-        await Shell.Current.GoToAsync(AppShell.RouteWorkOrderInstruction, query);
+        _productionContext.Set(new ProductionContext
+        {
+            WorkOrderId = current.WorkOrderId,
+            WorkOrderNo = current.WorkOrderNo,
+            ExecutionId = current.ExecutionId,
+            MachineCode = current.MachineCode,
+            Status = status,
+            StartedAt = current.StartedAt,
+            SessionId = current.SessionId
+        });
+    }
+
+    private async void OnInstructionTapped(object sender, TappedEventArgs e)
+    {
+        var workOrderId = _productionContext.Current?.WorkOrderId;
+        if (string.IsNullOrWhiteSpace(workOrderId))
+        {
+            await DisplayAlert("提示", "当前生产工单为空，无法查看生产作业指令卡。", "确定");
+            return;
+        }
+
+        await Shell.Current.GoToAsync($"{AppShell.RouteWorkOrderInstruction}?id={Uri.EscapeDataString(workOrderId)}");
     }
 
     private async void OnMaterialLoadingTapped(object sender, TappedEventArgs e)
     {
-        var query = new Dictionary<string, object>();
-        if (!string.IsNullOrWhiteSpace(_workOrderId))
-        {
-            query["id"] = _workOrderId;
-        }
-
-        if (!string.IsNullOrWhiteSpace(_workOrderNo))
-        {
-            query["workOrderNo"] = _workOrderNo;
-        }
-
-        await Shell.Current.GoToAsync(AppShell.RouteMaterialLoading, query);
+        await Shell.Current.GoToAsync(AppShell.RouteMaterialLoading);
     }
 
     private async void OnMaterialUnloadingTapped(object sender, TappedEventArgs e)
     {
         try
         {
-            var query = new Dictionary<string, object>();
-            if (!string.IsNullOrWhiteSpace(_workOrderId))
-            {
-                query["id"] = _workOrderId;
-            }
-
-            if (!string.IsNullOrWhiteSpace(_workOrderNo))
-            {
-                query["workOrderNo"] = _workOrderNo;
-            }
-
-            await Shell.Current.GoToAsync(AppShell.RouteMaterialUnloading, query);
+            await Shell.Current.GoToAsync(AppShell.RouteMaterialUnloading);
         }
         catch (Exception ex)
         {
@@ -131,35 +129,24 @@ public partial class WorkExecutionPage : ContentPage
 
     private async void OnAbnormalReportTapped(object sender, TappedEventArgs e)
     {
-        var query = new Dictionary<string, object>();
-        if (!string.IsNullOrWhiteSpace(_workOrderNo))
-        {
-            query["workOrderNo"] = _workOrderNo;
-        }
-
-        await Shell.Current.GoToAsync(AppShell.RouteAbnormalReport, query);
+        await Shell.Current.GoToAsync(AppShell.RouteAbnormalReport);
     }
 
     private async void OnReworkReportTapped(object sender, TappedEventArgs e)
     {
-        var query = new Dictionary<string, object>();
-        if (!string.IsNullOrWhiteSpace(_workOrderNo))
-        {
-            query["workOrderNo"] = _workOrderNo;
-        }
-
-        await Shell.Current.GoToAsync(AppShell.RouteReworkReport, query);
+        await Shell.Current.GoToAsync(AppShell.RouteReworkReport);
     }
 
     private async void OnPauseTapped(object sender, TappedEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(_workOrderNo))
+        var workOrderNo = _productionContext.Current?.WorkOrderNo;
+        if (string.IsNullOrWhiteSpace(workOrderNo))
         {
-            await DisplayAlert("提示", "工单号为空，无法暂停生产工单。", "确定");
+            await DisplayAlert("提示", "当前生产工单为空，无法暂停生产工单。", "确定");
             return;
         }
 
-        var confirm = await DisplayAlert("确认暂停", $"确认暂停工单 {_workOrderNo} 吗？", "确认", "取消");
+        var confirm = await DisplayAlert("确认暂停", $"确认暂停工单 {workOrderNo} 吗？", "确认", "取消");
         if (!confirm)
         {
             return;
@@ -168,13 +155,14 @@ public partial class WorkExecutionPage : ContentPage
         try
         {
             RefreshContainer.IsRefreshing = true;
-            var success = await _workOrderApi.StopWorkOrderAsync(_workOrderNo);
+            var success = await _workOrderApi.StopWorkOrderAsync(workOrderNo);
             if (!success)
             {
                 await DisplayAlert("暂停失败", "接口未返回成功，请稍后重试。", "确定");
                 return;
             }
 
+            UpdateProductionContextStatus("Paused");
             await LoadTaskPoolAsync();
         }
         catch (Exception ex)
@@ -189,13 +177,7 @@ public partial class WorkExecutionPage : ContentPage
 
     private async void OnWorkCompletionTapped(object sender, TappedEventArgs e)
     {
-        var query = new Dictionary<string, object>();
-        if (!string.IsNullOrWhiteSpace(_workOrderNo))
-        {
-            query["workOrderNo"] = _workOrderNo;
-        }
-
-        await Shell.Current.GoToAsync(AppShell.RouteWorkCompletion, query);
+        await Shell.Current.GoToAsync(AppShell.RouteWorkCompletion);
     }
 
     private async void OnSwitchMachineTapped(object sender, TappedEventArgs e)
@@ -228,6 +210,7 @@ public partial class WorkExecutionPage : ContentPage
                 return;
             }
 
+            UpdateProductionContextMachine(devCode);
             await Shell.Current.GoToAsync(AppShell.RouteHome);
         }
         catch (Exception ex)

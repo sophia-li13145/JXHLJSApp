@@ -155,10 +155,36 @@ public sealed class WorkOrderApi : IWorkOrderApi
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<List<WorkOrderTaskDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
-        var orders = data?.result ?? new List<WorkOrderTaskDto>();
+        var orders = DeduplicateCurrentUserMachineWorkOrders(data?.result ?? new List<WorkOrderTaskDto>());
         await ApplyWorkOrderStatusNamesAsync(orders, ct).ConfigureAwait(false);
         return orders;
     }
+
+    private static List<WorkOrderTaskDto> DeduplicateCurrentUserMachineWorkOrders(IEnumerable<WorkOrderTaskDto> orders)
+    {
+        var result = new List<WorkOrderTaskDto>();
+        var seenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var order in orders)
+        {
+            var key = FirstNonEmpty(order.workOrderNo, order.id);
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                result.Add(order);
+                continue;
+            }
+
+            if (seenKeys.Add(key.Trim()))
+            {
+                result.Add(order);
+            }
+        }
+
+        return result;
+    }
+
+    private static string? FirstNonEmpty(params string?[] values) =>
+        values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
     public async Task<bool> StartWorkOrderAsync(string workOrderNo, CancellationToken ct = default)
     {
@@ -564,8 +590,7 @@ public sealed class MaterialInputConfirmDto
     public string? materialName { get; set; }
     public string? qrCode { get; set; }
     public string? spec { get; set; }
-    public string? stockBatch { get; set; }
-    public string? workOrderCode { get; set; }
+    public string? workOrderNo { get; set; }
 }
 
 public sealed class MaterialOutputConfirmDto
