@@ -5,24 +5,25 @@ using JXHLJSApp.Services.WorkOrders;
 
 namespace JXHLJSApp.Pages.WorkStart;
 
-[QueryProperty(nameof(WorkOrderNo), "workOrderNo")]
 public partial class AbnormalReportPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
+    private readonly IProductionContextService _productionContext;
     private List<WorkOrderAbnormalOptionDto> _options = new();
     private MaterialQrCodeInfoDto? _material;
     private AttachmentDto? _photo;
     private string? _selectedAbnormalType;
-    private string? _workOrderNo;
 
-    public string? WorkOrderNo { get => _workOrderNo; set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty); }
-
-    public AbnormalReportPage(IWorkOrderApi workOrderApi, IScanService scanService)
+    public AbnormalReportPage(
+        IWorkOrderApi workOrderApi,
+        IScanService scanService,
+        IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
         _scanService = scanService;
+        _productionContext = productionContext;
     }
 
     protected override async void OnAppearing()
@@ -149,6 +150,13 @@ public partial class AbnormalReportPage : ContentPage
         if (string.IsNullOrWhiteSpace(_selectedAbnormalType)) { await DisplayAlert("提示", "请选择异常类型。", "确定"); return; }
         if (_photo is null) { await DisplayAlert("提示", "请拍摄并上传现场照片。", "确定"); return; }
 
+        var workOrderNo = FirstNonEmpty(_material.workOrderNo, _productionContext.Current?.WorkOrderNo);
+        if (string.IsNullOrWhiteSpace(workOrderNo))
+        {
+            await DisplayAlert("提示", "扫码结果未返回工单号，无法提交异常上报。", "确定");
+            return;
+        }
+
         try
         {
             var request = new WorkOrderAbnormalAddRequestDto
@@ -161,7 +169,7 @@ public partial class AbnormalReportPage : ContentPage
                 reportMode = "abnormal",
                 supplementaryDescription = DescriptionEditor.Text,
                 weight = _material.weight ?? (decimal.TryParse(_material.coilWeight, out var weight) ? weight : null),
-                workOrderNo = _workOrderNo
+                workOrderNo = workOrderNo
             };
             await _workOrderApi.AddAbnormalRecordAsync(request);
             await Shell.Current.GoToAsync(AppShell.RouteAbnormalReportSuccess);
