@@ -153,15 +153,15 @@ public sealed class QualityApi : IQualityApi
 
     public Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersByResourceAsync(string resourceCode, CancellationToken ct = default)
     {
-        return GetProductionQualityOrdersAsync(resourceName: null, inspectStatus: null, resourceCode: resourceCode, ct: ct);
+        return QueryProductionQualityOrdersAsync(resourceName: null, inspectStatus: null, resourceCode: resourceCode, ct: ct);
     }
 
     public Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, CancellationToken ct = default)
     {
-        return GetProductionQualityOrdersAsync(resourceName: resourceName, inspectStatus: inspectStatus, resourceCode: null, ct: ct);
+        return QueryProductionQualityOrdersAsync(resourceName: resourceName, inspectStatus: inspectStatus, resourceCode: null, ct: ct);
     }
 
-    private async Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, string? resourceCode, CancellationToken ct)
+    private async Task<List<ProductionQualityOrderDto>> QueryProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, string? resourceCode, CancellationToken ct)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityListEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new
@@ -201,53 +201,6 @@ public sealed class QualityApi : IQualityApi
     private static bool BooleanResultOrFalse(ApiResp<bool> data)
     {
         return data.result == true;
-    }
-
-    public Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersByResourceAsync(string resourceCode, CancellationToken ct = default)
-    {
-        return GetProductionQualityOrdersAsync(resourceName: null, inspectStatus: null, resourceCode: resourceCode, ct: ct);
-    }
-
-    public Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, CancellationToken ct = default)
-    {
-        return GetProductionQualityOrdersAsync(resourceName: resourceName, inspectStatus: inspectStatus, resourceCode: null, ct: ct);
-    }
-
-    private async Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, string? resourceCode, CancellationToken ct)
-    {
-        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityListEndpoint);
-        using var resp = await _http.PostAsJsonAsync(url, new
-        {
-            createdTimeBegin = string.Empty,
-            createdTimeEnd = string.Empty,
-            inspectStatus = inspectStatus ?? string.Empty,
-            inspectionSchemeCode = string.Empty,
-            qualityNo = string.Empty,
-            resourceCode = resourceCode ?? string.Empty,
-            resourceName = resourceName ?? string.Empty
-        }, JsonOptions, ct).ConfigureAwait(false);
-        resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<List<ProductionQualityOrderDto>>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new List<ProductionQualityOrderDto>();
-    }
-
-    public async Task<ProductionQualityDetailDto> GetProductionQualityDetailAsync(string qualityNo, string workOrderNo, CancellationToken ct = default)
-    {
-        var endpoint = $"{_productionQualityDetailByNoEndpoint}?qualityNo={Uri.EscapeDataString(qualityNo)}&workOrderNo={Uri.EscapeDataString(workOrderNo)}";
-        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, endpoint);
-        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
-        resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<ProductionQualityDetailDto>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new ProductionQualityDetailDto { workOrderNo = workOrderNo };
-    }
-
-    public async Task<bool> CommitProductionQualityAsync(ProductionQualityCommitRequestDto request, CancellationToken ct = default)
-    {
-        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityCommitEndpoint);
-        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
-        resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
-        return data.result;
     }
 
     private async Task<IReadOnlyDictionary<string, string>> LoadDelStatusNamesAsync(CancellationToken ct)
