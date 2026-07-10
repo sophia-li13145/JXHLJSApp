@@ -178,6 +178,7 @@ public sealed class ProductInstockTransportOrderDetailItemDto
     public string? id { get; set; }
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
+    public string? toLocationName { get; set; }
     [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? quantity { get; set; }
     public string? spec { get; set; }
@@ -186,7 +187,7 @@ public sealed class ProductInstockTransportOrderDetailItemDto
 
     public string materialCodeDisplay => Display(materialCode);
     public string weightKgDisplay => weight.HasValue ? $"{weight.Value:0,0.##}kg" : "--";
-    public string toLocationDisplay => Display(materialName);
+    public string toLocationDisplay => Display(toLocationName);
 
     private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
 }

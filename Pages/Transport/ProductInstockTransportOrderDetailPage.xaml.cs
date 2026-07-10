@@ -56,6 +56,10 @@ public partial class ProductInstockTransportOrderDetailPage : ContentPage
         _items.Clear();
         foreach (var item in detail.detailList ?? new List<Models.ProductInstockTransportOrderDetailItemDto>())
         {
+            if (string.IsNullOrWhiteSpace(item.toLocationName))
+            {
+                item.toLocationName = detail.toLocationName;
+            }
             _items.Add(item);
         }
     }
