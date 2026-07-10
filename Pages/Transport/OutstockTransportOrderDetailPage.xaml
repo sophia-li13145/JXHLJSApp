@@ -2,69 +2,72 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="JXHLJSApp.Pages.Transport.OutstockTransportOrderDetailPage"
-             Title="出库运输详情"
+             Title="出库运输记录"
              BackgroundColor="#F4F6F9"
              Shell.NavBarIsVisible="False">
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,*,Auto">
         <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="16,22,16,14" HeightRequest="66">
             <Border.StrokeShape><RoundRectangle CornerRadius="0,0,16,16" /></Border.StrokeShape>
             <Grid ColumnDefinitions="Auto,*">
                 <Label Text="‹ 返回" TextColor="White" FontSize="15" VerticalOptions="Center">
                     <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers>
                 </Label>
-                <Label Grid.Column="1" Text="出库运输详情" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,48,0" />
+                <Label Grid.Column="1" Text="出库运输记录" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,48,0" />
             </Grid>
         </Border>
 
         <ScrollView Grid.Row="1">
-            <VerticalStackLayout Padding="17,24,17,24" Spacing="16">
-                <Border BackgroundColor="White" StrokeThickness="0" Padding="18,18">
-                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
-                    <VerticalStackLayout Spacing="14">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <Label Text="运输单信息" TextColor="#0A2E69" FontSize="20" FontAttributes="Bold" />
-                            <Border Grid.Column="1" BackgroundColor="#EAFBEF" StrokeThickness="0" Padding="9,4">
-                                <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
-                                <Label x:Name="StatusLabel" Text="出库完成" TextColor="#00A86B" FontSize="13" FontAttributes="Bold" />
-                            </Border>
-                        </Grid>
-                        <BoxView HeightRequest="1" Color="#E1E7F0" />
-                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*" RowSpacing="17" ColumnSpacing="16">
-                            <Label Text="运输单号" TextColor="#4B6688" /><Label x:Name="TransportOrderNoLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="1" Text="领料单号" TextColor="#4B6688" /><Label x:Name="RequisitionNoLabel" Grid.Row="1" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="2" Text="入库单号" TextColor="#4B6688" /><Label x:Name="InstockNoLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="3" Text="路线" TextColor="#4B6688" /><Label x:Name="RouteLabel" Grid.Row="3" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="4" Text="起点" TextColor="#4B6688" /><Label x:Name="FromLabel" Grid.Row="4" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="5" Text="终点" TextColor="#4B6688" /><Label x:Name="ToLabel" Grid.Row="5" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="6" Text="任务状态" TextColor="#4B6688" /><Label x:Name="TaskStatusLabel" Grid.Row="6" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
-                        </Grid>
-                    </VerticalStackLayout>
+            <VerticalStackLayout Padding="18,14,18,24" Spacing="14">
+                <Border BackgroundColor="#EAF4FF" Stroke="#A8CCFF" StrokeThickness="1" Padding="18,14">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="9" /></Border.StrokeShape>
+                    <Label Text="📋 来源于领料单。该页面仅展示单据与明细信息，供查询核对。" TextColor="#0B5CFF" FontSize="14" LineBreakMode="WordWrap" />
                 </Border>
 
-                <Border BackgroundColor="White" StrokeThickness="0" Padding="16,16">
+                <Border BackgroundColor="White" StrokeThickness="0" Padding="18,18">
                     <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
-                    <VerticalStackLayout Spacing="14">
-                        <Label Text="物料明细" TextColor="#001431" FontSize="17" FontAttributes="Bold" />
-                        <BoxView HeightRequest="1" Color="#E8EDF4" />
-                        <CollectionView x:Name="DetailList" EmptyView="暂无物料明细">
-                            <CollectionView.ItemTemplate>
-                                <DataTemplate>
-                                    <Border BackgroundColor="White" Stroke="#D9E0EA" StrokeThickness="1" Padding="12" Margin="0,0,0,10">
-                                        <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
-                                        <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="8" ColumnSpacing="12">
-                                            <Label Text="{Binding materialCodeDisplay, StringFormat='物料编码：{0}'}" TextColor="#0A2E69" FontSize="15" FontAttributes="Bold" />
-                                            <Label Grid.Column="1" Text="{Binding quantityDisplay, StringFormat='件数：{0}'}" TextColor="#00A86B" FontSize="15" FontAttributes="Bold" />
-                                            <Label Grid.Row="1" Text="{Binding materialNameDisplay, StringFormat='物料名称：{0}'}" TextColor="#4B6688" />
-                                            <Label Grid.Row="1" Grid.Column="1" Text="{Binding specDisplay, StringFormat='规格：{0}'}" TextColor="#4B6688" />
-                                            <Label Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding weightDisplay, StringFormat='重量：{0}'}" TextColor="#4B6688" />
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </CollectionView.ItemTemplate>
-                        </CollectionView>
+                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*" RowSpacing="18" ColumnSpacing="18">
+                        <Label Text="{Binding orderNoDisplay}" TextColor="#001431" FontSize="16" FontAttributes="Bold" />
+                        <Label Grid.Row="1" Text="路线" TextColor="#38557C" FontSize="14" />
+                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding routeDisplay}" TextColor="#001431" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                    </Grid>
+                </Border>
+
+                <Border BackgroundColor="White" StrokeThickness="0" Padding="0" Margin="0,0,0,10">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Padding="0" Spacing="0">
+                        <Label Text="出库物料明细" TextColor="#001431" FontSize="16" FontAttributes="Bold" Margin="14,16,14,12" />
+                        <Border Stroke="#D9E0EA" StrokeThickness="1" BackgroundColor="White" Margin="0,0,0,16">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="9" /></Border.StrokeShape>
+                            <VerticalStackLayout Spacing="0">
+                                <Grid ColumnDefinitions="*,*,Auto" Padding="14,10" BackgroundColor="#F8FAFD">
+                                    <Label Text="物料" TextColor="#001431" FontSize="13" FontAttributes="Bold" />
+                                    <Label Grid.Column="1" Text="规格" TextColor="#001431" FontSize="13" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                                    <Label Grid.Column="2" Text="数量" TextColor="#001431" FontSize="13" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                                </Grid>
+                                <BoxView HeightRequest="1" Color="#D9E0EA" />
+                                <CollectionView x:Name="DetailList" EmptyView="暂无物料明细">
+                                    <CollectionView.ItemTemplate>
+                                        <DataTemplate>
+                                            <VerticalStackLayout Spacing="0">
+                                                <Grid ColumnDefinitions="*,*,Auto" Padding="14,11">
+                                                    <Label Text="{Binding materialNameDisplay}" TextColor="#001431" FontSize="13" LineBreakMode="TailTruncation" />
+                                                    <Label Grid.Column="1" Text="{Binding specDisplay}" TextColor="#001431" FontSize="13" HorizontalTextAlignment="Center" />
+                                                    <Label Grid.Column="2" Text="{Binding quantityDisplay, StringFormat='{0}件'}" TextColor="#001431" FontSize="13" HorizontalTextAlignment="End" />
+                                                </Grid>
+                                                <BoxView HeightRequest="1" Color="#D9E0EA" />
+                                            </VerticalStackLayout>
+                                        </DataTemplate>
+                                    </CollectionView.ItemTemplate>
+                                </CollectionView>
+                            </VerticalStackLayout>
+                        </Border>
                     </VerticalStackLayout>
                 </Border>
             </VerticalStackLayout>
         </ScrollView>
+
+        <Border Grid.Row="2" BackgroundColor="White" Stroke="#E1E7F0" StrokeThickness="1" Padding="18,14,18,22">
+            <Button Text="返回列表" BackgroundColor="White" TextColor="#001431" BorderColor="#D0D7E2" BorderWidth="1" CornerRadius="8" HeightRequest="50" FontAttributes="Bold" Clicked="OnBackButtonClicked" />
+        </Border>
     </Grid>
 </ContentPage>

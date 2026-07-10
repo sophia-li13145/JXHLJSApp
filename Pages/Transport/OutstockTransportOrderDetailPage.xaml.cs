@@ -50,14 +50,7 @@ public partial class OutstockTransportOrderDetailPage : ContentPage
 
     private void BindDetail(Models.MaterialOutstockTransportOrderDetailDto detail)
     {
-        StatusLabel.Text = detail.statusDisplay;
-        TransportOrderNoLabel.Text = detail.orderNoDisplay;
-        RequisitionNoLabel.Text = Display(detail.materialRequisitionNo);
-        InstockNoLabel.Text = Display(detail.instockNo);
-        RouteLabel.Text = detail.routeDisplay;
-        FromLabel.Text = detail.fromDisplay;
-        ToLabel.Text = detail.toDisplay;
-        TaskStatusLabel.Text = detail.statusDisplay;
+        BindingContext = detail;
 
         _items.Clear();
         foreach (var item in detail.detailList ?? new List<Models.MaterialOutstockTransportOrderDetailItemDto>())
@@ -69,4 +62,6 @@ public partial class OutstockTransportOrderDetailPage : ContentPage
     private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
+
+    private async void OnBackButtonClicked(object sender, EventArgs e) => await Shell.Current.GoToAsync("..");
 }
