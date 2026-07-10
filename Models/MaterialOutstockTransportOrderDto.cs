@@ -14,6 +14,7 @@ public sealed class MaterialOutstockTransportOrderDto
     public string? spec { get; set; }
     public string? steelGrade { get; set; }
     public string? taskStatus { get; set; }
+    public string? taskStatusName { get; set; }
     public string? toWarehouseName { get; set; }
     [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? totalQuantity { get; set; }
@@ -22,7 +23,7 @@ public sealed class MaterialOutstockTransportOrderDto
     public string? transportOrderNo { get; set; }
 
     public string orderNoDisplay => string.IsNullOrWhiteSpace(transportOrderNo) ? "--" : transportOrderNo!;
-    public string statusDisplay => string.IsNullOrWhiteSpace(taskStatus) ? "出库完成" : taskStatus!;
+    public string statusDisplay => FirstNonEmpty(taskStatusName, taskStatus, "出库完成");
     public string summaryDisplay
     {
         get
@@ -58,6 +59,7 @@ public sealed class MaterialOutstockTransportOrderDto
     }
 
     private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
+    private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "--";
 }
 
 public sealed class MaterialOutstockTransportOrderDetailDto
@@ -71,12 +73,13 @@ public sealed class MaterialOutstockTransportOrderDetailDto
     public string? routeCode { get; set; }
     public string? routeName { get; set; }
     public string? taskStatus { get; set; }
+    public string? taskStatusName { get; set; }
     public string? toLocationName { get; set; }
     public string? toWarehouseName { get; set; }
     public string? transportOrderNo { get; set; }
 
     public string orderNoDisplay => Display(transportOrderNo);
-    public string statusDisplay => string.IsNullOrWhiteSpace(taskStatus) ? "出库完成" : taskStatus!;
+    public string statusDisplay => FirstNonEmpty(taskStatusName, taskStatus, "出库完成");
     public string routeDisplay => string.IsNullOrWhiteSpace(routeName) ? Display(routeCode) : routeName!;
     public string fromDisplay => JoinLocation(fromWarehouseName, fromLocationName);
     public string toDisplay => JoinLocation(toWarehouseName, toLocationName);
@@ -88,6 +91,7 @@ public sealed class MaterialOutstockTransportOrderDetailDto
     }
 
     private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
+    private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "--";
 }
 
 public sealed class MaterialOutstockTransportOrderDetailItemDto

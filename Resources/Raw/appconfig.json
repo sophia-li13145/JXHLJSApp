@@ -135,6 +135,7 @@
     "transportOrder": {
       "scan": "/pda/transportOrder/scanTransportOrder",
       "complete": "/pda/transportOrder/completeTransportOrder",
+      "getDictList": "/pda/transportOrder/getDictList",
       "listMaterialOutstockTransportOrders": "/pda/transportOrder/listMaterialOutstockTransportOrders",
       "detailMaterialOutstockTransportOrder": "/pda/transportOrder/detailMaterialOutstockTransportOrder",
       "listProductInstockTransportOrders": "/pda/transportOrder/listProductInstockTransportOrders",

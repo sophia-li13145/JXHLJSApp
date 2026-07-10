@@ -1,4 +1,5 @@
 using JXHLJSApp.Models;
+using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Services.Common;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -20,6 +21,7 @@ public sealed class TransportOrderApi : ITransportOrderApi
     private readonly HttpClient _http;
     private readonly string _scanEndpoint;
     private readonly string _completeEndpoint;
+    private readonly string _dictListEndpoint;
     private readonly string _outstockListEndpoint;
     private readonly string _outstockDetailEndpoint;
     private readonly string _productInstockListEndpoint;
@@ -34,6 +36,8 @@ public sealed class TransportOrderApi : ITransportOrderApi
             configLoader.GetApiPath("transportOrder.scan", "/pda/transportOrder/scanTransportOrder"), servicePath);
         _completeEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("transportOrder.complete", "/pda/transportOrder/completeTransportOrder"), servicePath);
+        _dictListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("transportOrder.getDictList", "/pda/transportOrder/getDictList"), servicePath);
         _outstockListEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("transportOrder.listMaterialOutstockTransportOrders", "/pda/transportOrder/listMaterialOutstockTransportOrders"), servicePath);
         _outstockDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -57,13 +61,19 @@ public sealed class TransportOrderApi : ITransportOrderApi
 
     public async Task<List<MaterialOutstockTransportOrderDto>> GetMaterialOutstockTransportOrdersAsync(CancellationToken ct = default)
     {
+        var taskStatusNames = await LoadTaskStatusNamesAsync(ct).ConfigureAwait(false);
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _outstockListEndpoint);
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<List<MaterialOutstockTransportOrderDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
-        return data?.result ?? new List<MaterialOutstockTransportOrderDto>();
+        var list = data?.result ?? new List<MaterialOutstockTransportOrderDto>();
+        foreach (var item in list)
+        {
+            item.taskStatusName = ResolveTaskStatusName(item.taskStatus, taskStatusNames);
+        }
+        return list;
     }
 
     public async Task<MaterialOutstockTransportOrderDetailDto> GetMaterialOutstockTransportOrderDetailAsync(string transportOrderNo, CancellationToken ct = default)
@@ -78,7 +88,9 @@ public sealed class TransportOrderApi : ITransportOrderApi
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<MaterialOutstockTransportOrderDetailDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
-        return data?.result ?? new MaterialOutstockTransportOrderDetailDto();
+        var detail = data?.result ?? new MaterialOutstockTransportOrderDetailDto();
+        detail.taskStatusName = ResolveTaskStatusName(detail.taskStatus, await LoadTaskStatusNamesAsync(ct).ConfigureAwait(false));
+        return detail;
     }
 
 
@@ -118,6 +130,28 @@ public sealed class TransportOrderApi : ITransportOrderApi
         var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
         return ReadFlexibleBooleanResult(data);
+    }
+
+    private async Task<IReadOnlyDictionary<string, string>> LoadTaskStatusNamesAsync(CancellationToken ct)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _dictListEndpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<List<DictGroupDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return data?.result?
+            .FirstOrDefault(group => string.Equals(group.field, "taskStatus", StringComparison.OrdinalIgnoreCase))?
+            .dictItems?
+            .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue))
+            .GroupBy(item => item.dictItemValue!)
+            .ToDictionary(group => group.Key, group => group.First().dictItemName ?? group.Key)
+            ?? new Dictionary<string, string>();
+    }
+
+    private static string? ResolveTaskStatusName(string? taskStatus, IReadOnlyDictionary<string, string> taskStatusNames)
+    {
+        return !string.IsNullOrWhiteSpace(taskStatus) && taskStatusNames.TryGetValue(taskStatus, out var name) ? name : null;
     }
 
     private static string BuildUrlWithQuery(string endpoint, IReadOnlyDictionary<string, string?> query)
