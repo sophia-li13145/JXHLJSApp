@@ -138,7 +138,7 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _incomingQualitySaveResultEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
         return BooleanResultOrFalse(data);
     }
 
@@ -147,7 +147,7 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _incomingQualityDeleteEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new { incomingQualityNo }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
         return BooleanResultOrFalse(data);
     }
 
@@ -194,11 +194,11 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityCommitEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
         return BooleanResultOrFalse(data);
     }
 
-    private static bool BooleanResultOrFalse(ApiResp<bool> data)
+    private static bool BooleanResultOrFalse(ApiResp<bool?> data)
     {
         return data.result == true;
     }
