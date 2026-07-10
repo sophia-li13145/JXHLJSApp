@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.Quality.MachineQualityScanPage"
+             BackgroundColor="#F4F6FA"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="16,22,16,14" HeightRequest="66">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,16,16" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*">
+                <Label Text="‹ 返回工作台" TextColor="White" FontSize="15" VerticalOptions="Center">
+                    <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers>
+                </Label>
+                <Label Grid.Column="1" Text="机台质检" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,86,0" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Padding="20,24" RowDefinitions="Auto,*">
+            <Border BackgroundColor="White" Stroke="#C8D6EA" StrokeThickness="1" StrokeDashArray="4,3" Padding="24" HeightRequest="278">
+                <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                <VerticalStackLayout Spacing="14" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Label Text="📷" FontSize="42" HorizontalTextAlignment="Center" />
+                    <Label Text="请扫描机台二维码" TextColor="#051B3D" FontSize="16" HorizontalTextAlignment="Center" />
+                    <Label Text="点击此处读取二维码，进入机台质检任务" TextColor="#8BA0C0" FontSize="14" HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+                <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanTapped" /></Border.GestureRecognizers>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>
