@@ -4,38 +4,26 @@ using JXHLJSApp.Services.WorkOrders;
 
 namespace JXHLJSApp.Pages.WorkStart;
 
-[QueryProperty(nameof(WorkOrderId), "id")]
-[QueryProperty(nameof(WorkOrderNo), "workOrderNo")]
 public partial class MaterialUnloadingPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
-    private string? _workOrderId;
-    private string? _workOrderNo;
+    private readonly IProductionContextService _productionContext;
     private bool _machineConfirmed;
     private bool _isBusy;
     private string? _lastMaterialQrCode;
     private MaterialOutputConfirmDto? _confirmOutput;
     private WorkOrderInputOutputDto? _inputOutput;
 
-    public string? WorkOrderId
-    {
-        get => _workOrderId;
-        set => _workOrderId = Uri.UnescapeDataString(value ?? string.Empty);
-    }
 
-    public string? WorkOrderNo
-    {
-        get => _workOrderNo;
-        set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty);
-    }
-
-    public MaterialUnloadingPage(IWorkOrderApi workOrderApi, IScanService scanService)
+    public MaterialUnloadingPage(IWorkOrderApi workOrderApi, IScanService scanService, IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
         _scanService = scanService;
+        _productionContext = productionContext;
     }
+
 
     private async void OnBackTapped(object sender, TappedEventArgs e)
     {
@@ -86,16 +74,17 @@ public partial class MaterialUnloadingPage : ContentPage
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(_workOrderNo))
+        var workOrderNo = _productionContext.Current?.WorkOrderNo;
+        if (string.IsNullOrWhiteSpace(workOrderNo))
         {
-            await DisplayAlert("提示", "工单号为空，无法扫码下料。", "确定");
+            await DisplayAlert("提示", "当前生产工单为空，无法扫码下料。", "确定");
             return;
         }
 
         try
         {
             _isBusy = true;
-            var result = await _workOrderApi.ScanToWorkAsync(devCode, _workOrderNo);
+            var result = await _workOrderApi.ScanToWorkAsync(devCode, workOrderNo);
             if (!result)
             {
                 await DisplayAlert("识别失败", "机台识别未成功，请确认机台码后重试。", "确定");
@@ -104,6 +93,7 @@ public partial class MaterialUnloadingPage : ContentPage
 
             _machineConfirmed = true;
             MachineCodeEntry.Text = devCode;
+            UpdateProductionContextMachine(devCode);
             ShowMaterialScanStep();
         }
         catch (Exception ex)
@@ -116,6 +106,27 @@ public partial class MaterialUnloadingPage : ContentPage
         }
     }
 
+    private void UpdateProductionContextMachine(string machineCode)
+    {
+        var current = _productionContext.Current;
+        if (current is not null)
+        {
+            _productionContext.Set(new ProductionContext
+            {
+                WorkOrderId = current.WorkOrderId,
+                WorkOrderNo = current.WorkOrderNo,
+                ExecutionId = current.ExecutionId,
+                MachineCode = machineCode,
+                Status = current.Status,
+                StartedAt = current.StartedAt,
+                SessionId = current.SessionId
+            });
+            return;
+        }
+
+
+    }
+
     private async Task ScanMaterialAsync()
     {
         var code = await _scanService.ScanAsync("扫描下料标签二维码");
@@ -125,9 +136,10 @@ public partial class MaterialUnloadingPage : ContentPage
         {
             _isBusy = true;
             _lastMaterialQrCode = code.Trim();
-            var inputOutputs = string.IsNullOrWhiteSpace(_workOrderNo)
+            var workOrderNo = _productionContext.Current?.WorkOrderNo;
+            var inputOutputs = string.IsNullOrWhiteSpace(workOrderNo)
                 ? new List<WorkOrderInputOutputDto>()
-                : await _workOrderApi.GetWorkOrderInputOutputAsync(_workOrderNo);
+                : await _workOrderApi.GetWorkOrderInputOutputAsync(workOrderNo);
             _inputOutput = inputOutputs.FirstOrDefault();
             BindInputOutput(_inputOutput);
             ShowResultStep();
@@ -167,7 +179,7 @@ public partial class MaterialUnloadingPage : ContentPage
             pieceWeight = pieceWeight,
             productInspectStatus = "合格品",
             qrCode = _lastMaterialQrCode,
-            workOrderNo = _workOrderNo
+            workOrderNo = _productionContext.Current?.WorkOrderNo
         };
 
         InspectStatusEntry.Text = _confirmOutput.productInspectStatus;
@@ -266,13 +278,7 @@ public partial class MaterialUnloadingPage : ContentPage
 
     private async Task GoReportAsync(string route)
     {
-        var query = new Dictionary<string, object>();
-        if (!string.IsNullOrWhiteSpace(_workOrderNo))
-        {
-            query["workOrderNo"] = _workOrderNo;
-        }
-
-        await Shell.Current.GoToAsync(route, query);
+        await Shell.Current.GoToAsync(route);
     }
 
     private static string FormatDecimal(decimal? value) => value.HasValue ? value.Value.ToString("0.##") : "--";

@@ -3,26 +3,25 @@ using JXHLJSApp.Services.WorkOrders;
 
 namespace JXHLJSApp.Pages.WorkStart;
 
-[QueryProperty(nameof(WorkOrderNo), "workOrderNo")]
 public partial class WorkCompletionPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
-    private string? _workOrderNo;
+    private readonly IProductionContextService _productionContext;
     private bool _isBusy;
 
-    public string? WorkOrderNo
-    {
-        get => _workOrderNo;
-        set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty);
-    }
 
-    public WorkCompletionPage(IWorkOrderApi workOrderApi, IScanService scanService)
+    public WorkCompletionPage(
+        IWorkOrderApi workOrderApi,
+        IScanService scanService,
+        IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
         _scanService = scanService;
+        _productionContext = productionContext;
     }
+
 
     private async void OnBackTapped(object sender, TappedEventArgs e)
     {
@@ -72,6 +71,7 @@ public partial class WorkCompletionPage : ContentPage
                 return;
             }
 
+            UpdateProductionContextMachine(devCode);
             ScanPanel.IsVisible = false;
             ManualMachinePanel.IsVisible = false;
             SuccessBanner.IsVisible = true;
@@ -87,6 +87,26 @@ public partial class WorkCompletionPage : ContentPage
         }
     }
 
+    private void UpdateProductionContextMachine(string machineCode)
+    {
+        var current = _productionContext.Current;
+        if (current is null)
+        {
+            return;
+        }
+
+        _productionContext.Set(new ProductionContext
+        {
+            WorkOrderId = current.WorkOrderId,
+            WorkOrderNo = current.WorkOrderNo,
+            ExecutionId = current.ExecutionId,
+            MachineCode = machineCode,
+            Status = current.Status,
+            StartedAt = current.StartedAt,
+            SessionId = current.SessionId
+        });
+    }
+
     private async void OnConfirmCompletionClicked(object sender, EventArgs e)
     {
         if (_isBusy)
@@ -94,9 +114,10 @@ public partial class WorkCompletionPage : ContentPage
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(_workOrderNo))
+        var workOrderNo = _productionContext.Current?.WorkOrderNo;
+        if (string.IsNullOrWhiteSpace(workOrderNo))
         {
-            await DisplayAlert("提示", "工单号为空，无法确认完工。", "确定");
+            await DisplayAlert("提示", "当前生产工单为空，无法确认完工。", "确定");
             return;
         }
 
@@ -104,13 +125,14 @@ public partial class WorkCompletionPage : ContentPage
         {
             _isBusy = true;
             ConfirmButton.IsEnabled = false;
-            var success = await _workOrderApi.ConfirmCompletionAsync(_workOrderNo);
+            var success = await _workOrderApi.ConfirmCompletionAsync(workOrderNo);
             if (!success)
             {
                 await DisplayAlert("完工失败", "工单完工未成功，请稍后重试。", "确定");
                 return;
             }
 
+            _productionContext.Clear();
             await DisplayAlert("提示", "机台完工作业记录成功!", "确定");
             await Shell.Current.GoToAsync(AppShell.RouteHome);
         }
