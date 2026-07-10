@@ -29,9 +29,9 @@
                             <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
                             <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="8" ColumnSpacing="12">
                                 <Label Text="{Binding incomingQualityNoDisplay}" TextColor="#051B3D" FontSize="18" FontAttributes="Bold" />
-                                <Border Grid.Column="1" BackgroundColor="#EEF3FA" StrokeThickness="0" Padding="9,4" VerticalOptions="Start">
+                                <Border Grid.Column="1" BackgroundColor="{Binding statusBackground}" StrokeThickness="0" Padding="9,4" VerticalOptions="Start">
                                     <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
-                                    <Label Text="{Binding statusDisplay}" TextColor="#244B88" FontSize="13" FontAttributes="Bold" />
+                                    <Label Text="{Binding statusDisplay}" TextColor="{Binding statusColor}" FontSize="13" FontAttributes="Bold" />
                                 </Border>
                                 <Label Grid.Row="1" Grid.ColumnSpan="2" TextColor="#38557C" FontSize="14">
                                     <Label.FormattedText>
