@@ -18,6 +18,7 @@ public interface IQualityApi
     Task<bool> SaveIncomingQualityResultAsync(IncomingQualitySaveResultRequestDto request, CancellationToken ct = default);
     Task<bool> DeleteIncomingQualityOrderAsync(string incomingQualityNo, CancellationToken ct = default);
     Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersByResourceAsync(string resourceCode, CancellationToken ct = default);
+    Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, CancellationToken ct = default);
     Task<ProductionQualityDetailDto> GetProductionQualityDetailAsync(string qualityNo, string workOrderNo, CancellationToken ct = default);
     Task<bool> CommitProductionQualityAsync(ProductionQualityCommitRequestDto request, CancellationToken ct = default);
 }
@@ -150,10 +151,29 @@ public sealed class QualityApi : IQualityApi
         return data.result;
     }
 
-    public async Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersByResourceAsync(string resourceCode, CancellationToken ct = default)
+    public Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersByResourceAsync(string resourceCode, CancellationToken ct = default)
+    {
+        return GetProductionQualityOrdersAsync(resourceName: null, inspectStatus: null, resourceCode: resourceCode, ct: ct);
+    }
+
+    public Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, CancellationToken ct = default)
+    {
+        return GetProductionQualityOrdersAsync(resourceName: resourceName, inspectStatus: inspectStatus, resourceCode: null, ct: ct);
+    }
+
+    private async Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, string? resourceCode, CancellationToken ct)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityListEndpoint);
-        using var resp = await _http.PostAsJsonAsync(url, new { resourceCode }, JsonOptions, ct).ConfigureAwait(false);
+        using var resp = await _http.PostAsJsonAsync(url, new
+        {
+            createdTimeBegin = string.Empty,
+            createdTimeEnd = string.Empty,
+            inspectStatus = inspectStatus ?? string.Empty,
+            inspectionSchemeCode = string.Empty,
+            qualityNo = string.Empty,
+            resourceCode = resourceCode ?? string.Empty,
+            resourceName = resourceName ?? string.Empty
+        }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<List<ProductionQualityOrderDto>>(resp, ct).ConfigureAwait(false);
         return data.result ?? new List<ProductionQualityOrderDto>();

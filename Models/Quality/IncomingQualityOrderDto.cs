@@ -141,7 +141,14 @@ public sealed class ProductionQualityOrderDto
 
     public string titleDisplay => $"{FirstNonEmpty(resourceName, machineNo, resourceCode, "机台")} {FirstNonEmpty(qualityTypeName, inspectionSchemeTypeName, "质检任务")}";
     public string machineDisplay => FirstNonEmpty(resourceName, machineNo, resourceCode, "-");
-    public string statusDisplay => string.IsNullOrWhiteSpace(inspectStatus) ? "待检验" : inspectStatus!;
+    public string statusDisplay => inspectStatus switch
+    {
+        "0" => "新建",
+        "1" => "待检验",
+        "2" => "检验中",
+        "3" => "检验完成",
+        _ => string.IsNullOrWhiteSpace(inspectStatus) ? "待检验" : inspectStatus!
+    };
     public string qualityNoDisplay => string.IsNullOrWhiteSpace(qualityNo) ? "-" : qualityNo!;
     public string orderNumberDisplay => string.IsNullOrWhiteSpace(orderNumber) ? "-" : orderNumber!;
 

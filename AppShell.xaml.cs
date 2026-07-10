@@ -44,6 +44,7 @@ public partial class AppShell : Shell
     public const string RouteIncomingQualityOrders = "IncomingQualityOrders";
     public const string RouteIncomingQualityOrderDetail = "IncomingQualityOrderDetail";
     public const string RouteIncomingQualityScan = "IncomingQualityScan";
+    public const string RouteProductionQualityOrders = "ProductionQualityOrders";
     public const string RouteMachineQualityScan = "MachineQualityScan";
     public const string RouteMachineQualityTasks = "MachineQualityTasks";
     public const string RouteMachineQualityDetail = "MachineQualityDetail";
@@ -84,6 +85,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteIncomingQualityOrders, typeof(IncomingQualityOrderListPage));
         Routing.RegisterRoute(RouteIncomingQualityOrderDetail, typeof(IncomingQualityOrderDetailPage));
         Routing.RegisterRoute(RouteIncomingQualityScan, typeof(IncomingQualityScanPage));
+        Routing.RegisterRoute(RouteProductionQualityOrders, typeof(ProductionQualityOrderListPage));
         Routing.RegisterRoute(RouteMachineQualityScan, typeof(MachineQualityScanPage));
         Routing.RegisterRoute(RouteMachineQualityTasks, typeof(MachineQualityTaskListPage));
         Routing.RegisterRoute(RouteMachineQualityDetail, typeof(MachineQualityDetailPage));
