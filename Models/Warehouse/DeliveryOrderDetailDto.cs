@@ -6,6 +6,7 @@ public sealed class DeliveryOrderDetailDto
 {
     public List<DeliveryOrderScanDetailDto>? actualScanDetailList { get; set; }
     public string? auditStatus { get; set; }
+    public string? auditStatusName { get; set; }
     public string? carrierLicense { get; set; }
     public string? carrierName { get; set; }
     public string? consAddress { get; set; }
@@ -24,7 +25,18 @@ public sealed class DeliveryOrderDetailDto
     public string carrierLicenseDisplay => ValueOrDash(carrierLicense);
     public string logisticsNumberDisplay => ValueOrDash(logisticsNumber);
     public string expectedDeliveryDateDisplay => FormatDate(expectedDeliveryTime);
-    public string auditStatusDisplay => string.IsNullOrWhiteSpace(auditStatus) ? "待发货复核" : auditStatus!;
+    public string auditStatusDisplay
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(auditStatusName))
+            {
+                return auditStatusName!;
+            }
+
+            return string.IsNullOrWhiteSpace(auditStatus) ? "待发货复核" : auditStatus!;
+        }
+    }
     public int? needScanCount => detailList?.Count ?? 0;
     public int? scannedCount => detailList?.Count(item => item.isScanned) ?? 0;
     public string scanProgressDisplay => $"{scannedCount} / {needScanCount} 件";
