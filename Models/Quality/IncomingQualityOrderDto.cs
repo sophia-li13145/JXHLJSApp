@@ -57,13 +57,32 @@ public sealed class IncomingQualityOrderDetailDto
     public string? materialName { get; set; }
     public string? spec { get; set; }
     public int? total { get; set; }
+    public string? status { get; set; }
+    public string? statusName { get; set; }
     public string? delStatus { get; set; }
     public string? delStatusName { get; set; }
 
     public string incomingQualityNoDisplay => string.IsNullOrWhiteSpace(incomingQualityNo) ? "-" : incomingQualityNo!;
     public string instockNoDisplay => string.IsNullOrWhiteSpace(instockNo) ? "-" : instockNo!;
-    public string statusDisplay => string.IsNullOrWhiteSpace(delStatusName) ? (delStatus ?? "未提交") : delStatusName!;
-    public int? scanCount => detailList?.Count ?? 0;
+    public string materialNameDisplay => string.IsNullOrWhiteSpace(materialName) ? "-" : materialName!;
+    public string specDisplay => string.IsNullOrWhiteSpace(spec) ? "-" : spec!;
+    public string totalDisplay => total.HasValue ? $"{total} 件" : "-";
+    public string statusDisplay => FirstNonEmpty(statusName, delStatusName, MapStatus(status), MapStatus(delStatus), "未提交");
+    public int? scanCount => detailList?.Count ?? done ?? 0;
+    public int? done { get; set; }
+    public bool isUnsubmitted => IsStatus("UNSUBMITTED", "unsubmitted", "未提交");
+    public bool isWaitInspection => IsStatus("WAIT_INSPECTION", "wait_inspection", "待质检");
+    public bool isCompleted => IsStatus("COMPLETED", "completed", "已完成", "检验完成");
+
+    private bool IsStatus(params string[] values) => values.Any(value => string.Equals(status, value, StringComparison.OrdinalIgnoreCase) || string.Equals(delStatus, value, StringComparison.OrdinalIgnoreCase) || string.Equals(statusDisplay, value, StringComparison.OrdinalIgnoreCase));
+    private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
+    private static string? MapStatus(string? value) => value?.ToLowerInvariant() switch
+    {
+        "unsubmitted" => "未提交",
+        "wait_inspection" => "待质检",
+        "completed" => "已完成",
+        _ => value
+    };
 }
 
 public sealed class IncomingQualityScanDetailDto
@@ -71,10 +90,11 @@ public sealed class IncomingQualityScanDetailDto
     public string? otherProblemItem { get; set; }
     public string? problemPoint { get; set; }
     public string? qrCode { get; set; }
+    public string? qrCodeNo { get; set; }
     public string? inspectResult { get; set; }
     public string? inspectResultName { get; set; }
     public string problemPointDisplay => string.IsNullOrWhiteSpace(problemPoint) ? "-" : problemPoint!;
-    public string qrCodeDisplay => string.IsNullOrWhiteSpace(qrCode) ? "-" : qrCode!;
+    public string qrCodeDisplay => string.IsNullOrWhiteSpace(qrCode) ? (string.IsNullOrWhiteSpace(qrCodeNo) ? "-" : qrCodeNo!) : qrCode!;
     public string inspectResultDisplay => string.IsNullOrWhiteSpace(inspectResultName) ? (inspectResult ?? "-") : inspectResultName!;
     public Color inspectResultColor => inspectResultDisplay.Contains("合格") && !inspectResultDisplay.Contains("不合格") ? Color.FromArgb("#00A86B") : Color.FromArgb("#FF4D5E");
 }
@@ -99,9 +119,10 @@ public sealed class IncomingQualityScanMaterialDto
     public string? materialName { get; set; }
     public string? origin { get; set; }
     public string? qrCode { get; set; }
+    public string? qrCodeNo { get; set; }
     public string? spec { get; set; }
 
-    public string qrCodeDisplay => string.IsNullOrWhiteSpace(qrCode) ? "-" : qrCode!;
+    public string qrCodeDisplay => string.IsNullOrWhiteSpace(qrCode) ? (string.IsNullOrWhiteSpace(qrCodeNo) ? "-" : qrCodeNo!) : qrCode!;
     public string materialDisplay
     {
         get

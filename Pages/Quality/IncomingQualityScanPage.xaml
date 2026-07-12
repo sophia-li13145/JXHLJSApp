@@ -17,7 +17,16 @@
         </Border>
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Padding="20,16" Spacing="18">
-                <Border BackgroundColor="White" StrokeThickness="0" Padding="18">
+                <Border x:Name="ScanPanel" BackgroundColor="#FFFBEF" Stroke="#F59E0B" StrokeThickness="1" StrokeDashArray="4,3" Padding="24" HeightRequest="190">
+                    <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanPanelTapped" /></Border.GestureRecognizers>
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="10" HorizontalOptions="Center" VerticalOptions="Center">
+                        <Label Text="📷" FontSize="34" HorizontalTextAlignment="Center" />
+                        <Label Text="点击此处模拟扫描 异常物料二维码" TextColor="#D97706" FontSize="15" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                        <Label Text="状态判断将根据入库单是否提交有所不同" TextColor="#38557C" FontSize="12" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Border>
+                <Border x:Name="MaterialInfoCard" BackgroundColor="White" StrokeThickness="0" Padding="18" IsVisible="False">
                     <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
                     <VerticalStackLayout Spacing="12">
                         <Label Text="扫码识别信息" TextColor="#00346F" FontSize="16" FontAttributes="Bold" />

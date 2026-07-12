@@ -46,6 +46,7 @@
       "detail": "/pda/qs/qsIncomingQualityOrder/detail",
       "scan": "/pda/qs/qsIncomingQualityOrder/scan",
       "saveResult": "/pda/qs/qsIncomingQualityOrder/saveResult",
+      "completed": "/pda/qs/qsIncomingQualityOrder/completed",
       "delete": "/pda/qs/qsIncomingQualityOrder/delete"
     },
     "deliveryOrder": {
