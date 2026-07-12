@@ -1,6 +1,8 @@
 using JXHLJSApp.Models.WorkOrders;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.WorkOrders;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace JXHLJSApp.Pages.WorkStart;
 
@@ -172,25 +174,28 @@ public partial class MaterialUnloadingPage : ContentPage
     private void BindInputOutput(WorkOrderInputOutputDto? inputOutput)
     {
         var outputLength = TryParseDecimal(inputOutput?.wireTakeUpLength);
-        var pieceWeight = CalculatePieceWeight(outputLength, inputOutput?.outputSpecification);
         _confirmOutput = new MaterialOutputConfirmDto
         {
             outputLength = outputLength,
-            pieceWeight = pieceWeight,
-            productInspectStatus = "合格品",
             qrCode = _lastMaterialQrCode,
             workOrderNo = _productionContext.Current?.WorkOrderNo
         };
 
-        InspectStatusEntry.Text = _confirmOutput.productInspectStatus;
+        OutputLengthLabel.Text = $"产出长度（m）（收线长度：{FormatDecimalWithUnit(outputLength, "m")}）*";
         OutputLengthEntry.Text = FormatDecimalInput(outputLength);
-        PieceWeightEntry.Text = FormatDecimalInput(pieceWeight);
-        MaterialCodeLabel.Text = ValueOrDash(inputOutput?.outputMaterialCode);
-        SteelGradeLabel.Text = ValueOrDash(inputOutput?.machineNo);
-        OriginPlaceLabel.Text = ValueOrDash(FirstNonEmpty(inputOutput?.customerCode, inputOutput?.outputOriginPlace));
-        SpecLabel.Text = ValueOrDash(inputOutput?.outputSpecification);
-        WeightLabel.Text = FormatDecimalWithUnit(pieceWeight, "KG");
-        LengthLabel.Text = FormatDecimalWithUnit(outputLength, "m");
+        InputMaterialCodeLabel.Text = $"物料: {ValueOrDash(inputOutput?.inputMaterialCode)}";
+        InputSteelGradeLabel.Text = $"钢号: {ValueOrDash(FirstNonEmpty(inputOutput?.inputSteel, inputOutput?.inputSteelGrade, inputOutput?.inputMaterialName))}";
+        InputOriginPlaceLabel.Text = $"产地: {ValueOrDash(inputOutput?.inputOriginPlace)}";
+        InputSpecLabel.Text = $"规格: {ValueOrDash(inputOutput?.inputSpecification)}";
+        MaterialCodeLabel.Text = $"物料: {ValueOrDash(inputOutput?.outputMaterialCode)}";
+        SteelGradeLabel.Text = $"钢号: {ValueOrDash(FirstNonEmpty(inputOutput?.outputSteel, inputOutput?.outputSteelGrade, inputOutput?.outputMaterialName))}";
+        OriginPlaceLabel.Text = $"产地: {ValueOrDash(inputOutput?.outputOriginPlace)}";
+        SpecLabel.Text = $"规格: {ValueOrDash(inputOutput?.outputSpecification)}";
+        OutputWorkOrderNoLabel.Text = $"生产者 {ValueOrDash(FirstNonEmpty(inputOutput?.workOrderNo, _productionContext.Current?.WorkOrderNo))}";
+        OutputMachineLabel.Text = $"机台 {ValueOrDash(FirstNonEmpty(inputOutput?.machineNo, inputOutput?.machineType, inputOutput?.deviceName, _productionContext.Current?.MachineCode))}";
+        OutputCustomerCodeLabel.Text = $"客户代码 {ValueOrDash(inputOutput?.customerCode)}";
+        OutputSequenceLabel.Text = $"当前序号 {FormatDecimal(inputOutput?.currentSequenceNo)}";
+        RecalculateOutputFields();
     }
 
     private async void OnConfirmBackClicked(object sender, EventArgs e)
@@ -219,7 +224,7 @@ public partial class MaterialUnloadingPage : ContentPage
 
         if (string.IsNullOrWhiteSpace(_confirmOutput.productInspectStatus))
         {
-            await DisplayAlert("提示", "请输入产品检验状态。", "确定");
+            await DisplayAlert("提示", "产品检验状态为空，请检查产出长度。", "确定");
             return;
         }
 
@@ -231,7 +236,7 @@ public partial class MaterialUnloadingPage : ContentPage
 
         if (!_confirmOutput.pieceWeight.HasValue)
         {
-            await DisplayAlert("提示", "请输入件重。", "确定");
+            await DisplayAlert("提示", "件重计算失败，请检查产出长度和规格。", "确定");
             return;
         }
 
@@ -285,30 +290,51 @@ public partial class MaterialUnloadingPage : ContentPage
 
     private static string FormatDecimalInput(decimal? value) => value.HasValue ? value.Value.ToString("0.##") : string.Empty;
 
-    private static decimal? TryParseDecimal(string? value) =>
-        decimal.TryParse(value, out var result) ? result : null;
+    private static decimal? TryParseDecimal(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+
+        var match = Regex.Match(value, @"[-+]?\d+(?:[.,]\d+)?");
+        if (!match.Success) return null;
+
+        var normalized = match.Value.Replace(',', '.');
+        return decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out var result) ? result : null;
+    }
+
+    private void OnManualOutputTextChanged(object sender, TextChangedEventArgs e) => RecalculateOutputFields();
 
     private void OnManualOutputCompleted(object sender, EventArgs e) => ApplyManualOutputValues();
 
-    private void ApplyManualOutputValues()
+    private void ApplyManualOutputValues() => RecalculateOutputFields();
+
+    private void RecalculateOutputFields()
     {
         if (_confirmOutput is null)
         {
             return;
         }
 
-        _confirmOutput.productInspectStatus = string.IsNullOrWhiteSpace(InspectStatusEntry.Text)
-            ? null
-            : InspectStatusEntry.Text.Trim();
-        _confirmOutput.outputLength = TryParseDecimal(OutputLengthEntry.Text);
-        _confirmOutput.pieceWeight = TryParseDecimal(PieceWeightEntry.Text);
+        var outputLength = TryParseDecimal(OutputLengthEntry.Text);
+        var pieceWeight = CalculatePieceWeight(outputLength, _inputOutput?.outputSpecification);
+        var receiveLength = TryParseDecimal(_inputOutput?.wireTakeUpLength);
+        var inspectStatus = outputLength.HasValue && receiveLength.HasValue && receiveLength.Value >= outputLength.Value ? "合格品" : "小件";
+
+        _confirmOutput.outputLength = outputLength;
+        _confirmOutput.pieceWeight = pieceWeight;
+        _confirmOutput.productInspectStatus = inspectStatus;
+
+        InspectStatusEntry.Text = inspectStatus;
+        InspectStatusEntry.TextColor = inspectStatus == "合格品" ? Color.FromArgb("#00A86B") : Color.FromArgb("#D97706");
+        PieceWeightEntry.Text = FormatDecimalInput(pieceWeight);
+        WeightLabel.Text = $"件重: {FormatDecimalWithUnit(pieceWeight, "KG")}";
+        LengthLabel.Text = $"长度: {FormatDecimalWithUnit(outputLength, "m")}";
     }
 
     private static decimal? CalculatePieceWeight(decimal? outputLength, string? outputSpecification)
     {
         var spec = TryParseDecimal(outputSpecification);
         return outputLength.HasValue && spec.HasValue
-            ? Math.Round(outputLength.Value * 0.00617m * spec.Value, 2)
+            ? Math.Round(outputLength.Value * 0.00617m * spec.Value * spec.Value, 2)
             : null;
     }
 }
