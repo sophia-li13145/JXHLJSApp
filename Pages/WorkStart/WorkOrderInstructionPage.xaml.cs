@@ -102,7 +102,7 @@ public partial class WorkOrderInstructionPage : ContentPage
                 StrokeShape = new RoundRectangle { CornerRadius = 6 },
                 Content = new Label
                 {
-                    Text = FormatDecimal(item.moldSequence),
+                    Text = item.moldSequence,
                     TextColor = Color.FromArgb("#C45A00"),
                     FontAttributes = FontAttributes.Bold,
                     FontSize = 15,

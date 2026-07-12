@@ -52,7 +52,7 @@ public sealed class WorkOrderDetailDto
     public string statusTextColor => IsPausedStatus ? "#C47A00" : "#00A651";
     public string statusSeparatorColor => IsPausedStatus ? "#F3D9A6" : "#CDEEDC";
     public string moldSequenceDisplay => moldSequenceList is { Count: > 0 }
-        ? string.Join("-", moldSequenceList.Select(item => FormatDecimal(item.moldSequence, string.Empty)))
+        ? string.Join("-", moldSequenceList.Select(item => item.moldSequence))
         : "--";
 
     private bool IsPausedStatus => !string.IsNullOrWhiteSpace(workOrderStatus)
@@ -90,7 +90,7 @@ public sealed class WorkOrderDetailDto
 
 public sealed class WorkOrderMoldSequenceDto
 {
-    public decimal? moldSequence { get; set; }
+    public string? moldSequence { get; set; }
     public decimal? pieceWeight { get; set; }
     public decimal? productionQuantity { get; set; }
     public decimal? productionWeight { get; set; }
