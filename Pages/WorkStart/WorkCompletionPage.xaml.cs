@@ -72,6 +72,7 @@ public partial class WorkCompletionPage : ContentPage
             }
 
             UpdateProductionContextMachine(devCode);
+            await LoadCompletionStatusAsync();
             ScanPanel.IsVisible = false;
             ManualMachinePanel.IsVisible = false;
             SuccessBanner.IsVisible = true;
@@ -85,6 +86,25 @@ public partial class WorkCompletionPage : ContentPage
         {
             _isBusy = false;
         }
+    }
+
+    private async Task LoadCompletionStatusAsync()
+    {
+        var workOrderNo = _productionContext.Current?.WorkOrderNo;
+        if (string.IsNullOrWhiteSpace(workOrderNo))
+        {
+            SystemStatusValueLabel.Text = "--";
+            TargetStatusValueLabel.Text = "--";
+            WeightProgressValueLabel.Text = "--";
+            ConfirmButton.IsEnabled = false;
+            return;
+        }
+
+        var status = await _workOrderApi.GetWorkOrderCompletionStatusAsync(workOrderNo);
+        SystemStatusValueLabel.Text = status?.systemStatusDisplay ?? "--";
+        TargetStatusValueLabel.Text = status?.targetStatusDisplay ?? "--";
+        WeightProgressValueLabel.Text = status?.weightProgressDisplay ?? "--";
+        ConfirmButton.IsEnabled = status?.isCompleted == true;
     }
 
     private void UpdateProductionContextMachine(string machineCode)
