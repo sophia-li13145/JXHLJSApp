@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.WorkStart.MaterialOperationSuccessPage"
+             BackgroundColor="#F4F6FA"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="18,18,18,14" HeightRequest="66">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,18,18" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Label Text="‹ 返回" TextColor="White" VerticalOptions="Center">
+                    <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers>
+                </Label>
+                <Label Grid.Column="1" Text="操作提示" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                <BoxView Grid.Column="2" WidthRequest="48" Opacity="0" />
+            </Grid>
+        </Border>
+
+        <VerticalStackLayout Grid.Row="1" Spacing="22" HorizontalOptions="Center" VerticalOptions="Start" Padding="0,112,0,0">
+            <Border BackgroundColor="#43C984" WidthRequest="70" HeightRequest="70">
+                <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                <Label Text="✓" TextColor="White" FontSize="54" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+            </Border>
+            <Label Text="操作成功" TextColor="#001431" FontSize="26" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+            <Label Text="数据已同步到系统" TextColor="#4B6688" FontSize="15" HorizontalTextAlignment="Center" />
+            <Button Text="完 成 返 回" WidthRequest="240" HeightRequest="54" CornerRadius="9" BackgroundColor="#244B88" TextColor="White" FontAttributes="Bold" FontSize="17" Clicked="OnDoneClicked" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

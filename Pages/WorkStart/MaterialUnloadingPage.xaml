@@ -51,22 +51,51 @@
                             <Button Text="返工上报" BackgroundColor="#FF9800" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="46" Clicked="OnReworkReportClicked" />
                             <Button Grid.Column="1" Text="异常上报" BackgroundColor="#F43F4B" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="46" Clicked="OnAbnormalReportClicked" />
                         </Grid>
-                        <Label Text="产品检验状态（手动输入）*" TextColor="#001431" FontSize="14" FontAttributes="Bold" />
-                        <Entry x:Name="InspectStatusEntry" Text="合格品" TextColor="#00A86B" FontAttributes="Bold" BackgroundColor="#F4F7FB" Completed="OnManualOutputCompleted" />
-                        <Label Text="产出长度（m）（手动输入）*" TextColor="#001431" FontSize="14" FontAttributes="Bold" />
-                        <Entry x:Name="OutputLengthEntry" Keyboard="Numeric" TextColor="#001431" FontAttributes="Bold" BackgroundColor="#F4F7FB" Completed="OnManualOutputCompleted" />
-                        <Label Text="件重（KG）（手动输入）*" TextColor="#001431" FontSize="14" FontAttributes="Bold" />
-                        <Entry x:Name="PieceWeightEntry" Keyboard="Numeric" TextColor="#001431" FontAttributes="Bold" BackgroundColor="#F4F7FB" Completed="OnManualOutputCompleted" />
-                        <Label Text="上下料对照" TextColor="#001431" FontSize="17" FontAttributes="Bold" />
-                        <BoxView HeightRequest="1" Color="#DDE6F1" />
-                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="92,*" RowSpacing="0" ColumnSpacing="10">
-                            <Label Text="下料物料" TextColor="#4B6688" Padding="0,10" /><Label x:Name="MaterialCodeLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="1" Text="机台" TextColor="#4B6688" Padding="0,10" /><Label x:Name="SteelGradeLabel" Grid.Row="1" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="2" Text="产地" TextColor="#4B6688" Padding="0,10" /><Label x:Name="OriginPlaceLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="3" Text="规格" TextColor="#4B6688" Padding="0,10" /><Label x:Name="SpecLabel" Grid.Row="3" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="4" Text="件重 (KG)" TextColor="#4B6688" Padding="0,10" /><Label x:Name="WeightLabel" Grid.Row="4" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
-                            <Label Grid.Row="5" Text="长度 (米)" TextColor="#4B6688" Padding="0,10" /><Label x:Name="LengthLabel" Grid.Row="5" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" Padding="0,10" HorizontalTextAlignment="End" />
+                        <Label Text="产品检验状态（系统智能判定）*" TextColor="#001431" FontSize="14" FontAttributes="Bold" />
+                        <Entry x:Name="InspectStatusEntry" Text="合格品" TextColor="#00A86B" FontAttributes="Bold" BackgroundColor="#F4F7FB" IsReadOnly="True" />
+                        <Label x:Name="OutputLengthLabel" Text="产出长度（m）*" TextColor="#001431" FontSize="14" FontAttributes="Bold" />
+                        <Entry x:Name="OutputLengthEntry" Keyboard="Numeric" TextColor="#001431" FontAttributes="Bold" BackgroundColor="#F4F7FB" TextChanged="OnManualOutputTextChanged" Completed="OnManualOutputCompleted" />
+                        <Label x:Name="PieceWeightLabel" Text="件重（KG）（长度×0.00617×规格²）*" TextColor="#001431" FontSize="14" FontAttributes="Bold" />
+                        <Entry x:Name="PieceWeightEntry" Keyboard="Numeric" TextColor="#001431" FontAttributes="Bold" BackgroundColor="#F4F7FB" IsReadOnly="True" />
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,6,0,0">
+                            <Label Text="上下料对照" TextColor="#001431" FontSize="17" FontAttributes="Bold" />
+                            <Border x:Name="MatchBadge" Grid.Column="1" BackgroundColor="#E9FFF2" StrokeThickness="0" Padding="8,3">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
+                                <Label x:Name="MatchBadgeLabel" Text="映射匹配" TextColor="#00A86B" FontSize="12" FontAttributes="Bold" />
+                            </Border>
                         </Grid>
+                        <VerticalStackLayout Spacing="10">
+                            <Border BackgroundColor="#F4F7FB" Stroke="#E3EBF6" Padding="14,12">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                                <VerticalStackLayout Spacing="8">
+                                    <Label Text="📥 上料信息" TextColor="#5B7DB2" FontSize="12" FontAttributes="Bold" />
+                                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,*" RowSpacing="6" ColumnSpacing="10">
+                                        <Label x:Name="InputMaterialCodeLabel" TextColor="#001431" FontAttributes="Bold" />
+                                        <Label x:Name="InputSteelGradeLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
+                                        <Label x:Name="InputOriginPlaceLabel" Grid.Row="1" TextColor="#001431" />
+                                        <Label x:Name="InputSpecLabel" Grid.Row="1" Grid.Column="1" TextColor="#001431" />
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </Border>
+                            <Border BackgroundColor="#EEF6FF" Stroke="#80B8FF" Padding="14,12">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                                <VerticalStackLayout Spacing="8">
+                                    <Label Text="📤 下料信息及工单属性" TextColor="#0057FF" FontSize="12" FontAttributes="Bold" />
+                                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="*,*" RowSpacing="6" ColumnSpacing="10">
+                                        <Label x:Name="MaterialCodeLabel" TextColor="#001431" FontAttributes="Bold" />
+                                        <Label x:Name="SteelGradeLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
+                                        <Label x:Name="OriginPlaceLabel" Grid.Row="1" TextColor="#001431" />
+                                        <Label x:Name="SpecLabel" Grid.Row="1" Grid.Column="1" TextColor="#001431" />
+                                        <Label x:Name="LengthLabel" Grid.Row="2" TextColor="#4B6688" />
+                                        <Label x:Name="WeightLabel" Grid.Row="2" Grid.Column="1" TextColor="#4B6688" />
+                                        <Label x:Name="OutputWorkOrderNoLabel" Grid.Row="3" TextColor="#4B6688" FontSize="12" />
+                                        <Label x:Name="OutputMachineLabel" Grid.Row="3" Grid.Column="1" TextColor="#001431" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                                        <Label x:Name="OutputCustomerCodeLabel" Grid.Row="4" TextColor="#4B6688" FontSize="12" />
+                                        <Label x:Name="OutputSequenceLabel" Grid.Row="4" Grid.Column="1" TextColor="#4B6688" FontSize="12" HorizontalTextAlignment="End" />
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </Border>
+                        </VerticalStackLayout>
                         <Button x:Name="ConfirmButton" Text="确认提交下料" BackgroundColor="#244B88" TextColor="White" FontSize="17" FontAttributes="Bold" CornerRadius="10" HeightRequest="54" Clicked="OnConfirmBackClicked" />
                     </VerticalStackLayout>
                 </Border>
