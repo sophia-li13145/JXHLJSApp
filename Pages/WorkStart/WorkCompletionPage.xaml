@@ -50,7 +50,15 @@
                         <Label Text="当前执行中工单" TextColor="#001431" FontSize="22" FontAttributes="Bold" HorizontalTextAlignment="Center" />
                         <Grid ColumnDefinitions="*,Auto" Padding="0,14,0,0">
                             <Label Text="系统状态" TextColor="#4B6688" FontSize="15" />
-                            <Label Grid.Column="1" Text="目标已达成" TextColor="#001431" FontSize="16" FontAttributes="Bold" />
+                            <Label x:Name="SystemStatusValueLabel" Grid.Column="1" Text="--" TextColor="#001431" FontSize="16" FontAttributes="Bold" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="达标状态" TextColor="#4B6688" FontSize="15" />
+                            <Label x:Name="TargetStatusValueLabel" Grid.Column="1" Text="--" TextColor="#001431" FontSize="16" FontAttributes="Bold" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="重量进度" TextColor="#4B6688" FontSize="15" />
+                            <Label x:Name="WeightProgressValueLabel" Grid.Column="1" Text="--" TextColor="#001431" FontSize="16" FontAttributes="Bold" />
                         </Grid>
                         <BoxView HeightRequest="1" Color="#DDE6F1" />
                         <Button x:Name="ConfirmButton" Text="确认完工" BackgroundColor="#18BE82" TextColor="White" FontSize="18" FontAttributes="Bold" CornerRadius="10" HeightRequest="54" Clicked="OnConfirmCompletionClicked" />

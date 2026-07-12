@@ -27,6 +27,7 @@ public interface IWorkOrderApi
     Task<AttachmentDto> UploadAbnormalAttachmentAsync(FileResult photo, CancellationToken ct = default);
     Task<AttachmentDto> UploadReworkAttachmentAsync(FileResult photo, CancellationToken ct = default);
     Task<bool> AddAbnormalRecordAsync(WorkOrderAbnormalAddRequestDto request, CancellationToken ct = default);
+    Task<WorkOrderCompletionStatusDto?> GetWorkOrderCompletionStatusAsync(string workOrderNo, CancellationToken ct = default);
     Task<bool> ConfirmCompletionAsync(string workOrderNo, CancellationToken ct = default);
     Task<bool> StopWorkOrderAsync(string workOrderNo, CancellationToken ct = default);
     Task<ProductionStatisticsDto?> GetProductionStatisticsAsync(string date, CancellationToken ct = default);
@@ -52,6 +53,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _abnormalScanQrCodeEndpoint;
     private readonly string _reworkScanQrCodeEndpoint;
     private readonly string _uploadAttachmentEndpoint;
+    private readonly string _workOrderCompletionStatusEndpoint;
     private readonly string _confirmCompletionEndpoint;
     private readonly string _orderStopEndpoint;
     private readonly string _productionStatisticsEndpoint;
@@ -96,6 +98,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
             configLoader.GetApiPath("workOrderAbnormalRecord.scanReworkQrCode", "/pda/pmsWorkOrder/scanReworkReportQrCode"), servicePath);
         _uploadAttachmentEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("attachment.uploadAttachment", "/pda/attachment/uploadAttachment"), servicePath);
+        _workOrderCompletionStatusEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrder.status", "/pda/pmsWorkOrder/getWorkOrderStatus"), servicePath);
         _confirmCompletionEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.confirmCompletion", "/pda/pmsWorkOrder/confirmCompletion"), servicePath);
         _orderStopEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -362,6 +366,20 @@ public sealed class WorkOrderApi : IWorkOrderApi
         var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
         return ReadFlexibleBooleanResult(data);
+    }
+
+    public async Task<WorkOrderCompletionStatusDto?> GetWorkOrderCompletionStatusAsync(string workOrderNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_workOrderCompletionStatusEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(workOrderNo)] = workOrderNo
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<WorkOrderCompletionStatusDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccessOrCodeZero(data);
+        return data?.result;
     }
 
     public async Task<bool> ConfirmCompletionAsync(string workOrderNo, CancellationToken ct = default)

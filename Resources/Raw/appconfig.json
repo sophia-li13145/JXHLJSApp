@@ -94,6 +94,7 @@
       "productionStatistics": "/pda/pmsWorkOrder/getProductionStatistics",
       "confirmInput": "/pda/pmsWorkOrder/confirmInput",
       "confirmOutput": "/pda/pmsWorkOrder/confirmOutput",
+      "status": "/pda/pmsWorkOrder/getWorkOrderStatus",
       "confirmCompletion": "/pda/pmsWorkOrder/confirmCompletion",
       "page": "/pda/pmsWorkOrder/pageWorkOrders",
       "workflow": "/pda/pmsWorkOrder/getWorkOrderWorkflow",
