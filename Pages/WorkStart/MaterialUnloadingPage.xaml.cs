@@ -251,7 +251,7 @@ public partial class MaterialUnloadingPage : ContentPage
                 return;
             }
 
-            await Shell.Current.GoToAsync("..");
+            await Shell.Current.GoToAsync(AppShell.RouteMaterialOperationSuccess);
         }
         catch (Exception ex)
         {
