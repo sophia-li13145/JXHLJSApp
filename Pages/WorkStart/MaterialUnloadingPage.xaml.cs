@@ -181,7 +181,7 @@ public partial class MaterialUnloadingPage : ContentPage
             workOrderNo = _productionContext.Current?.WorkOrderNo
         };
 
-        OutputLengthLabel.Text = $"产出长度（m）（收线长度：{FormatDecimalWithUnit(outputLength, "m")}）*";
+        OutputLengthLabel.Text = $"产出长度（m）（指令卡标准：{FormatDecimalWithUnit(outputLength, "m")}）*";
         OutputLengthEntry.Text = FormatDecimalInput(outputLength);
         InputMaterialCodeLabel.Text = $"物料: {ValueOrDash(inputOutput?.inputMaterialCode)}";
         InputSteelGradeLabel.Text = $"钢号: {ValueOrDash(FirstNonEmpty(inputOutput?.inputSteel, inputOutput?.inputSteelGrade, inputOutput?.inputMaterialName))}";
@@ -316,8 +316,8 @@ public partial class MaterialUnloadingPage : ContentPage
 
         var outputLength = TryParseDecimal(OutputLengthEntry.Text);
         var pieceWeight = CalculatePieceWeight(outputLength, _inputOutput?.outputSpecification);
-        var receiveLength = TryParseDecimal(_inputOutput?.wireTakeUpLength);
-        var inspectStatus = outputLength.HasValue && receiveLength.HasValue && receiveLength.Value >= outputLength.Value ? "合格品" : "小件";
+        var standardLength = TryParseDecimal(_inputOutput?.wireTakeUpLength);
+        var inspectStatus = outputLength.HasValue && standardLength.HasValue && outputLength.Value >= standardLength.Value ? "合格品" : "小件";
 
         _confirmOutput.outputLength = outputLength;
         _confirmOutput.pieceWeight = pieceWeight;
