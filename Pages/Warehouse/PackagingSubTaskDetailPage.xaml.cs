@@ -1,5 +1,7 @@
+using JXHLJSApp.Models.WorkOrders;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.Warehouse;
+using JXHLJSApp.Services.WorkOrders;
 
 namespace JXHLJSApp.Pages.Warehouse;
 
@@ -8,6 +10,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
 {
     private readonly IWarehouseApi _warehouseApi;
     private readonly IScanService _scanService;
+    private readonly IWorkOrderApi _workOrderApi;
     private string? _id;
 
     public string? TaskId
@@ -16,11 +19,12 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         set => _id = Uri.UnescapeDataString(value ?? string.Empty);
     }
 
-    public PackagingSubTaskDetailPage(IWarehouseApi warehouseApi, IScanService scanService)
+    public PackagingSubTaskDetailPage(IWarehouseApi warehouseApi, IScanService scanService, IWorkOrderApi workOrderApi)
     {
         InitializeComponent();
         _warehouseApi = warehouseApi;
         _scanService = scanService;
+        _workOrderApi = workOrderApi;
     }
 
     protected override async void OnAppearing()
@@ -61,10 +65,47 @@ public partial class PackagingSubTaskDetailPage : ContentPage
     private async void OnScanClicked(object sender, EventArgs e)
     {
         var code = await _scanService.ScanAsync("包装扫码");
-        if (!string.IsNullOrWhiteSpace(code))
+        if (string.IsNullOrWhiteSpace(code))
         {
-            ActualWeightEntry.Text = code.Trim();
+            return;
         }
+
+        try
+        {
+            var material = await _workOrderApi.ScanQueryMaterialInfoAsync(code.Trim());
+            ApplyScannedMaterial(material);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("包装扫码失败", ex.Message, "确定");
+        }
+    }
+
+    private void ApplyScannedMaterial(MaterialQrCodeInfoDto material)
+    {
+        ScanSuccessPanel.IsVisible = true;
+        ScannedMaterialPanel.IsVisible = true;
+
+        ScannedMaterialCodeLabel.Text = $"物料编号：{Display(material.materialCode)}";
+        ScannedSteelGradeLabel.Text = Display(material.steelGrade ?? material.materialName);
+        ScannedSpecLabel.Text = Display(material.specification ?? material.spec);
+        ScannedOriginLabel.Text = Display(material.originPlace);
+        ScannedLengthLabel.Text = FormatQuantity(material.length, material.lengthUnit);
+        ScannedWeightLabel.Text = FormatQuantity(material.weight, material.weightUnit ?? material.unit ?? "KG");
+        ActualWeightEntry.Text = material.weight?.ToString("0.##") ?? string.Empty;
+    }
+
+    private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
+
+    private static string FormatQuantity(decimal? value, string? unit)
+    {
+        if (!value.HasValue)
+        {
+            return "--";
+        }
+
+        var text = value.Value % 1 == 0 ? value.Value.ToString("0") : value.Value.ToString("0.##");
+        return string.IsNullOrWhiteSpace(unit) ? text : $"{text} {unit}";
     }
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
