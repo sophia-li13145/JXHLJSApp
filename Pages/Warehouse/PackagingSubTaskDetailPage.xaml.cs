@@ -16,6 +16,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
     private string? _id;
     private PackagingSubTaskDetailDto? _detail;
     private MaterialQrCodeInfoDto? _scannedMaterial;
+    private string? _scannedQrCode;
     private PackagingSubTaskDto? _nextTask;
 
     public string? TaskId
@@ -79,8 +80,9 @@ public partial class PackagingSubTaskDetailPage : ContentPage
 
         try
         {
-            var material = await _workOrderApi.ScanQueryMaterialInfoAsync(code.Trim());
-            ApplyScannedMaterial(material);
+            var qrCode = code.Trim();
+            var material = await _workOrderApi.ScanQueryMaterialInfoAsync(qrCode);
+            ApplyScannedMaterial(material, qrCode);
         }
         catch (Exception ex)
         {
@@ -88,12 +90,13 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         }
     }
 
-    private void ApplyScannedMaterial(MaterialQrCodeInfoDto material)
+    private void ApplyScannedMaterial(MaterialQrCodeInfoDto material, string qrCode)
     {
         ScanSuccessPanel.IsVisible = true;
         ScannedMaterialPanel.IsVisible = true;
 
         _scannedMaterial = material;
+        _scannedQrCode = qrCode;
 
         ScannedMaterialCodeLabel.Text = $"物料编号：{Display(material.materialCode)}";
         ScannedSteelGradeLabel.Text = Display(material.steelGrade ?? material.materialName);
@@ -126,7 +129,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
             return;
         }
 
-        if (_scannedMaterial is null || string.IsNullOrWhiteSpace(_scannedMaterial.qrCode))
+        if (_scannedMaterial is null || string.IsNullOrWhiteSpace(_scannedQrCode))
         {
             await DisplayAlert("提示", "请先完成包装扫码。", "确定");
             return;
@@ -149,7 +152,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
                 materialName = _scannedMaterial.materialName,
                 originPlace = _scannedMaterial.originPlace,
                 pieceWeight = _scannedMaterial.weight,
-                qrCode = _scannedMaterial.qrCode,
+                qrCode = _scannedQrCode,
                 specification = _scannedMaterial.specification ?? _scannedMaterial.spec,
                 steelGrade = _scannedMaterial.steelGrade,
                 workOrderNo = _detail.workOrderNo
@@ -181,6 +184,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         ScannedMaterialPanel.IsVisible = false;
         ActualWeightEntry.Text = string.Empty;
         _scannedMaterial = null;
+        _scannedQrCode = null;
         _nextTask = await FindNextTaskAsync();
         NextTaskButton.IsVisible = _nextTask is not null;
     }
@@ -220,6 +224,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         NextTaskButton.IsVisible = false;
         ActualWeightEntry.Text = string.Empty;
         _scannedMaterial = null;
+        _scannedQrCode = null;
         _nextTask = null;
     }
 
