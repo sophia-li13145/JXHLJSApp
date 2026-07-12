@@ -40,18 +40,22 @@ public partial class PackagingSubTaskListPage : ContentPage
 
     private async void OnTaskTapped(object sender, TappedEventArgs e)
     {
-        if ((sender as BindableObject)?.BindingContext is not PackagingSubTaskDto item)
+        var item = e.Parameter as PackagingSubTaskDto
+            ?? (sender as BindableObject)?.BindingContext as PackagingSubTaskDto;
+
+        if (item is null)
         {
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(item.id))
+        var taskId = item.id?.Trim();
+        if (string.IsNullOrWhiteSpace(taskId))
         {
             await DisplayAlert("提示", "未找到子工序任务ID，无法查看详情。", "确定");
             return;
         }
 
-        await Shell.Current.GoToAsync($"{AppShell.RoutePackagingSubTaskDetail}?id={Uri.EscapeDataString(item.id)}");
+        await Shell.Current.GoToAsync($"{AppShell.RoutePackagingSubTaskDetail}?id={Uri.EscapeDataString(taskId)}");
     }
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
