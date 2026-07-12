@@ -11,10 +11,14 @@ public sealed class WorkOrderInputOutputDto
     public string? inputMaterialName { get; set; }
     public string? inputOriginPlace { get; set; }
     public string? inputSpecification { get; set; }
+    public string? inputSteel { get; set; }
+    public string? inputSteelGrade { get; set; }
     public string? outputMaterialCode { get; set; }
     public string? outputMaterialName { get; set; }
     public string? outputOriginPlace { get; set; }
     public string? outputSpecification { get; set; }
+    public string? outputSteel { get; set; }
+    public string? outputSteelGrade { get; set; }
     public string? wireTakeUpLength { get; set; }
     public decimal? currentSequenceNo { get; set; }
     public string? machineType { get; set; }
