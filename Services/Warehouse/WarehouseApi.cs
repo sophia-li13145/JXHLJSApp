@@ -136,6 +136,7 @@ public sealed class WarehouseApi : IWarehouseApi
 
     public async Task<DeliveryOrderDetailDto> GetDeliveryOrderDetailAsync(string deliveryNo, CancellationToken ct = default)
     {
+        var auditStatusNames = await LoadDeliveryAuditStatusNamesAsync(ct).ConfigureAwait(false);
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_deliveryOrderDetailEndpoint, new Dictionary<string, string?>
         {
             [nameof(deliveryNo)] = deliveryNo
@@ -143,7 +144,9 @@ public sealed class WarehouseApi : IWarehouseApi
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<DeliveryOrderDetailDto>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new DeliveryOrderDetailDto();
+        var detail = data.result ?? new DeliveryOrderDetailDto();
+        ApplyDeliveryAuditStatusName(detail, auditStatusNames);
+        return detail;
     }
 
 
@@ -373,6 +376,14 @@ public sealed class WarehouseApi : IWarehouseApi
             {
                 item.auditStatusName = name;
             }
+        }
+    }
+
+    private static void ApplyDeliveryAuditStatusName(DeliveryOrderDetailDto detail, IReadOnlyDictionary<string, string> auditStatusNames)
+    {
+        if (!string.IsNullOrWhiteSpace(detail.auditStatus) && auditStatusNames.TryGetValue(detail.auditStatus, out var name))
+        {
+            detail.auditStatusName = name;
         }
     }
 
