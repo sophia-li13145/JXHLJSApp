@@ -82,7 +82,7 @@ public partial class DeliveryOrderDetailPage : ContentPage
         await ScanActualAsync(code.Trim());
     }
 
-    private async Task ScanActualAsync(string barcode)
+    private async Task ScanActualAsync(string qrCode)
     {
         if (string.IsNullOrWhiteSpace(_deliveryNo))
         {
@@ -94,7 +94,7 @@ public partial class DeliveryOrderDetailPage : ContentPage
         {
             var result = await _warehouseApi.ScanDeliveryActualAsync(new DeliveryOrderScanActualRequestDto
             {
-                barcode = barcode,
+                qrCode = qrCode,
                 deliveryNo = _deliveryNo
             });
 

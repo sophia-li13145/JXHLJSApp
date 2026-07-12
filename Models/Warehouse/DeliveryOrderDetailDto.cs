@@ -117,7 +117,7 @@ public sealed class DeliveryOrderScanActualRequestDto
 {
     [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? actualQty { get; set; }
-    public string? barcode { get; set; }
+    public string? qrCode { get; set; }
     public string? deliveryNo { get; set; }
     public string? memo { get; set; }
     public string? outstockNo { get; set; }
