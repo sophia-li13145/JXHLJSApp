@@ -81,13 +81,17 @@
                                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                                 <VerticalStackLayout Spacing="8">
                                     <Label Text="📤 下料信息及工单属性" TextColor="#0057FF" FontSize="12" FontAttributes="Bold" />
-                                    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,*" RowSpacing="6" ColumnSpacing="10">
+                                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="*,*" RowSpacing="6" ColumnSpacing="10">
                                         <Label x:Name="MaterialCodeLabel" TextColor="#001431" FontAttributes="Bold" />
                                         <Label x:Name="SteelGradeLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
                                         <Label x:Name="OriginPlaceLabel" Grid.Row="1" TextColor="#001431" />
                                         <Label x:Name="SpecLabel" Grid.Row="1" Grid.Column="1" TextColor="#001431" />
                                         <Label x:Name="LengthLabel" Grid.Row="2" TextColor="#4B6688" />
                                         <Label x:Name="WeightLabel" Grid.Row="2" Grid.Column="1" TextColor="#4B6688" />
+                                        <Label x:Name="OutputWorkOrderNoLabel" Grid.Row="3" TextColor="#4B6688" FontSize="12" />
+                                        <Label x:Name="OutputMachineLabel" Grid.Row="3" Grid.Column="1" TextColor="#001431" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                                        <Label x:Name="OutputCustomerCodeLabel" Grid.Row="4" TextColor="#4B6688" FontSize="12" />
+                                        <Label x:Name="OutputSequenceLabel" Grid.Row="4" Grid.Column="1" TextColor="#4B6688" FontSize="12" HorizontalTextAlignment="End" />
                                     </Grid>
                                 </VerticalStackLayout>
                             </Border>
