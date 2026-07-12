@@ -16,6 +16,7 @@ public interface IQualityApi
     Task<List<QualityDictOption>> GetInspectResultOptionsAsync(CancellationToken ct = default);
     Task<List<QualityDictOption>> GetProblemPointOptionsAsync(CancellationToken ct = default);
     Task<bool> SaveIncomingQualityResultAsync(IncomingQualitySaveResultRequestDto request, CancellationToken ct = default);
+    Task<bool> CompleteIncomingQualityOrderAsync(string incomingQualityNo, CancellationToken ct = default);
     Task<bool> DeleteIncomingQualityOrderAsync(string incomingQualityNo, CancellationToken ct = default);
     Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersByResourceAsync(string resourceCode, CancellationToken ct = default);
     Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, CancellationToken ct = default);
@@ -31,6 +32,7 @@ public sealed class QualityApi : IQualityApi
     private readonly string _incomingQualityDetailEndpoint;
     private readonly string _incomingQualityScanEndpoint;
     private readonly string _incomingQualitySaveResultEndpoint;
+    private readonly string _incomingQualityCompletedEndpoint;
     private readonly string _incomingQualityDeleteEndpoint;
     private readonly string _productionQualityListEndpoint;
     private readonly string _productionQualityDetailByNoEndpoint;
@@ -51,6 +53,8 @@ public sealed class QualityApi : IQualityApi
             configLoader.GetApiPath("incomingQualityOrder.scan", "/pda/qs/qsIncomingQualityOrder/scan"), servicePath);
         _incomingQualitySaveResultEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("incomingQualityOrder.saveResult", "/pda/qs/qsIncomingQualityOrder/saveResult"), servicePath);
+        _incomingQualityCompletedEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("incomingQualityOrder.completed", "/pda/qs/qsIncomingQualityOrder/completed"), servicePath);
         _incomingQualityDeleteEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("incomingQualityOrder.delete", "/pda/qs/qsIncomingQualityOrder/delete"), servicePath);
         _productionQualityListEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -104,6 +108,10 @@ public sealed class QualityApi : IQualityApi
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<IncomingQualityOrderDetailDto>(resp, ct).ConfigureAwait(false);
         var detail = data.result ?? new IncomingQualityOrderDetailDto();
+        if (!string.IsNullOrWhiteSpace(detail.status) && statusNames.TryGetValue(detail.status, out var statusName))
+        {
+            detail.statusName = statusName;
+        }
         if (!string.IsNullOrWhiteSpace(detail.delStatus) && statusNames.TryGetValue(detail.delStatus, out var name))
         {
             detail.delStatusName = name;
@@ -144,6 +152,15 @@ public sealed class QualityApi : IQualityApi
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
         return BooleanResultOrFalse(data);
+    }
+
+    public async Task<bool> CompleteIncomingQualityOrderAsync(string incomingQualityNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _incomingQualityCompletedEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, new { incomingQualityNo }, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<int?>(resp, ct).ConfigureAwait(false);
+        return (data.result ?? 0) > 0 || data.success != false;
     }
 
     public async Task<bool> DeleteIncomingQualityOrderAsync(string incomingQualityNo, CancellationToken ct = default)

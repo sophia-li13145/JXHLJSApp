@@ -1,4 +1,5 @@
 using JXHLJSApp.Models.Quality;
+using JXHLJSApp.Services;
 using JXHLJSApp.Services.Quality;
 
 namespace JXHLJSApp.Pages.Quality;
@@ -8,6 +9,7 @@ namespace JXHLJSApp.Pages.Quality;
 public partial class IncomingQualityScanPage : ContentPage
 {
     private readonly IQualityApi _qualityApi;
+    private readonly IScanService _scanService;
     private string? _incomingQualityNo;
     private string? _qrCode;
     private List<QualityDictOption> _problemOptions = new();
@@ -25,10 +27,11 @@ public partial class IncomingQualityScanPage : ContentPage
         set => _qrCode = Uri.UnescapeDataString(value ?? string.Empty);
     }
 
-    public IncomingQualityScanPage(IQualityApi qualityApi)
+    public IncomingQualityScanPage(IQualityApi qualityApi, IScanService scanService)
     {
         InitializeComponent();
         _qualityApi = qualityApi;
+        _scanService = scanService;
     }
 
     protected override async void OnAppearing()
@@ -50,17 +53,44 @@ public partial class IncomingQualityScanPage : ContentPage
                 InspectResultPicker.SelectedIndex = defaultIndex >= 0 ? defaultIndex : 0;
             }
 
-            if (!string.IsNullOrWhiteSpace(_qrCode))
+            if (!string.IsNullOrWhiteSpace(_qrCode) && _scanMaterial is null)
             {
-                _scanMaterial = await _qualityApi.ScanIncomingQualityMaterialAsync(_qrCode);
-                QrCodeLabel.Text = _scanMaterial.qrCodeDisplay;
-                MaterialHintLabel.Text = _scanMaterial.materialDisplay == "-" ? "未提交单据无法获取物料明细" : _scanMaterial.materialDisplay;
+                await LoadScannedMaterialAsync(_qrCode);
+            }
+            else
+            {
+                ScanPanel.IsVisible = _scanMaterial is null;
+                MaterialInfoCard.IsVisible = _scanMaterial is not null;
             }
         }
         catch (Exception ex)
         {
             await DisplayAlert("加载失败", ex.Message, "确定");
         }
+    }
+
+    private async void OnScanPanelTapped(object sender, TappedEventArgs e)
+    {
+        var code = await _scanService.ScanAsync("来料质检扫码");
+        if (string.IsNullOrWhiteSpace(code)) return;
+        try
+        {
+            await LoadScannedMaterialAsync(code.Trim());
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("扫码失败", ex.Message, "确定");
+        }
+    }
+
+    private async Task LoadScannedMaterialAsync(string qrCode)
+    {
+        _qrCode = qrCode;
+        _scanMaterial = await _qualityApi.ScanIncomingQualityMaterialAsync(qrCode);
+        QrCodeLabel.Text = _scanMaterial.qrCodeDisplay;
+        MaterialHintLabel.Text = _scanMaterial.materialDisplay == "-" ? "未提交单据无法获取物料明细" : _scanMaterial.materialDisplay;
+        ScanPanel.IsVisible = false;
+        MaterialInfoCard.IsVisible = true;
     }
 
     private async void OnProblemPointTapped(object sender, TappedEventArgs e)
@@ -100,7 +130,7 @@ public partial class IncomingQualityScanPage : ContentPage
 
         if (_scanMaterial is null)
         {
-            await DisplayAlert("提示", "未获取到扫码物料信息，无法保存。", "确定");
+            await DisplayAlert("提示", "请先扫描物料二维码。", "确定");
             return;
         }
 
