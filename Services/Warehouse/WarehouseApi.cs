@@ -13,6 +13,7 @@ public interface IWarehouseApi
     Task<DeliveryOrderDetailDto> GetDeliveryOrderDetailAsync(string deliveryNo, CancellationToken ct = default);
     Task<List<PackagingSubTaskDto>> GetPackagingSubTaskListAsync(CancellationToken ct = default);
     Task<PackagingSubTaskDetailDto> GetPackagingSubTaskDetailAsync(string id, CancellationToken ct = default);
+    Task<bool?> SavePackagingAsync(PackagingSaveRequestDto request, CancellationToken ct = default);
     Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default);
     Task<bool?> ConfirmDeliveryCompletionAsync(string deliveryOrderNo, CancellationToken ct = default);
     Task<RawMaterialReceivingDetailDto> GetRawMaterialReceivingDetailAsync(string instockNo, CancellationToken ct = default);
@@ -48,6 +49,7 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _deliveryOrderDictListEndpoint;
     private readonly string _packagingSubTaskListEndpoint;
     private readonly string _packagingSubTaskDetailEndpoint;
+    private readonly string _packagingSaveEndpoint;
     private readonly string _workOrderDictListEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -91,6 +93,8 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("packagingSubTask.list", "/pda/pmsWorkOrder/getPackagingSubTaskList"), servicePath);
         _packagingSubTaskDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("packagingSubTask.detail", "/pda/pmsWorkOrder/getPackagingSubTaskDetail"), servicePath);
+        _packagingSaveEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("packagingSubTask.packingSave", "/pda/pmsWorkOrder/packingSave"), servicePath);
         _workOrderDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.dictList", "/pda/pmsWorkOrder/getWorkOrderDictList"), servicePath);
     }
@@ -167,6 +171,16 @@ public sealed class WarehouseApi : IWarehouseApi
         var detail = data.result ?? new PackagingSubTaskDetailDto();
         detail.workOrderStatus = await MapWorkOrderStatusAsync(detail.workOrderStatus, ct).ConfigureAwait(false);
         return detail;
+    }
+
+
+    public async Task<bool?> SavePackagingAsync(PackagingSaveRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _packagingSaveEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        return data.result;
     }
 
     public async Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default)

@@ -76,7 +76,10 @@
         </ScrollView>
 
         <Border Grid.Row="2" BackgroundColor="White" StrokeThickness="0" Padding="22,16">
-            <Button Text="🖨️  打印并保存" BackgroundColor="#1F447E" TextColor="White" FontSize="17" FontAttributes="Bold" CornerRadius="10" HeightRequest="50" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <Button x:Name="SaveButton" Text="🖨️  打印并保存" BackgroundColor="#1F447E" TextColor="White" FontSize="17" FontAttributes="Bold" CornerRadius="10" HeightRequest="50" Clicked="OnSaveClicked" />
+                <Button x:Name="NextTaskButton" Grid.Column="1" Text="⏭  下一个任务" IsVisible="False" BackgroundColor="White" TextColor="#00A86B" BorderColor="#00A86B" BorderWidth="1" FontSize="15" FontAttributes="Bold" CornerRadius="10" HeightRequest="50" Padding="14,0" Clicked="OnNextTaskClicked" />
+            </Grid>
         </Border>
     </Grid>
 </ContentPage>
