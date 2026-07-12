@@ -3,14 +3,14 @@ using JXHLJSApp.Services.Warehouse;
 
 namespace JXHLJSApp.Pages.Warehouse;
 
-[QueryProperty(nameof(Id), "id")]
+[QueryProperty(nameof(TaskId), "id")]
 public partial class PackagingSubTaskDetailPage : ContentPage
 {
     private readonly IWarehouseApi _warehouseApi;
     private readonly IScanService _scanService;
     private string? _id;
 
-    public string? Id
+    public string? TaskId
     {
         get => _id;
         set => _id = Uri.UnescapeDataString(value ?? string.Empty);
