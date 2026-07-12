@@ -13,6 +13,7 @@ public interface IWarehouseApi
     Task<DeliveryOrderDetailDto> GetDeliveryOrderDetailAsync(string deliveryNo, CancellationToken ct = default);
     Task<List<PackagingSubTaskDto>> GetPackagingSubTaskListAsync(CancellationToken ct = default);
     Task<PackagingSubTaskDetailDto> GetPackagingSubTaskDetailAsync(string id, CancellationToken ct = default);
+    Task<bool?> SavePackagingAsync(PackagingSaveRequestDto request, CancellationToken ct = default);
     Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default);
     Task<bool?> ConfirmDeliveryCompletionAsync(string deliveryOrderNo, CancellationToken ct = default);
     Task<RawMaterialReceivingDetailDto> GetRawMaterialReceivingDetailAsync(string instockNo, CancellationToken ct = default);
@@ -48,6 +49,8 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _deliveryOrderDictListEndpoint;
     private readonly string _packagingSubTaskListEndpoint;
     private readonly string _packagingSubTaskDetailEndpoint;
+    private readonly string _packagingSaveEndpoint;
+    private readonly string _workOrderDictListEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public WarehouseApi(HttpClient http, IConfigLoader configLoader)
@@ -90,6 +93,10 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("packagingSubTask.list", "/pda/pmsWorkOrder/getPackagingSubTaskList"), servicePath);
         _packagingSubTaskDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("packagingSubTask.detail", "/pda/pmsWorkOrder/getPackagingSubTaskDetail"), servicePath);
+        _packagingSaveEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("packagingSubTask.packingSave", "/pda/pmsWorkOrder/packingSave"), servicePath);
+        _workOrderDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrder.dictList", "/pda/pmsWorkOrder/getWorkOrderDictList"), servicePath);
     }
 
     public async Task<List<RawMaterialReceivingDto>> GetRawMaterialReceivingListAsync(CancellationToken ct = default)
@@ -142,11 +149,14 @@ public sealed class WarehouseApi : IWarehouseApi
 
     public async Task<List<PackagingSubTaskDto>> GetPackagingSubTaskListAsync(CancellationToken ct = default)
     {
+        var workOrderStatusNames = await LoadWorkOrderStatusNamesAsync(ct).ConfigureAwait(false);
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _packagingSubTaskListEndpoint);
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<List<PackagingSubTaskDto>>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new List<PackagingSubTaskDto>();
+        var list = data.result ?? new List<PackagingSubTaskDto>();
+        ApplyPackagingWorkOrderStatusNames(list, workOrderStatusNames);
+        return list;
     }
 
     public async Task<PackagingSubTaskDetailDto> GetPackagingSubTaskDetailAsync(string id, CancellationToken ct = default)
@@ -158,7 +168,19 @@ public sealed class WarehouseApi : IWarehouseApi
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<PackagingSubTaskDetailDto>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new PackagingSubTaskDetailDto();
+        var detail = data.result ?? new PackagingSubTaskDetailDto();
+        detail.workOrderStatus = await MapWorkOrderStatusAsync(detail.workOrderStatus, ct).ConfigureAwait(false);
+        return detail;
+    }
+
+
+    public async Task<bool?> SavePackagingAsync(PackagingSaveRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _packagingSaveEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        return data.result;
     }
 
     public async Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default)
@@ -301,6 +323,46 @@ public sealed class WarehouseApi : IWarehouseApi
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
         return data.result;
+    }
+
+
+    private static void ApplyPackagingWorkOrderStatusNames(IEnumerable<PackagingSubTaskDto> items, IReadOnlyDictionary<string, string> workOrderStatusNames)
+    {
+        foreach (var item in items)
+        {
+            item.workOrderStatus = MapStatusName(item.workOrderStatus, workOrderStatusNames);
+        }
+    }
+
+    private async Task<string?> MapWorkOrderStatusAsync(string? status, CancellationToken ct)
+    {
+        var statusNames = await LoadWorkOrderStatusNamesAsync(ct).ConfigureAwait(false);
+        return MapStatusName(status, statusNames);
+    }
+
+    private async Task<IReadOnlyDictionary<string, string>> LoadWorkOrderStatusNamesAsync(CancellationToken ct)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _workOrderDictListEndpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<List<DictGroupDto>>(resp, ct).ConfigureAwait(false);
+        return data.result?
+            .FirstOrDefault(group => string.Equals(group.field, "workOrderStatus", StringComparison.OrdinalIgnoreCase))?
+            .dictItems?
+            .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue))
+            .GroupBy(item => item.dictItemValue!)
+            .ToDictionary(group => group.Key, group => group.First().dictItemName ?? group.Key)
+            ?? new Dictionary<string, string>();
+    }
+
+    private static string? MapStatusName(string? status, IReadOnlyDictionary<string, string> statusNames)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            return status;
+        }
+
+        return statusNames.TryGetValue(status, out var name) ? name : status;
     }
 
     private static void ApplyDeliveryAuditStatusNames(IEnumerable<DeliveryOrderDto> items, IReadOnlyDictionary<string, string> auditStatusNames)

@@ -38,7 +38,8 @@
     },
     "packagingSubTask": {
       "list": "/pda/pmsWorkOrder/getPackagingSubTaskList",
-      "detail": "/pda/pmsWorkOrder/getPackagingSubTaskDetail"
+      "detail": "/pda/pmsWorkOrder/getPackagingSubTaskDetail",
+      "packingSave": "/pda/pmsWorkOrder/packingSave"
     },
     "incomingQualityOrder": {
       "getDictList": "/pda/qs/qsIncomingQualityOrder/getDictList",
