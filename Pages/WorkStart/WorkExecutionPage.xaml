@@ -78,11 +78,9 @@
                                                     <Label Grid.Column="2" Text="钢号/规格" TextColor="#5C6F8F" />
                                                     <Label Grid.Column="3" Text="{Binding steelGradeSpecificationDisplay}" TextColor="#001431" FontAttributes="Bold" />
                                                 </Grid>
-                                                <Grid ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="8">
+                                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
                                                     <Label Text="生产重量" TextColor="#5C6F8F" />
                                                     <Label Grid.Column="1" Text="{Binding completedWeightDisplay}" TextColor="{Binding statusTextColor}" FontAttributes="Bold" />
-                                                    <Label Grid.Column="2" Text="件数" TextColor="#5C6F8F" />
-                                                    <Label Grid.Column="3" Text="{Binding completedQuantityDisplay}" TextColor="#001431" FontAttributes="Bold" />
                                                 </Grid>
                                                 <BoxView HeightRequest="1" Color="{Binding statusSeparatorColor}" />
                                                 <Label Text="模序" TextColor="#5C6F8F" />
