@@ -21,7 +21,7 @@
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
                         <Border BackgroundColor="White" StrokeThickness="0" Padding="20,18" Margin="0,0,0,14">
-                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnTaskTapped" /></Border.GestureRecognizers>
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnTaskTapped" CommandParameter="{Binding .}" /></Border.GestureRecognizers>
                             <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
                             <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="14" ColumnSpacing="12">
                                 <Label Text="{Binding taskNoDisplay}" TextColor="#051B3D" FontSize="18" FontAttributes="Bold" />
