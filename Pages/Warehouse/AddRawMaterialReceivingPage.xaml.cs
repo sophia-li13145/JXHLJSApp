@@ -244,13 +244,21 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             if (photo is null) return;
 
             _pendingTicketAttachment = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
-
-            // OCR 识别接口暂不参与当前联调，附件上传成功后先进入手动录入流程。
-            ShowTicketConfirmDialog(new RawMaterialOcrDto());
         }
         catch (Exception ex)
         {
             await DisplayAlert("附件上传失败", ex.Message, "确定");
+            return;
+        }
+
+        try
+        {
+            var ocr = await _warehouseApi.RecognizeIncomingAsync(_pendingTicketAttachment, _instockNo);
+            ShowTicketConfirmDialog(ocr, false);
+        }
+        catch
+        {
+            ShowTicketConfirmDialog(new RawMaterialOcrDto(), true);
         }
     }
 
@@ -394,6 +402,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         BindCoilCountEntry.Text = source.coilCount;
         BindCoilDiameterEntry.Text = source.coilDiameter;
         BindPieceWeightEntry.Text = source.pieceWeight;
+        ApplyMaterialClassFormVisibility(BindMaterialTypePicker, true);
         BindConfirmOverlay.IsVisible = true;
     }
 
@@ -412,7 +421,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             furnaceNo = BindFurnaceNoEntry.Text,
             originPlace = BindOriginPlaceEntry.Text,
             pieceWeight = BindPieceWeightEntry.Text,
-            pieceWeightUnit = "吨",
+            pieceWeightUnit = ResolvePieceWeightUnit(materialClass),
             coilCount = BindCoilCountEntry.Text,
             coilDiameter = BindCoilDiameterEntry.Text,
             ocrRawText = _selectedTicket?.ocrRawText,
@@ -428,9 +437,37 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private void OnCancelBindConfirmClicked(object sender, EventArgs e) => BindConfirmOverlay.IsVisible = false;
 
-    private void ShowTicketConfirmDialog(RawMaterialOcrDto ocr)
+    private void OnTicketMaterialTypeChanged(object sender, EventArgs e) => ApplyMaterialClassFormVisibility(MaterialTypePicker, false);
+
+    private void OnBindMaterialTypeChanged(object sender, EventArgs e) => ApplyMaterialClassFormVisibility(BindMaterialTypePicker, true);
+
+    private void ApplyMaterialClassFormVisibility(Picker picker, bool isBindDialog)
+    {
+        var isSemiFinished = IsSemiFinished(GetSelectedMaterialClass(picker, null));
+        if (isBindDialog)
+        {
+            BindSemiFieldsRow1.IsVisible = isSemiFinished;
+            BindSemiFieldsRow2.IsVisible = isSemiFinished;
+            return;
+        }
+
+        TicketSemiFieldsRow1.IsVisible = isSemiFinished;
+        TicketSemiFieldsRow2.IsVisible = isSemiFinished;
+    }
+
+    private static bool IsSemiFinished(DictItemDto? materialClass)
+    {
+        var value = FirstNonEmpty(materialClass?.dictItemValue, materialClass?.dictItemName);
+        return value.Contains("半成品", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("semi", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ResolvePieceWeightUnit(DictItemDto? materialClass) => IsSemiFinished(materialClass) ? "KG" : "吨";
+
+    private void ShowTicketConfirmDialog(RawMaterialOcrDto ocr, bool showOcrFailedHint = false)
     {
         _pendingOcr = ocr;
+        OcrFailedHintLabel.IsVisible = showOcrFailedHint;
         SelectMaterialClass(MaterialTypePicker, ocr.materialClass);
         MaterialCodeEntry.Text = ocr.materialCode;
         MaterialNameEntry.Text = ocr.materialName;
@@ -441,6 +478,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         CoilCountEntry.Text = ocr.coilCount;
         CoilDiameterEntry.Text = ocr.coilDiameter;
         PieceWeightEntry.Text = ocr.pieceWeight;
+        ApplyMaterialClassFormVisibility(MaterialTypePicker, false);
         TicketConfirmOverlay.IsVisible = true;
     }
 
@@ -458,7 +496,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             furnaceNo = FurnaceNoEntry.Text,
             originPlace = OriginPlaceEntry.Text,
             pieceWeight = PieceWeightEntry.Text,
-            pieceWeightUnit = "吨",
+            pieceWeightUnit = ResolvePieceWeightUnit(materialClass),
             coilCount = CoilCountEntry.Text,
             coilDiameter = CoilDiameterEntry.Text,
             ocrRawText = _pendingOcr?.ocrRawText,
@@ -564,6 +602,16 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         SelectedFurnaceNoLabel.Text = ticket.furnaceNoDisplay;
         SelectedOriginPlaceLabel.Text = ticket.originPlaceDisplay;
         SelectedPieceWeightLabel.Text = ticket.pieceWeightDisplay;
+        var isSemiFinished = ticket.isSemiFinished;
+        SelectedStrengthTitleLabel.IsVisible = isSemiFinished;
+        SelectedStrengthLabel.IsVisible = isSemiFinished;
+        SelectedStrengthLabel.Text = ticket.strengthDisplay;
+        SelectedCoilCountTitleLabel.IsVisible = isSemiFinished;
+        SelectedCoilCountLabel.IsVisible = isSemiFinished;
+        SelectedCoilCountLabel.Text = ticket.coilCountDisplay;
+        SelectedCoilDiameterTitleLabel.IsVisible = isSemiFinished;
+        SelectedCoilDiameterLabel.IsVisible = isSemiFinished;
+        SelectedCoilDiameterLabel.Text = ticket.coilDiameterDisplay;
     }
 
     private void ClearSelectedTicket()
