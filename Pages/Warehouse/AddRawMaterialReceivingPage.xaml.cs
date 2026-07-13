@@ -108,12 +108,17 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             var options = dictGroups
                 .FirstOrDefault(group => IsMaterialClassField(group.field))?
                 .dictItems?
-                .Where(item => !string.IsNullOrWhiteSpace(item.dictItemName) || !string.IsNullOrWhiteSpace(item.dictItemValue))
+                .Where(IsSupportedMaterialClassOption)
                 .ToList();
 
             if (options?.Count > 0)
             {
                 _materialClassOptions = options;
+                ApplyMaterialClassOptions(_materialClassOptions);
+            }
+            else
+            {
+                _materialClassOptions = CreateDefaultMaterialClassOptions();
                 ApplyMaterialClassOptions(_materialClassOptions);
             }
         }
@@ -132,19 +137,28 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                string.Equals(normalized, "materialType", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsSupportedMaterialClassOption(DictItemDto item)
+    {
+        var value = FirstNonEmpty(item.dictItemName, item.dictItemValue);
+        return value.Contains("原料", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("raw", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("半成品", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("semi", StringComparison.OrdinalIgnoreCase);
+    }
+
     private void ApplyMaterialClassOptions(List<DictItemDto> options)
     {
         MaterialTypePicker.ItemsSource = options;
         BindMaterialTypePicker.ItemsSource = options;
         if (options.Count == 0) return;
 
-        if (MaterialTypePicker.SelectedItem is not DictItemDto)
+        if (MaterialTypePicker.SelectedItem is not DictItemDto materialType || !options.Contains(materialType))
         {
             MaterialTypePicker.SelectedIndex = 0;
             MaterialTypePicker.SelectedItem = options[0];
         }
 
-        if (BindMaterialTypePicker.SelectedItem is not DictItemDto)
+        if (BindMaterialTypePicker.SelectedItem is not DictItemDto bindMaterialType || !options.Contains(bindMaterialType))
         {
             BindMaterialTypePicker.SelectedIndex = 0;
             BindMaterialTypePicker.SelectedItem = options[0];
@@ -244,50 +258,79 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             if (photo is null) return;
 
             _pendingTicketAttachment = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
-
-            // OCR 识别接口暂不参与当前联调，附件上传成功后先进入手动录入流程。
-            ShowTicketConfirmDialog(new RawMaterialOcrDto());
         }
         catch (Exception ex)
         {
             await DisplayAlert("附件上传失败", ex.Message, "确定");
+            return;
+        }
+
+        try
+        {
+            var ocr = await _warehouseApi.RecognizeIncomingAsync(_pendingTicketAttachment, _instockNo);
+            ShowTicketConfirmDialog(ocr, false);
+        }
+        catch
+        {
+            ShowTicketConfirmDialog(new RawMaterialOcrDto(), true);
         }
     }
 
     private async Task<FileResult?> GetTicketPhotoAsync()
     {
-        var captureSupported = MediaPicker.Default.IsCaptureSupported;
-        var choice = captureSupported
-            ? await DisplayActionSheet("上传票签图片", "取消", null, "拍照", "从相册选择")
-            : await DisplayActionSheet("当前设备不支持直接拍照，可从相册选择票签图片", "取消", null, "从相册选择");
-
+        var choice = await DisplayActionSheet("上传票签图片", "取消", null, "手机拍照", "手持机拍照", "从相册选择", "从文件选择");
         if (choice == "取消" || string.IsNullOrWhiteSpace(choice)) return null;
 
-        if (choice == "从相册选择")
+        return choice switch
         {
-            return await PickTicketPhotoAsync();
-        }
+            "从相册选择" => await PickTicketPhotoAsync(),
+            "从文件选择" => await PickTicketImageFileAsync(),
+            _ => await CaptureTicketPhotoAsync(choice)
+        };
+    }
 
+    private async Task<FileResult?> CaptureTicketPhotoAsync(string title)
+    {
         var permission = await Permissions.RequestAsync<Permissions.Camera>();
         if (permission != PermissionStatus.Granted)
         {
-            var fallback = await DisplayActionSheet("未授予摄像头权限，可从相册选择票签图片", "取消", null, "从相册选择");
-            return fallback == "从相册选择" ? await PickTicketPhotoAsync() : null;
+            var fallback = await DisplayActionSheet("未授予摄像头权限，可从相册或文件选择票签图片", "取消", null, "从相册选择", "从文件选择");
+            return fallback switch
+            {
+                "从相册选择" => await PickTicketPhotoAsync(),
+                "从文件选择" => await PickTicketImageFileAsync(),
+                _ => null
+            };
         }
 
         try
         {
-            return await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "拍摄票签" });
+            return await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = title });
         }
-        catch (FeatureNotSupportedException)
+        catch (Exception ex) when (ex is FeatureNotSupportedException || ex is FeatureNotEnabledException || ex is PermissionException)
         {
-            return await PickTicketPhotoAsync();
+            var fallback = await DisplayActionSheet("当前设备无法直接调用相机，可从相册或文件选择票签图片", "取消", null, "从相册选择", "从文件选择");
+            return fallback switch
+            {
+                "从相册选择" => await PickTicketPhotoAsync(),
+                "从文件选择" => await PickTicketImageFileAsync(),
+                _ => null
+            };
         }
     }
 
     private static async Task<FileResult?> PickTicketPhotoAsync()
     {
         return await MediaPicker.Default.PickPhotoAsync(new MediaPickerOptions { Title = "选择票签图片" });
+    }
+
+    private static async Task<FileResult?> PickTicketImageFileAsync()
+    {
+        return await FilePicker.Default.PickAsync(new PickOptions
+        {
+            PickerTitle = "选择票签图片",
+            FileTypes = FilePickerFileType.Images
+        });
     }
 
     private async void OnCalculateSummaryClicked(object sender, EventArgs e)
@@ -394,6 +437,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         BindCoilCountEntry.Text = source.coilCount;
         BindCoilDiameterEntry.Text = source.coilDiameter;
         BindPieceWeightEntry.Text = source.pieceWeight;
+        RefreshMaterialClassFormVisibility(true);
         BindConfirmOverlay.IsVisible = true;
     }
 
@@ -412,7 +456,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             furnaceNo = BindFurnaceNoEntry.Text,
             originPlace = BindOriginPlaceEntry.Text,
             pieceWeight = BindPieceWeightEntry.Text,
-            pieceWeightUnit = "吨",
+            pieceWeightUnit = ResolvePieceWeightUnit(materialClass),
             coilCount = BindCoilCountEntry.Text,
             coilDiameter = BindCoilDiameterEntry.Text,
             ocrRawText = _selectedTicket?.ocrRawText,
@@ -428,9 +472,80 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private void OnCancelBindConfirmClicked(object sender, EventArgs e) => BindConfirmOverlay.IsVisible = false;
 
-    private void ShowTicketConfirmDialog(RawMaterialOcrDto ocr)
+    private void OnTicketMaterialTypeChanged(object sender, EventArgs e) => RefreshMaterialClassFormVisibility(false);
+
+    private void OnBindMaterialTypeChanged(object sender, EventArgs e) => RefreshMaterialClassFormVisibility(true);
+
+    private void OnTicketMaterialTypePickerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(Picker.SelectedItem) or nameof(Picker.SelectedIndex))
+        {
+            RefreshMaterialClassFormVisibility(false);
+        }
+    }
+
+    private void OnBindMaterialTypePickerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(Picker.SelectedItem) or nameof(Picker.SelectedIndex))
+        {
+            RefreshMaterialClassFormVisibility(true);
+        }
+    }
+
+    private void RefreshMaterialClassFormVisibility(bool isBindDialog)
+    {
+        var picker = isBindDialog ? BindMaterialTypePicker : MaterialTypePicker;
+        ApplyMaterialClassFormVisibility(picker, isBindDialog);
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(50), () => ApplyMaterialClassFormVisibility(picker, isBindDialog));
+    }
+
+    private void ApplyMaterialClassFormVisibility(Picker picker, bool isBindDialog)
+    {
+        var isSemiFinished = IsSemiFinished(picker);
+        if (isBindDialog)
+        {
+            BindSemiFieldsRow1.IsVisible = isSemiFinished;
+            BindSemiFieldsRow2.IsVisible = isSemiFinished;
+            BindPieceWeightLabel.Text = isSemiFinished ? "实际件重（KG） *" : "实际件重（吨） *";
+            return;
+        }
+
+        TicketSemiFieldsRow1.IsVisible = isSemiFinished;
+        TicketSemiFieldsRow2.IsVisible = isSemiFinished;
+        TicketPieceWeightLabel.Text = isSemiFinished ? "件重（KG） *" : "件重（吨） *";
+    }
+
+    private bool IsSemiFinished(Picker picker)
+    {
+        if (picker.SelectedItem is DictItemDto selected && IsSemiFinished(selected))
+        {
+            return true;
+        }
+
+        if (picker.SelectedIndex >= 0 && picker.SelectedIndex < _materialClassOptions.Count && IsSemiFinished(_materialClassOptions[picker.SelectedIndex]))
+        {
+            return true;
+        }
+
+        var selectedText = FirstNonEmpty(picker.SelectedItem?.ToString(),
+            picker.SelectedIndex >= 0 && picker.SelectedIndex < picker.Items.Count ? picker.Items[picker.SelectedIndex] : null);
+        return selectedText.Contains("半成品", StringComparison.OrdinalIgnoreCase) ||
+            selectedText.Contains("semi", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsSemiFinished(DictItemDto? materialClass)
+    {
+        var value = FirstNonEmpty(materialClass?.dictItemValue, materialClass?.dictItemName);
+        return value.Contains("半成品", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("semi", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ResolvePieceWeightUnit(DictItemDto? materialClass) => IsSemiFinished(materialClass) ? "KG" : "吨";
+
+    private void ShowTicketConfirmDialog(RawMaterialOcrDto ocr, bool showOcrFailedHint = false)
     {
         _pendingOcr = ocr;
+        OcrFailedHintLabel.IsVisible = showOcrFailedHint;
         SelectMaterialClass(MaterialTypePicker, ocr.materialClass);
         MaterialCodeEntry.Text = ocr.materialCode;
         MaterialNameEntry.Text = ocr.materialName;
@@ -441,6 +556,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         CoilCountEntry.Text = ocr.coilCount;
         CoilDiameterEntry.Text = ocr.coilDiameter;
         PieceWeightEntry.Text = ocr.pieceWeight;
+        RefreshMaterialClassFormVisibility(false);
         TicketConfirmOverlay.IsVisible = true;
     }
 
@@ -458,7 +574,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             furnaceNo = FurnaceNoEntry.Text,
             originPlace = OriginPlaceEntry.Text,
             pieceWeight = PieceWeightEntry.Text,
-            pieceWeightUnit = "吨",
+            pieceWeightUnit = ResolvePieceWeightUnit(materialClass),
             coilCount = CoilCountEntry.Text,
             coilDiameter = CoilDiameterEntry.Text,
             ocrRawText = _pendingOcr?.ocrRawText,
@@ -564,6 +680,16 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         SelectedFurnaceNoLabel.Text = ticket.furnaceNoDisplay;
         SelectedOriginPlaceLabel.Text = ticket.originPlaceDisplay;
         SelectedPieceWeightLabel.Text = ticket.pieceWeightDisplay;
+        var isSemiFinished = ticket.isSemiFinished;
+        SelectedStrengthTitleLabel.IsVisible = isSemiFinished;
+        SelectedStrengthLabel.IsVisible = isSemiFinished;
+        SelectedStrengthLabel.Text = ticket.strengthDisplay;
+        SelectedCoilCountTitleLabel.IsVisible = isSemiFinished;
+        SelectedCoilCountLabel.IsVisible = isSemiFinished;
+        SelectedCoilCountLabel.Text = ticket.coilCountDisplay;
+        SelectedCoilDiameterTitleLabel.IsVisible = isSemiFinished;
+        SelectedCoilDiameterLabel.IsVisible = isSemiFinished;
+        SelectedCoilDiameterLabel.Text = ticket.coilDiameterDisplay;
     }
 
     private void ClearSelectedTicket()
