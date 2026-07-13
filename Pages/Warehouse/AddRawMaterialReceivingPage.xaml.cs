@@ -108,12 +108,17 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             var options = dictGroups
                 .FirstOrDefault(group => IsMaterialClassField(group.field))?
                 .dictItems?
-                .Where(item => !string.IsNullOrWhiteSpace(item.dictItemName) || !string.IsNullOrWhiteSpace(item.dictItemValue))
+                .Where(IsSupportedMaterialClassOption)
                 .ToList();
 
             if (options?.Count > 0)
             {
                 _materialClassOptions = options;
+                ApplyMaterialClassOptions(_materialClassOptions);
+            }
+            else
+            {
+                _materialClassOptions = CreateDefaultMaterialClassOptions();
                 ApplyMaterialClassOptions(_materialClassOptions);
             }
         }
@@ -132,19 +137,28 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                string.Equals(normalized, "materialType", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsSupportedMaterialClassOption(DictItemDto item)
+    {
+        var value = FirstNonEmpty(item.dictItemName, item.dictItemValue);
+        return value.Contains("原料", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("raw", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("半成品", StringComparison.OrdinalIgnoreCase) ||
+            value.Contains("semi", StringComparison.OrdinalIgnoreCase);
+    }
+
     private void ApplyMaterialClassOptions(List<DictItemDto> options)
     {
         MaterialTypePicker.ItemsSource = options;
         BindMaterialTypePicker.ItemsSource = options;
         if (options.Count == 0) return;
 
-        if (MaterialTypePicker.SelectedItem is not DictItemDto)
+        if (MaterialTypePicker.SelectedItem is not DictItemDto materialType || !options.Contains(materialType))
         {
             MaterialTypePicker.SelectedIndex = 0;
             MaterialTypePicker.SelectedItem = options[0];
         }
 
-        if (BindMaterialTypePicker.SelectedItem is not DictItemDto)
+        if (BindMaterialTypePicker.SelectedItem is not DictItemDto bindMaterialType || !options.Contains(bindMaterialType))
         {
             BindMaterialTypePicker.SelectedIndex = 0;
             BindMaterialTypePicker.SelectedItem = options[0];
@@ -448,11 +462,13 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         {
             BindSemiFieldsRow1.IsVisible = isSemiFinished;
             BindSemiFieldsRow2.IsVisible = isSemiFinished;
+            BindPieceWeightLabel.Text = isSemiFinished ? "实际件重（KG） *" : "实际件重（吨） *";
             return;
         }
 
         TicketSemiFieldsRow1.IsVisible = isSemiFinished;
         TicketSemiFieldsRow2.IsVisible = isSemiFinished;
+        TicketPieceWeightLabel.Text = isSemiFinished ? "件重（KG） *" : "件重（吨） *";
     }
 
     private static bool IsSemiFinished(DictItemDto? materialClass)
