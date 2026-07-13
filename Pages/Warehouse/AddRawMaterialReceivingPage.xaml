@@ -28,10 +28,13 @@
                     </Grid>
                 </Border>
 
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                    <Button Text="✍  手动录入票签" BackgroundColor="#EFFFF4" TextColor="#008C38" BorderColor="#0AA344" BorderWidth="1" CornerRadius="10" HeightRequest="46" Clicked="OnTakePhotoClicked" />
-                    <Button Grid.Column="1" Text="◼  扫码绑定" BackgroundColor="#F4F8FF" TextColor="#0B4FEA" BorderColor="#2263FF" BorderWidth="1" CornerRadius="10" HeightRequest="46" Clicked="OnScanBindClicked" />
-                </Grid>
+                <VerticalStackLayout Spacing="6">
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <Button Text="📷  拍照" BackgroundColor="#EFFFF4" TextColor="#008C38" BorderColor="#0AA344" BorderWidth="1" CornerRadius="10" HeightRequest="46" Clicked="OnTakePhotoClicked" />
+                        <Button Grid.Column="1" Text="◼  扫码绑定" BackgroundColor="#F4F8FF" TextColor="#0B4FEA" BorderColor="#2263FF" BorderWidth="1" CornerRadius="10" HeightRequest="46" Clicked="OnScanBindClicked" />
+                    </Grid>
+                    <Label Text="请尽量避免光线、角度等原因影响拍照识别效果" TextColor="#F64148" FontSize="12" />
+                </VerticalStackLayout>
 
                 <Border BackgroundColor="#FAFCFF" Stroke="#C8D6EA" StrokeDashArray="3,3" StrokeThickness="1" Padding="16" MinimumHeightRequest="106">
                     <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
@@ -43,7 +46,7 @@
                         <Label x:Name="ExtractedTextLabel" Text="暂无票签内容，请先手动录入" TextColor="#8EA0B8" FontSize="15" HorizontalTextAlignment="Center" />
                         <Border x:Name="SelectedTicketCard" IsVisible="False" BackgroundColor="White" Stroke="#2863FF" StrokeThickness="2" Padding="12">
                             <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                            <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,*" RowSpacing="8" ColumnSpacing="12">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="*,*" RowSpacing="8" ColumnSpacing="12">
                                 <HorizontalStackLayout Spacing="8">
                                     <Label Text="✔ 当前选中" TextColor="#2D54D9" FontAttributes="Bold" />
                                     <Border BackgroundColor="#F2F4F8" StrokeThickness="0" Padding="8,2">
@@ -64,6 +67,12 @@
                                 <Label x:Name="SelectedOriginPlaceLabel" Grid.Row="2" Grid.Column="1" Text="--" TextColor="#0A2C61" FontAttributes="Bold" Margin="44,0,0,0" />
                                 <Label Grid.Row="3" Text="件重：" TextColor="#667A99" />
                                 <Label x:Name="SelectedPieceWeightLabel" Grid.Row="3" Text="--" TextColor="#D96B00" FontAttributes="Bold" Margin="44,0,0,0" />
+                                <Label x:Name="SelectedStrengthTitleLabel" Grid.Row="4" Text="强度：" TextColor="#667A99" />
+                                <Label x:Name="SelectedStrengthLabel" Grid.Row="4" Text="--" TextColor="#0A2C61" FontAttributes="Bold" Margin="44,0,0,0" />
+                                <Label x:Name="SelectedCoilCountTitleLabel" Grid.Row="4" Grid.Column="1" Text="圈数：" TextColor="#667A99" />
+                                <Label x:Name="SelectedCoilCountLabel" Grid.Row="4" Grid.Column="1" Text="--" TextColor="#0A2C61" FontAttributes="Bold" Margin="44,0,0,0" />
+                                <Label x:Name="SelectedCoilDiameterTitleLabel" Grid.Row="5" Text="圈径：" TextColor="#667A99" />
+                                <Label x:Name="SelectedCoilDiameterLabel" Grid.Row="5" Text="--" TextColor="#0A2C61" FontAttributes="Bold" Margin="44,0,0,0" />
                             </Grid>
                         </Border>
                     </VerticalStackLayout>
@@ -98,9 +107,9 @@
                                             <Label Grid.Row="2" Grid.Column="1" Text="{Binding specDisplay, StringFormat='规格：{0}'}" TextColor="#38557C" />
                                             <Label Grid.Row="3" Text="{Binding furnaceNoDisplay, StringFormat='炉号：{0}'}" TextColor="#38557C" />
                                             <Label Grid.Row="3" Grid.Column="1" Text="{Binding originPlaceDisplay, StringFormat='产地：{0}'}" TextColor="#38557C" />
-                                            <Label Grid.Row="4" Text="{Binding strengthDisplay, StringFormat='强度：{0}'}" TextColor="#38557C" />
-                                            <Label Grid.Row="4" Grid.Column="1" Text="{Binding coilCountDisplay, StringFormat='圈数：{0}'}" TextColor="#38557C" />
-                                            <Label Grid.Row="5" Text="{Binding coilDiameterDisplay, StringFormat='圈径：{0}'}" TextColor="#38557C" />
+                                            <Label Grid.Row="4" IsVisible="{Binding isSemiFinished}" Text="{Binding strengthDisplay, StringFormat='强度：{0}'}" TextColor="#38557C" />
+                                            <Label Grid.Row="4" Grid.Column="1" IsVisible="{Binding isSemiFinished}" Text="{Binding coilCountDisplay, StringFormat='圈数：{0}'}" TextColor="#38557C" />
+                                            <Label Grid.Row="5" IsVisible="{Binding isSemiFinished}" Text="{Binding coilDiameterDisplay, StringFormat='圈径：{0}'}" TextColor="#38557C" />
                                             <Label Grid.Row="5" Grid.Column="1" Text="{Binding pieceWeightDisplay, StringFormat='件重：{0}'}" TextColor="#00A060" FontAttributes="Bold" />
                                         </Grid>
                                     </Border>
@@ -131,20 +140,20 @@
                         </Label>
                     </Grid>
                     <BoxView HeightRequest="1" Color="#EDF1F6" />
+                    <Label x:Name="OcrFailedHintLabel" IsVisible="False" Text="OCR识别失败，请重新拍照识别或者手动输入信息" TextColor="#F64148" FontSize="12" FontAttributes="Bold" />
                     <Label Text="物料分类 *" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
-                    <Picker x:Name="MaterialTypePicker" ItemDisplayBinding="{Binding dictItemName}" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
+                    <Picker x:Name="MaterialTypePicker" ItemDisplayBinding="{Binding dictItemName}" BackgroundColor="#F8FAFD" TextColor="#051B3D" SelectedIndexChanged="OnTicketMaterialTypeChanged" />
+                    <Entry x:Name="MaterialCodeEntry" IsVisible="False" />
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                         <VerticalStackLayout Spacing="6">
-                            <Label Text="物料编码 *" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
-                            <Entry x:Name="MaterialCodeEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
-                        </VerticalStackLayout>
-                        <VerticalStackLayout Grid.Column="1" Spacing="6">
                             <Label Text="物料名称" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
                             <Entry x:Name="MaterialNameEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
                         </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                            <Label Text="规格" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
+                            <Entry x:Name="SpecEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
+                        </VerticalStackLayout>
                     </Grid>
-                    <Label Text="规格" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
-                    <Entry x:Name="SpecEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                         <VerticalStackLayout Spacing="6">
                             <Label Text="炉号" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
@@ -155,7 +164,7 @@
                             <Entry x:Name="OriginPlaceEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
                         </VerticalStackLayout>
                     </Grid>
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Grid x:Name="TicketSemiFieldsRow1" ColumnDefinitions="*,*" ColumnSpacing="12">
                         <VerticalStackLayout Spacing="6">
                             <Label Text="强度" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
                             <Entry x:Name="StrengthEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" Keyboard="Numeric" />
@@ -165,16 +174,14 @@
                             <Entry x:Name="CoilCountEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" Keyboard="Numeric" />
                         </VerticalStackLayout>
                     </Grid>
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Grid x:Name="TicketSemiFieldsRow2" ColumnDefinitions="*,*" ColumnSpacing="12">
                         <VerticalStackLayout Spacing="6">
                             <Label Text="圈径" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
                             <Entry x:Name="CoilDiameterEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" Keyboard="Numeric" />
                         </VerticalStackLayout>
-                        <VerticalStackLayout Grid.Column="1" Spacing="6">
-                            <Label Text="件重（吨） *" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
-                            <Entry x:Name="PieceWeightEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" Keyboard="Numeric" />
-                        </VerticalStackLayout>
                     </Grid>
+                    <Label x:Name="TicketPieceWeightLabel" Text="件重（吨） *" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
+                    <Entry x:Name="PieceWeightEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" Keyboard="Numeric" />
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,12,0,0">
                         <Button Text="取消" BackgroundColor="White" TextColor="#1F447E" BorderColor="#1F447E" BorderWidth="1" CornerRadius="10" HeightRequest="50" Clicked="OnCancelTicketConfirmClicked" />
                         <Button Grid.Column="1" Text="确认无误" BackgroundColor="#1F447E" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="50" Clicked="OnConfirmTicketClicked" />
@@ -198,19 +205,18 @@
                     <BoxView HeightRequest="1" Color="#EDF1F6" />
                     <Entry x:Name="BindQrCodeEntry" IsReadOnly="True" BackgroundColor="#F8FAFD" TextColor="#00A060" FontAttributes="Bold" HorizontalTextAlignment="End" />
                     <Label Text="物料分类 *" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
-                    <Picker x:Name="BindMaterialTypePicker" ItemDisplayBinding="{Binding dictItemName}" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
+                    <Picker x:Name="BindMaterialTypePicker" ItemDisplayBinding="{Binding dictItemName}" BackgroundColor="#F8FAFD" TextColor="#051B3D" SelectedIndexChanged="OnBindMaterialTypeChanged" />
+                    <Entry x:Name="BindMaterialCodeEntry" IsVisible="False" />
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                         <VerticalStackLayout Spacing="6">
-                            <Label Text="物料编码 *" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
-                            <Entry x:Name="BindMaterialCodeEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
-                        </VerticalStackLayout>
-                        <VerticalStackLayout Grid.Column="1" Spacing="6">
                             <Label Text="物料名称" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
                             <Entry x:Name="BindMaterialNameEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
                         </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                            <Label Text="规格" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
+                            <Entry x:Name="BindSpecEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
+                        </VerticalStackLayout>
                     </Grid>
-                    <Label Text="规格" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
-                    <Entry x:Name="BindSpecEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                         <VerticalStackLayout Spacing="6">
                             <Label Text="炉号" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
@@ -221,7 +227,7 @@
                             <Entry x:Name="BindOriginPlaceEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
                         </VerticalStackLayout>
                     </Grid>
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Grid x:Name="BindSemiFieldsRow1" ColumnDefinitions="*,*" ColumnSpacing="12">
                         <VerticalStackLayout Spacing="6">
                             <Label Text="强度" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
                             <Entry x:Name="BindStrengthEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" Keyboard="Numeric" />
@@ -231,16 +237,14 @@
                             <Entry x:Name="BindCoilCountEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" Keyboard="Numeric" />
                         </VerticalStackLayout>
                     </Grid>
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Grid x:Name="BindSemiFieldsRow2" ColumnDefinitions="*,*" ColumnSpacing="12">
                         <VerticalStackLayout Spacing="6">
                             <Label Text="圈径" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
                             <Entry x:Name="BindCoilDiameterEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" Keyboard="Numeric" />
                         </VerticalStackLayout>
-                        <VerticalStackLayout Grid.Column="1" Spacing="6">
-                            <Label Text="实际件重（吨） *" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
-                            <Entry x:Name="BindPieceWeightEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" Keyboard="Numeric" />
-                        </VerticalStackLayout>
                     </Grid>
+                    <Label x:Name="BindPieceWeightLabel" Text="实际件重（吨） *" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
+                    <Entry x:Name="BindPieceWeightEntry" BackgroundColor="#F8FAFD" TextColor="#051B3D" Keyboard="Numeric" />
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,12,0,0">
                         <Button Text="取消" BackgroundColor="White" TextColor="#1F447E" BorderColor="#1F447E" BorderWidth="1" CornerRadius="10" HeightRequest="50" Clicked="OnCancelBindConfirmClicked" />
                         <Button Grid.Column="1" Text="确认绑定入库" BackgroundColor="#1F447E" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="50" Clicked="OnConfirmBindClicked" />
