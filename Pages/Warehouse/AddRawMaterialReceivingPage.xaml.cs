@@ -278,38 +278,59 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private async Task<FileResult?> GetTicketPhotoAsync()
     {
-        var captureSupported = MediaPicker.Default.IsCaptureSupported;
-        var choice = captureSupported
-            ? await DisplayActionSheet("上传票签图片", "取消", null, "拍照", "从相册选择")
-            : await DisplayActionSheet("当前设备不支持直接拍照，可从相册选择票签图片", "取消", null, "从相册选择");
-
+        var choice = await DisplayActionSheet("上传票签图片", "取消", null, "手机拍照", "手持机拍照", "从相册选择", "从文件选择");
         if (choice == "取消" || string.IsNullOrWhiteSpace(choice)) return null;
 
-        if (choice == "从相册选择")
+        return choice switch
         {
-            return await PickTicketPhotoAsync();
-        }
+            "从相册选择" => await PickTicketPhotoAsync(),
+            "从文件选择" => await PickTicketImageFileAsync(),
+            _ => await CaptureTicketPhotoAsync(choice)
+        };
+    }
 
+    private async Task<FileResult?> CaptureTicketPhotoAsync(string title)
+    {
         var permission = await Permissions.RequestAsync<Permissions.Camera>();
         if (permission != PermissionStatus.Granted)
         {
-            var fallback = await DisplayActionSheet("未授予摄像头权限，可从相册选择票签图片", "取消", null, "从相册选择");
-            return fallback == "从相册选择" ? await PickTicketPhotoAsync() : null;
+            var fallback = await DisplayActionSheet("未授予摄像头权限，可从相册或文件选择票签图片", "取消", null, "从相册选择", "从文件选择");
+            return fallback switch
+            {
+                "从相册选择" => await PickTicketPhotoAsync(),
+                "从文件选择" => await PickTicketImageFileAsync(),
+                _ => null
+            };
         }
 
         try
         {
-            return await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "拍摄票签" });
+            return await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = title });
         }
-        catch (FeatureNotSupportedException)
+        catch (Exception ex) when (ex is FeatureNotSupportedException || ex is FeatureNotEnabledException || ex is PermissionException)
         {
-            return await PickTicketPhotoAsync();
+            var fallback = await DisplayActionSheet("当前设备无法直接调用相机，可从相册或文件选择票签图片", "取消", null, "从相册选择", "从文件选择");
+            return fallback switch
+            {
+                "从相册选择" => await PickTicketPhotoAsync(),
+                "从文件选择" => await PickTicketImageFileAsync(),
+                _ => null
+            };
         }
     }
 
     private static async Task<FileResult?> PickTicketPhotoAsync()
     {
         return await MediaPicker.Default.PickPhotoAsync(new MediaPickerOptions { Title = "选择票签图片" });
+    }
+
+    private static async Task<FileResult?> PickTicketImageFileAsync()
+    {
+        return await FilePicker.Default.PickAsync(new PickOptions
+        {
+            PickerTitle = "选择票签图片",
+            FileTypes = FilePickerFileType.Images
+        });
     }
 
     private async void OnCalculateSummaryClicked(object sender, EventArgs e)
@@ -416,7 +437,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         BindCoilCountEntry.Text = source.coilCount;
         BindCoilDiameterEntry.Text = source.coilDiameter;
         BindPieceWeightEntry.Text = source.pieceWeight;
-        ApplyMaterialClassFormVisibility(BindMaterialTypePicker, true);
+        RefreshMaterialClassFormVisibility(true);
         BindConfirmOverlay.IsVisible = true;
     }
 
@@ -451,15 +472,15 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private void OnCancelBindConfirmClicked(object sender, EventArgs e) => BindConfirmOverlay.IsVisible = false;
 
-    private void OnTicketMaterialTypeChanged(object sender, EventArgs e) => ApplyMaterialClassFormVisibility(MaterialTypePicker, false);
+    private void OnTicketMaterialTypeChanged(object sender, EventArgs e) => RefreshMaterialClassFormVisibility(false);
 
-    private void OnBindMaterialTypeChanged(object sender, EventArgs e) => ApplyMaterialClassFormVisibility(BindMaterialTypePicker, true);
+    private void OnBindMaterialTypeChanged(object sender, EventArgs e) => RefreshMaterialClassFormVisibility(true);
 
     private void OnTicketMaterialTypePickerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(Picker.SelectedItem) or nameof(Picker.SelectedIndex))
         {
-            ApplyMaterialClassFormVisibility(MaterialTypePicker, false);
+            RefreshMaterialClassFormVisibility(false);
         }
     }
 
@@ -467,8 +488,15 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     {
         if (e.PropertyName is nameof(Picker.SelectedItem) or nameof(Picker.SelectedIndex))
         {
-            ApplyMaterialClassFormVisibility(BindMaterialTypePicker, true);
+            RefreshMaterialClassFormVisibility(true);
         }
+    }
+
+    private void RefreshMaterialClassFormVisibility(bool isBindDialog)
+    {
+        var picker = isBindDialog ? BindMaterialTypePicker : MaterialTypePicker;
+        ApplyMaterialClassFormVisibility(picker, isBindDialog);
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(50), () => ApplyMaterialClassFormVisibility(picker, isBindDialog));
     }
 
     private void ApplyMaterialClassFormVisibility(Picker picker, bool isBindDialog)
@@ -528,7 +556,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         CoilCountEntry.Text = ocr.coilCount;
         CoilDiameterEntry.Text = ocr.coilDiameter;
         PieceWeightEntry.Text = ocr.pieceWeight;
-        ApplyMaterialClassFormVisibility(MaterialTypePicker, false);
+        RefreshMaterialClassFormVisibility(false);
         TicketConfirmOverlay.IsVisible = true;
     }
 
