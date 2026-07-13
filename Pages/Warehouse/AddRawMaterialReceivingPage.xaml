@@ -142,7 +142,7 @@
                     <BoxView HeightRequest="1" Color="#EDF1F6" />
                     <Label x:Name="OcrFailedHintLabel" IsVisible="False" Text="OCR识别失败，请重新拍照识别或者手动输入信息" TextColor="#F64148" FontSize="12" FontAttributes="Bold" />
                     <Label Text="物料分类 *" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
-                    <Picker x:Name="MaterialTypePicker" ItemDisplayBinding="{Binding dictItemName}" BackgroundColor="#F8FAFD" TextColor="#051B3D" SelectedIndexChanged="OnTicketMaterialTypeChanged" />
+                    <Picker x:Name="MaterialTypePicker" ItemDisplayBinding="{Binding dictItemName}" BackgroundColor="#F8FAFD" TextColor="#051B3D" SelectedIndexChanged="OnTicketMaterialTypeChanged" PropertyChanged="OnTicketMaterialTypePickerPropertyChanged" />
                     <Entry x:Name="MaterialCodeEntry" IsVisible="False" />
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                         <VerticalStackLayout Spacing="6">
@@ -205,7 +205,7 @@
                     <BoxView HeightRequest="1" Color="#EDF1F6" />
                     <Entry x:Name="BindQrCodeEntry" IsReadOnly="True" BackgroundColor="#F8FAFD" TextColor="#00A060" FontAttributes="Bold" HorizontalTextAlignment="End" />
                     <Label Text="物料分类 *" TextColor="#0A2C61" FontAttributes="Bold" FontSize="13" />
-                    <Picker x:Name="BindMaterialTypePicker" ItemDisplayBinding="{Binding dictItemName}" BackgroundColor="#F8FAFD" TextColor="#051B3D" SelectedIndexChanged="OnBindMaterialTypeChanged" />
+                    <Picker x:Name="BindMaterialTypePicker" ItemDisplayBinding="{Binding dictItemName}" BackgroundColor="#F8FAFD" TextColor="#051B3D" SelectedIndexChanged="OnBindMaterialTypeChanged" PropertyChanged="OnBindMaterialTypePickerPropertyChanged" />
                     <Entry x:Name="BindMaterialCodeEntry" IsVisible="False" />
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                         <VerticalStackLayout Spacing="6">

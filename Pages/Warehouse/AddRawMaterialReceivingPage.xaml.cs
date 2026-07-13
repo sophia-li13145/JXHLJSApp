@@ -455,9 +455,25 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private void OnBindMaterialTypeChanged(object sender, EventArgs e) => ApplyMaterialClassFormVisibility(BindMaterialTypePicker, true);
 
+    private void OnTicketMaterialTypePickerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(Picker.SelectedItem) or nameof(Picker.SelectedIndex))
+        {
+            ApplyMaterialClassFormVisibility(MaterialTypePicker, false);
+        }
+    }
+
+    private void OnBindMaterialTypePickerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(Picker.SelectedItem) or nameof(Picker.SelectedIndex))
+        {
+            ApplyMaterialClassFormVisibility(BindMaterialTypePicker, true);
+        }
+    }
+
     private void ApplyMaterialClassFormVisibility(Picker picker, bool isBindDialog)
     {
-        var isSemiFinished = IsSemiFinished(GetSelectedMaterialClass(picker, null));
+        var isSemiFinished = IsSemiFinished(picker);
         if (isBindDialog)
         {
             BindSemiFieldsRow1.IsVisible = isSemiFinished;
@@ -469,6 +485,24 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         TicketSemiFieldsRow1.IsVisible = isSemiFinished;
         TicketSemiFieldsRow2.IsVisible = isSemiFinished;
         TicketPieceWeightLabel.Text = isSemiFinished ? "件重（KG） *" : "件重（吨） *";
+    }
+
+    private bool IsSemiFinished(Picker picker)
+    {
+        if (picker.SelectedItem is DictItemDto selected && IsSemiFinished(selected))
+        {
+            return true;
+        }
+
+        if (picker.SelectedIndex >= 0 && picker.SelectedIndex < _materialClassOptions.Count && IsSemiFinished(_materialClassOptions[picker.SelectedIndex]))
+        {
+            return true;
+        }
+
+        var selectedText = FirstNonEmpty(picker.SelectedItem?.ToString(),
+            picker.SelectedIndex >= 0 && picker.SelectedIndex < picker.Items.Count ? picker.Items[picker.SelectedIndex] : null);
+        return selectedText.Contains("半成品", StringComparison.OrdinalIgnoreCase) ||
+            selectedText.Contains("semi", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsSemiFinished(DictItemDto? materialClass)
