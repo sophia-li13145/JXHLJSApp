@@ -19,6 +19,9 @@ public sealed class WorkOrderInputOutputDto
     public string? outputSpecification { get; set; }
     public string? outputSteel { get; set; }
     public string? outputSteelGrade { get; set; }
+    public string? processName { get; set; }
+    public string? unit { get; set; }
+    public decimal? pieceWeight { get; set; }
     public string? wireTakeUpLength { get; set; }
     public decimal? currentSequenceNo { get; set; }
     public string? machineType { get; set; }

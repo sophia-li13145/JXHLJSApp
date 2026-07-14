@@ -16,6 +16,7 @@ public partial class MaterialUnloadingPage : ContentPage
     private string? _lastMaterialQrCode;
     private MaterialOutputConfirmDto? _confirmOutput;
     private WorkOrderInputOutputDto? _inputOutput;
+    private bool _isUpdatingOutputFields;
 
 
     public MaterialUnloadingPage(IWorkOrderApi workOrderApi, IScanService scanService, IProductionContextService productionContext)
@@ -173,16 +174,16 @@ public partial class MaterialUnloadingPage : ContentPage
 
     private void BindInputOutput(WorkOrderInputOutputDto? inputOutput)
     {
-        var outputLength = TryParseDecimal(inputOutput?.wireTakeUpLength);
+        var initialOutputLength = GetInitialOutputLength(inputOutput);
         _confirmOutput = new MaterialOutputConfirmDto
         {
-            outputLength = outputLength,
+            outputLength = initialOutputLength,
             qrCode = _lastMaterialQrCode,
             workOrderNo = _productionContext.Current?.WorkOrderNo
         };
 
-        OutputLengthLabel.Text = $"产出长度（m）（指令卡标准：{FormatDecimalWithUnit(outputLength, "m")}）*";
-        OutputLengthEntry.Text = FormatDecimalInput(outputLength);
+        ConfigureProcessSpecificInputs(inputOutput);
+        OutputLengthEntry.Text = FormatDecimalInput(initialOutputLength);
         InputMaterialCodeLabel.Text = $"物料: {ValueOrDash(inputOutput?.inputMaterialCode)}";
         InputSteelGradeLabel.Text = $"钢号: {ValueOrDash(FirstNonEmpty(inputOutput?.inputSteel, inputOutput?.inputSteelGrade, inputOutput?.inputMaterialName))}";
         InputOriginPlaceLabel.Text = $"产地: {ValueOrDash(inputOutput?.inputOriginPlace)}";
@@ -305,30 +306,95 @@ public partial class MaterialUnloadingPage : ContentPage
 
     private void OnManualOutputCompleted(object sender, EventArgs e) => ApplyManualOutputValues();
 
+    private void OnInspectStatusPickerChanged(object sender, EventArgs e)
+    {
+        if (_isUpdatingOutputFields) return;
+
+        RecalculateOutputFields();
+    }
+
     private void ApplyManualOutputValues() => RecalculateOutputFields();
+
+    private void ConfigureProcessSpecificInputs(WorkOrderInputOutputDto? inputOutput)
+    {
+        InspectStatusLabel.Text = IsHeatTreatmentProcess(inputOutput)
+            ? "产品检验状态*"
+            : "产品检验状态（系统智能判定）*";
+        InspectStatusEntry.IsVisible = !IsHeatTreatmentProcess(inputOutput);
+        InspectStatusPicker.IsVisible = IsHeatTreatmentProcess(inputOutput);
+        InspectStatusPicker.SelectedItem = "合格品";
+
+        OutputLengthLabel.Text = IsDefaultProcess(inputOutput)
+            ? $"产出长度（m）（指令卡标准：{FormatDecimalWithUnit(TryParseDecimal(inputOutput?.wireTakeUpLength), "m")}）*"
+            : "产出长度（m）*";
+        OutputLengthEntry.IsReadOnly = IsPicklingProcess(inputOutput);
+
+        PieceWeightLabel.Text = IsPicklingProcess(inputOutput)
+            ? "件重（KG）*"
+            : "件重（KG）（长度×0.00617×规格²）*";
+    }
 
     private void RecalculateOutputFields()
     {
-        if (_confirmOutput is null)
+        if (_confirmOutput is null || _isUpdatingOutputFields)
         {
             return;
         }
 
-        var outputLength = TryParseDecimal(OutputLengthEntry.Text);
-        var pieceWeight = CalculatePieceWeight(outputLength, _inputOutput?.outputSpecification);
-        var standardLength = TryParseDecimal(_inputOutput?.wireTakeUpLength);
-        var inspectStatus = outputLength.HasValue && standardLength.HasValue && outputLength.Value >= standardLength.Value ? "合格品" : "小件";
+        _isUpdatingOutputFields = true;
+        try
+        {
+            var outputLength = IsPicklingProcess(_inputOutput)
+                ? CalculateOutputLength(_inputOutput?.pieceWeight, _inputOutput?.outputSpecification)
+                : TryParseDecimal(OutputLengthEntry.Text);
+            var pieceWeight = IsPicklingProcess(_inputOutput)
+                ? _inputOutput?.pieceWeight
+                : CalculatePieceWeight(outputLength, _inputOutput?.outputSpecification);
+            var inspectStatus = GetInspectStatus(outputLength);
 
-        _confirmOutput.outputLength = outputLength;
-        _confirmOutput.pieceWeight = pieceWeight;
-        _confirmOutput.productInspectStatus = inspectStatus;
+            _confirmOutput.outputLength = outputLength;
+            _confirmOutput.pieceWeight = pieceWeight;
+            _confirmOutput.productInspectStatus = inspectStatus;
 
-        InspectStatusEntry.Text = inspectStatus;
-        InspectStatusEntry.TextColor = inspectStatus == "合格品" ? Color.FromArgb("#00A86B") : Color.FromArgb("#D97706");
-        PieceWeightEntry.Text = FormatDecimalInput(pieceWeight);
-        WeightLabel.Text = $"件重: {FormatDecimalWithUnit(pieceWeight, "KG")}";
-        LengthLabel.Text = $"长度: {FormatDecimalWithUnit(outputLength, "m")}";
+            InspectStatusEntry.Text = inspectStatus;
+            InspectStatusPicker.SelectedItem = inspectStatus;
+            var statusColor = inspectStatus == "合格品" ? Color.FromArgb("#00A86B") : Color.FromArgb("#D97706");
+            InspectStatusEntry.TextColor = statusColor;
+            InspectStatusPicker.TextColor = statusColor;
+            if (IsPicklingProcess(_inputOutput))
+            {
+                OutputLengthEntry.Text = FormatDecimalInput(outputLength);
+            }
+
+            PieceWeightEntry.Text = FormatDecimalInput(pieceWeight);
+            WeightLabel.Text = $"件重: {FormatDecimalWithUnit(pieceWeight, "KG")}";
+            LengthLabel.Text = $"长度: {FormatDecimalWithUnit(outputLength, "m")}";
+        }
+        finally
+        {
+            _isUpdatingOutputFields = false;
+        }
     }
+
+    private string GetInspectStatus(decimal? outputLength)
+    {
+        if (IsHeatTreatmentProcess(_inputOutput))
+        {
+            return InspectStatusPicker.SelectedItem as string ?? "合格品";
+        }
+
+        if (IsPicklingProcess(_inputOutput))
+        {
+            return "合格品";
+        }
+
+        var standardLength = TryParseDecimal(_inputOutput?.wireTakeUpLength);
+        return outputLength.HasValue && standardLength.HasValue && outputLength.Value >= standardLength.Value ? "合格品" : "小件";
+    }
+
+    private static decimal? GetInitialOutputLength(WorkOrderInputOutputDto? inputOutput) => IsPicklingProcess(inputOutput)
+        ? CalculateOutputLength(inputOutput?.pieceWeight, inputOutput?.outputSpecification)
+        : null;
 
     private static decimal? CalculatePieceWeight(decimal? outputLength, string? outputSpecification)
     {
@@ -337,4 +403,21 @@ public partial class MaterialUnloadingPage : ContentPage
             ? Math.Round(outputLength.Value * 0.00617m * spec.Value * spec.Value, 2)
             : null;
     }
+
+    private static decimal? CalculateOutputLength(decimal? pieceWeight, string? outputSpecification)
+    {
+        var spec = TryParseDecimal(outputSpecification);
+        return pieceWeight.HasValue && spec.HasValue && spec.Value != 0
+            ? Math.Round(pieceWeight.Value / spec.Value / spec.Value / 0.00617m, 2)
+            : null;
+    }
+
+    private static bool IsPicklingProcess(WorkOrderInputOutputDto? inputOutput) => ContainsProcessName(inputOutput, "酸洗");
+
+    private static bool IsHeatTreatmentProcess(WorkOrderInputOutputDto? inputOutput) => ContainsProcessName(inputOutput, "热处理");
+
+    private static bool IsDefaultProcess(WorkOrderInputOutputDto? inputOutput) => !IsPicklingProcess(inputOutput) && !IsHeatTreatmentProcess(inputOutput);
+
+    private static bool ContainsProcessName(WorkOrderInputOutputDto? inputOutput, string keyword) =>
+        inputOutput?.processName?.Contains(keyword, StringComparison.OrdinalIgnoreCase) == true;
 }
