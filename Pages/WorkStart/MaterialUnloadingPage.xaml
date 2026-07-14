@@ -51,8 +51,16 @@
                             <Button Text="返工上报" BackgroundColor="#FF9800" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="46" Clicked="OnReworkReportClicked" />
                             <Button Grid.Column="1" Text="异常上报" BackgroundColor="#F43F4B" TextColor="White" FontAttributes="Bold" CornerRadius="10" HeightRequest="46" Clicked="OnAbnormalReportClicked" />
                         </Grid>
-                        <Label Text="产品检验状态（系统智能判定）*" TextColor="#001431" FontSize="14" FontAttributes="Bold" />
+                        <Label x:Name="InspectStatusLabel" Text="产品检验状态（系统智能判定）*" TextColor="#001431" FontSize="14" FontAttributes="Bold" />
                         <Entry x:Name="InspectStatusEntry" Text="合格品" TextColor="#00A86B" FontAttributes="Bold" BackgroundColor="#F4F7FB" IsReadOnly="True" />
+                        <Picker x:Name="InspectStatusPicker" Title="产品检验状态" TextColor="#00A86B" FontAttributes="Bold" BackgroundColor="#F4F7FB" IsVisible="False" SelectedIndexChanged="OnInspectStatusPickerChanged">
+                            <Picker.ItemsSource>
+                                <x:Array Type="{x:Type x:String}">
+                                    <x:String>合格品</x:String>
+                                    <x:String>小件</x:String>
+                                </x:Array>
+                            </Picker.ItemsSource>
+                        </Picker>
                         <Label x:Name="OutputLengthLabel" Text="产出长度（m）*" TextColor="#001431" FontSize="14" FontAttributes="Bold" />
                         <Entry x:Name="OutputLengthEntry" Keyboard="Numeric" TextColor="#001431" FontAttributes="Bold" BackgroundColor="#F4F7FB" TextChanged="OnManualOutputTextChanged" Completed="OnManualOutputCompleted" />
                         <Label x:Name="PieceWeightLabel" Text="件重（KG）（长度×0.00617×规格²）*" TextColor="#001431" FontSize="14" FontAttributes="Bold" />
