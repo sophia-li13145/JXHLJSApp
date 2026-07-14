@@ -46,17 +46,20 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
         {
             RefreshContainer.IsRefreshing = true;
             _detail = await _qualityApi.GetIncomingQualityOrderDetailAsync(_incomingQualityNo);
-            QualityNoSpan.Text = _detail.incomingQualityNoDisplay;
-            InstockNoSpan.Text = _detail.instockNoDisplay;
+            QualityNoLabel.Text = _detail.incomingQualityNoDisplay;
+            InstockNoLabel.Text = _detail.instockNoDisplay;
             StatusLabel.Text = _detail.statusDisplay;
             ScanCountLabel.Text = $"共 {_detail.scanCount} 次";
-            MaterialNameSpan.Text = _detail.materialNameDisplay;
-            SpecSpan.Text = _detail.specDisplay;
-            TotalSpan.Text = _detail.totalDisplay;
+            MaterialNameLabel.Text = _detail.materialNameDisplay;
+            SpecLabel.Text = _detail.specDisplay;
+            TotalLabel.Text = _detail.totalDisplay;
             var showMaterial = !_detail.isUnsubmitted;
-            MaterialNameRow.IsVisible = showMaterial;
-            SpecRow.IsVisible = showMaterial;
-            TotalRow.IsVisible = showMaterial;
+            MaterialNameTitle.IsVisible = showMaterial;
+            MaterialNameLabel.IsVisible = showMaterial;
+            SpecTitle.IsVisible = showMaterial;
+            SpecLabel.IsVisible = showMaterial;
+            TotalTitle.IsVisible = showMaterial;
+            TotalLabel.IsVisible = showMaterial;
             ApplyStatusStyle(_detail);
             var showScanRecords = !_detail.isUnsubmitted;
             ScanRecordsHeader.IsVisible = showScanRecords;
@@ -102,15 +105,15 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
             return;
         }
 
+        ActionBar.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+        ActionBar.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
         if (detail.isUnsubmitted)
         {
-            ActionBar.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
             ActionBar.Add(CreateButton("删除", "#FF4D5E", "#FFF2F2", "#FFB7BE", OnDeleteClicked), 0);
+            ActionBar.Add(CreateButton("质检扫码", "White", "#1E427C", null, OnScanClicked), 1);
             return;
         }
 
-        ActionBar.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-        ActionBar.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
         if (detail.isWaitInspection)
         {
             ActionBar.Add(CreateButton("质检扫码", "White", "#F59E0B", null, OnScanClicked), 0);
