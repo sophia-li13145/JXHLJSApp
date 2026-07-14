@@ -9,4 +9,7 @@ public sealed class AttachmentDto
     public string? attachmentRealName { get; set; }
     public decimal? attachmentSize { get; set; }
     public string? attachmentUrl { get; set; }
+    public string? createdTime { get; set; }
+    public string? id { get; set; }
+    public string? memo { get; set; }
 }

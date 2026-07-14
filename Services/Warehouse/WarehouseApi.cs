@@ -13,6 +13,7 @@ public interface IWarehouseApi
     Task<DeliveryOrderDetailDto> GetDeliveryOrderDetailAsync(string deliveryNo, CancellationToken ct = default);
     Task<List<PackagingSubTaskDto>> GetPackagingSubTaskListAsync(CancellationToken ct = default);
     Task<PackagingSubTaskDetailDto> GetPackagingSubTaskDetailAsync(string id, CancellationToken ct = default);
+    Task<string?> PreviewAttachmentAsync(string attachmentUrl, long? expires = null, CancellationToken ct = default);
     Task<bool?> SavePackagingAsync(PackagingSaveRequestDto request, CancellationToken ct = default);
     Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default);
     Task<bool?> ConfirmDeliveryCompletionAsync(string deliveryOrderNo, CancellationToken ct = default);
@@ -36,6 +37,7 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _rawMaterialReceivingDetailEndpoint;
     private readonly string _queryWarehouseInfoEndpoint;
     private readonly string _uploadAttachmentEndpoint;
+    private readonly string _previewAttachmentEndpoint;
     private readonly string _ocrIncomingEndpoint;
     private readonly string _saveOcrIncomingImageEndpoint;
     private readonly string _queryQrCodeInfoEndpoint;
@@ -67,6 +69,8 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("rawMaterialReceiving.queryWarehouseInfo", "/pda/rawMaterialReceiving/queryWarehouseInfo"), servicePath);
         _uploadAttachmentEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("attachment.uploadAttachment", "/pda/attachment/uploadAttachment"), servicePath);
+        _previewAttachmentEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("attachment.previewAttachment", "/pda/attachment/previewAttachment"), servicePath);
         _ocrIncomingEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.ocrIncoming", "/pda/rawMaterialReceiving/ocrIncoming"), servicePath);
         _saveOcrIncomingImageEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -176,6 +180,20 @@ public sealed class WarehouseApi : IWarehouseApi
         return detail;
     }
 
+
+
+    public async Task<string?> PreviewAttachmentAsync(string attachmentUrl, long? expires = null, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_previewAttachmentEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(attachmentUrl)] = attachmentUrl,
+            [nameof(expires)] = expires?.ToString()
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<string?>(resp, ct).ConfigureAwait(false);
+        return data.result;
+    }
 
     public async Task<bool?> SavePackagingAsync(PackagingSaveRequestDto request, CancellationToken ct = default)
     {

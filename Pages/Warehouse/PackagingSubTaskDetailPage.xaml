@@ -50,7 +50,7 @@
                         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto,*" RowSpacing="16" ColumnSpacing="12">
                             <Label Text="任务单号" TextColor="#4B6688" /><Label x:Name="TaskNoLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
                             <Label Grid.Column="2" Text="目标物料" TextColor="#4B6688" /><Label x:Name="MaterialLabel" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" />
-                            <Label Grid.Row="1" Text="打印模板" TextColor="#4B6688" /><Label x:Name="TemplateLabel" Grid.Row="1" Grid.Column="1" TextColor="#004FEF" FontAttributes="Bold" />
+                            <Label Grid.Row="1" Text="打印模板" TextColor="#4B6688" /><Label x:Name="TemplateLabel" Grid.Row="1" Grid.Column="1" TextColor="#004FEF" FontAttributes="Bold" TextDecorations="Underline"><Label.GestureRecognizers><TapGestureRecognizer Tapped="OnTemplateTapped" /></Label.GestureRecognizers></Label>
                             <Label Grid.Row="2" Text="物料属性" TextColor="#4B6688" /><Label x:Name="PropertyLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
                             <Label Grid.Row="2" Grid.Column="2" Text="包装方式" TextColor="#4B6688" /><Label x:Name="MethodLabel" Grid.Row="2" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" />
                             <Label Grid.Row="3" Text="包装称重" TextColor="#4B6688" /><Label x:Name="WeightLabel" Grid.Row="3" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />

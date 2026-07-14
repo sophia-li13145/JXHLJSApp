@@ -2,6 +2,8 @@ namespace JXHLJSApp.Models.Warehouse;
 
 public sealed class PackagingSubTaskDetailDto
 {
+    public List<AttachmentDto>? attachmentList { get; set; }
+    public string? finishedQrCode { get; set; }
     public string? id { get; set; }
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
@@ -32,6 +34,12 @@ public sealed class PackagingSubTaskDetailDto
     public string packagingClothColorDisplay => Display(packagingClothColor);
     public string otherRequirementDisplay => Display(otherRequirement);
     public string workOrderNoDisplay => Display(workOrderNo);
+    public AttachmentDto? printTemplate => attachmentList?
+        .FirstOrDefault(file => !string.IsNullOrWhiteSpace(file.attachmentUrl))
+        ?? attachmentList?.FirstOrDefault();
+    public string printTemplateNameDisplay => Display(FirstNonEmpty(printTemplate?.attachmentName, printTemplate?.attachmentRealName));
 
     private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "无" : value!;
+
+    private static string? FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 }

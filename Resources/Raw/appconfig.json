@@ -28,7 +28,8 @@
       "quickInstock": "/pda/rawMaterialReceiving/quickInstock"
     },
     "attachment": {
-      "uploadAttachment": "/pda/attachment/uploadAttachment"
+      "uploadAttachment": "/pda/attachment/uploadAttachment",
+      "previewAttachment": "/pda/attachment/previewAttachment"
     },
     "workOrderAbnormalRecord": {
       "getDictList": "/pda/qsWorkOrderAbnormalRecord/getDictList",
