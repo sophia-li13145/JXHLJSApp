@@ -1,6 +1,7 @@
 using JXHLJSApp.Models.Quality;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.Quality;
+using Microsoft.Maui.Controls.Shapes;
 using System.Collections.ObjectModel;
 
 namespace JXHLJSApp.Pages.Quality;
@@ -46,25 +47,27 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
         {
             RefreshContainer.IsRefreshing = true;
             _detail = await _qualityApi.GetIncomingQualityOrderDetailAsync(_incomingQualityNo);
-            QualityNoSpan.Text = _detail.incomingQualityNoDisplay;
-            InstockNoSpan.Text = _detail.instockNoDisplay;
+            QualityNoLabel.Text = _detail.incomingQualityNoDisplay;
+            InstockNoLabel.Text = _detail.instockNoDisplay;
             StatusLabel.Text = _detail.statusDisplay;
             ScanCountLabel.Text = $"共 {_detail.scanCount} 次";
-            MaterialNameSpan.Text = _detail.materialNameDisplay;
-            SpecSpan.Text = _detail.specDisplay;
-            TotalSpan.Text = _detail.totalDisplay;
+            MaterialNameLabel.Text = _detail.materialNameDisplay;
+            SpecLabel.Text = _detail.specDisplay;
+            TotalLabel.Text = _detail.totalDisplay;
             var showMaterial = !_detail.isUnsubmitted;
-            MaterialNameRow.IsVisible = showMaterial;
-            SpecRow.IsVisible = showMaterial;
-            TotalRow.IsVisible = showMaterial;
+            MaterialNameTitle.IsVisible = showMaterial;
+            MaterialNameLabel.IsVisible = showMaterial;
+            SpecTitle.IsVisible = showMaterial;
+            SpecLabel.IsVisible = showMaterial;
+            TotalTitle.IsVisible = showMaterial;
+            TotalLabel.IsVisible = showMaterial;
             ApplyStatusStyle(_detail);
-            var showScanRecords = !_detail.isUnsubmitted;
-            ScanRecordsHeader.IsVisible = showScanRecords;
-            ScanRecordList.IsVisible = showScanRecords;
+            ScanRecordsHeader.IsVisible = true;
+            ScanRecordList.IsVisible = true;
             BuildActionBar(_detail);
 
             _records.Clear();
-            foreach (var record in _detail.detailList ?? new List<IncomingQualityScanDetailDto>())
+            foreach (var record in _detail.scanDetails)
             {
                 _records.Add(record);
             }
@@ -98,19 +101,19 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
         if (detail.isCompleted)
         {
             ActionBar.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-            ActionBar.Add(CreateButton("返回列表", "#051B3D", "White", "#C8D2DF", OnBackButtonClicked), 0);
+            ActionBar.Add(CreateOutlineAction("返回列表", OnBackButtonClicked), 0);
             return;
         }
 
+        ActionBar.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+        ActionBar.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
         if (detail.isUnsubmitted)
         {
-            ActionBar.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
             ActionBar.Add(CreateButton("删除", "#FF4D5E", "#FFF2F2", "#FFB7BE", OnDeleteClicked), 0);
+            ActionBar.Add(CreateButton("质检扫码", "White", "#1E427C", null, OnScanClicked), 1);
             return;
         }
 
-        ActionBar.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-        ActionBar.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
         if (detail.isWaitInspection)
         {
             ActionBar.Add(CreateButton("质检扫码", "White", "#F59E0B", null, OnScanClicked), 0);
@@ -120,6 +123,31 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
 
         ActionBar.Add(CreateButton("删除", "#FF4D5E", "#FFF2F2", "#FFB7BE", OnDeleteClicked), 0);
         ActionBar.Add(CreateButton("质检扫码", "White", "#1E427C", null, OnScanClicked), 1);
+    }
+
+    private static Border CreateOutlineAction(string text, EventHandler tapped)
+    {
+        var border = new Border
+        {
+            BackgroundColor = Colors.White,
+            Stroke = Color.FromArgb("#C8D2DF"),
+            StrokeThickness = 1,
+            HeightRequest = 56,
+            StrokeShape = new RoundRectangle { CornerRadius = 10 },
+            Content = new Label
+            {
+                Text = text,
+                TextColor = Color.FromArgb("#051B3D"),
+                FontSize = 16,
+                FontAttributes = FontAttributes.Bold,
+                HorizontalTextAlignment = TextAlignment.Center,
+                VerticalTextAlignment = TextAlignment.Center
+            }
+        };
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += (_, _) => tapped(border, EventArgs.Empty);
+        border.GestureRecognizers.Add(tap);
+        return border;
     }
 
     private static Button CreateButton(string text, string textColor, string backgroundColor, string? borderColor, EventHandler clicked)

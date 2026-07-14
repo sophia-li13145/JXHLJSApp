@@ -17,23 +17,27 @@ public sealed class IncomingQualityOrderDto
 
     public string incomingQualityNoDisplay => string.IsNullOrWhiteSpace(incomingQualityNo) ? "未生成来料质检单" : incomingQualityNo!;
     public string instockNoDisplay => string.IsNullOrWhiteSpace(instockNo) ? "-" : instockNo!;
-    public string statusDisplay => FirstNonEmpty(statusName, delStatusName, status, delStatus, "未提交");
+    public string statusDisplay => FirstNonEmpty(statusName, delStatusName, MapStatus(status), MapStatus(delStatus), "未提交");
     public string statusBackground => statusDisplay switch
     {
         "待质检" => "#FFF6E8",
-        "检验完成" => "#E9FBEF",
+        "检验完成" or "已完成" => "#E9FBEF",
         "未提交" => "#F1F3F7",
         _ => "#EEF3FA"
     };
     public string statusColor => statusDisplay switch
     {
         "待质检" => "#D97706",
-        "检验完成" => "#16A34A",
+        "检验完成" or "已完成" => "#16A34A",
         "未提交" => "#4B5563",
         _ => "#244B88"
     };
     public string totalDisplay => total.HasValue ? $"{total}件" : "-";
     public string doneDisplay => done.HasValue ? $"已扫记录：{done} 条" : "已扫记录：-";
+    public string pendingStorageText => "等待仓储提交入库单明细...";
+    public bool isUnsubmitted => IsStatus("0", "UNSUBMITTED", "unsubmitted", "未提交");
+    public bool isInspectionStarted => !isUnsubmitted;
+    public bool canDelete => isUnsubmitted;
     public string materialDisplay
     {
         get
@@ -46,12 +50,20 @@ public sealed class IncomingQualityOrderDto
     }
     public bool hasMaterial => !string.IsNullOrWhiteSpace(materialDisplay) && materialDisplay != "-";
 
+    private bool IsStatus(params string[] values) => values.Any(value => string.Equals(status, value, StringComparison.OrdinalIgnoreCase) || string.Equals(delStatus, value, StringComparison.OrdinalIgnoreCase) || string.Equals(statusDisplay, value, StringComparison.OrdinalIgnoreCase));
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
+    private static string? MapStatus(string? value) => value?.ToLowerInvariant() switch
+    {
+        "0" or "unsubmitted" => "未提交",
+        "1" or "wait_inspection" => "待质检",
+        "2" or "completed" => "检验完成",
+        _ => value
+    };
 }
 
 public sealed class IncomingQualityOrderDetailDto
 {
-    public List<IncomingQualityScanDetailDto>? detailList { get; set; }
+    public List<IncomingQualityScanDetailDto>? details { get; set; }
     public string? incomingQualityNo { get; set; }
     public string? instockNo { get; set; }
     public string? materialName { get; set; }
@@ -68,19 +80,20 @@ public sealed class IncomingQualityOrderDetailDto
     public string specDisplay => string.IsNullOrWhiteSpace(spec) ? "-" : spec!;
     public string totalDisplay => total.HasValue ? $"{total} 件" : "-";
     public string statusDisplay => FirstNonEmpty(statusName, delStatusName, MapStatus(status), MapStatus(delStatus), "未提交");
-    public int? scanCount => detailList?.Count ?? done ?? 0;
+    public IReadOnlyList<IncomingQualityScanDetailDto> scanDetails => details ?? new List<IncomingQualityScanDetailDto>();
+    public int? scanCount => scanDetails.Count;
     public int? done { get; set; }
-    public bool isUnsubmitted => IsStatus("UNSUBMITTED", "unsubmitted", "未提交");
-    public bool isWaitInspection => IsStatus("WAIT_INSPECTION", "wait_inspection", "待质检");
-    public bool isCompleted => IsStatus("COMPLETED", "completed", "已完成", "检验完成");
+    public bool isUnsubmitted => IsStatus("0", "UNSUBMITTED", "unsubmitted", "未提交");
+    public bool isWaitInspection => IsStatus("1", "WAIT_INSPECTION", "wait_inspection", "待质检");
+    public bool isCompleted => IsStatus("2", "COMPLETED", "completed", "已完成", "检验完成");
 
     private bool IsStatus(params string[] values) => values.Any(value => string.Equals(status, value, StringComparison.OrdinalIgnoreCase) || string.Equals(delStatus, value, StringComparison.OrdinalIgnoreCase) || string.Equals(statusDisplay, value, StringComparison.OrdinalIgnoreCase));
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
     private static string? MapStatus(string? value) => value?.ToLowerInvariant() switch
     {
-        "unsubmitted" => "未提交",
-        "wait_inspection" => "待质检",
-        "completed" => "已完成",
+        "0" or "unsubmitted" => "未提交",
+        "1" or "wait_inspection" => "待质检",
+        "2" or "completed" => "检验完成",
         _ => value
     };
 }
@@ -89,14 +102,17 @@ public sealed class IncomingQualityScanDetailDto
 {
     public string? otherProblemItem { get; set; }
     public string? problemPoint { get; set; }
+    public string? problemPointName { get; set; }
     public string? qrCode { get; set; }
     public string? qrCodeNo { get; set; }
     public string? inspectResult { get; set; }
     public string? inspectResultName { get; set; }
-    public string problemPointDisplay => string.IsNullOrWhiteSpace(problemPoint) ? "-" : problemPoint!;
+    public string problemPointDisplay => FirstNonEmpty(otherProblemItem, problemPointName, problemPoint, "-");
     public string qrCodeDisplay => string.IsNullOrWhiteSpace(qrCode) ? (string.IsNullOrWhiteSpace(qrCodeNo) ? "-" : qrCodeNo!) : qrCode!;
-    public string inspectResultDisplay => string.IsNullOrWhiteSpace(inspectResultName) ? (inspectResult ?? "-") : inspectResultName!;
+    public string inspectResultDisplay => FirstNonEmpty(inspectResultName, inspectResult, HasProblemDescription ? "不合格" : "-");
     public Color inspectResultColor => inspectResultDisplay.Contains("合格") && !inspectResultDisplay.Contains("不合格") ? Color.FromArgb("#00A86B") : Color.FromArgb("#FF4D5E");
+    private bool HasProblemDescription => !string.IsNullOrWhiteSpace(otherProblemItem) || !string.IsNullOrWhiteSpace(problemPoint);
+    private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
 }
 
 public sealed class IncomingQualitySaveResultRequestDto

@@ -23,29 +23,22 @@
                         <VerticalStackLayout Spacing="14">
                             <Label Text="来料任务信息" TextColor="#00346F" FontSize="16" FontAttributes="Bold" />
                             <BoxView HeightRequest="1" Color="#C8D2DF" />
-                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="18" ColumnSpacing="16">
-                                <Label TextColor="#38557C" FontSize="14">
-                                    <Label.FormattedText><FormattedString><Span Text="质检单号&#10;" /><Span x:Name="QualityNoSpan" TextColor="#051B3D" FontAttributes="Bold" /></FormattedString></Label.FormattedText>
-                                </Label>
-                                <Label Grid.Column="1" TextColor="#38557C" FontSize="14">
-                                    <Label.FormattedText><FormattedString><Span Text="入库单号&#10;" /><Span x:Name="InstockNoSpan" TextColor="#051B3D" FontAttributes="Bold" /></FormattedString></Label.FormattedText>
-                                </Label>
-                                <HorizontalStackLayout Grid.Row="1" Spacing="12">
-                                    <Label Text="当前状态" TextColor="#38557C" FontSize="14" VerticalOptions="Center" />
-                                    <Border x:Name="StatusBadge" BackgroundColor="#F2F4F8" StrokeThickness="0" Padding="10,4">
-                                        <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
-                                        <Label x:Name="StatusLabel" TextColor="#051B3D" FontSize="13" FontAttributes="Bold" />
-                                    </Border>
-                                </HorizontalStackLayout>
-                                <Label x:Name="MaterialNameRow" Grid.Row="2" Grid.ColumnSpan="2" TextColor="#38557C" FontSize="14" IsVisible="False">
-                                    <Label.FormattedText><FormattedString><Span Text="物料名称&#10;" /><Span x:Name="MaterialNameSpan" TextColor="#051B3D" FontAttributes="Bold" /></FormattedString></Label.FormattedText>
-                                </Label>
-                                <Label x:Name="SpecRow" Grid.Row="3" TextColor="#38557C" FontSize="14" IsVisible="False">
-                                    <Label.FormattedText><FormattedString><Span Text="规格参数&#10;" /><Span x:Name="SpecSpan" TextColor="#0057FF" FontAttributes="Bold" /></FormattedString></Label.FormattedText>
-                                </Label>
-                                <Label x:Name="TotalRow" Grid.Row="3" Grid.Column="1" TextColor="#38557C" FontSize="14" IsVisible="False">
-                                    <Label.FormattedText><FormattedString><Span Text="总数量&#10;" /><Span x:Name="TotalSpan" TextColor="#051B3D" FontAttributes="Bold" /></FormattedString></Label.FormattedText>
-                                </Label>
+                            <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="18" ColumnSpacing="10">
+                                <Label Text="质检单号" TextColor="#38557C" FontSize="14" />
+                                <Label x:Name="QualityNoLabel" Grid.Column="1" TextColor="#051B3D" FontSize="15" FontAttributes="Bold" LineBreakMode="WordWrap" />
+                                <Label Grid.Column="2" Text="入库单号" TextColor="#38557C" FontSize="14" />
+                                <Label x:Name="InstockNoLabel" Grid.Column="3" TextColor="#051B3D" FontSize="15" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                                <Label Grid.Row="1" Text="当前状态" TextColor="#38557C" FontSize="14" VerticalOptions="Center" />
+                                <Border x:Name="StatusBadge" Grid.Row="1" Grid.Column="1" BackgroundColor="#F2F4F8" StrokeThickness="0" Padding="10,4" HorizontalOptions="Start">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
+                                    <Label x:Name="StatusLabel" TextColor="#051B3D" FontSize="13" FontAttributes="Bold" />
+                                </Border>
+                                <Label x:Name="MaterialNameTitle" Grid.Row="2" Text="物料名称" TextColor="#38557C" FontSize="14" IsVisible="False" />
+                                <Label x:Name="MaterialNameLabel" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" TextColor="#051B3D" FontSize="15" FontAttributes="Bold" HorizontalTextAlignment="End" IsVisible="False" />
+                                <Label x:Name="SpecTitle" Grid.Row="3" Text="规格参数" TextColor="#38557C" FontSize="14" IsVisible="False" />
+                                <Label x:Name="SpecLabel" Grid.Row="3" Grid.Column="1" TextColor="#0057FF" FontSize="15" FontAttributes="Bold" IsVisible="False" />
+                                <Label x:Name="TotalTitle" Grid.Row="3" Grid.Column="2" Text="总数量" TextColor="#38557C" FontSize="14" IsVisible="False" />
+                                <Label x:Name="TotalLabel" Grid.Row="3" Grid.Column="3" TextColor="#051B3D" FontSize="15" FontAttributes="Bold" HorizontalTextAlignment="End" IsVisible="False" />
                             </Grid>
                         </VerticalStackLayout>
                     </Border>
@@ -53,16 +46,24 @@
                         <Label Text="多次扫码检验记录" TextColor="#00346F" FontSize="16" FontAttributes="Bold" />
                         <Label x:Name="ScanCountLabel" Grid.Column="1" TextColor="#38557C" FontSize="14" />
                     </Grid>
-                    <CollectionView x:Name="ScanRecordList" EmptyView="暂无扫码检验记录">
+                    <CollectionView x:Name="ScanRecordList">
+                        <CollectionView.EmptyView>
+                            <Border Stroke="#DDE7F2" StrokeThickness="1" StrokeDashArray="6,4" BackgroundColor="Transparent" Padding="16" HeightRequest="102" Margin="0,0,0,12">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                                <Label Text="暂无扫码检验记录" TextColor="#8BA0C0" FontSize="14" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                            </Border>
+                        </CollectionView.EmptyView>
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Border BackgroundColor="White" StrokeThickness="0" Padding="16" Margin="0,0,0,12">
+                                <Border BackgroundColor="White" StrokeThickness="0" Padding="0" Margin="0,0,0,12">
                                     <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
-                                    <Border.Stroke><SolidColorBrush Color="#FF4D5E" /></Border.Stroke>
-                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="8">
-                                        <Label Text="{Binding qrCodeDisplay, StringFormat='条码：{0}'}" TextColor="#00346F" FontAttributes="Bold" />
-                                        <Label Grid.Column="1" Text="{Binding inspectResultDisplay}" TextColor="{Binding inspectResultColor}" FontAttributes="Bold" />
-                                        <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding problemPointDisplay, StringFormat='检测结果说明：{0}'}" TextColor="#38557C" />
+                                    <Grid ColumnDefinitions="4,*">
+                                        <BoxView Color="#FF4D5E" />
+                                        <Grid Grid.Column="1" Padding="14,16" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="8">
+                                            <Label Text="{Binding qrCodeDisplay, StringFormat='条码：{0}'}" TextColor="#00346F" FontAttributes="Bold" FontSize="15" />
+                                            <Label Grid.Column="1" Text="{Binding inspectResultDisplay}" TextColor="{Binding inspectResultColor}" FontAttributes="Bold" FontSize="14" />
+                                            <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding problemPointDisplay, StringFormat='检测结果说明：{0}'}" TextColor="#38557C" FontSize="13" />
+                                        </Grid>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
