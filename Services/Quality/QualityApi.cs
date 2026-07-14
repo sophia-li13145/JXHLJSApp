@@ -119,6 +119,7 @@ public sealed class QualityApi : IQualityApi
     {
         var statusNames = await LoadIncomingQualityStatusNamesAsync(ct).ConfigureAwait(false);
         var inspectResultNames = await LoadDictOptionsAsync("inspectResult", ct).ConfigureAwait(false);
+        var problemPointNames = await LoadDictOptionsAsync("problemPoint", ct).ConfigureAwait(false);
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _incomingQualityDetailEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new { incomingQualityNo }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
@@ -137,6 +138,10 @@ public sealed class QualityApi : IQualityApi
             if (!string.IsNullOrWhiteSpace(item.inspectResult))
             {
                 item.inspectResultName = inspectResultNames.FirstOrDefault(option => option.Value == item.inspectResult)?.Name;
+            }
+            if (!string.IsNullOrWhiteSpace(item.problemPoint))
+            {
+                item.problemPointName = problemPointNames.FirstOrDefault(option => option.Value == item.problemPoint)?.Name;
             }
         }
         return detail;

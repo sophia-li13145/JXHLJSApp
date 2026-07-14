@@ -102,11 +102,12 @@ public sealed class IncomingQualityScanDetailDto
 {
     public string? otherProblemItem { get; set; }
     public string? problemPoint { get; set; }
+    public string? problemPointName { get; set; }
     public string? qrCode { get; set; }
     public string? qrCodeNo { get; set; }
     public string? inspectResult { get; set; }
     public string? inspectResultName { get; set; }
-    public string problemPointDisplay => FirstNonEmpty(otherProblemItem, problemPoint, "-");
+    public string problemPointDisplay => FirstNonEmpty(otherProblemItem, problemPointName, problemPoint, "-");
     public string qrCodeDisplay => string.IsNullOrWhiteSpace(qrCode) ? (string.IsNullOrWhiteSpace(qrCodeNo) ? "-" : qrCodeNo!) : qrCode!;
     public string inspectResultDisplay => FirstNonEmpty(inspectResultName, inspectResult, HasProblemDescription ? "不合格" : "-");
     public Color inspectResultColor => inspectResultDisplay.Contains("合格") && !inspectResultDisplay.Contains("不合格") ? Color.FromArgb("#00A86B") : Color.FromArgb("#FF4D5E");

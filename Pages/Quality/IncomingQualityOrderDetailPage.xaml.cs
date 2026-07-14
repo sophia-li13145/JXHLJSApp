@@ -1,6 +1,7 @@
 using JXHLJSApp.Models.Quality;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.Quality;
+using Microsoft.Maui.Controls.Shapes;
 using System.Collections.ObjectModel;
 
 namespace JXHLJSApp.Pages.Quality;
@@ -100,7 +101,7 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
         if (detail.isCompleted)
         {
             ActionBar.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-            ActionBar.Add(CreateButton("返回列表", "#051B3D", "White", "#C8D2DF", OnBackButtonClicked), 0);
+            ActionBar.Add(CreateOutlineAction("返回列表", OnBackButtonClicked), 0);
             return;
         }
 
@@ -122,6 +123,31 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
 
         ActionBar.Add(CreateButton("删除", "#FF4D5E", "#FFF2F2", "#FFB7BE", OnDeleteClicked), 0);
         ActionBar.Add(CreateButton("质检扫码", "White", "#1E427C", null, OnScanClicked), 1);
+    }
+
+    private static Border CreateOutlineAction(string text, EventHandler tapped)
+    {
+        var border = new Border
+        {
+            BackgroundColor = Colors.White,
+            Stroke = Color.FromArgb("#C8D2DF"),
+            StrokeThickness = 1,
+            HeightRequest = 56,
+            StrokeShape = new RoundRectangle { CornerRadius = 10 },
+            Content = new Label
+            {
+                Text = text,
+                TextColor = Color.FromArgb("#051B3D"),
+                FontSize = 16,
+                FontAttributes = FontAttributes.Bold,
+                HorizontalTextAlignment = TextAlignment.Center,
+                VerticalTextAlignment = TextAlignment.Center
+            }
+        };
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += (_, _) => tapped(border, EventArgs.Empty);
+        border.GestureRecognizers.Add(tap);
+        return border;
     }
 
     private static Button CreateButton(string text, string textColor, string backgroundColor, string? borderColor, EventHandler clicked)
