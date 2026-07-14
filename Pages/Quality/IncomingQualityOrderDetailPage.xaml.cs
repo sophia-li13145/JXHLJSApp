@@ -61,13 +61,12 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
             TotalTitle.IsVisible = showMaterial;
             TotalLabel.IsVisible = showMaterial;
             ApplyStatusStyle(_detail);
-            var showScanRecords = !_detail.isUnsubmitted;
-            ScanRecordsHeader.IsVisible = showScanRecords;
-            ScanRecordList.IsVisible = showScanRecords;
+            ScanRecordsHeader.IsVisible = true;
+            ScanRecordList.IsVisible = true;
             BuildActionBar(_detail);
 
             _records.Clear();
-            foreach (var record in _detail.detailList ?? new List<IncomingQualityScanDetailDto>())
+            foreach (var record in _detail.scanDetails)
             {
                 _records.Add(record);
             }

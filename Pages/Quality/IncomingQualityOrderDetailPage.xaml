@@ -46,7 +46,13 @@
                         <Label Text="多次扫码检验记录" TextColor="#00346F" FontSize="16" FontAttributes="Bold" />
                         <Label x:Name="ScanCountLabel" Grid.Column="1" TextColor="#38557C" FontSize="14" />
                     </Grid>
-                    <CollectionView x:Name="ScanRecordList" EmptyView="暂无扫码检验记录">
+                    <CollectionView x:Name="ScanRecordList">
+                        <CollectionView.EmptyView>
+                            <Border Stroke="#DDE7F2" StrokeThickness="1" StrokeDashArray="6,4" BackgroundColor="Transparent" Padding="16" HeightRequest="102" Margin="0,0,0,12">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                                <Label Text="暂无扫码检验记录" TextColor="#8BA0C0" FontSize="14" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                            </Border>
+                        </CollectionView.EmptyView>
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <Border BackgroundColor="White" StrokeThickness="0" Padding="0" Margin="0,0,0,12">

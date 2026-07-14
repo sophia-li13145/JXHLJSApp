@@ -132,7 +132,7 @@ public sealed class QualityApi : IQualityApi
         {
             detail.delStatusName = name;
         }
-        foreach (var item in detail.detailList ?? new List<IncomingQualityScanDetailDto>())
+        foreach (var item in detail.scanDetails)
         {
             if (!string.IsNullOrWhiteSpace(item.inspectResult))
             {

@@ -63,7 +63,7 @@ public sealed class IncomingQualityOrderDto
 
 public sealed class IncomingQualityOrderDetailDto
 {
-    public List<IncomingQualityScanDetailDto>? detailList { get; set; }
+    public List<IncomingQualityScanDetailDto>? details { get; set; }
     public string? incomingQualityNo { get; set; }
     public string? instockNo { get; set; }
     public string? materialName { get; set; }
@@ -80,7 +80,8 @@ public sealed class IncomingQualityOrderDetailDto
     public string specDisplay => string.IsNullOrWhiteSpace(spec) ? "-" : spec!;
     public string totalDisplay => total.HasValue ? $"{total} 件" : "-";
     public string statusDisplay => FirstNonEmpty(statusName, delStatusName, MapStatus(status), MapStatus(delStatus), "未提交");
-    public int? scanCount => detailList?.Count ?? done ?? 0;
+    public IReadOnlyList<IncomingQualityScanDetailDto> scanDetails => details ?? new List<IncomingQualityScanDetailDto>();
+    public int? scanCount => scanDetails.Count;
     public int? done { get; set; }
     public bool isUnsubmitted => IsStatus("0", "UNSUBMITTED", "unsubmitted", "未提交");
     public bool isWaitInspection => IsStatus("1", "WAIT_INSPECTION", "wait_inspection", "待质检");
