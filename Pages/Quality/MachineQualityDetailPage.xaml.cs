@@ -6,6 +6,7 @@ namespace JXHLJSApp.Pages.Quality;
 
 [QueryProperty(nameof(QualityNo), "qualityNo")]
 [QueryProperty(nameof(WorkOrderNo), "workOrderNo")]
+[QueryProperty(nameof(InspectStatus), "inspectStatus")]
 public partial class MachineQualityDetailPage : ContentPage
 {
     private const string SchemeAcidPickling = "酸洗";
@@ -16,11 +17,13 @@ public partial class MachineQualityDetailPage : ContentPage
     private string? _qualityNo;
     private string? _workOrderNo;
     private string? _inspectionSchemeName;
+    private string? _inspectStatus;
     private string? _qrCode;
     private string? _qualityMaterialId;
 
     public string? QualityNo { get => _qualityNo; set => _qualityNo = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? WorkOrderNo { get => _workOrderNo; set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty); }
+    public string? InspectStatus { get => _inspectStatus; set => _inspectStatus = Uri.UnescapeDataString(value ?? string.Empty); }
 
     public MachineQualityDetailPage(IQualityApi qualityApi)
     {
@@ -52,6 +55,7 @@ public partial class MachineQualityDetailPage : ContentPage
         {
             var detail = await _qualityApi.GetProductionQualityDetailAsync(_qualityNo, _workOrderNo);
             _inspectionSchemeName = detail.inspectionSchemeName?.Trim();
+            if (!string.IsNullOrWhiteSpace(detail.inspectStatus)) _inspectStatus = detail.inspectStatus;
             _qrCode = detail.qrCode;
             _qualityMaterialId = detail.qualityMaterialId;
             ApplySchemeLayout(detail);
@@ -66,6 +70,7 @@ public partial class MachineQualityDetailPage : ContentPage
             SelectQualifiedOption(CoilDiameterPicker, detail.coilDiameterControl);
             SelectQualifiedOption(CoilPitchPicker, detail.coilPitchControl);
             SelectQualifiedOption(InspectResultPicker, detail.inspectResult);
+            ApplyReadOnlyStateIfCompleted();
         }
         catch (Exception ex)
         {
@@ -185,6 +190,56 @@ public partial class MachineQualityDetailPage : ContentPage
     }
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
+
+    private void ApplyReadOnlyStateIfCompleted()
+    {
+        if (!IsInspectionCompleted(_inspectStatus)) return;
+
+        SetReadOnly(Content);
+        ActionBar.IsVisible = false;
+    }
+
+    private static bool IsInspectionCompleted(string? inspectStatus)
+    {
+        return string.Equals(inspectStatus, "3", StringComparison.Ordinal) ||
+            string.Equals(inspectStatus, "检验完成", StringComparison.Ordinal) ||
+            string.Equals(inspectStatus, "已完成", StringComparison.Ordinal);
+    }
+
+    private static void SetReadOnly(Element element)
+    {
+        switch (element)
+        {
+            case Entry entry:
+                entry.IsReadOnly = true;
+                break;
+            case Editor editor:
+                editor.IsReadOnly = true;
+                break;
+            case Picker picker:
+                picker.IsEnabled = false;
+                break;
+            case Button button:
+                button.IsEnabled = false;
+                break;
+        }
+
+        switch (element)
+        {
+            case Layout layout:
+                foreach (var child in layout.Children.OfType<Element>()) SetReadOnly(child);
+                break;
+            case Border border when border.Content is Element borderContent:
+                SetReadOnly(borderContent);
+                break;
+            case ScrollView scrollView when scrollView.Content is Element scrollContent:
+                SetReadOnly(scrollContent);
+                break;
+            case ContentView contentView when contentView.Content is Element viewContent:
+                SetReadOnly(viewContent);
+                break;
+        }
+    }
 
     private static View CreateInfoCell(string label, string? value)
     {

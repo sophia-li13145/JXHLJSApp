@@ -304,6 +304,7 @@ public sealed class ProductionQualityDetailDto
     public string? inspectResult { get; set; }
     public string? inspectionSchemeCode { get; set; }
     public string? inspectionSchemeName { get; set; }
+    public string? inspectStatus { get; set; }
     public string? lowerToleranceValue { get; set; }
     public string? memo { get; set; }
     public string? phosphatingTemperature { get; set; }

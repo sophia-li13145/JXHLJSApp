@@ -102,7 +102,7 @@
                 </Border>
             </VerticalStackLayout>
         </ScrollView>
-        <Grid Grid.Row="2" Margin="6,16" ColumnDefinitions="*,*" ColumnSpacing="12">
+        <Grid x:Name="ActionBar" Grid.Row="2" Margin="6,16" ColumnDefinitions="*,*" ColumnSpacing="12">
             <Button Text="提交质检" TextColor="#0B3D8B" BackgroundColor="White" BorderColor="#0B3D8B" BorderWidth="1" CornerRadius="10" HeightRequest="54" FontAttributes="Bold" Clicked="OnSubmitClicked" />
             <Button x:Name="CompleteButton" Grid.Column="1" IsVisible="False" Text="完 成" TextColor="White" BackgroundColor="#244B88" CornerRadius="10" HeightRequest="54" FontAttributes="Bold" Clicked="OnCompleteClicked" />
         </Grid>
