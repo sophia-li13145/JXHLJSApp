@@ -77,19 +77,19 @@ public partial class MachineQualityDetailPage : ContentPage
     {
         var schemeName = detail.inspectionSchemeName?.Trim();
         var isAcid = string.Equals(schemeName, SchemeAcidPickling, StringComparison.Ordinal);
-        var isHeat = string.Equals(schemeName, SchemeHeatTreatment, StringComparison.Ordinal);
+        var isHeat = IsHeatTreatmentScheme(schemeName);
 
         TitleLabel.Text = schemeName switch
         {
             SchemeAcidPickling => "执行酸洗质检",
-            SchemeHeatTreatment => "执行热处理质检",
+            SchemeHeatTreatment or "全检" => "执行热处理质检",
             SchemeBlankOpening or SchemeDrawing => "执行工序质检",
             _ => "执行工序质检"
         };
         InfoTitleLabel.Text = schemeName switch
         {
             SchemeAcidPickling => "酸洗任务信息",
-            SchemeHeatTreatment => "热处理卡片信息",
+            SchemeHeatTreatment or "全检" => "热处理卡片信息",
             _ => "生产卡片信息"
         };
         InputTitleLabel.Text = isAcid ? "酸洗检验录入" : isHeat ? "理化检验录入" : "检验项目录入";
@@ -144,21 +144,30 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static (string Label, string? Value)[] BuildInfoRows(ProductionQualityDetailDto detail)
     {
-        return detail.inspectionSchemeName?.Trim() switch
+        var schemeName = detail.inspectionSchemeName?.Trim();
+        if (IsPicklingScheme(schemeName))
         {
-            SchemeAcidPickling => new[]
+            return new[]
             {
                 ("检验日期", DateTime.Now.ToString("yyyy-MM-dd")), ("工单号", detail.workOrderNo)
-            },
-            SchemeHeatTreatment => new[]
+            };
+        }
+
+        if (IsHeatTreatmentScheme(schemeName))
+        {
+            return new[]
             {
                 ("日期", DateTime.Now.ToString("yyyyMMdd")), ("机台号", detail.deviceName ?? detail.deviceCode),
                 ("批号", FirstNonEmpty(detail.batchNo, detail.businessType)), ("炉号", detail.furnaceNo),
                 ("产地", FirstNonEmpty(detail.originPlace, detail.freeAcid)), ("钢号", detail.steelGrade),
                 ("工号", detail.workOrderNo), ("班次", FirstNonEmpty(detail.shiftNo, detail.targetSpecification)),
                 ("盘号", FirstNonEmpty(detail.plateNo, detail.inputSpecification))
-            },
-            SchemeBlankOpening or SchemeDrawing => new[]
+            };
+        }
+
+        if (IsProcessCardScheme(schemeName))
+        {
+            return new[]
             {
                 ("日期", DateTime.Now.ToString("yyyyMMdd")), ("机台", detail.deviceName ?? detail.deviceCode),
                 ("客户代码", FirstNonEmpty(detail.customerCode, detail.businessType)), ("炉号", detail.furnaceNo),
@@ -169,9 +178,10 @@ public partial class MachineQualityDetailPage : ContentPage
                 ("下公差", detail.lowerToleranceValue), ("强度要求", detail.spoolWeightRequirement),
                 ("圈径", detail.coilDiameterControl), ("圈径控制", detail.coilDiameterControl),
                 ("圈距控制", detail.coilPitchControl)
-            },
-            _ => new[] { ("日期", DateTime.Now.ToString("yyyyMMdd")), ("工单号", detail.workOrderNo), ("质检方案", detail.inspectionSchemeName) }
-        };
+            };
+        }
+
+        return new[] { ("日期", DateTime.Now.ToString("yyyyMMdd")), ("工单号", detail.workOrderNo), ("质检方案", detail.inspectionSchemeName) };
     }
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
@@ -195,23 +205,33 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static bool IsPicklingScheme(string? schemeName)
     {
-        return string.Equals(schemeName, SchemeAcidPickling, StringComparison.Ordinal) ||
-            string.Equals(schemeName, "表检", StringComparison.Ordinal);
+        return HasSchemeToken(schemeName, SchemeAcidPickling, "表检");
+    }
+
+    private static bool IsHeatTreatmentScheme(string? schemeName)
+    {
+        return HasSchemeToken(schemeName, SchemeHeatTreatment, "全检");
     }
 
     private static bool IsSamplingOrFullScheme(string? schemeName)
     {
-        return string.Equals(schemeName, SchemeBlankOpening, StringComparison.Ordinal) ||
-            string.Equals(schemeName, SchemeHeatTreatment, StringComparison.Ordinal) ||
-            string.Equals(schemeName, "抽检", StringComparison.Ordinal) ||
-            string.Equals(schemeName, "全检", StringComparison.Ordinal);
+        return HasSchemeToken(schemeName, SchemeBlankOpening, "抽检") || IsHeatTreatmentScheme(schemeName);
+    }
+
+    private static bool IsProcessCardScheme(string? schemeName)
+    {
+        return HasSchemeToken(schemeName, SchemeBlankOpening, SchemeDrawing, "抽检") || IsFirstInspectionScheme(schemeName);
     }
 
     private static bool IsFirstInspectionScheme(string? schemeName)
     {
-        return string.Equals(schemeName, SchemeDrawing, StringComparison.Ordinal) ||
-            string.Equals(schemeName, "首检", StringComparison.Ordinal) ||
-            string.Equals(schemeName, "首件检", StringComparison.Ordinal);
+        return HasSchemeToken(schemeName, SchemeDrawing, "首检", "首件检");
+    }
+
+    private static bool HasSchemeToken(string? schemeName, params string[] tokens)
+    {
+        if (string.IsNullOrWhiteSpace(schemeName)) return false;
+        return tokens.Any(token => schemeName.Contains(token, StringComparison.Ordinal));
     }
 
     private void OnHeatDiameterTextChanged(object sender, TextChangedEventArgs e)
