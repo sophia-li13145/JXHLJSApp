@@ -22,6 +22,10 @@ public interface IQualityApi
     Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, CancellationToken ct = default);
     Task<ProductionQualityDetailDto> GetProductionQualityDetailAsync(string qualityNo, string workOrderNo, CancellationToken ct = default);
     Task<bool> CommitProductionQualityAsync(ProductionQualityCommitRequestDto request, CancellationToken ct = default);
+    Task<bool> CommitProductionFirstInspectionAsync(ProductionFirstInspectionCommitRequestDto request, CancellationToken ct = default);
+    Task<bool> CommitProductionPicklingAsync(ProductionPicklingCommitRequestDto request, CancellationToken ct = default);
+    Task<bool> CommitProductionSamplingOrFullAsync(ProductionSamplingOrFullCommitRequestDto request, CancellationToken ct = default);
+    Task<bool> CompleteProductionSamplingOrFullAsync(ProductionSamplingOrFullCompleteRequestDto request, CancellationToken ct = default);
 }
 
 public sealed class QualityApi : IQualityApi
@@ -37,6 +41,10 @@ public sealed class QualityApi : IQualityApi
     private readonly string _productionQualityListEndpoint;
     private readonly string _productionQualityDetailByNoEndpoint;
     private readonly string _productionQualityCommitEndpoint;
+    private readonly string _productionQualityFirstInspectionCommitEndpoint;
+    private readonly string _productionQualityPicklingCommitEndpoint;
+    private readonly string _productionQualitySamplingOrFullCommitEndpoint;
+    private readonly string _productionQualitySamplingOrFullCompleteEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public QualityApi(HttpClient http, IConfigLoader configLoader)
@@ -63,6 +71,14 @@ public sealed class QualityApi : IQualityApi
             configLoader.GetApiPath("productionQualityOrder.detailByNo", "/pda/qsOrderQuality/detailByNo"), servicePath);
         _productionQualityCommitEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("productionQualityOrder.commit", "/pda/qsOrderQuality/commit"), servicePath);
+        _productionQualityFirstInspectionCommitEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("productionQualityOrder.firstInspectionCommit", "/pda/qsOrderQuality/firstInspectionCommit"), servicePath);
+        _productionQualityPicklingCommitEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("productionQualityOrder.picklingCommit", "/pda/qsOrderQuality/picklingCommit"), servicePath);
+        _productionQualitySamplingOrFullCommitEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("productionQualityOrder.samplingOrFullCommit", "/pda/qsOrderQuality/samplingOrFullCommit"), servicePath);
+        _productionQualitySamplingOrFullCompleteEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("productionQualityOrder.samplingOrFullComplete", "/pda/qsOrderQuality/samplingOrFullComplete"), servicePath);
     }
 
     public async Task<List<IncomingQualityStatusFilter>> GetIncomingQualityStatusFiltersAsync(CancellationToken ct = default)
@@ -213,6 +229,42 @@ public sealed class QualityApi : IQualityApi
     public async Task<bool> CommitProductionQualityAsync(ProductionQualityCommitRequestDto request, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityCommitEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        return BooleanResultOrFalse(data);
+    }
+
+    public async Task<bool> CommitProductionFirstInspectionAsync(ProductionFirstInspectionCommitRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityFirstInspectionCommitEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        return BooleanResultOrFalse(data);
+    }
+
+    public async Task<bool> CommitProductionPicklingAsync(ProductionPicklingCommitRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityPicklingCommitEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        return BooleanResultOrFalse(data);
+    }
+
+    public async Task<bool> CommitProductionSamplingOrFullAsync(ProductionSamplingOrFullCommitRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualitySamplingOrFullCommitEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        return BooleanResultOrFalse(data);
+    }
+
+    public async Task<bool> CompleteProductionSamplingOrFullAsync(ProductionSamplingOrFullCompleteRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualitySamplingOrFullCompleteEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);

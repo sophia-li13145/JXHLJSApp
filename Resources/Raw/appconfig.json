@@ -148,7 +148,11 @@
     "productionQualityOrder": {
       "list": "/pda/qsOrderQuality/list",
       "detailByNo": "/pda/qsOrderQuality/detailByNo",
-      "commit": "/pda/qsOrderQuality/commit"
+      "commit": "/pda/qsOrderQuality/commit",
+      "firstInspectionCommit": "/pda/qsOrderQuality/firstInspectionCommit",
+      "picklingCommit": "/pda/qsOrderQuality/picklingCommit",
+      "samplingOrFullCommit": "/pda/qsOrderQuality/samplingOrFullCommit",
+      "samplingOrFullComplete": "/pda/qsOrderQuality/samplingOrFullComplete"
     }
   },
   "logging": {

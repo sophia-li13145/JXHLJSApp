@@ -11,7 +11,7 @@
                 <Label Text="‹ 返回" TextColor="White" FontSize="15" VerticalOptions="Center">
                     <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers>
                 </Label>
-                <Label Grid.Column="1" Text="执行工序质检" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,58,0" />
+                <Label x:Name="TitleLabel" Grid.Column="1" Text="执行工序质检" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,58,0" />
             </Grid>
         </Border>
         <ScrollView Grid.Row="1">
@@ -19,7 +19,7 @@
                 <Border BackgroundColor="White" Stroke="#DDE6F1" StrokeThickness="1" Padding="20">
                     <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
                     <VerticalStackLayout Spacing="12">
-                        <Label Text="生产卡片信息" TextColor="#00346F" FontSize="16" FontAttributes="Bold" />
+                        <Label x:Name="InfoTitleLabel" Text="生产卡片信息" TextColor="#00346F" FontSize="16" FontAttributes="Bold" />
                         <BoxView HeightRequest="1" Color="#C8D2DF" />
                         <Grid x:Name="InfoGrid" ColumnDefinitions="*,*" RowSpacing="14" ColumnSpacing="16" />
                     </VerticalStackLayout>
@@ -27,7 +27,34 @@
                 <Border BackgroundColor="White" StrokeThickness="0" Padding="20">
                     <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
                     <VerticalStackLayout Spacing="16">
-                        <Label Text="检验项目录入" TextColor="#051B3D" FontSize="18" FontAttributes="Bold" />
+                        <Label x:Name="InputTitleLabel" Text="检验项目录入" TextColor="#051B3D" FontSize="18" FontAttributes="Bold" />
+                        <VerticalStackLayout x:Name="AcidInputPanel" Spacing="16" IsVisible="False">
+                            <Label Text="检验日期 (年月日) *" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="AcidDateEntry" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Label Text="磷化温度" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="PhosphatingTemperatureEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Label Text="总酸" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="TotalAcidEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Label Text="游离酸" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="FreeAcidEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Label Text="皂化温度" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="SaponificationTemperatureEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Label Text="皂化PH值" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="SaponificationPhEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Label Text="盐酸1浓度" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="HydrochloricAcid1Entry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Label Text="盐酸2浓度" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="HydrochloricAcid2Entry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Label Text="总酸取样" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="TotalAcidSamplingEntry" Placeholder="手动录入" BackgroundColor="#F8FAFD" />
+                            <Label Text="游离酸取样" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="FreeAcidSamplingEntry" Placeholder="手动录入" BackgroundColor="#F8FAFD" />
+                            <Label Text="酸比" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="AcidRatioEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Label Text="记录人 *" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="RecorderEntry" IsReadOnly="True" BackgroundColor="#EEF3FA" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout x:Name="ProcessInputPanel" Spacing="16">
                         <Label Text="圈径控制" TextColor="#051B3D" FontAttributes="Bold" />
                         <Picker x:Name="CoilDiameterPicker" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
                         <Label Text="圈距控制" TextColor="#051B3D" FontAttributes="Bold" />
@@ -40,6 +67,28 @@
                         <Entry x:Name="ElongationEntry" Placeholder="可为空" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
                         <Label Text="表面状态" TextColor="#051B3D" FontAttributes="Bold" />
                         <Entry x:Name="SurfaceEntry" Placeholder="正常" BackgroundColor="#F8FAFD" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout x:Name="HeatTreatmentInputPanel" Spacing="16" IsVisible="False">
+                            <Label Text="实测直径 (mm) *" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="HeatActualDiameterEntry" Placeholder="输入测量直径" Keyboard="Numeric" TextChanged="OnHeatDiameterTextChanged" BackgroundColor="#F8FAFD" />
+                            <Label Text="标准直径 (mm)" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="StandardDiameterEntry" Placeholder="标准直径" Keyboard="Numeric" BackgroundColor="#EEF3FA" />
+                            <Label Text="断后直径 (mm) *" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="BrokenDiameterEntry" Placeholder="输入断后直径" Keyboard="Numeric" TextChanged="OnHeatDiameterTextChanged" BackgroundColor="#F8FAFD" />
+                            <Border BackgroundColor="#ECFBF1" Stroke="#B9F1CB" StrokeThickness="1" Padding="14">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                                <VerticalStackLayout Spacing="4">
+                                    <Label Text="断面收缩率 (%)" TextColor="#009C44" FontAttributes="Bold" />
+                                    <Label x:Name="SectionShrinkageLabel" Text="-" TextColor="#009C44" FontSize="20" FontAttributes="Bold" />
+                                </VerticalStackLayout>
+                            </Border>
+                            <Label Text="实测抗拉强度 (MPa) *" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="TensileStrengthEntry" Placeholder="输入抗拉强度" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Label Text="延伸率 (%)" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="HeatElongationEntry" Placeholder="可为空" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Label Text="扭转次数" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Entry x:Name="TwistCountEntry" Placeholder="输入扭转次数" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                        </VerticalStackLayout>
                         <Border BackgroundColor="#EAF4FF" Stroke="#BBD8FF" StrokeThickness="1" Padding="16">
                             <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                             <VerticalStackLayout Spacing="8">
@@ -47,12 +96,15 @@
                                 <Picker x:Name="InspectResultPicker" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
                             </VerticalStackLayout>
                         </Border>
-                        <Label Text="质检备注" TextColor="#051B3D" FontAttributes="Bold" />
+                        <Label x:Name="MemoLabel" Text="质检备注" TextColor="#051B3D" FontAttributes="Bold" />
                         <Editor x:Name="MemoEditor" Placeholder="填写其他备注信息..." AutoSize="TextChanges" HeightRequest="90" BackgroundColor="#F8FAFD" />
                     </VerticalStackLayout>
                 </Border>
             </VerticalStackLayout>
         </ScrollView>
-        <Button Grid.Row="2" Margin="6,16" Text="提交质检" TextColor="#0B3D8B" BackgroundColor="White" BorderColor="#0B3D8B" BorderWidth="1" CornerRadius="10" HeightRequest="54" FontAttributes="Bold" Clicked="OnSubmitClicked" />
+        <Grid Grid.Row="2" Margin="6,16" ColumnDefinitions="*,*" ColumnSpacing="12">
+            <Button Text="提交质检" TextColor="#0B3D8B" BackgroundColor="White" BorderColor="#0B3D8B" BorderWidth="1" CornerRadius="10" HeightRequest="54" FontAttributes="Bold" Clicked="OnSubmitClicked" />
+            <Button x:Name="CompleteButton" Grid.Column="1" IsVisible="False" Text="完 成" TextColor="White" BackgroundColor="#244B88" CornerRadius="10" HeightRequest="54" FontAttributes="Bold" Clicked="OnCompleteClicked" />
+        </Grid>
     </Grid>
 </ContentPage>
