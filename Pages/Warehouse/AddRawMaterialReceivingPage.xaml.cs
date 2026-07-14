@@ -278,59 +278,36 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private async Task<FileResult?> GetTicketPhotoAsync()
     {
-        var choice = await DisplayActionSheet("上传票签图片", "取消", null, "手机拍照", "手持机拍照", "从相册选择", "从文件选择");
-        if (choice == "取消" || string.IsNullOrWhiteSpace(choice)) return null;
-
-        return choice switch
-        {
-            "从相册选择" => await PickTicketPhotoAsync(),
-            "从文件选择" => await PickTicketImageFileAsync(),
-            _ => await CaptureTicketPhotoAsync(choice)
-        };
+        return await CaptureTicketPhotoAsync();
     }
 
-    private async Task<FileResult?> CaptureTicketPhotoAsync(string title)
+    private async Task<FileResult?> CaptureTicketPhotoAsync()
     {
         var permission = await Permissions.RequestAsync<Permissions.Camera>();
         if (permission != PermissionStatus.Granted)
         {
-            var fallback = await DisplayActionSheet("未授予摄像头权限，可从相册或文件选择票签图片", "取消", null, "从相册选择", "从文件选择");
-            return fallback switch
-            {
-                "从相册选择" => await PickTicketPhotoAsync(),
-                "从文件选择" => await PickTicketImageFileAsync(),
-                _ => null
-            };
+            return await PickTicketPhotoAfterCameraUnavailableAsync("未授予摄像头权限，可从相册选择票签图片");
         }
 
         try
         {
-            return await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = title });
+            return await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "票签拍照" });
         }
         catch (Exception ex) when (ex is FeatureNotSupportedException || ex is FeatureNotEnabledException || ex is PermissionException)
         {
-            var fallback = await DisplayActionSheet("当前设备无法直接调用相机，可从相册或文件选择票签图片", "取消", null, "从相册选择", "从文件选择");
-            return fallback switch
-            {
-                "从相册选择" => await PickTicketPhotoAsync(),
-                "从文件选择" => await PickTicketImageFileAsync(),
-                _ => null
-            };
+            return await PickTicketPhotoAfterCameraUnavailableAsync("当前设备无法直接调用相机，可从相册选择票签图片");
         }
+    }
+
+    private async Task<FileResult?> PickTicketPhotoAfterCameraUnavailableAsync(string message)
+    {
+        var fallback = await DisplayActionSheet(message, "取消", null, "从相册选择");
+        return fallback == "从相册选择" ? await PickTicketPhotoAsync() : null;
     }
 
     private static async Task<FileResult?> PickTicketPhotoAsync()
     {
         return await MediaPicker.Default.PickPhotoAsync(new MediaPickerOptions { Title = "选择票签图片" });
-    }
-
-    private static async Task<FileResult?> PickTicketImageFileAsync()
-    {
-        return await FilePicker.Default.PickAsync(new PickOptions
-        {
-            PickerTitle = "选择票签图片",
-            FileTypes = FilePickerFileType.Images
-        });
     }
 
     private async void OnCalculateSummaryClicked(object sender, EventArgs e)
