@@ -278,36 +278,9 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private async Task<FileResult?> GetTicketPhotoAsync()
     {
-        return await CaptureTicketPhotoAsync();
-    }
-
-    private async Task<FileResult?> CaptureTicketPhotoAsync()
-    {
-        var permission = await Permissions.RequestAsync<Permissions.Camera>();
-        if (permission != PermissionStatus.Granted)
-        {
-            return await PickTicketPhotoAfterCameraUnavailableAsync("未授予摄像头权限，可从相册选择票签图片");
-        }
-
-        try
-        {
-            return await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "票签拍照" });
-        }
-        catch (Exception ex) when (ex is FeatureNotSupportedException || ex is FeatureNotEnabledException || ex is PermissionException)
-        {
-            return await PickTicketPhotoAfterCameraUnavailableAsync("当前设备无法直接调用相机，可从相册选择票签图片");
-        }
-    }
-
-    private async Task<FileResult?> PickTicketPhotoAfterCameraUnavailableAsync(string message)
-    {
-        var fallback = await DisplayActionSheet(message, "取消", null, "从相册选择");
-        return fallback == "从相册选择" ? await PickTicketPhotoAsync() : null;
-    }
-
-    private static async Task<FileResult?> PickTicketPhotoAsync()
-    {
-        return await MediaPicker.Default.PickPhotoAsync(new MediaPickerOptions { Title = "选择票签图片" });
+        var capturePage = new TicketPhotoCapturePage();
+        await Navigation.PushModalAsync(capturePage);
+        return await capturePage.Completion;
     }
 
     private async void OnCalculateSummaryClicked(object sender, EventArgs e)
