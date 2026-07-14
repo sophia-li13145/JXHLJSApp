@@ -38,7 +38,7 @@
                                     <Label Text="{Binding statusDisplay}" TextColor="#D87500" FontSize="13" FontAttributes="Bold" />
                                 </Border>
                                 <Label Grid.Row="1" TextColor="#38557C" FontSize="14">
-                                    <Label.FormattedText><FormattedString><Span Text="机台: " /><Span Text="{Binding machineDisplay}" /></FormattedString></Label.FormattedText>
+                                    <Label.FormattedText><FormattedString><Span Text="机台: " /><Span Text="{Binding machineDisplay}" /><Span Text="  工单: " /><Span Text="{Binding orderNumberDisplay}" /></FormattedString></Label.FormattedText>
                                 </Label>
                             </Grid>
                         </Border>
