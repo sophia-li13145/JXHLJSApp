@@ -137,6 +137,81 @@ public sealed class IncomingQualityScanMaterialDto
 
 public sealed class ProductionQualityCommitRequestDto
 {
+    public string? acidRatio { get; set; }
+    public string? actualDiameterMm { get; set; }
+    public string? coilDiameterControl { get; set; }
+    public string? coilPitchControl { get; set; }
+    public string? elongationRate { get; set; }
+    public string? freeAcid { get; set; }
+    public string? freeAcidSampling { get; set; }
+    public string? hydrochloricAcidConcentration1 { get; set; }
+    public string? hydrochloricAcidConcentration2 { get; set; }
+    public string? standardDiameterMm { get; set; }
+    public string? brokenDiameterMm { get; set; }
+    public string? sectionShrinkageRate { get; set; }
+    public string? tensileStrengthMpa { get; set; }
+    public string? twistCount { get; set; }
+    public string? inspectResult { get; set; }
+    public string? memo { get; set; }
+    public string? phosphatingTemperature { get; set; }
+    public string? qualityNo { get; set; }
+    public string? recorder { get; set; }
+    public string? saponificationPhValue { get; set; }
+    public string? saponificationTemperature { get; set; }
+    public string? strengthMpa { get; set; }
+    public string? surfaceCondition { get; set; }
+    public string? totalAcid { get; set; }
+    public string? totalAcidSampling { get; set; }
+    public string? workOrderNo { get; set; }
+}
+
+
+
+
+public sealed class ProductionSamplingOrFullCommitRequestDto
+{
+    public string? actualDiameterMm { get; set; }
+    public string? coilDiameterControl { get; set; }
+    public string? coilPitchControl { get; set; }
+    public string? elongationRate { get; set; }
+    public string? inspectResult { get; set; }
+    public string? memo { get; set; }
+    public string? qrCode { get; set; }
+    public string? qualityMaterialId { get; set; }
+    public string? qualityNo { get; set; }
+    public string? strengthMpa { get; set; }
+    public string? surfaceCondition { get; set; }
+    public string? workOrderNo { get; set; }
+}
+
+public sealed class ProductionSamplingOrFullCompleteRequestDto
+{
+    public string? qualityNo { get; set; }
+    public string? workOrderNo { get; set; }
+}
+
+public sealed class ProductionPicklingCommitRequestDto
+{
+    public string? acidRatio { get; set; }
+    public string? freeAcid { get; set; }
+    public string? freeAcidSampling { get; set; }
+    public string? hydrochloricAcidConcentration1 { get; set; }
+    public string? hydrochloricAcidConcentration2 { get; set; }
+    public string? inspectDate { get; set; }
+    public string? inspectResult { get; set; }
+    public string? inspector { get; set; }
+    public string? memo { get; set; }
+    public string? phosphatingTemperature { get; set; }
+    public string? qualityNo { get; set; }
+    public string? saponificationPhValue { get; set; }
+    public string? saponificationTemperature { get; set; }
+    public string? totalAcid { get; set; }
+    public string? totalAcidSampling { get; set; }
+    public string? workOrderNo { get; set; }
+}
+
+public sealed class ProductionFirstInspectionCommitRequestDto
+{
     public string? actualDiameterMm { get; set; }
     public string? coilDiameterControl { get; set; }
     public string? coilPitchControl { get; set; }
@@ -171,6 +246,7 @@ public sealed class ProductionQualityOrderDto
     public string? inspectStatus { get; set; }
     public string? inspectionSchemeCode { get; set; }
     public string? inspectionSchemeTypeName { get; set; }
+    public string? inspectionSchemeName { get; set; }
     public string? machineNo { get; set; }
     public string? orderNumber { get; set; }
     public string? qualityNo { get; set; }
@@ -180,7 +256,7 @@ public sealed class ProductionQualityOrderDto
     public string? resourceName { get; set; }
     public string? workOrderStatus { get; set; }
 
-    public string titleDisplay => $"{FirstNonEmpty(resourceName, machineNo, resourceCode, "机台")} {FirstNonEmpty(qualityTypeName, inspectionSchemeTypeName, "质检任务")}";
+    public string titleDisplay => FirstNonEmpty(inspectionSchemeName, qualityTypeName, inspectionSchemeTypeName, "质检任务");
     public string machineDisplay => FirstNonEmpty(resourceName, machineNo, resourceCode, "-");
     public string statusDisplay => inspectStatus switch
     {
@@ -211,11 +287,24 @@ public sealed class ProductionQualityDetailDto
     public string? furnaceNo { get; set; }
     public string? hydrochloricAcidConcentration1 { get; set; }
     public string? hydrochloricAcidConcentration2 { get; set; }
+    public string? standardDiameterMm { get; set; }
+    public string? brokenDiameterMm { get; set; }
+    public string? sectionShrinkageRate { get; set; }
+    public string? tensileStrengthMpa { get; set; }
+    public string? twistCount { get; set; }
+    public string? batchNo { get; set; }
+    public string? shiftNo { get; set; }
+    public string? plateNo { get; set; }
+    public string? customerCode { get; set; }
+    public string? originPlace { get; set; }
+    public string? qrCode { get; set; }
+    public string? qualityMaterialId { get; set; }
     public string? inputDiameterMm { get; set; }
     public string? inputSpecification { get; set; }
     public string? inspectResult { get; set; }
     public string? inspectionSchemeCode { get; set; }
     public string? inspectionSchemeName { get; set; }
+    public string? inspectStatus { get; set; }
     public string? lowerToleranceValue { get; set; }
     public string? memo { get; set; }
     public string? phosphatingTemperature { get; set; }
