@@ -107,7 +107,7 @@ public partial class WorkOrderInstructionPage : ContentPage
                 TextColor = Color.FromArgb("#C45A00"),
                 FontAttributes = FontAttributes.Bold
             });
-            card.Children.Add(BuildTwoColumnRow("生产重量(吨)", FormatDecimal(item.productionWeight), "件重(吨)", FormatDecimal(item.pieceWeight)));
+            card.Children.Add(BuildTwoColumnRow("生产重量(吨)", FormatDecimal(item.productionWeight), "件重(KG)", FormatDecimal(item.pieceWeight)));
             card.Children.Add(BuildSingleValueRow("生产件数", FormatDecimal(item.productionQuantity), Color.FromArgb("#00A651")));
             card.Children.Add(new Label { Text = "模序", TextColor = Color.FromArgb("#5C6F8F") });
             card.Children.Add(new Border
@@ -146,26 +146,46 @@ public partial class WorkOrderInstructionPage : ContentPage
 
         var items = new (string Label, string? Value)[]
         {
-            ("收线速度", detail.wireTakeUpSpeed),
-            ("收线方式", detail.wireTakeUpMode),
-            ("炉号", detail.steelGrade),
-            ("收线长度", detail.wireTakeUpLength),
-            ("生产件数", FormatMoldSequenceTotal(detail.moldSequenceList, item => item.productionQuantity)),
-            ("生产总重量", FormatMoldSequenceTotal(detail.moldSequenceList, item => item.productionWeight)),
-            ("盘重要求", detail.coilWeightRequirement),
-            ("投料钢号", detail.steelGrade),
-            ("投料规格", detail.intermediateSpecification),
+            ("质检方案编号", detail.inspectionSchemeCode),
+            ("质检方案名称", detail.inspectionSchemeName),
+            ("中间过程规格", detail.intermediateSpecification),
+            ("炉号", detail.furnaceNo),
+            ("投料规格", detail.inputSpecification),
+            ("投料钢号", detail.inputSteelGrade),
+            ("机台号", detail.machineNo),
+            ("机台类型", detail.machineType),
+            ("物料属性", detail.materialProperty),
+            ("工序编码", detail.operationCode),
+            ("工序名称", detail.operationName),
+            ("其他要求", detail.otherRequirement),
+            ("椭圆度控制", detail.ovalityControl),
+            ("包装方式", detail.packageMethod),
+            ("包装称重", detail.packageWeight),
+            ("包装布颜色", detail.packagingClothColor),
+            ("圈距控制", detail.pitchControl),
+            ("成品规格", detail.productSpecification),
+            ("质检单号", detail.qualityNo),
+            ("销售方式", detail.saleMode),
             ("钢号", detail.steelGrade),
-            ("开坯规格", detail.productSpecification),
+            ("收线长度(m)", detail.wireTakeUpLength),
+            ("收线方式", detail.wireTakeUpMode),
+            ("收线速度", detail.wireTakeUpSpeed),
+            ("盘重要求", detail.coilWeightRequirement),
+            ("圈径控制", detail.coilDiameterControl),
+            ("拉拔方式", detail.drawMode),
+            ("用途", detail.usagePurpose),
+            ("开坯规格", detail.blankSpecification),
             ("开坯下公差(mm)", detail.billetLowerTolerance),
             ("开坯上公差(mm)", detail.billetUpperTolerance),
-            ("圈距控制", detail.pitchControl),
-            ("圈径控制", detail.coilDiameterControl),
-            ("椭圆度控制", detail.ovalityControl),
-            ("质检方式", detail.saleMode),
-            ("用途", detail.drawMode)
+            ("DV(主线速度Hz)", detail.dvSpeed),
+            ("生产件数", FormatDecimalOrFallback(detail.productionQuantity, FormatMoldSequenceTotal(detail.moldSequenceList, item => item.productionQuantity))),
+            ("生产总重量(t)", FormatDecimalOrFallback(detail.productionWeight, FormatMoldSequenceTotal(detail.moldSequenceList, item => item.productionWeight))),
+            ("是否打弯", FormatBool(detail.needBending)),
+            ("是否需包装布", FormatBool(detail.needPackagingCloth)),
+            ("是否打托", FormatBool(detail.needPalletizing)),
+            ("是否磷化", FormatBool(detail.needPhosphating)),
+            ("工单状态", detail.workOrderStatus)
         };
-
         var row = 0;
         for (var i = 0; i < items.Length; i += 2)
         {
@@ -203,6 +223,16 @@ public partial class WorkOrderInstructionPage : ContentPage
     private static string FormatParamLabel(string label)
     {
         return label.Length > 4 ? $"{label[..4]}\n{label[4..]}" : label;
+    }
+
+    private static string? FormatDecimalOrFallback(decimal? value, string? fallback)
+    {
+        return value.HasValue ? FormatDecimal(value) : fallback;
+    }
+
+    private static string FormatBool(bool? value)
+    {
+        return value.HasValue ? (value.Value ? "是" : "否") : string.Empty;
     }
 
     private static string ProcessParamValueOrEmpty(string? value)
