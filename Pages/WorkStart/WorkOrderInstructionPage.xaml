@@ -50,10 +50,10 @@
                             <VerticalStackLayout x:Name="MoldSequenceLayout" Spacing="12" />
                         </Border>
 
-                        <Label Text="⚙️ 工艺基础参数" TextColor="#001431" FontSize="16" FontAttributes="Bold" />
-                        <Border BackgroundColor="#F8FAFD" Stroke="#DDE6F1" Padding="12">
+                        <Label x:Name="ProcessParamsTitleLabel" Text="⚙️ 工艺基础参数" TextColor="#001431" FontSize="16" FontAttributes="Bold" />
+                        <Border x:Name="ProcessParamsBorder" BackgroundColor="#F8FAFD" Stroke="#DDE6F1" Padding="12">
                             <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
-                            <Grid x:Name="ProcessParamsGrid" ColumnDefinitions="Auto,Auto,Auto,Auto" RowSpacing="14" ColumnSpacing="4" />
+                            <Grid x:Name="ProcessParamsGrid" ColumnDefinitions="Auto,*,Auto,*" RowSpacing="14" ColumnSpacing="4" />
                         </Border>
 
                         <Border BackgroundColor="#F0F3F8" StrokeThickness="0" Padding="12" MinimumHeightRequest="60">

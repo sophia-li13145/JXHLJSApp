@@ -69,7 +69,23 @@ public partial class WorkOrderInstructionPage : ContentPage
         MemoLabel.Text = detail.memo ?? string.Empty;
 
         BindMoldSequences(detail.moldSequenceList);
-        BindProcessParams(detail);
+        var showProcessParams = !IsPicklingProcess(detail.operationName);
+        ProcessParamsTitleLabel.IsVisible = showProcessParams;
+        ProcessParamsBorder.IsVisible = showProcessParams;
+        if (showProcessParams)
+        {
+            BindProcessParams(detail);
+        }
+        else
+        {
+            ProcessParamsGrid.Children.Clear();
+            ProcessParamsGrid.RowDefinitions.Clear();
+        }
+    }
+
+    private static bool IsPicklingProcess(string? operationName)
+    {
+        return operationName?.Contains("酸洗", StringComparison.OrdinalIgnoreCase) == true;
     }
 
     private void BindMoldSequences(IReadOnlyList<WorkOrderMoldSequenceDto>? sequences)
@@ -134,8 +150,8 @@ public partial class WorkOrderInstructionPage : ContentPage
             ("收线方式", detail.wireTakeUpMode),
             ("炉号", detail.steelGrade),
             ("收线长度", detail.wireTakeUpLength),
-            ("生产件数", null),
-            ("生产总重量", null),
+            ("生产件数", FormatMoldSequenceTotal(detail.moldSequenceList, item => item.productionQuantity)),
+            ("生产总重量", FormatMoldSequenceTotal(detail.moldSequenceList, item => item.productionWeight)),
             ("盘重要求", detail.coilWeightRequirement),
             ("投料钢号", detail.steelGrade),
             ("投料规格", detail.intermediateSpecification),
@@ -175,7 +191,7 @@ public partial class WorkOrderInstructionPage : ContentPage
         }, column, row);
         ProcessParamsGrid.Add(new Label
         {
-            Text = ValueOrDash(value),
+            Text = ProcessParamValueOrEmpty(value),
             TextColor = Colors.Black,
             FontAttributes = FontAttributes.Bold,
             FontSize = 13,
@@ -187,6 +203,39 @@ public partial class WorkOrderInstructionPage : ContentPage
     private static string FormatParamLabel(string label)
     {
         return label.Length > 4 ? $"{label[..4]}\n{label[4..]}" : label;
+    }
+
+    private static string ProcessParamValueOrEmpty(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) || value.Equals("none", StringComparison.OrdinalIgnoreCase)
+            ? string.Empty
+            : value;
+    }
+
+    private static string? FormatMoldSequenceTotal(
+        IReadOnlyList<WorkOrderMoldSequenceDto>? sequences,
+        Func<WorkOrderMoldSequenceDto, decimal?> selector)
+    {
+        if (sequences is null || sequences.Count == 0)
+        {
+            return null;
+        }
+
+        decimal total = 0;
+        var hasValue = false;
+        foreach (var sequence in sequences)
+        {
+            var value = selector(sequence);
+            if (!value.HasValue)
+            {
+                continue;
+            }
+
+            total += value.Value;
+            hasValue = true;
+        }
+
+        return hasValue ? FormatDecimal(total) : null;
     }
 
     private static Grid BuildTwoColumnRow(string label1, string value1, string label2, string value2)
