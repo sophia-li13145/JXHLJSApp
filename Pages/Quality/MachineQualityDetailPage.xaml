@@ -7,11 +7,12 @@
     <Grid RowDefinitions="Auto,*,Auto">
         <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="16,22,16,14" HeightRequest="80">
             <Border.StrokeShape><RoundRectangle CornerRadius="0,0,18,18" /></Border.StrokeShape>
-            <Grid ColumnDefinitions="Auto,*">
+            <Grid ColumnDefinitions="Auto,*,Auto">
                 <Label Text="‹ 返回" TextColor="White" FontSize="15" VerticalOptions="Center">
                     <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers>
                 </Label>
-                <Label x:Name="TitleLabel" Grid.Column="1" Text="执行工序质检" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,58,0" />
+                <Label x:Name="TitleLabel" Grid.Column="1" Text="执行工序质检" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" />
+                <Button x:Name="ScanMaterialButton" Grid.Column="2" Text="▣  扫物料" BackgroundColor="White" TextColor="#0B3D8B" BorderColor="#0B3D8B" BorderWidth="1" CornerRadius="8" HeightRequest="38" Padding="10,0" FontSize="13" FontAttributes="Bold" Clicked="OnScanMaterialClicked" IsVisible="False" />
             </Grid>
         </Border>
         <ScrollView Grid.Row="1">

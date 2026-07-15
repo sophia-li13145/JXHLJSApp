@@ -21,6 +21,7 @@ public interface IQualityApi
     Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersByResourceAsync(string resourceCode, CancellationToken ct = default);
     Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, CancellationToken ct = default);
     Task<ProductionQualityDetailDto> GetProductionQualityDetailAsync(string qualityNo, string workOrderNo, CancellationToken ct = default);
+    Task<ProductionQualityScanMaterialDto> ScanProductionQualityMaterialAsync(ProductionQualityScanMaterialRequestDto request, CancellationToken ct = default);
     Task<bool> CommitProductionQualityAsync(ProductionQualityCommitRequestDto request, CancellationToken ct = default);
     Task<bool> CommitProductionFirstInspectionAsync(ProductionFirstInspectionCommitRequestDto request, CancellationToken ct = default);
     Task<bool> CommitProductionPicklingAsync(ProductionPicklingCommitRequestDto request, CancellationToken ct = default);
@@ -40,6 +41,7 @@ public sealed class QualityApi : IQualityApi
     private readonly string _incomingQualityDeleteEndpoint;
     private readonly string _productionQualityListEndpoint;
     private readonly string _productionQualityDetailByNoEndpoint;
+    private readonly string _productionQualityScanMaterialEndpoint;
     private readonly string _productionQualityCommitEndpoint;
     private readonly string _productionQualityFirstInspectionCommitEndpoint;
     private readonly string _productionQualityPicklingCommitEndpoint;
@@ -69,6 +71,8 @@ public sealed class QualityApi : IQualityApi
             configLoader.GetApiPath("productionQualityOrder.list", "/pda/qsOrderQuality/list"), servicePath);
         _productionQualityDetailByNoEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("productionQualityOrder.detailByNo", "/pda/qsOrderQuality/detailByNo"), servicePath);
+        _productionQualityScanMaterialEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("productionQualityOrder.scanMaterial", "/pda/qsOrderQuality/scanMaterial"), servicePath);
         _productionQualityCommitEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("productionQualityOrder.commit", "/pda/qsOrderQuality/commit"), servicePath);
         _productionQualityFirstInspectionCommitEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -229,6 +233,15 @@ public sealed class QualityApi : IQualityApi
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<ProductionQualityDetailDto>(resp, ct).ConfigureAwait(false);
         return data.result ?? new ProductionQualityDetailDto { workOrderNo = workOrderNo };
+    }
+
+    public async Task<ProductionQualityScanMaterialDto> ScanProductionQualityMaterialAsync(ProductionQualityScanMaterialRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityScanMaterialEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<ProductionQualityScanMaterialDto>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new ProductionQualityScanMaterialDto { qrCode = request.qrCode };
     }
 
     public async Task<bool> CommitProductionQualityAsync(ProductionQualityCommitRequestDto request, CancellationToken ct = default)

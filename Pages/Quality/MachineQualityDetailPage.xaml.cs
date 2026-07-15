@@ -14,6 +14,8 @@ public partial class MachineQualityDetailPage : ContentPage
     private const string SchemeHeatTreatment = "热处理";
     private const string SchemeDrawing = "拉拔";
     private readonly IQualityApi _qualityApi;
+    private readonly IScanService _scanService;
+    private ProductionQualityDetailDto? _detail;
     private string? _qualityNo;
     private string? _workOrderNo;
     private string? _inspectionSchemeName;
@@ -25,10 +27,11 @@ public partial class MachineQualityDetailPage : ContentPage
     public string? WorkOrderNo { get => _workOrderNo; set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? InspectStatus { get => _inspectStatus; set => _inspectStatus = Uri.UnescapeDataString(value ?? string.Empty); }
 
-    public MachineQualityDetailPage(IQualityApi qualityApi)
+    public MachineQualityDetailPage(IQualityApi qualityApi, IScanService scanService)
     {
         InitializeComponent();
         _qualityApi = qualityApi;
+        _scanService = scanService;
         CoilDiameterPicker.ItemsSource = new[] { "合格", "不合格" };
         CoilPitchPicker.ItemsSource = new[] { "合格", "不合格" };
         InspectResultPicker.ItemsSource = new[] { "合格", "不合格" };
@@ -54,6 +57,7 @@ public partial class MachineQualityDetailPage : ContentPage
         try
         {
             var detail = await _qualityApi.GetProductionQualityDetailAsync(_qualityNo, _workOrderNo);
+            _detail = detail;
             _inspectionSchemeName = detail.inspectionSchemeName?.Trim();
             if (!string.IsNullOrWhiteSpace(detail.inspectStatus)) _inspectStatus = detail.inspectStatus;
             _qrCode = detail.qrCode;
@@ -104,6 +108,7 @@ public partial class MachineQualityDetailPage : ContentPage
         MemoLabel.IsVisible = !isHeat;
         MemoEditor.IsVisible = !isHeat;
         CompleteButton.IsVisible = IsSamplingOrFullScheme(schemeName);
+        ScanMaterialButton.IsVisible = IsSamplingOrFullScheme(schemeName);
     }
 
     private void FillAcidInputs(ProductionQualityDetailDto detail)
@@ -305,6 +310,66 @@ public partial class MachineQualityDetailPage : ContentPage
 
         var rate = (1 - (brokenDiameter * brokenDiameter) / (actualDiameter * actualDiameter)) * 100;
         return $"{rate:F2}%";
+    }
+
+
+    private async void OnScanMaterialClicked(object sender, EventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_qualityNo) || string.IsNullOrWhiteSpace(_workOrderNo))
+        {
+            await DisplayAlert("提示", "质检单号或工单号为空，无法扫码物料。", "确定");
+            return;
+        }
+
+        var code = await _scanService.ScanAsync("生产质检扫码物料");
+        if (string.IsNullOrWhiteSpace(code)) return;
+
+        try
+        {
+            var material = await _qualityApi.ScanProductionQualityMaterialAsync(new ProductionQualityScanMaterialRequestDto
+            {
+                qrCode = code,
+                qualityNo = _qualityNo,
+                workOrderNo = _workOrderNo
+            });
+            ApplyScannedMaterial(material, code);
+            await DisplayAlert("扫码成功", "物料信息已更新到当前质检页面。", "确定");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("扫码物料失败", ex.Message, "确定");
+        }
+    }
+
+    private void ApplyScannedMaterial(ProductionQualityScanMaterialDto material, string fallbackQrCode)
+    {
+        _qrCode = FirstNonEmpty(material.qrCode, fallbackQrCode);
+        _qualityMaterialId = FirstNonEmpty(material.qualityMaterialId, _qualityMaterialId);
+        if (_detail is null) _detail = new ProductionQualityDetailDto { workOrderNo = _workOrderNo };
+
+        _detail.batchNo = FirstNonEmpty(material.batchNo, _detail.batchNo);
+        _detail.businessType = FirstNonEmpty(material.businessType, _detail.businessType);
+        _detail.customerCode = FirstNonEmpty(material.customerCode, _detail.customerCode);
+        _detail.deviceCode = FirstNonEmpty(material.deviceCode, _detail.deviceCode);
+        _detail.deviceName = FirstNonEmpty(material.deviceName, _detail.deviceName);
+        _detail.furnaceNo = FirstNonEmpty(material.furnaceNo, _detail.furnaceNo);
+        _detail.inputDiameterMm = FirstNonEmpty(material.inputDiameterMm, _detail.inputDiameterMm);
+        _detail.inputSpecification = FirstNonEmpty(material.inputSpecification, _detail.inputSpecification);
+        _detail.originPlace = FirstNonEmpty(material.originPlace, _detail.originPlace);
+        _detail.plateNo = FirstNonEmpty(material.plateNo, _detail.plateNo);
+        _detail.productDiameter = FirstNonEmpty(material.productDiameter, _detail.productDiameter);
+        _detail.qrCode = _qrCode;
+        _detail.qualityMaterialId = _qualityMaterialId;
+        _detail.shiftNo = FirstNonEmpty(material.shiftNo, _detail.shiftNo);
+        _detail.steelGrade = FirstNonEmpty(material.steelGrade, _detail.steelGrade);
+        _detail.targetSpecification = FirstNonEmpty(material.targetSpecification, _detail.targetSpecification);
+        _detail.upperToleranceValue = FirstNonEmpty(material.upperToleranceValue, _detail.upperToleranceValue);
+        _detail.lowerToleranceValue = FirstNonEmpty(material.lowerToleranceValue, _detail.lowerToleranceValue);
+        _detail.spoolWeightRequirement = FirstNonEmpty(material.spoolWeightRequirement, _detail.spoolWeightRequirement);
+        _detail.workOrderNo = FirstNonEmpty(material.workOrderNo, _detail.workOrderNo);
+
+        RenderInfo(_detail);
+        StandardDiameterEntry.Text = FirstNonEmpty(_detail.standardDiameterMm, _detail.productDiameter);
     }
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");

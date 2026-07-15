@@ -151,6 +151,38 @@ public sealed class IncomingQualityScanMaterialDto
 }
 
 
+
+public sealed class ProductionQualityScanMaterialRequestDto
+{
+    public string? qrCode { get; set; }
+    public string? qualityNo { get; set; }
+    public string? workOrderNo { get; set; }
+}
+
+public sealed class ProductionQualityScanMaterialDto
+{
+    public string? batchNo { get; set; }
+    public string? businessType { get; set; }
+    public string? customerCode { get; set; }
+    public string? deviceCode { get; set; }
+    public string? deviceName { get; set; }
+    public string? furnaceNo { get; set; }
+    public string? inputDiameterMm { get; set; }
+    public string? inputSpecification { get; set; }
+    public string? originPlace { get; set; }
+    public string? plateNo { get; set; }
+    public string? productDiameter { get; set; }
+    public string? qrCode { get; set; }
+    public string? qualityMaterialId { get; set; }
+    public string? shiftNo { get; set; }
+    public string? steelGrade { get; set; }
+    public string? targetSpecification { get; set; }
+    public string? upperToleranceValue { get; set; }
+    public string? lowerToleranceValue { get; set; }
+    public string? spoolWeightRequirement { get; set; }
+    public string? workOrderNo { get; set; }
+}
+
 public sealed class ProductionQualityCommitRequestDto
 {
     public string? acidRatio { get; set; }
