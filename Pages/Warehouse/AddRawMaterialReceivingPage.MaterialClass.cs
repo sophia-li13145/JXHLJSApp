@@ -141,8 +141,8 @@ public partial class AddRawMaterialReceivingPage
         TicketSemiFieldsRow1.IsVisible = isSemiFinished;
         TicketSemiFieldsRow2.IsVisible = isSemiFinished;
         TicketPieceWeightLabel.Text = isSemiFinished
-            ? "件重（KG） *"
-            : "件重（吨） *";
+            ? "件重（KG）"
+            : "件重（吨）";
     }
 
     private DictItemDto? GetSelectedMaterialClassV2(
@@ -314,19 +314,38 @@ public partial class AddRawMaterialReceivingPage
             return;
         }
 
-        var pieceWeight = ParsePieceWeightValueV2(
-            PieceWeightEntry.Text);
+        var missingRequiredFields = new List<string>();
+        if (string.IsNullOrWhiteSpace(MaterialNameEntry.Text))
+        {
+            missingRequiredFields.Add("物料名称");
+        }
 
-        if (pieceWeight <= 0m)
+        if (string.IsNullOrWhiteSpace(SpecEntry.Text))
+        {
+            missingRequiredFields.Add("规格");
+        }
+
+        if (string.IsNullOrWhiteSpace(FurnaceNoEntry.Text))
+        {
+            missingRequiredFields.Add("炉号");
+        }
+
+        if (string.IsNullOrWhiteSpace(OriginPlaceEntry.Text))
+        {
+            missingRequiredFields.Add("产地");
+        }
+
+        if (missingRequiredFields.Count > 0)
         {
             await DisplayAlert(
                 "提示",
-                "请输入有效的件重。",
+                $"请填写{string.Join("、", missingRequiredFields)}。",
                 "确定");
             return;
         }
 
         var isSemiFinished = IsSemiFinishedV2(materialClass);
+        var pieceWeight = PieceWeightEntry.Text?.Trim();
 
         _selectedTicket = new RawMaterialOcrDto
         {
@@ -350,9 +369,7 @@ public partial class AddRawMaterialReceivingPage
             spec = SpecEntry.Text?.Trim(),
             furnaceNo = FurnaceNoEntry.Text?.Trim(),
             originPlace = OriginPlaceEntry.Text?.Trim(),
-            pieceWeight = pieceWeight.ToString(
-                "0.############################",
-                System.Globalization.CultureInfo.InvariantCulture),
+            pieceWeight = pieceWeight,
             pieceWeightUnit = ResolvePieceWeightUnitV2(
                 isSemiFinished),
 
