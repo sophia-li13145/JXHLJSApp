@@ -469,7 +469,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
         TicketSemiFieldsRow1.IsVisible = isSemiFinished;
         TicketSemiFieldsRow2.IsVisible = isSemiFinished;
-        TicketPieceWeightLabel.Text = isSemiFinished ? "件重（KG） *" : "件重（吨） *";
+        TicketPieceWeightLabel.Text = isSemiFinished ? "件重（KG）" : "件重（吨）";
     }
 
     private bool IsSemiFinished(Picker picker)

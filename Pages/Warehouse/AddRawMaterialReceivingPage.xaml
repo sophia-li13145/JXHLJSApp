@@ -495,7 +495,7 @@
 
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                             <VerticalStackLayout Spacing="6">
-                                <Label Text="物料名称"
+                                <Label Text="物料名称 *"
                                        TextColor="#0A2C61"
                                        FontAttributes="Bold"
                                        FontSize="13" />
@@ -504,7 +504,7 @@
                                        TextColor="#051B3D" />
                             </VerticalStackLayout>
                             <VerticalStackLayout Grid.Column="1" Spacing="6">
-                                <Label Text="规格"
+                                <Label Text="规格 *"
                                        TextColor="#0A2C61"
                                        FontAttributes="Bold"
                                        FontSize="13" />
@@ -516,7 +516,7 @@
 
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                             <VerticalStackLayout Spacing="6">
-                                <Label Text="炉号"
+                                <Label Text="炉号 *"
                                        TextColor="#0A2C61"
                                        FontAttributes="Bold"
                                        FontSize="13" />
@@ -525,7 +525,7 @@
                                        TextColor="#051B3D" />
                             </VerticalStackLayout>
                             <VerticalStackLayout Grid.Column="1" Spacing="6">
-                                <Label Text="产地"
+                                <Label Text="产地 *"
                                        TextColor="#0A2C61"
                                        FontAttributes="Bold"
                                        FontSize="13" />
@@ -578,7 +578,7 @@
                         </Grid>
 
                         <Label x:Name="TicketPieceWeightLabel"
-                               Text="件重（吨） *"
+                               Text="件重（吨）"
                                TextColor="#0A2C61"
                                FontAttributes="Bold"
                                FontSize="13" />
