@@ -167,9 +167,11 @@ public partial class WorkOrderInstructionPage : ContentPage
     {
         ProcessParamsGrid.Add(new Label
         {
-            Text = label,
+            Text = FormatParamLabel(label),
             TextColor = Color.FromArgb("#5C6F8F"),
-            FontSize = 13
+            FontSize = 13,
+            LineBreakMode = LineBreakMode.WordWrap,
+            Margin = column == 2 ? new Thickness(14, 0, 0, 0) : Thickness.Zero
         }, column, row);
         ProcessParamsGrid.Add(new Label
         {
@@ -177,8 +179,14 @@ public partial class WorkOrderInstructionPage : ContentPage
             TextColor = Colors.Black,
             FontAttributes = FontAttributes.Bold,
             FontSize = 13,
-            HorizontalTextAlignment = TextAlignment.End
+            HorizontalTextAlignment = TextAlignment.Start,
+            LineBreakMode = LineBreakMode.WordWrap
         }, column + 1, row);
+    }
+
+    private static string FormatParamLabel(string label)
+    {
+        return label.Length > 4 ? $"{label[..4]}\n{label[4..]}" : label;
     }
 
     private static Grid BuildTwoColumnRow(string label1, string value1, string label2, string value2)
