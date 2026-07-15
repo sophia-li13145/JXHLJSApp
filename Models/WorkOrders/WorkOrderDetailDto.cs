@@ -6,13 +6,19 @@ public sealed class WorkOrderDetailDto
     public decimal? actualWeight { get; set; }
     public string? billetLowerTolerance { get; set; }
     public string? billetUpperTolerance { get; set; }
+    public string? blankSpecification { get; set; }
     public string? coilDiameterControl { get; set; }
     public string? coilWeightRequirement { get; set; }
     public string? deviceCode { get; set; }
     public string? deviceName { get; set; }
     public string? drawMode { get; set; }
     public string? dvSpeed { get; set; }
+    public string? furnaceNo { get; set; }
     public string? id { get; set; }
+    public string? inputSpecification { get; set; }
+    public string? inputSteelGrade { get; set; }
+    public string? inspectionSchemeCode { get; set; }
+    public string? inspectionSchemeName { get; set; }
     public string? intermediateSpecification { get; set; }
     public string? machineNo { get; set; }
     public string? machineType { get; set; }
@@ -34,8 +40,12 @@ public sealed class WorkOrderDetailDto
     public decimal? plannedQuantity { get; set; }
     public decimal? plannedWeight { get; set; }
     public string? productSpecification { get; set; }
+    public decimal? productionQuantity { get; set; }
+    public decimal? productionWeight { get; set; }
+    public string? qualityNo { get; set; }
     public string? saleMode { get; set; }
     public string? steelGrade { get; set; }
+    public string? usagePurpose { get; set; }
     public string? wireTakeUpLength { get; set; }
     public string? wireTakeUpMode { get; set; }
     public string? wireTakeUpSpeed { get; set; }
