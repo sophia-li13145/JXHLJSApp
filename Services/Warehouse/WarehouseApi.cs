@@ -362,6 +362,7 @@ public sealed class WarehouseApi : IWarehouseApi
         detail.materialProperty = MapDictName(detail.materialProperty, dictNames, "materialProperty");
         detail.packageMethod = MapDictName(detail.packageMethod, dictNames, "packageMethod");
         detail.packageWeight = MapDictName(detail.packageWeight, dictNames, "packageWeight");
+        detail.packagingClothColor = MapDictName(detail.packagingClothColor, dictNames, "packagingClothColor");
     }
 
     private async Task<IReadOnlyDictionary<string, string>> LoadWorkOrderStatusNamesAsync(CancellationToken ct)
