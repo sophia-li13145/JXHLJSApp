@@ -112,6 +112,71 @@
                                FontSize="15"
                                HorizontalTextAlignment="Center" />
 
+                        <CollectionView x:Name="TicketList"
+                                        IsVisible="False"
+                                        SelectionMode="Single"
+                                        SelectionChanged="OnTicketSelectionChanged">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="White"
+                                            Stroke="{Binding ticketCardStrokeColor}"
+                                            StrokeThickness="{Binding ticketCardStrokeThickness}"
+                                            Padding="12"
+                                            Margin="0,0,0,10">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="10" />
+                                        </Border.StrokeShape>
+                                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                                              ColumnDefinitions="*,*"
+                                              RowSpacing="8"
+                                              ColumnSpacing="12">
+                                            <HorizontalStackLayout Spacing="8">
+                                                <Label Text="{Binding selectedTicketTitle}"
+                                                       TextColor="{Binding selectedTicketTitleColor}"
+                                                       FontAttributes="Bold" />
+                                                <Border BackgroundColor="#F2F4F8"
+                                                        StrokeThickness="0"
+                                                        Padding="8,2">
+                                                    <Border.StrokeShape>
+                                                        <RoundRectangle CornerRadius="5" />
+                                                    </Border.StrokeShape>
+                                                    <Label Text="{Binding materialClassDisplay}"
+                                                           FontSize="12"
+                                                           TextColor="#2D3B4F" />
+                                                </Border>
+                                            </HorizontalStackLayout>
+
+                                            <Button Grid.Column="1"
+                                                    Text="删除"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="#F64148"
+                                                    FontAttributes="Bold"
+                                                    HorizontalOptions="End"
+                                                    Padding="0"
+                                                    Clicked="OnDeleteTicketClicked" />
+
+                                            <Label Grid.Row="1" Text="物料名称：" TextColor="#667A99" />
+                                            <Label Grid.Row="1" Text="{Binding materialNameDisplay}" TextColor="#0A2C61" FontAttributes="Bold" Margin="70,0,0,0" />
+                                            <Label Grid.Row="1" Grid.Column="1" Text="规格：" TextColor="#667A99" />
+                                            <Label Grid.Row="1" Grid.Column="1" Text="{Binding specDisplay}" TextColor="#0A2C61" FontAttributes="Bold" Margin="44,0,0,0" />
+                                            <Label Grid.Row="2" IsVisible="{Binding isRawMaterial}" Text="炉号：" TextColor="#667A99" />
+                                            <Label Grid.Row="2" IsVisible="{Binding isRawMaterial}" Text="{Binding furnaceNoDisplay}" TextColor="#0A2C61" FontAttributes="Bold" Margin="44,0,0,0" />
+                                            <Label Grid.Row="2" Grid.Column="1" IsVisible="{Binding isRawMaterial}" Text="产地：" TextColor="#667A99" />
+                                            <Label Grid.Row="2" Grid.Column="1" IsVisible="{Binding isRawMaterial}" Text="{Binding originPlaceDisplay}" TextColor="#0A2C61" FontAttributes="Bold" Margin="44,0,0,0" />
+                                            <Label Grid.Row="3" Text="件重：" TextColor="#667A99" />
+                                            <Label Grid.Row="3" Text="{Binding pieceWeightDisplay}" TextColor="#D96B00" FontAttributes="Bold" Margin="44,0,0,0" />
+                                            <Label Grid.Row="4" IsVisible="{Binding isSemiFinished}" Text="强度：" TextColor="#667A99" />
+                                            <Label Grid.Row="4" IsVisible="{Binding isSemiFinished}" Text="{Binding strengthDisplay}" TextColor="#0A2C61" FontAttributes="Bold" Margin="44,0,0,0" />
+                                            <Label Grid.Row="4" Grid.Column="1" IsVisible="{Binding isSemiFinished}" Text="圈数：" TextColor="#667A99" />
+                                            <Label Grid.Row="4" Grid.Column="1" IsVisible="{Binding isSemiFinished}" Text="{Binding coilCountDisplay}" TextColor="#0A2C61" FontAttributes="Bold" Margin="44,0,0,0" />
+                                            <Label Grid.Row="5" IsVisible="{Binding isSemiFinished}" Text="圈径：" TextColor="#667A99" />
+                                            <Label Grid.Row="5" IsVisible="{Binding isSemiFinished}" Text="{Binding coilDiameterDisplay}" TextColor="#0A2C61" FontAttributes="Bold" Margin="44,0,0,0" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
                         <Border x:Name="SelectedTicketCard"
                                 IsVisible="False"
                                 BackgroundColor="White"
@@ -169,7 +234,7 @@
                                        FontAttributes="Bold"
                                        Margin="44,0,0,0" />
 
-                                <Label Grid.Row="2" Text="炉号：" TextColor="#667A99" />
+                                <Label Grid.Row="2" IsVisible="{Binding isRawMaterial}" Text="炉号：" TextColor="#667A99" />
                                 <Label x:Name="SelectedFurnaceNoLabel"
                                        Grid.Row="2"
                                        Text="--"
@@ -177,7 +242,7 @@
                                        FontAttributes="Bold"
                                        Margin="44,0,0,0" />
 
-                                <Label Grid.Row="2" Grid.Column="1" Text="产地：" TextColor="#667A99" />
+                                <Label Grid.Row="2" Grid.Column="1" IsVisible="{Binding isRawMaterial}" Text="产地：" TextColor="#667A99" />
                                 <Label x:Name="SelectedOriginPlaceLabel"
                                        Grid.Row="2"
                                        Grid.Column="1"
@@ -314,10 +379,12 @@
                                                    Text="{Binding specDisplay, StringFormat='规格：{0}'}"
                                                    TextColor="#38557C" />
                                             <Label Grid.Row="3"
+                                                   IsVisible="{Binding isRawMaterial}"
                                                    Text="{Binding furnaceNoDisplay, StringFormat='炉号：{0}'}"
                                                    TextColor="#38557C" />
                                             <Label Grid.Row="3"
                                                    Grid.Column="1"
+                                                   IsVisible="{Binding isRawMaterial}"
                                                    Text="{Binding originPlaceDisplay, StringFormat='产地：{0}'}"
                                                    TextColor="#38557C" />
                                             <Label Grid.Row="4"

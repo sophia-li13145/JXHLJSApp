@@ -1,7 +1,12 @@
+using System.ComponentModel;
+
 namespace JXHLJSApp.Models.Warehouse;
 
-public sealed class RawMaterialOcrDto
+public sealed class RawMaterialOcrDto : INotifyPropertyChanged
 {
+    private bool _isSelected;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
     public string? qrCode { get; set; }
     public string? coilCount { get; set; }
     public string? coilDiameter { get; set; }
@@ -24,9 +29,33 @@ public sealed class RawMaterialOcrDto
     public string? standard { get; set; }
     public string? strength { get; set; }
     public string? workshop { get; set; }
+    public bool isSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected == value)
+            {
+                return;
+            }
+
+            _isSelected = value;
+            OnPropertyChanged(nameof(isSelected));
+            OnPropertyChanged(nameof(selectedTicketTitle));
+            OnPropertyChanged(nameof(selectedTicketTitleColor));
+            OnPropertyChanged(nameof(ticketCardStrokeColor));
+            OnPropertyChanged(nameof(ticketCardStrokeThickness));
+        }
+    }
+
+    public string selectedTicketTitle => isSelected ? "✔ 当前选中" : "票签内容";
+    public Color selectedTicketTitleColor => isSelected ? Color.FromArgb("#2D54D9") : Color.FromArgb("#0A2C61");
+    public Color ticketCardStrokeColor => isSelected ? Color.FromArgb("#2863FF") : Color.FromArgb("#DDE6F2");
+    public double ticketCardStrokeThickness => isSelected ? 2 : 1;
 
     public string materialClassDisplay => FirstNonEmpty(materialClassName, materialClass, materialType, "--");
     public bool isSemiFinished => ContainsAny(materialClass, "半成品", "semi") || ContainsAny(materialClassName, "半成品", "semi") || ContainsAny(materialType, "半成品", "semi");
+    public bool isRawMaterial => !isSemiFinished;
     public string materialTitle => $"追溯码： {FirstNonEmpty(qrCode, materialCode, materialName, "--")}";
     public string materialNameDisplay => FirstNonEmpty(materialName, "--");
     public string specDisplay => FirstNonEmpty(spec, "--");
@@ -48,4 +77,7 @@ public sealed class RawMaterialOcrDto
         !string.IsNullOrWhiteSpace(value) && tokens.Any(token => value.Contains(token, StringComparison.OrdinalIgnoreCase));
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "--";
+
+    private void OnPropertyChanged(string propertyName) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }

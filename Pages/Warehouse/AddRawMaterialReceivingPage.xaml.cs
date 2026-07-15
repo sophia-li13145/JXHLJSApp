@@ -11,6 +11,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private readonly IWarehouseApi _warehouseApi;
     private readonly IScanService _scanService;
     private readonly ObservableCollection<RawMaterialOcrDto> _ocrItems = new();
+    private readonly ObservableCollection<RawMaterialOcrDto> _ticketItems = new();
     private readonly ObservableCollection<MaterialSummaryItem> _summaryItems = new();
     private RawMaterialOcrDto? _pendingOcr;
     private RawMaterialOcrDto? _selectedTicket;
@@ -28,6 +29,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         _warehouseApi = warehouseApi;
         _scanService = scanService;
         OcrList.ItemsSource = _ocrItems;
+        TicketList.ItemsSource = _ticketItems;
         SummaryList.ItemsSource = _summaryItems;
         ApplyMaterialClassOptions(_materialClassOptions);
     }
@@ -192,30 +194,35 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private void ApplyOcrList(IEnumerable<RawMaterialReceivingOcrDto>? ocrList)
     {
-        var firstOcr = ocrList?.FirstOrDefault();
-        if (firstOcr is null)
+        _ticketItems.Clear();
+
+        foreach (var ocr in ocrList ?? Enumerable.Empty<RawMaterialReceivingOcrDto>())
+        {
+            _ticketItems.Add(new RawMaterialOcrDto
+            {
+                coilCount = FormatDecimal(ocr.coilCount),
+                coilDiameter = FormatDecimal(ocr.coilDiameter),
+                furnaceNo = ocr.furnaceNo,
+                materialClass = ocr.materialClass,
+                materialClassName = ResolveMaterialClassName(ocr.materialClass),
+                materialName = ocr.materialName,
+                materialType = ocr.materialType,
+                ocrRawText = ocr.ocrRawText,
+                originPlace = ocr.originPlace,
+                pieceWeight = FormatDecimal(ocr.pieceWeight),
+                pieceWeightUnit = string.IsNullOrWhiteSpace(ocr.pieceWeightUnit) ? "吨" : ocr.pieceWeightUnit,
+                spec = ocr.spec,
+                strength = ocr.strength
+            });
+        }
+
+        if (_ticketItems.Count == 0)
         {
             ClearSelectedTicket();
             return;
         }
 
-        _selectedTicket = new RawMaterialOcrDto
-        {
-            coilCount = FormatDecimal(firstOcr.coilCount),
-            coilDiameter = FormatDecimal(firstOcr.coilDiameter),
-            furnaceNo = firstOcr.furnaceNo,
-            materialClass = firstOcr.materialClass,
-            materialClassName = ResolveMaterialClassName(firstOcr.materialClass),
-            materialName = firstOcr.materialName,
-            materialType = firstOcr.materialType,
-            ocrRawText = firstOcr.ocrRawText,
-            originPlace = firstOcr.originPlace,
-            pieceWeight = FormatDecimal(firstOcr.pieceWeight),
-            pieceWeightUnit = string.IsNullOrWhiteSpace(firstOcr.pieceWeightUnit) ? "吨" : firstOcr.pieceWeightUnit,
-            spec = firstOcr.spec,
-            strength = firstOcr.strength
-        };
-        ApplySelectedTicket(_selectedTicket);
+        ApplySelectedTicket(_ticketItems[0]);
     }
 
     private void ApplyDetailList(IEnumerable<RawMaterialReceivingDetailItemDto> detailItems)
@@ -541,7 +548,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             return;
         }
 
-        ApplySelectedTicket(_selectedTicket);
+        AddTicketAndSelect(_selectedTicket);
         TicketConfirmOverlay.IsVisible = false;
     }
 
@@ -620,10 +627,24 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         new DictItemDto { dictItemName = "半成品", dictItemValue = "semi_finished" }
     };
 
+    private void AddTicketAndSelect(RawMaterialOcrDto ticket)
+    {
+        _ticketItems.Add(ticket);
+        ApplySelectedTicket(ticket);
+    }
+
     private void ApplySelectedTicket(RawMaterialOcrDto ticket)
     {
+        foreach (var item in _ticketItems)
+        {
+            item.isSelected = ReferenceEquals(item, ticket);
+        }
+
+        _selectedTicket = ticket;
         ExtractedTextLabel.IsVisible = false;
-        SelectedTicketCard.IsVisible = true;
+        TicketList.IsVisible = true;
+        TicketList.SelectedItem = ticket;
+        SelectedTicketCard.IsVisible = false;
         SelectedMaterialTypeLabel.Text = ticket.materialClassDisplay;
         SelectedMaterialNameLabel.Text = ticket.materialNameDisplay;
         SelectedSpecLabel.Text = ticket.specDisplay;
@@ -645,9 +666,42 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private void ClearSelectedTicket()
     {
         _selectedTicket = null;
+        _ticketItems.Clear();
+        TicketList.SelectedItem = null;
+        TicketList.IsVisible = false;
         SelectedTicketCard.IsVisible = false;
         ExtractedTextLabel.IsVisible = true;
         ExtractedTextLabel.Text = "暂无票签内容，请先手动录入";
+    }
+
+
+    private void OnTicketSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (e.CurrentSelection.FirstOrDefault() is RawMaterialOcrDto ticket)
+        {
+            ApplySelectedTicket(ticket);
+        }
+    }
+
+    private void OnDeleteTicketClicked(object sender, EventArgs e)
+    {
+        if (sender is not Button { BindingContext: RawMaterialOcrDto ticket })
+        {
+            return;
+        }
+
+        _ticketItems.Remove(ticket);
+        if (ReferenceEquals(_selectedTicket, ticket))
+        {
+            if (_ticketItems.Count > 0)
+            {
+                ApplySelectedTicket(_ticketItems[0]);
+            }
+            else
+            {
+                ClearSelectedTicket();
+            }
+        }
     }
 
     private void OnDeleteTicketTapped(object sender, TappedEventArgs e) => ClearSelectedTicket();
