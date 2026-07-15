@@ -5,28 +5,34 @@
              Title="任务列表"
              BackgroundColor="#F3F6FA">
     <RefreshView x:Name="RefreshContainer" Refreshing="OnRefreshing">
-        <CollectionView x:Name="TaskList" EmptyView="暂无任务" Margin="16">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Border BackgroundColor="White" StrokeThickness="0" Padding="14" Margin="0,0,0,12">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="12" />
-                        </Border.StrokeShape>
-                        <VerticalStackLayout Spacing="6">
-                            <Label Text="{Binding workOrderNo}" FontSize="16" FontAttributes="Bold" TextColor="#061A3B" />
-                            <Label Text="{Binding operationName}" FontSize="14" TextColor="#4B6688" />
-                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10">
-                                <Label Text="{Binding machineNo, StringFormat='机台：{0}'}" />
-                                <Label Grid.Column="1" Text="{Binding deviceName, StringFormat='设备：{0}'}" />
-                                <Label Grid.Row="1" Text="{Binding plannedQuantity, StringFormat='计划数：{0}'}" />
-                                <Label Grid.Row="1" Grid.Column="1" Text="{Binding plannedWeight, StringFormat='计划重量：{0}'}" />
-                                <Label Grid.Row="2" Text="{Binding workOrderStatus, StringFormat='状态：{0}'}" />
-                                <Label Grid.Row="2" Grid.Column="1" Text="{Binding targetSpecification, StringFormat='规格：{0}'}" />
-                            </Grid>
-                        </VerticalStackLayout>
-                    </Border>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+        <Grid RowDefinitions="Auto,*" Padding="16" RowSpacing="12">
+            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout x:Name="MachineButtonLayout" Spacing="10" />
+            </ScrollView>
+
+            <CollectionView x:Name="TaskList" Grid.Row="1" EmptyView="暂无任务">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="White" StrokeThickness="0" Padding="14" Margin="0,0,0,12">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="{Binding workOrderNo}" FontSize="16" FontAttributes="Bold" TextColor="#061A3B" />
+                                <Label Text="{Binding operationName}" FontSize="14" TextColor="#4B6688" />
+                                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10">
+                                    <Label Text="{Binding machineNo, StringFormat='机台：{0}'}" />
+                                    <Label Grid.Column="1" Text="{Binding deviceName, StringFormat='设备：{0}'}" />
+                                    <Label Grid.Row="1" Text="{Binding plannedQuantity, StringFormat='计划数：{0}'}" />
+                                    <Label Grid.Row="1" Grid.Column="1" Text="{Binding plannedWeight, StringFormat='计划重量：{0}'}" />
+                                    <Label Grid.Row="2" Text="{Binding workOrderStatus, StringFormat='状态：{0}'}" />
+                                    <Label Grid.Row="2" Grid.Column="1" Text="{Binding targetSpecification, StringFormat='规格：{0}'}" />
+                                </Grid>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
     </RefreshView>
 </ContentPage>

@@ -84,6 +84,9 @@
       "updateLocation": "/pda/wmsMaterialOutstock/updateLocation",
       "updateQuantity": "/pda/wmsMaterialOutstock/updateOutQuantity"
     },
+    "device": {
+      "queryDevList": "/pda/dev/queryDevList"
+    },
     "workOrder": {
       "list": "/pda/pmsWorkOrder/getWorkOrderList",
       "bindWorkerMachine": "/pda/devUserMachineBindRecord/workerBindDev",
