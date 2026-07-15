@@ -89,12 +89,44 @@ public partial class PackagingSubTaskDetailPage : ContentPage
                 return;
             }
 
+            if (ShouldOpenWithExternalViewer(template, preview))
+            {
+                await Launcher.OpenAsync(new Uri(preview));
+                return;
+            }
+
             await Navigation.PushModalAsync(CreatePreviewPage(template, preview));
         }
         catch (Exception ex)
         {
             await DisplayAlert("预览失败", ex.Message, "确定");
         }
+    }
+
+    private static bool ShouldOpenWithExternalViewer(AttachmentDto template, string preview)
+    {
+        if (!Uri.TryCreate(preview, UriKind.Absolute, out _))
+        {
+            return false;
+        }
+
+        var fileName = FirstNonEmpty(template.attachmentName, template.attachmentRealName, template.attachmentUrl, preview);
+        var extension = Path.GetExtension(fileName)?.TrimStart('.');
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            extension = template.attachmentExt;
+        }
+
+        return IsOfficeDocumentExtension(extension);
+    }
+
+    private static bool IsOfficeDocumentExtension(string? extension)
+    {
+        return extension?.Trim().TrimStart('.').ToLowerInvariant() switch
+        {
+            "xls" or "xlsx" or "xlsm" or "csv" or "doc" or "docx" or "ppt" or "pptx" => true,
+            _ => false
+        };
     }
 
     private static ContentPage CreatePreviewPage(AttachmentDto template, string preview)
