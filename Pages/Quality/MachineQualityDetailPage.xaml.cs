@@ -1,5 +1,6 @@
 using JXHLJSApp.Models.Quality;
 using JXHLJSApp.Pages;
+using JXHLJSApp.Services;
 using JXHLJSApp.Services.Quality;
 
 namespace JXHLJSApp.Pages.Quality;
