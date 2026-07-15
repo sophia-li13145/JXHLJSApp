@@ -176,7 +176,8 @@ public sealed class WarehouseApi : IWarehouseApi
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<PackagingSubTaskDetailDto>(resp, ct).ConfigureAwait(false);
         var detail = data.result ?? new PackagingSubTaskDetailDto();
-        detail.workOrderStatus = await MapWorkOrderStatusAsync(detail.workOrderStatus, ct).ConfigureAwait(false);
+        var dictNames = await LoadWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
+        ApplyPackagingDetailDictNames(detail, dictNames);
         return detail;
     }
 
@@ -355,25 +356,38 @@ public sealed class WarehouseApi : IWarehouseApi
         }
     }
 
-    private async Task<string?> MapWorkOrderStatusAsync(string? status, CancellationToken ct)
+    private static void ApplyPackagingDetailDictNames(PackagingSubTaskDetailDto detail, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> dictNames)
     {
-        var statusNames = await LoadWorkOrderStatusNamesAsync(ct).ConfigureAwait(false);
-        return MapStatusName(status, statusNames);
+        detail.workOrderStatus = MapDictName(detail.workOrderStatus, dictNames, "workOrderStatus");
+        detail.materialProperty = MapDictName(detail.materialProperty, dictNames, "materialProperty");
+        detail.packageMethod = MapDictName(detail.packageMethod, dictNames, "packageMethod");
+        detail.packageWeight = MapDictName(detail.packageWeight, dictNames, "packageWeight");
     }
 
     private async Task<IReadOnlyDictionary<string, string>> LoadWorkOrderStatusNamesAsync(CancellationToken ct)
+    {
+        var dictNames = await LoadWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
+        return dictNames.TryGetValue("workOrderStatus", out var statusNames) ? statusNames : new Dictionary<string, string>();
+    }
+
+    private async Task<IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>> LoadWorkOrderDictNamesAsync(CancellationToken ct)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _workOrderDictListEndpoint);
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<List<DictGroupDto>>(resp, ct).ConfigureAwait(false);
         return data.result?
-            .FirstOrDefault(group => string.Equals(group.field, "workOrderStatus", StringComparison.OrdinalIgnoreCase))?
-            .dictItems?
-            .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue))
-            .GroupBy(item => item.dictItemValue!)
-            .ToDictionary(group => group.Key, group => group.First().dictItemName ?? group.Key)
-            ?? new Dictionary<string, string>();
+            .Where(group => !string.IsNullOrWhiteSpace(group.field))
+            .GroupBy(group => group.field!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyDictionary<string, string>)group
+                    .SelectMany(item => item.dictItems ?? new List<DictItemDto>())
+                    .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue))
+                    .GroupBy(item => item.dictItemValue!)
+                    .ToDictionary(itemGroup => itemGroup.Key, itemGroup => itemGroup.First().dictItemName ?? itemGroup.Key),
+                StringComparer.OrdinalIgnoreCase)
+            ?? new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
     }
 
     private static string? MapStatusName(string? status, IReadOnlyDictionary<string, string> statusNames)
@@ -384,6 +398,16 @@ public sealed class WarehouseApi : IWarehouseApi
         }
 
         return statusNames.TryGetValue(status, out var name) ? name : status;
+    }
+
+    private static string? MapDictName(string? value, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> dictNames, string field)
+    {
+        if (string.IsNullOrWhiteSpace(value) || !dictNames.TryGetValue(field, out var itemNames))
+        {
+            return value;
+        }
+
+        return itemNames.TryGetValue(value, out var name) ? name : value;
     }
 
     private static void ApplyDeliveryAuditStatusNames(IEnumerable<DeliveryOrderDto> items, IReadOnlyDictionary<string, string> auditStatusNames)
