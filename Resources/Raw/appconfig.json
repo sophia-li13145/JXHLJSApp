@@ -148,6 +148,7 @@
     "productionQualityOrder": {
       "list": "/pda/qsOrderQuality/list",
       "detailByNo": "/pda/qsOrderQuality/detailByNo",
+      "scanMaterial": "/pda/qsOrderQuality/scanMaterial",
       "commit": "/pda/qsOrderQuality/commit",
       "firstInspectionCommit": "/pda/qsOrderQuality/firstInspectionCommit",
       "picklingCommit": "/pda/qsOrderQuality/picklingCommit",
