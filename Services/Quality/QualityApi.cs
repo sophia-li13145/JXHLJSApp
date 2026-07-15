@@ -145,10 +145,22 @@ public sealed class QualityApi : IQualityApi
             }
             if (!string.IsNullOrWhiteSpace(item.problemPoint))
             {
-                item.problemPointName = problemPointNames.FirstOrDefault(option => option.Value == item.problemPoint)?.Name;
+                item.problemPointName = ResolveDictNames(item.problemPoint, problemPointNames);
             }
         }
         return detail;
+    }
+
+
+    private static string? ResolveDictNames(string value, IReadOnlyCollection<QualityDictOption> options)
+    {
+        var names = value
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(part => options.FirstOrDefault(option => option.Value == part)?.Name ?? part)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToList();
+
+        return names.Count == 0 ? null : string.Join("、", names);
     }
 
     public async Task<IncomingQualityScanMaterialDto> ScanIncomingQualityMaterialAsync(string qrCode, CancellationToken ct = default)

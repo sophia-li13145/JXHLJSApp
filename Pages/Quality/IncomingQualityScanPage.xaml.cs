@@ -101,16 +101,41 @@ public partial class IncomingQualityScanPage : ContentPage
             return;
         }
 
-        var names = _problemOptions.Select(item => item.Name).ToArray();
-        var selected = await DisplayActionSheet("选择问题点", "取消", null, names);
-        if (string.IsNullOrWhiteSpace(selected) || selected == "取消") return;
-
-        foreach (var option in _problemOptions)
+        while (true)
         {
-            option.IsSelected = option.Name == selected;
+            var names = _problemOptions
+                .Select(item => $"{(item.IsSelected ? "✓ " : string.Empty)}{item.Name}")
+                .ToArray();
+            var selected = await DisplayActionSheet("选择问题点（可多选）", "取消", "完成", names);
+            if (string.IsNullOrWhiteSpace(selected) || selected == "取消")
+            {
+                return;
+            }
+
+            if (selected == "完成")
+            {
+                RefreshProblemPointDisplay();
+                return;
+            }
+
+            var selectedName = selected.StartsWith("✓ ", StringComparison.Ordinal) ? selected[2..] : selected;
+            var option = _problemOptions.FirstOrDefault(item => item.Name == selectedName);
+            if (option is not null)
+            {
+                option.IsSelected = !option.IsSelected;
+            }
         }
-        ProblemPointLabel.Text = selected;
-        ProblemPointLabel.TextColor = Color.FromArgb("#051B3D");
+    }
+
+    private void RefreshProblemPointDisplay()
+    {
+        var selectedNames = _problemOptions
+            .Where(item => item.IsSelected)
+            .Select(item => item.Name)
+            .ToList();
+
+        ProblemPointLabel.Text = selectedNames.Count == 0 ? "点击选择问题点" : string.Join("、", selectedNames);
+        ProblemPointLabel.TextColor = selectedNames.Count == 0 ? Color.FromArgb("#7A889A") : Color.FromArgb("#051B3D");
     }
 
     private async void OnSaveClicked(object sender, EventArgs e)
@@ -121,8 +146,8 @@ public partial class IncomingQualityScanPage : ContentPage
             return;
         }
 
-        var selectedProblem = _problemOptions.FirstOrDefault(item => item.IsSelected);
-        if (selectedProblem is null)
+        var selectedProblems = _problemOptions.Where(item => item.IsSelected).ToList();
+        if (selectedProblems.Count == 0)
         {
             await DisplayAlert("提示", "请选择问题点。", "确定");
             return;
@@ -144,7 +169,7 @@ public partial class IncomingQualityScanPage : ContentPage
                 materialName = _scanMaterial.materialName ?? string.Empty,
                 otherExceptionDesc = RemarkEditor.Text?.Trim(),
                 otherProblemItem = OtherProblemEditor.Text?.Trim(),
-                problemPoint = selectedProblem.Value,
+                problemPoint = string.Join(",", selectedProblems.Select(item => item.Value)),
                 qrCode = _scanMaterial.qrCode ?? _qrCode ?? string.Empty
             });
 
