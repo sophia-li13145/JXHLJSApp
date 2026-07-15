@@ -10,6 +10,7 @@ namespace JXHLJSApp.Services.WorkOrders;
 public interface IWorkOrderApi
 {
     Task<List<WorkOrderTaskDto>> GetWorkOrderListAsync(string? deviceCode = null, string? machineNo = null, string? workOrderStatus = null, CancellationToken ct = default);
+    Task<List<DeviceDto>> GetDeviceListAsync(CancellationToken ct = default);
     Task<bool> BindWorkerMachineAsync(string devCode, CancellationToken ct = default);
     Task<bool> ScanToWorkAsync(string devCode, string workOrderNo, CancellationToken ct = default);
     Task<List<WorkOrderTaskDto>> GetCurrentUserMachinesWorkOrdersAsync(CancellationToken ct = default);
@@ -37,6 +38,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
 {
     private readonly HttpClient _http;
     private readonly string _listEndpoint;
+    private readonly string _deviceListEndpoint;
     private readonly string _bindWorkerMachineEndpoint;
     private readonly string _scanToWorkEndpoint;
     private readonly string _currentUserMachinesWorkOrderEndpoint;
@@ -66,6 +68,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
         var servicePath = _http.BaseAddress?.AbsolutePath?.TrimEnd('/') ?? "/jxhljszpService";
         _listEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.list", "/pda/pmsWorkOrder/getWorkOrderList"), servicePath);
+        _deviceListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("device.queryDevList", "/pda/dev/queryDevList"), servicePath);
         _bindWorkerMachineEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.bindWorkerMachine", "/pda/devUserMachineBindRecord/workerBindDev"), servicePath);
         _scanToWorkEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -126,6 +130,18 @@ public sealed class WorkOrderApi : IWorkOrderApi
         var orders = data?.result ?? new List<WorkOrderTaskDto>();
         await ApplyWorkOrderStatusNamesAsync(orders, ct).ConfigureAwait(false);
         return orders;
+    }
+
+
+    public async Task<List<DeviceDto>> GetDeviceListAsync(CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _deviceListEndpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<List<DeviceDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return data?.result ?? new List<DeviceDto>();
     }
 
     public async Task<bool> BindWorkerMachineAsync(string devCode, CancellationToken ct = default)
