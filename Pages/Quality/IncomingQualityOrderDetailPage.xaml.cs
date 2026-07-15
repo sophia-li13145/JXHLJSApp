@@ -109,8 +109,8 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
         ActionBar.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
         if (detail.isUnsubmitted)
         {
-            ActionBar.Add(CreateButton("删除", "#FF4D5E", "#FFF2F2", "#FFB7BE", OnDeleteClicked), 0);
-            ActionBar.Add(CreateButton("质检扫码", "White", "#1E427C", null, OnScanClicked), 1);
+            ActionBar.Add(CreateButton("质检扫码", "White", "#F59E0B", null, OnScanClicked), 0);
+            ActionBar.Add(CreateButton("完成检验", "White", "#10B981", null, OnCompleteClicked), 1);
             return;
         }
 
