@@ -120,6 +120,7 @@ public partial class AbnormalReportPage : ContentPage
     private void BindMaterial()
     {
         MaterialCard.IsVisible = true;
+        MaterialTypeLabel.Text = $"✅ 识别成功: {ValueOrDash(_material?.materialType)}";
         MaterialCodeLabel.Text = ValueOrDash(_material?.materialCode);
         SteelLabel.Text = ValueOrDash(_material?.steelGrade);
         OriginLabel.Text = ValueOrDash(_material?.originPlace);
