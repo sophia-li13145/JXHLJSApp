@@ -31,7 +31,14 @@ public partial class AddRawMaterialReceivingPage
 
     private void OnBindOverlayPropertyChangedV2(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == "IsVisible" && BindConfirmOverlay.IsVisible)
+        if (e.PropertyName != "IsVisible")
+        {
+            return;
+        }
+
+        WarehousePicker.IsEnabled = !BindConfirmOverlay.IsVisible;
+
+        if (BindConfirmOverlay.IsVisible)
         {
             RefreshMaterialClassFormVisibilityV2(isBindDialog: true);
         }
