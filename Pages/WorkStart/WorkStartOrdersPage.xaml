@@ -36,7 +36,7 @@
                                     </Border>
                                 </Grid>
                                 <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="12">
-                                    <Label Text="原料规格" TextColor="#4B6688" FontSize="14" />
+                                    <Label Text="上料规格" TextColor="#4B6688" FontSize="14" />
                                     <Label Grid.Column="1" Text="{Binding inputMaterialDisplay}" TextColor="#001431" FontSize="15" FontAttributes="Bold" />
                                     <BoxView Grid.Row="1" Grid.ColumnSpan="2" HeightRequest="1" Color="#EEF2F7" />
                                     <Label Grid.Row="2" Text="下料规格" TextColor="#4B6688" FontSize="14" />
