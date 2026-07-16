@@ -71,118 +71,6 @@ public partial class PackagingSubTaskDetailPage : ContentPage
     }
 
 
-    private async void OnTemplateTapped(object sender, TappedEventArgs e)
-    {
-        var template = _detail?.printTemplate;
-        if (template is null || string.IsNullOrWhiteSpace(template.attachmentUrl))
-        {
-            await DisplayAlert("提示", "当前包装任务暂无可预览的打印模板。", "确定");
-            return;
-        }
-
-        try
-        {
-            var preview = await _warehouseApi.PreviewAttachmentAsync(template.attachmentUrl);
-            if (string.IsNullOrWhiteSpace(preview))
-            {
-                await DisplayAlert("提示", "打印模板预览内容为空。", "确定");
-                return;
-            }
-
-            if (ShouldOpenWithExternalViewer(template, preview))
-            {
-                await Launcher.OpenAsync(new Uri(preview));
-                return;
-            }
-
-            await Navigation.PushModalAsync(CreatePreviewPage(template, preview));
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlert("预览失败", ex.Message, "确定");
-        }
-    }
-
-    private static bool ShouldOpenWithExternalViewer(AttachmentDto template, string preview)
-    {
-        if (!Uri.TryCreate(preview, UriKind.Absolute, out _))
-        {
-            return false;
-        }
-
-        var fileName = FirstNonEmpty(template.attachmentName, template.attachmentRealName, template.attachmentUrl, preview);
-        var extension = Path.GetExtension(fileName)?.TrimStart('.');
-        if (string.IsNullOrWhiteSpace(extension))
-        {
-            extension = template.attachmentExt;
-        }
-
-        return IsOfficeDocumentExtension(extension);
-    }
-
-    private static bool IsOfficeDocumentExtension(string? extension)
-    {
-        return extension?.Trim().TrimStart('.').ToLowerInvariant() switch
-        {
-            "xls" or "xlsx" or "xlsm" or "csv" or "doc" or "docx" or "ppt" or "pptx" => true,
-            _ => false
-        };
-    }
-
-    private static ContentPage CreatePreviewPage(AttachmentDto template, string preview)
-    {
-        var title = FirstNonEmpty(template.attachmentName, template.attachmentRealName) ?? "打印模板预览";
-        var closeButton = new Button
-        {
-            Text = "关闭",
-            BackgroundColor = Color.FromArgb("#1F447E"),
-            TextColor = Colors.White,
-            CornerRadius = 10,
-            HeightRequest = 44
-        };
-
-        var titleLabel = new Label
-        {
-            Text = title,
-            TextColor = Color.FromArgb("#0A2E69"),
-            FontAttributes = FontAttributes.Bold,
-            FontSize = 18,
-            Margin = new Thickness(18, 18, 18, 10)
-        };
-        var previewSource = Uri.TryCreate(preview, UriKind.Absolute, out _)
-            ? new UrlWebViewSource { Url = preview }
-            : (WebViewSource)new HtmlWebViewSource { Html = preview };
-        var previewWebView = new WebView
-        {
-            Source = previewSource,
-            Margin = new Thickness(12, 0)
-        };
-        closeButton.Margin = new Thickness(18, 12, 18, 18);
-
-        var layout = new Grid
-        {
-            RowDefinitions =
-            {
-                new RowDefinition(GridLength.Auto),
-                new RowDefinition(GridLength.Star),
-                new RowDefinition(GridLength.Auto)
-            }
-        };
-        layout.Add(titleLabel, 0, 0);
-        layout.Add(previewWebView, 0, 1);
-        layout.Add(closeButton, 0, 2);
-
-        var page = new ContentPage
-        {
-            Title = title,
-            BackgroundColor = Colors.White,
-            Content = layout
-        };
-
-        closeButton.Clicked += async (_, _) => await page.Navigation.PopModalAsync();
-        return page;
-    }
-
     private async void OnScanClicked(object sender, EventArgs e)
     {
         var code = await _scanService.ScanAsync("包装扫码");
@@ -221,8 +109,6 @@ public partial class PackagingSubTaskDetailPage : ContentPage
     }
 
     private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
-
-    private static string? FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
     private static string FormatQuantity(decimal? value, string? unit)
     {
