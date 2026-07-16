@@ -59,7 +59,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _confirmCompletionEndpoint;
     private readonly string _orderStopEndpoint;
     private readonly string _productionStatisticsEndpoint;
-    private IReadOnlyDictionary<string, string>? _workOrderStatusNames;
+    private IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? _workOrderDictNames;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public WorkOrderApi(HttpClient http, IConfigLoader configLoader)
@@ -463,28 +463,29 @@ public sealed class WorkOrderApi : IWorkOrderApi
 
     private async Task ApplyWorkOrderStatusNamesAsync(IEnumerable<WorkOrderTaskDto> orders, CancellationToken ct)
     {
-        var statusNames = await GetWorkOrderStatusNamesAsync(ct).ConfigureAwait(false);
+        var dictNames = await GetWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
         foreach (var order in orders)
         {
-            order.workOrderStatus = MapWorkOrderStatus(order.workOrderStatus, statusNames);
+            order.workOrderStatus = MapWorkOrderDictName(order.workOrderStatus, dictNames, "workOrderStatus");
         }
     }
 
     private async Task ApplyWorkOrderStatusNamesAsync(IEnumerable<WorkOrderDetailDto> tasks, CancellationToken ct)
     {
-        var statusNames = await GetWorkOrderStatusNamesAsync(ct).ConfigureAwait(false);
+        var dictNames = await GetWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
         foreach (var task in tasks)
         {
-            task.workOrderStatus = MapWorkOrderStatus(task.workOrderStatus, statusNames);
+            task.workOrderStatus = MapWorkOrderDictName(task.workOrderStatus, dictNames, "workOrderStatus");
+            task.wireTakeUpMode = MapWorkOrderDictName(task.wireTakeUpMode, dictNames, "wireTakeUpMode");
         }
     }
 
     private async Task ApplyWorkOrderStatusNamesAsync(IEnumerable<WorkOrderInputOutputDto> tasks, CancellationToken ct)
     {
-        var statusNames = await GetWorkOrderStatusNamesAsync(ct).ConfigureAwait(false);
+        var dictNames = await GetWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
         foreach (var task in tasks)
         {
-            task.workOrderStatus = MapWorkOrderStatus(task.workOrderStatus, statusNames);
+            task.workOrderStatus = MapWorkOrderDictName(task.workOrderStatus, dictNames, "workOrderStatus");
         }
     }
 
@@ -492,15 +493,16 @@ public sealed class WorkOrderApi : IWorkOrderApi
     {
         if (detail is null) return;
 
-        var statusNames = await GetWorkOrderStatusNamesAsync(ct).ConfigureAwait(false);
-        detail.workOrderStatus = MapWorkOrderStatus(detail.workOrderStatus, statusNames);
+        var dictNames = await GetWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
+        detail.workOrderStatus = MapWorkOrderDictName(detail.workOrderStatus, dictNames, "workOrderStatus");
+        detail.wireTakeUpMode = MapWorkOrderDictName(detail.wireTakeUpMode, dictNames, "wireTakeUpMode");
     }
 
-    private async Task<IReadOnlyDictionary<string, string>> GetWorkOrderStatusNamesAsync(CancellationToken ct)
+    private async Task<IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>> GetWorkOrderDictNamesAsync(CancellationToken ct)
     {
-        if (_workOrderStatusNames is not null)
+        if (_workOrderDictNames is not null)
         {
-            return _workOrderStatusNames;
+            return _workOrderDictNames;
         }
 
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _dictListEndpoint);
@@ -510,24 +512,30 @@ public sealed class WorkOrderApi : IWorkOrderApi
         var data = await JsonSerializer.DeserializeAsync<ApiResp<List<WorkOrderDictDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
 
-        _workOrderStatusNames = data?.result?
-            .FirstOrDefault(dict => string.Equals(dict.field, "workOrderStatus", StringComparison.OrdinalIgnoreCase))?
-            .dictItems?
-            .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue) && !string.IsNullOrWhiteSpace(item.dictItemName))
-            .ToDictionary(item => item.dictItemValue!, item => item.dictItemName!)
-            ?? new Dictionary<string, string>();
+        _workOrderDictNames = data?.result?
+            .Where(dict => !string.IsNullOrWhiteSpace(dict.field))
+            .GroupBy(dict => dict.field!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyDictionary<string, string>)group
+                    .SelectMany(dict => dict.dictItems ?? new List<WorkOrderDictItemDto>())
+                    .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue) && !string.IsNullOrWhiteSpace(item.dictItemName))
+                    .GroupBy(item => item.dictItemValue!, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(itemGroup => itemGroup.Key, itemGroup => itemGroup.First().dictItemName!, StringComparer.OrdinalIgnoreCase),
+                StringComparer.OrdinalIgnoreCase)
+            ?? new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
 
-        return _workOrderStatusNames;
+        return _workOrderDictNames;
     }
 
-    private static string? MapWorkOrderStatus(string? status, IReadOnlyDictionary<string, string> statusNames)
+    private static string? MapWorkOrderDictName(string? value, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> dictNames, string field)
     {
-        if (string.IsNullOrWhiteSpace(status))
+        if (string.IsNullOrWhiteSpace(value) || !dictNames.TryGetValue(field, out var itemNames))
         {
-            return status;
+            return value;
         }
 
-        return statusNames.TryGetValue(status, out var name) ? name : status;
+        return itemNames.TryGetValue(value, out var name) ? name : value;
     }
 
 
