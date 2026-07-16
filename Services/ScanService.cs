@@ -66,6 +66,7 @@ public sealed class ScanService : IScanService
         private readonly TaskCompletionSource<string?> _resultSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly CameraBarcodeReaderView _cameraView;
         private readonly Entry _hardwareScanEntry;
+        private readonly bool _enableCamera;
         private bool _completed;
 
         public ScannerModalPage(string title, bool enableCamera, Func<Task<string?>> pickPhotoAsync)
@@ -73,10 +74,12 @@ public sealed class ScanService : IScanService
             Title = title;
             BackgroundColor = Color.FromArgb("#0B1220");
             Shell.SetNavBarIsVisible(this, false);
+            _enableCamera = enableCamera;
 
             _cameraView = new CameraBarcodeReaderView
             {
-                IsDetecting = enableCamera,
+                CameraLocation = CameraLocation.Rear,
+                IsDetecting = false,
                 Options = new BarcodeReaderOptions
                 {
                     Formats = BarcodeFormats.All,
@@ -123,8 +126,36 @@ public sealed class ScanService : IScanService
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            _cameraView.IsDetecting = _cameraView.IsEnabled;
-            _hardwareScanEntry.Focus();
+            _ = StartScannerAsync();
+        }
+
+        private async Task StartScannerAsync()
+        {
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                if (_completed)
+                {
+                    return;
+                }
+
+                if (!_enableCamera)
+                {
+                    _hardwareScanEntry.Focus();
+                    return;
+                }
+
+                _cameraView.IsEnabled = true;
+                _cameraView.IsDetecting = false;
+                await Task.Delay(300);
+
+                if (_completed)
+                {
+                    return;
+                }
+
+                _cameraView.CameraLocation = CameraLocation.Rear;
+                _cameraView.IsDetecting = true;
+            });
         }
 
         protected override void OnDisappearing()
@@ -204,7 +235,7 @@ public sealed class ScanService : IScanService
                 RowSpacing = 10
             };
             panel.Add(pickPhotoButton, 0, 0);
-            panel.Add(new Label { Text = "兼容安卓手机摄像头扫码和手持机扫码枪输入", TextColor = Color.FromArgb("#DDE8FF"), FontSize = 13, HorizontalTextAlignment = TextAlignment.Center }, 0, 1);
+            panel.Add(new Label { Text = "请将二维码对准上方扫码框；手持机也可用扫码枪输入", TextColor = Color.FromArgb("#DDE8FF"), FontSize = 13, HorizontalTextAlignment = TextAlignment.Center }, 0, 1);
             panel.Add(_hardwareScanEntry, 0, 2);
             Grid.SetRow(panel, 2);
             return panel;
