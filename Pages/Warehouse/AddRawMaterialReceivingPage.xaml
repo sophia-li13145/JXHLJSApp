@@ -63,7 +63,8 @@
 
                 <VerticalStackLayout Spacing="6">
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                        <Button Text="📷  拍照"
+                        <Button x:Name="TakePhotoButton"
+                                Text="📷  拍照"
                                 BackgroundColor="#EFFFF4"
                                 TextColor="#008C38"
                                 BorderColor="#0AA344"
@@ -84,6 +85,31 @@
                     <Label Text="请尽量避免光线、角度等原因影响拍照识别效果"
                            TextColor="#F64148"
                            FontSize="12" />
+                    <Border x:Name="PhotoProcessPanel"
+                            IsVisible="False"
+                            BackgroundColor="#F4F8FF"
+                            Stroke="#BFD0E8"
+                            StrokeThickness="1"
+                            Padding="12,10">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="10" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="8">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Label Text="⏳" FontSize="16" VerticalOptions="Center" />
+                                <Label Grid.Column="1"
+                                       x:Name="PhotoProcessLabel"
+                                       Text="文件上传中..."
+                                       TextColor="#0B4FEA"
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       VerticalOptions="Center" />
+                            </Grid>
+                            <ProgressBar x:Name="PhotoProcessProgress"
+                                         Progress="0.15"
+                                         ProgressColor="#0B4FEA" />
+                        </VerticalStackLayout>
+                    </Border>
                 </VerticalStackLayout>
 
                 <Border BackgroundColor="#FAFCFF"
