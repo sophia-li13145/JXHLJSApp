@@ -14,7 +14,9 @@ public partial class AbnormalReportPage : ContentPage
     private readonly IProductionContextService _productionContext;
     private List<WorkOrderAbnormalOptionDto> _options = new();
     private MaterialQrCodeInfoDto? _material;
+    private string? _scannedQrCode;
     private AttachmentDto? _photo;
+    private byte[]? _photoPreviewBytes;
     private string? _selectedAbnormalType;
 
     public AbnormalReportPage(
@@ -108,7 +110,8 @@ public partial class AbnormalReportPage : ContentPage
         if (string.IsNullOrWhiteSpace(code)) return;
         try
         {
-            _material = await _workOrderApi.ScanAbnormalMaterialAsync(code.Trim());
+            _scannedQrCode = code.Trim();
+            _material = await _workOrderApi.ScanAbnormalMaterialAsync(_scannedQrCode);
             BindMaterial();
         }
         catch (Exception ex)
@@ -129,7 +132,35 @@ public partial class AbnormalReportPage : ContentPage
         WorkOrderLabel.Text = ValueOrDash(FirstNonEmpty(_material?.workOrderNo, _productionContext.Current?.WorkOrderNo));
     }
 
-    private async void OnPhotoTapped(object sender, TappedEventArgs e)
+    private async void OnPhotoTapped(object sender, TappedEventArgs e) => await CaptureAndUploadPhotoAsync();
+
+    private async void OnRetakePhotoClicked(object sender, EventArgs e) => await CaptureAndUploadPhotoAsync();
+
+    private async Task LoadPhotoPreviewAsync(FileResult photo)
+    {
+        await using var stream = await photo.OpenReadAsync();
+        using var memory = new MemoryStream();
+        await stream.CopyToAsync(memory);
+        _photoPreviewBytes = memory.ToArray();
+    }
+
+    private void ShowPhotoPreview()
+    {
+        if (_photoPreviewBytes is null || _photoPreviewBytes.Length == 0)
+        {
+            return;
+        }
+
+        PhotoPreviewImage.Source = ImageSource.FromStream(() => new MemoryStream(_photoPreviewBytes));
+        PhotoPanel.HeightRequest = 340;
+        PhotoPreviewImage.IsVisible = true;
+        PhotoPlaceholder.IsVisible = false;
+        RetakePhotoButton.IsVisible = true;
+        PhotoPanel.BackgroundColor = Colors.White;
+        PhotoPanel.StrokeDashArray = null;
+    }
+
+    private async Task CaptureAndUploadPhotoAsync()
     {
         try
         {
@@ -139,11 +170,13 @@ public partial class AbnormalReportPage : ContentPage
                 await DisplayAlert("提示", "未获得相机权限，无法拍照。", "确定");
                 return;
             }
+
             var photo = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "现场拍照" });
             if (photo is null) return;
+
+            await LoadPhotoPreviewAsync(photo);
             _photo = await _workOrderApi.UploadAbnormalAttachmentAsync(photo);
-            PhotoHintLabel.Text = "照片已上传";
-            PhotoPanel.BackgroundColor = Color.FromArgb("#F2FFF8");
+            ShowPhotoPreview();
         }
         catch (FeatureNotSupportedException)
         {
@@ -177,6 +210,7 @@ public partial class AbnormalReportPage : ContentPage
                 materialCode = _material.materialCode,
                 materialName = _material.materialName,
                 materialType = _material.materialType,
+                qrCode = _scannedQrCode,
                 reportMode = ReportModeAbnormal,
                 supplementaryDescription = DescriptionEditor.Text,
                 weight = _material.weight ?? (decimal.TryParse(_material.coilWeight, out var weight) ? weight : null),
