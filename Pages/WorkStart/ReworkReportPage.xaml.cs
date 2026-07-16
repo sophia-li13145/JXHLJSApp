@@ -14,6 +14,7 @@ public partial class ReworkReportPage : ContentPage
     private readonly IProductionContextService _productionContext;
     private List<WorkOrderAbnormalOptionDto> _reworkReasons = new();
     private MaterialQrCodeInfoDto? _material;
+    private string? _scannedQrCode;
     private AttachmentDto? _photo;
     private string? _selectedReworkReason;
 
@@ -101,7 +102,8 @@ public partial class ReworkReportPage : ContentPage
         if (string.IsNullOrWhiteSpace(code)) return;
         try
         {
-            _material = await _workOrderApi.ScanReworkMaterialAsync(code.Trim());
+            _scannedQrCode = code.Trim();
+            _material = await _workOrderApi.ScanReworkMaterialAsync(_scannedQrCode);
             BindMaterial();
         }
         catch (Exception ex)
@@ -170,6 +172,7 @@ public partial class ReworkReportPage : ContentPage
                 materialCode = _material.materialCode,
                 materialName = _material.materialName,
                 materialType = _material.materialType,
+                qrCode = _scannedQrCode,
                 reportMode = ReportModeRework,
                 reworkReason = _selectedReworkReason,
                 weight = _material.weight ?? (decimal.TryParse(_material.coilWeight, out var weight) ? weight : null),
