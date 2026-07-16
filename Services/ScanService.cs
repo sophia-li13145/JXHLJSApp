@@ -159,7 +159,7 @@ public sealed class ScanService : IScanService
 
         protected override void OnDisappearing()
         {
-            _cameraView.IsDetecting = false;
+            ReleaseCamera();
             _cameraView.BarcodesDetected -= OnBarcodesDetected;
             base.OnDisappearing();
         }
@@ -303,8 +303,15 @@ public sealed class ScanService : IScanService
             }
 
             _completed = true;
-            _cameraView.IsDetecting = false;
+            ReleaseCamera();
             _resultSource.TrySetResult(text);
+        }
+
+        private void ReleaseCamera()
+        {
+            _cameraView.IsDetecting = false;
+            _cameraView.IsEnabled = false;
+            _cameraView.Handler?.DisconnectHandler();
         }
     }
 }
