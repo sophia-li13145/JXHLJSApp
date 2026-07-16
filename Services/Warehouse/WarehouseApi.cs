@@ -29,6 +29,13 @@ public interface IWarehouseApi
     Task<bool?> QuickInstockAsync(QuickInstockRequestDto request, CancellationToken ct = default);
 }
 
+public sealed class WarehouseApiFailureException : Exception
+{
+    public WarehouseApiFailureException(string message) : base(message)
+    {
+    }
+}
+
 public sealed class WarehouseApi : IWarehouseApi
 {
     private readonly HttpClient _http;
@@ -117,7 +124,7 @@ public sealed class WarehouseApi : IWarehouseApi
         }
         if (data.success == false)
         {
-            throw new InvalidOperationException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
+            throw new WarehouseApiFailureException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
         }
         var list = data.result ?? new List<RawMaterialReceivingDto>();
         ApplyInstockStatusNames(list, instockStatusNames);
@@ -284,7 +291,7 @@ public sealed class WarehouseApi : IWarehouseApi
         }
         if (data.success == false)
         {
-            throw new InvalidOperationException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
+            throw new WarehouseApiFailureException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
         }
         return data.result ?? new AttachmentDto
         {
@@ -481,7 +488,7 @@ public sealed class WarehouseApi : IWarehouseApi
         }
         if (data.success == false)
         {
-            throw new InvalidOperationException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
+            throw new WarehouseApiFailureException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
         }
         return data;
     }

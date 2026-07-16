@@ -22,6 +22,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private string? _pendingQrCode;
     private bool _isExistingInstock;
     private bool _loadedExistingInstock;
+    private bool _isPhotoProcessing;
 
     public AddRawMaterialReceivingPage(IWarehouseApi warehouseApi, IScanService scanService)
     {
@@ -253,33 +254,77 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private async void OnTakePhotoClicked(object sender, EventArgs e)
     {
+        if (_isPhotoProcessing)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(_instockNo))
         {
             await DisplayAlert("提示", "入库单号尚未生成，请稍后重试。", "确定");
             return;
         }
 
+        var photo = await GetTicketPhotoAsync();
+        if (photo is null) return;
+
         try
         {
-            var photo = await GetTicketPhotoAsync();
-            if (photo is null) return;
-
+            StartPhotoProcess("文件上传中...");
             _pendingTicketAttachment = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
+
+            UpdatePhotoProcess("OCR识别中...");
+            var ocr = await _warehouseApi.RecognizeIncomingAsync(_pendingTicketAttachment, _instockNo);
+            AddTicketAndSelect(ocr);
+        }
+        catch (WarehouseApiFailureException ex)
+        {
+            await DisplayAlert("提示", ex.Message, "确定");
         }
         catch (Exception ex)
         {
-            await DisplayAlert("附件上传失败", ex.Message, "确定");
-            return;
+            var stage = PhotoProcessLabel.Text?.Contains("OCR", StringComparison.OrdinalIgnoreCase) == true
+                ? "OCR识别阶段"
+                : "文件上传阶段";
+            await DisplayAlert("处理异常", $"{stage}异常：{ex.Message}", "确定");
         }
+        finally
+        {
+            StopPhotoProcess();
+        }
+    }
 
-        try
+    private void StartPhotoProcess(string message)
+    {
+        _isPhotoProcessing = true;
+        TakePhotoButton.IsEnabled = false;
+        PhotoProcessLabel.Text = message;
+        PhotoProcessProgress.Progress = 0.12;
+        PhotoProcessPanel.IsVisible = true;
+        _ = AnimatePhotoProcessAsync();
+    }
+
+    private void UpdatePhotoProcess(string message)
+    {
+        PhotoProcessLabel.Text = message;
+        PhotoProcessProgress.Progress = 0.56;
+    }
+
+    private void StopPhotoProcess()
+    {
+        _isPhotoProcessing = false;
+        TakePhotoButton.IsEnabled = true;
+        PhotoProcessPanel.IsVisible = false;
+        PhotoProcessProgress.Progress = 0;
+    }
+
+    private async Task AnimatePhotoProcessAsync()
+    {
+        while (_isPhotoProcessing)
         {
-            var ocr = await _warehouseApi.RecognizeIncomingAsync(_pendingTicketAttachment, _instockNo);
-            ShowTicketConfirmDialog(ocr, false);
-        }
-        catch
-        {
-            ShowTicketConfirmDialog(new RawMaterialOcrDto(), true);
+            var next = PhotoProcessProgress.Progress >= 0.92 ? 0.18 : PhotoProcessProgress.Progress + 0.18;
+            await PhotoProcessProgress.ProgressTo(next, 450, Easing.CubicInOut);
+            await Task.Delay(120);
         }
     }
 
