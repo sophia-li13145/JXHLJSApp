@@ -120,7 +120,6 @@ public sealed class ScanService : IScanService
                     CreateHardwareInputPanel(pickPhotoAsync)
                 }
             };
-            Grid.SetRow(_cameraView, 1);
         }
 
         protected override void OnAppearing()
@@ -193,21 +192,35 @@ public sealed class ScanService : IScanService
         private View CreateCameraFrame(bool enableCamera)
         {
             _cameraView.IsEnabled = enableCamera;
-            var frame = new Border
+
+            var frame = new Grid
+            {
+                Margin = new Thickness(22, 8),
+                BackgroundColor = Colors.Black
+            };
+
+            if (enableCamera)
+            {
+                frame.Add(_cameraView);
+            }
+            else
+            {
+                frame.Add(new Label
+                {
+                    Text = "未授予摄像头权限，仍可使用手持机扫码枪输入。",
+                    TextColor = Colors.White,
+                    HorizontalTextAlignment = TextAlignment.Center,
+                    VerticalTextAlignment = TextAlignment.Center
+                });
+            }
+
+            frame.Add(new Border
             {
                 Stroke = Color.FromArgb("#6EA8FF"),
                 StrokeThickness = 2,
-                Margin = new Thickness(22, 8),
-                Content = enableCamera
-                    ? _cameraView
-                    : new Label
-                    {
-                        Text = "未授予摄像头权限，仍可使用手持机扫码枪输入。",
-                        TextColor = Colors.White,
-                        HorizontalTextAlignment = TextAlignment.Center,
-                        VerticalTextAlignment = TextAlignment.Center
-                    }
-            };
+                InputTransparent = true
+            });
+
             Grid.SetRow(frame, 1);
             return frame;
         }
@@ -235,7 +248,7 @@ public sealed class ScanService : IScanService
                 RowSpacing = 10
             };
             panel.Add(pickPhotoButton, 0, 0);
-            panel.Add(new Label { Text = "请将二维码对准上方扫码框；手持机也可用扫码枪输入", TextColor = Color.FromArgb("#DDE8FF"), FontSize = 13, HorizontalTextAlignment = TextAlignment.Center }, 0, 1);
+            panel.Add(new Label { Text = "请将二维码对准上方扫码框；手持机也可用扫码枪输入。", TextColor = Color.FromArgb("#DDE8FF"), FontSize = 13, HorizontalTextAlignment = TextAlignment.Center }, 0, 1);
             panel.Add(_hardwareScanEntry, 0, 2);
             Grid.SetRow(panel, 2);
             return panel;
