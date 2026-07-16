@@ -144,6 +144,13 @@ public partial class AbnormalReportPage : ContentPage
         _photoPreviewBytes = memory.ToArray();
     }
 
+    private void SetPhotoLoading(bool isLoading)
+    {
+        PhotoLoadingOverlay.IsVisible = isLoading;
+        PhotoLoadingIndicator.IsRunning = isLoading;
+        RetakePhotoButton.IsEnabled = !isLoading;
+    }
+
     private void ShowPhotoPreview()
     {
         if (_photoPreviewBytes is null || _photoPreviewBytes.Length == 0)
@@ -162,6 +169,12 @@ public partial class AbnormalReportPage : ContentPage
 
     private async Task CaptureAndUploadPhotoAsync()
     {
+        if (_material is null)
+        {
+            await DisplayAlert("提示", "请先扫描识别异常对象。", "确定");
+            return;
+        }
+
         try
         {
             var permission = await Permissions.RequestAsync<Permissions.Camera>();
@@ -174,9 +187,17 @@ public partial class AbnormalReportPage : ContentPage
             var photo = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "现场拍照" });
             if (photo is null) return;
 
-            await LoadPhotoPreviewAsync(photo);
-            _photo = await _workOrderApi.UploadAbnormalAttachmentAsync(photo);
-            ShowPhotoPreview();
+            SetPhotoLoading(true);
+            try
+            {
+                await LoadPhotoPreviewAsync(photo);
+                _photo = await _workOrderApi.UploadAbnormalAttachmentAsync(photo);
+                ShowPhotoPreview();
+            }
+            finally
+            {
+                SetPhotoLoading(false);
+            }
         }
         catch (Exception ex) when (ex is FeatureNotSupportedException or FeatureNotEnabledException)
         {
