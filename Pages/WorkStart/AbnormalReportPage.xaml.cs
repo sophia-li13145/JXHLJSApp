@@ -144,6 +144,13 @@ public partial class AbnormalReportPage : ContentPage
         _photoPreviewBytes = memory.ToArray();
     }
 
+    private void SetPhotoLoading(bool isLoading)
+    {
+        PhotoLoadingOverlay.IsVisible = isLoading;
+        PhotoLoadingIndicator.IsRunning = isLoading;
+        RetakePhotoButton.IsEnabled = !isLoading;
+    }
+
     private void ShowPhotoPreview()
     {
         if (_photoPreviewBytes is null || _photoPreviewBytes.Length == 0)
@@ -162,6 +169,12 @@ public partial class AbnormalReportPage : ContentPage
 
     private async Task CaptureAndUploadPhotoAsync()
     {
+        if (_material is null)
+        {
+            await DisplayAlert("提示", "请先扫描识别异常对象。", "确定");
+            return;
+        }
+
         try
         {
             var permission = await Permissions.RequestAsync<Permissions.Camera>();
@@ -174,17 +187,41 @@ public partial class AbnormalReportPage : ContentPage
             var photo = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "现场拍照" });
             if (photo is null) return;
 
-            await LoadPhotoPreviewAsync(photo);
-            _photo = await _workOrderApi.UploadAbnormalAttachmentAsync(photo);
-            ShowPhotoPreview();
+            SetPhotoLoading(true);
+            try
+            {
+                await LoadPhotoPreviewAsync(photo);
+                _photo = await _workOrderApi.UploadAbnormalAttachmentAsync(photo);
+                ShowPhotoPreview();
+            }
+            finally
+            {
+                SetPhotoLoading(false);
+            }
         }
-        catch (FeatureNotSupportedException)
+        catch (Exception ex) when (ex is FeatureNotSupportedException or FeatureNotEnabledException)
         {
-            await DisplayAlert("提示", "当前设备不支持调用相机。", "确定");
+            await DisplayAlert("拍照失败", "当前设备不支持调用相机或相机功能未启用。", "确定");
+        }
+        catch (Exception ex) when (ex is PermissionException or UnauthorizedAccessException)
+        {
+            await DisplayAlert("权限错误", "没有相机或照片文件访问权限，请在系统设置中授权后重试。", "确定");
+        }
+        catch (HttpRequestException ex)
+        {
+            await DisplayAlert("接口错误", $"照片上传接口请求失败：{ex.Message}", "确定");
+        }
+        catch (InvalidOperationException ex)
+        {
+            await DisplayAlert("接口错误", $"照片上传接口返回异常：{ex.Message}", "确定");
+        }
+        catch (IOException ex)
+        {
+            await DisplayAlert("照片读取失败", $"已拍摄照片读取失败：{ex.Message}", "确定");
         }
         catch (Exception ex)
         {
-            await DisplayAlert("上传失败", ex.Message, "确定");
+            await DisplayAlert("拍照或上传失败", ex.Message, "确定");
         }
     }
 

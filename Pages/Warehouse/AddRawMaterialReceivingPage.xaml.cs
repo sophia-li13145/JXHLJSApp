@@ -266,9 +266,29 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
             _pendingTicketAttachment = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
         }
+        catch (Exception ex) when (ex is PermissionException or UnauthorizedAccessException)
+        {
+            await DisplayAlert("权限错误", "没有相机、相册或照片文件访问权限，请在系统设置中授权后重试。", "确定");
+            return;
+        }
+        catch (HttpRequestException ex)
+        {
+            await DisplayAlert("接口错误", $"附件上传接口请求失败：{ex.Message}", "确定");
+            return;
+        }
+        catch (InvalidOperationException ex)
+        {
+            await DisplayAlert("接口错误", $"附件上传接口返回异常：{ex.Message}", "确定");
+            return;
+        }
+        catch (IOException ex)
+        {
+            await DisplayAlert("照片读取失败", $"票签照片读取失败：{ex.Message}", "确定");
+            return;
+        }
         catch (Exception ex)
         {
-            await DisplayAlert("附件上传失败", ex.Message, "确定");
+            await DisplayAlert("拍照或上传失败", ex.Message, "确定");
             return;
         }
 
