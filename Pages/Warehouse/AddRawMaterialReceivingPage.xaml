@@ -63,7 +63,8 @@
 
                 <VerticalStackLayout Spacing="6">
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                        <Button Text="📷  拍照"
+                        <Button x:Name="TakePhotoButton"
+                                Text="📷  拍照"
                                 BackgroundColor="#EFFFF4"
                                 TextColor="#008C38"
                                 BorderColor="#0AA344"
@@ -781,6 +782,38 @@
                         </Grid>
                     </VerticalStackLayout>
                 </ScrollView>
+            </Border>
+        </Grid>
+
+
+        <Grid x:Name="LoadingOverlay"
+              Grid.RowSpan="3"
+              IsVisible="False"
+              BackgroundColor="#99000000"
+              Padding="42,0"
+              VerticalOptions="Fill"
+              HorizontalOptions="Fill">
+            <Border BackgroundColor="White"
+                    StrokeThickness="0"
+                    Padding="24"
+                    VerticalOptions="Center">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="18" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="14"
+                                     HorizontalOptions="Center">
+                    <ActivityIndicator x:Name="LoadingIndicator"
+                                       IsRunning="False"
+                                       Color="#1F447E"
+                                       WidthRequest="42"
+                                       HeightRequest="42" />
+                    <Label x:Name="LoadingMessageLabel"
+                           Text="处理中，请稍候..."
+                           TextColor="#0A2C61"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
             </Border>
         </Grid>
 
