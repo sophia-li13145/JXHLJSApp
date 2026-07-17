@@ -1,4 +1,5 @@
 using JXHLJSApp.Models.Quality;
+using JXHLJSApp.Services;
 using JXHLJSApp.Services.Quality;
 
 namespace JXHLJSApp.Pages.Quality;
@@ -6,6 +7,7 @@ namespace JXHLJSApp.Pages.Quality;
 public partial class ProductionQualityOrderListPage : ContentPage
 {
     private readonly IQualityApi _qualityApi;
+    private readonly IScanService _scanService;
     private readonly List<ProductionQualityStatusOption> _statuses = new()
     {
         new("所有状态", null),
@@ -15,10 +17,11 @@ public partial class ProductionQualityOrderListPage : ContentPage
         new("检验完成", "3")
     };
 
-    public ProductionQualityOrderListPage(IQualityApi qualityApi)
+    public ProductionQualityOrderListPage(IQualityApi qualityApi, IScanService scanService)
     {
         InitializeComponent();
         _qualityApi = qualityApi;
+        _scanService = scanService;
         StatusPicker.ItemsSource = _statuses;
         StatusPicker.SelectedIndex = 0;
     }
@@ -37,7 +40,7 @@ public partial class ProductionQualityOrderListPage : ContentPage
         {
             RefreshContainer.IsRefreshing = true;
             var status = StatusPicker.SelectedItem as ProductionQualityStatusOption;
-            OrderList.ItemsSource = await _qualityApi.GetProductionQualityOrdersAsync(ResourceNameEntry.Text?.Trim(), status?.Value);
+            OrderList.ItemsSource = await _qualityApi.GetProductionQualityOrdersAsync(ResourceNameEntry.Text?.Trim(), status?.Value, QualityNoEntry.Text?.Trim());
         }
         catch (Exception ex)
         {
@@ -54,11 +57,48 @@ public partial class ProductionQualityOrderListPage : ContentPage
     private async void OnResetClicked(object sender, EventArgs e)
     {
         ResourceNameEntry.Text = string.Empty;
+        QualityNoEntry.Text = string.Empty;
         StatusPicker.SelectedIndex = 0;
         await LoadOrdersAsync();
     }
 
     private async void OnFilterClicked(object sender, EventArgs e) => await LoadOrdersAsync();
+
+    private void OnAddManualInspectionClicked(object sender, EventArgs e)
+    {
+        ScanOverlay.IsVisible = true;
+    }
+
+    private void OnCancelScanClicked(object sender, EventArgs e)
+    {
+        ScanOverlay.IsVisible = false;
+    }
+
+    private async void OnScanManualMaterialClicked(object sender, TappedEventArgs e)
+    {
+        ScanOverlay.IsVisible = false;
+        var qrCode = await _scanService.ScanAsync("扫描新增巡检");
+        if (string.IsNullOrWhiteSpace(qrCode)) return;
+
+        try
+        {
+            var detail = await _qualityApi.CreateManualInspectionAsync(qrCode.Trim());
+            var qualityNo = detail.qualityNo;
+            if (string.IsNullOrWhiteSpace(qualityNo))
+            {
+                await DisplayAlert("创建成功", "巡检单已创建，但接口未返回巡检单号。", "确定");
+                await LoadOrdersAsync();
+                return;
+            }
+
+            await DisplayAlert("创建成功", "巡检任务已创建。", "确定");
+            await Shell.Current.GoToAsync($"{AppShell.RouteMachineQualityDetail}?qualityNo={Uri.EscapeDataString(qualityNo)}&workOrderNo={Uri.EscapeDataString(detail.workOrderNo ?? string.Empty)}&inspectStatus={Uri.EscapeDataString(detail.inspectStatus ?? string.Empty)}&manualInspection=true");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("创建失败", ex.Message, "确定");
+        }
+    }
 
     private async void OnOrderTapped(object sender, TappedEventArgs e)
     {
