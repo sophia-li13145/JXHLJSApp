@@ -1,6 +1,9 @@
+using System.Diagnostics;
+using Serilog;
 using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Models.WorkOrders;
 using JXHLJSApp.Services;
+using JXHLJSApp.Services.Common;
 using JXHLJSApp.Services.WorkOrders;
 
 namespace JXHLJSApp.Pages.WorkStart;
@@ -12,6 +15,7 @@ public partial class AbnormalReportPage : ContentPage
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
     private readonly IProductionContextService _productionContext;
+    private readonly IImageCompressionService _imageCompressionService;
     private List<WorkOrderAbnormalOptionDto> _options = new();
     private MaterialQrCodeInfoDto? _material;
     private string? _scannedQrCode;
@@ -22,12 +26,14 @@ public partial class AbnormalReportPage : ContentPage
     public AbnormalReportPage(
         IWorkOrderApi workOrderApi,
         IScanService scanService,
-        IProductionContextService productionContext)
+        IProductionContextService productionContext,
+        IImageCompressionService imageCompressionService)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
         _scanService = scanService;
         _productionContext = productionContext;
+        _imageCompressionService = imageCompressionService;
     }
 
     protected override async void OnAppearing()
@@ -175,6 +181,10 @@ public partial class AbnormalReportPage : ContentPage
             return;
         }
 
+        CompressedImageResult? compressedPhoto = null;
+        var compressionStopwatch = new Stopwatch();
+        var uploadStopwatch = new Stopwatch();
+
         try
         {
             var permission = await Permissions.RequestAsync<Permissions.Camera>();
@@ -191,11 +201,36 @@ public partial class AbnormalReportPage : ContentPage
             try
             {
                 await LoadPhotoPreviewAsync(photo);
-                _photo = await _workOrderApi.UploadAbnormalAttachmentAsync(photo);
+
+                compressionStopwatch.Start();
+                compressedPhoto = await _imageCompressionService.CompressForOcrAsync(photo);
+                compressionStopwatch.Stop();
+                Log.Information(
+                    "异常上报图片处理完成，QrCode={QrCode}, Original={OriginalWidth}x{OriginalHeight}/{OriginalBytes} bytes, Output={OutputWidth}x{OutputHeight}/{CompressedBytes} bytes, IsTemporary={IsTemporary}, ElapsedMs={ElapsedMs}",
+                    _scannedQrCode,
+                    compressedPhoto.OriginalWidth,
+                    compressedPhoto.OriginalHeight,
+                    compressedPhoto.OriginalBytes,
+                    compressedPhoto.OutputWidth,
+                    compressedPhoto.OutputHeight,
+                    compressedPhoto.CompressedBytes,
+                    compressedPhoto.IsTemporary,
+                    compressionStopwatch.ElapsedMilliseconds);
+
+                uploadStopwatch.Start();
+                _photo = await _workOrderApi.UploadAbnormalAttachmentAsync(compressedPhoto.File);
+                uploadStopwatch.Stop();
+                Log.Information(
+                    "异常上报图片上传完成，QrCode={QrCode}, CompressionMs={CompressionMs}, UploadMs={UploadMs}",
+                    _scannedQrCode,
+                    compressionStopwatch.ElapsedMilliseconds,
+                    uploadStopwatch.ElapsedMilliseconds);
+
                 ShowPhotoPreview();
             }
             finally
             {
+                DeleteTemporaryCompressedPhoto(compressedPhoto);
                 SetPhotoLoading(false);
             }
         }
@@ -222,6 +257,28 @@ public partial class AbnormalReportPage : ContentPage
         catch (Exception ex)
         {
             await DisplayAlert("拍照或上传失败", ex.Message, "确定");
+        }
+    }
+
+    private static void DeleteTemporaryCompressedPhoto(CompressedImageResult? compressedPhoto)
+    {
+        if (compressedPhoto?.IsTemporary != true ||
+            string.IsNullOrWhiteSpace(compressedPhoto.File.FullPath) ||
+            !File.Exists(compressedPhoto.File.FullPath))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(compressedPhoto.File.FullPath);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(
+                ex,
+                "删除异常上报临时压缩图片失败。Path={Path}",
+                compressedPhoto.File.FullPath);
         }
     }
 

@@ -299,7 +299,7 @@ public sealed class WarehouseApi : IWarehouseApi
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _ocrIncomingEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new { fileInfo, instockNo }, JsonOptions, ct).ConfigureAwait(false);
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessStatusCodeWithBodyAsync(resp, ct).ConfigureAwait(false);
         var data = await ReadApiResponseAsync<RawMaterialOcrDto>(resp, ct).ConfigureAwait(false);
         return data.result ?? new RawMaterialOcrDto();
     }
@@ -471,19 +471,46 @@ public sealed class WarehouseApi : IWarehouseApi
             ?? new Dictionary<string, string>();
     }
 
+    private static async Task EnsureSuccessStatusCodeWithBodyAsync(HttpResponseMessage resp, CancellationToken ct)
+    {
+        if (resp.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        throw new HttpRequestException(
+            $"接口返回HTTP {(int)resp.StatusCode} {resp.ReasonPhrase}。响应内容：{TrimResponseBody(body)}",
+            null,
+            resp.StatusCode);
+    }
+
     private static async Task<ApiResp<T>> ReadApiResponseAsync<T>(HttpResponseMessage resp, CancellationToken ct)
     {
-        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-        var data = await JsonSerializer.DeserializeAsync<ApiResp<T>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        var data = JsonSerializer.Deserialize<ApiResp<T>>(body, JsonOptions);
         if (data is null)
         {
-            throw new InvalidOperationException("接口返回为空。");
+            throw new InvalidOperationException($"接口返回为空。响应内容：{TrimResponseBody(body)}");
         }
         if (data.success == false)
         {
-            throw new InvalidOperationException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
+            var message = string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message;
+            throw new InvalidOperationException($"{message} 响应内容：{TrimResponseBody(body)}");
         }
         return data;
+    }
+
+    private static string TrimResponseBody(string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return "<空>";
+        }
+
+        const int maxLength = 1000;
+        var trimmed = body.Trim();
+        return trimmed.Length <= maxLength ? trimmed : $"{trimmed[..maxLength]}...";
     }
 
     private static string BuildUrlWithQuery(string endpoint, IReadOnlyDictionary<string, string?> query)

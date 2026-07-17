@@ -400,7 +400,7 @@ public partial class AddRawMaterialReceivingPage
             return;
         }
 
-        ApplySelectedTicket(_selectedTicket);
+        AddTicketAndSelect(_selectedTicket);
         TicketConfirmOverlay.IsVisible = false;
     }
 
@@ -639,11 +639,11 @@ public partial class AddRawMaterialReceivingPage
                 await _warehouseApi.QuickInstockAsync(
                     request);
 
-            if (success is false)
+            if (success != true)
             {
                 await DisplayAlert(
                     "提交失败",
-                    "接口返回失败，请稍后重试。",
+                    "接口未返回明确的成功结果。",
                     "确定");
                 return;
             }
