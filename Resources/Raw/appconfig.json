@@ -157,6 +157,12 @@
       "picklingCommit": "/pda/qsOrderQuality/picklingCommit",
       "samplingOrFullCommit": "/pda/qsOrderQuality/samplingOrFullCommit",
       "samplingOrFullComplete": "/pda/qsOrderQuality/samplingOrFullComplete"
+    },
+    "manualInspection": {
+      "create": "/pda/manualInspection/create",
+      "detail": "/pda/manualInspection/detail",
+      "saveResult": "/pda/manualInspection/saveResult",
+      "complete": "/pda/manualInspection/complete"
     }
   },
   "logging": {

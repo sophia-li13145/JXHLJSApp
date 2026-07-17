@@ -216,6 +216,23 @@ public sealed class ProductionQualityCommitRequestDto
 
 
 
+
+public sealed class ProductionManualInspectionSaveResultRequestDto
+{
+    public string? actualDiameterMm { get; set; }
+    public string? coilDiameterControl { get; set; }
+    public string? coilPitchControl { get; set; }
+    public string? elongationRate { get; set; }
+    public string? inspectResult { get; set; }
+    public string? memo { get; set; }
+    public string? qrCode { get; set; }
+    public string? qualityMaterialId { get; set; }
+    public string? qualityNo { get; set; }
+    public string? strengthMpa { get; set; }
+    public string? surfaceCondition { get; set; }
+    public string? workOrderNo { get; set; }
+}
+
 public sealed class ProductionSamplingOrFullCommitRequestDto
 {
     public string? actualDiameterMm { get; set; }
@@ -314,6 +331,20 @@ public sealed class ProductionQualityOrderDto
         "3" => "检验完成",
         _ => string.IsNullOrWhiteSpace(inspectStatus) ? "待检验" : inspectStatus!
     };
+    public string statusBackground => statusDisplay switch
+    {
+        "待检验" => "#FFF9E8",
+        "检验中" => "#EAF2FF",
+        "检验完成" => "#E9FBEF",
+        _ => "#EEF3FA"
+    };
+    public string statusColor => statusDisplay switch
+    {
+        "待检验" => "#D87500",
+        "检验中" => "#1D4ED8",
+        "检验完成" => "#16A34A",
+        _ => "#244B88"
+    };
     public string qualityNoDisplay => string.IsNullOrWhiteSpace(qualityNo) ? "-" : qualityNo!;
     public string orderNumberDisplay => string.IsNullOrWhiteSpace(orderNumber) ? "-" : orderNumber!;
 
@@ -359,6 +390,70 @@ public sealed class ProductionQualityDetailDto
     public string? productDiameter { get; set; }
     public string? saponificationPhValue { get; set; }
     public string? saponificationTemperature { get; set; }
+    public string? spoolWeightRequirement { get; set; }
+    public string? steelGrade { get; set; }
+    public string? strengthMpa { get; set; }
+    public string? surfaceCondition { get; set; }
+    public string? targetSpecification { get; set; }
+    public string? totalAcid { get; set; }
+    public string? totalAcidSampling { get; set; }
+    public string? upperToleranceValue { get; set; }
+    public string? workOrderNo { get; set; }
+    public string? qualityNo { get; set; }
+    public string? qualityType { get; set; }
+    public string? qualityTypeName { get; set; }
+    public string? processCode { get; set; }
+    public string? processName { get; set; }
+    public string? inspectionSchemeTypeName { get; set; }
+    public List<ProductionQualityInspectionItemDto>? inspectionItemList { get; set; }
+    public List<ProductionQualityMaterialDto>? materialList { get; set; }
+}
+
+public sealed class ProductionQualityInspectionItemDto
+{
+    public string? inspectionMode { get; set; }
+    public string? inspectionStandard { get; set; }
+    public string? itemCode { get; set; }
+    public string? itemName { get; set; }
+    public string? lowerLimit { get; set; }
+    public string? standardValue { get; set; }
+    public string? unit { get; set; }
+    public string? upperLimit { get; set; }
+}
+
+public sealed class ProductionQualityMaterialDto
+{
+    public string? acidRatio { get; set; }
+    public string? actualDiameterMm { get; set; }
+    public string? businessType { get; set; }
+    public string? coilDiameterControl { get; set; }
+    public string? coilPitchControl { get; set; }
+    public string? deviceCode { get; set; }
+    public string? deviceName { get; set; }
+    public string? elongationRate { get; set; }
+    public string? freeAcid { get; set; }
+    public string? freeAcidSampling { get; set; }
+    public string? furnaceNo { get; set; }
+    public string? hydrochloricAcidConcentration1 { get; set; }
+    public string? hydrochloricAcidConcentration2 { get; set; }
+    public string? inputDiameterMm { get; set; }
+    public string? inputSpecification { get; set; }
+    public string? inspectResult { get; set; }
+    public string? inspectionSchemeCode { get; set; }
+    public string? inspectionSchemeName { get; set; }
+    public string? lowerToleranceValue { get; set; }
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
+    public string? memo { get; set; }
+    public string? phosphatingTemperature { get; set; }
+    public string? productDiameter { get; set; }
+    public string? qrCode { get; set; }
+    public int? qrTimes { get; set; }
+    public string? qualityMaterialId { get; set; }
+    public bool resultSaved { get; set; }
+    public string? saponificationPhValue { get; set; }
+    public string? saponificationTemperature { get; set; }
+    public string? spec { get; set; }
     public string? spoolWeightRequirement { get; set; }
     public string? steelGrade { get; set; }
     public string? strengthMpa { get; set; }
