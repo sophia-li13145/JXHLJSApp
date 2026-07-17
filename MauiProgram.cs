@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Maui;
 using JXHLJSApp.Pages;
 using JXHLJSApp.Services;
+using JXHLJSApp.Services.Common;
 using JXHLJSApp.Services.WorkOrders;
 using JXHLJSApp.Services.Transport;
 using JXHLJSApp.Services.Warehouse;
@@ -80,6 +81,7 @@ namespace JXHLJSApp
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();
             builder.Services.AddSingleton<IScanService, ScanService>();
+            builder.Services.AddSingleton<IImageCompressionService, ImageCompressionService>();
             builder.Services.AddSingleton<IProductionContextService, ProductionContextService>();
             builder.Services.AddSingleton<AuthState>();
             builder.Services.AddTransient<AuthHeaderHandler>();
