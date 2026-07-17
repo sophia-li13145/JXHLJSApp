@@ -2,6 +2,7 @@ using JXHLJSApp.Models.Quality;
 using JXHLJSApp.Pages;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.Quality;
+using Microsoft.Maui.Controls.Shapes;
 
 namespace JXHLJSApp.Pages.Quality;
 
@@ -23,6 +24,7 @@ public partial class MachineQualityDetailPage : ContentPage
     private string? _inspectStatus;
     private string? _qrCode;
     private string? _qualityMaterialId;
+    private bool _isManualInspection;
 
     public string? QualityNo { get => _qualityNo; set => _qualityNo = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? WorkOrderNo { get => _workOrderNo; set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty); }
@@ -49,22 +51,29 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private async Task LoadAsync()
     {
-        if (string.IsNullOrWhiteSpace(_qualityNo) || string.IsNullOrWhiteSpace(_workOrderNo))
+        if (string.IsNullOrWhiteSpace(_qualityNo))
         {
-            await DisplayAlert("提示", "质检单号或工单号为空。", "确定");
+            await DisplayAlert("提示", "质检单号为空。", "确定");
             return;
         }
 
         try
         {
-            var detail = await _qualityApi.GetProductionQualityDetailAsync(_qualityNo, _workOrderNo);
+            _isManualInspection = string.IsNullOrWhiteSpace(_workOrderNo);
+            var detail = _isManualInspection
+                ? await _qualityApi.GetManualInspectionDetailAsync(_qualityNo)
+                : await _qualityApi.GetProductionQualityDetailAsync(_qualityNo, _workOrderNo);
             _detail = detail;
-            _inspectionSchemeName = detail.inspectionSchemeName?.Trim();
+            _inspectionSchemeName = ResolveSchemeName(detail);
             if (!string.IsNullOrWhiteSpace(detail.inspectStatus)) _inspectStatus = detail.inspectStatus;
-            _qrCode = detail.qrCode;
-            _qualityMaterialId = detail.qualityMaterialId;
+            if (!string.IsNullOrWhiteSpace(detail.workOrderNo)) _workOrderNo = detail.workOrderNo;
+            var firstMaterial = detail.materialList?.FirstOrDefault();
+            _qrCode = FirstNonEmpty(detail.qrCode, firstMaterial?.qrCode);
+            _qualityMaterialId = FirstNonEmpty(detail.qualityMaterialId, firstMaterial?.qualityMaterialId);
             ApplySchemeLayout(detail);
             RenderInfo(detail);
+            RenderMaterialInfo(detail);
+            RenderInspectionItems(detail);
             FillAcidInputs(detail);
             FillHeatTreatmentInputs(detail);
             ActualDiameterEntry.Text = detail.actualDiameterMm;
@@ -85,7 +94,7 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private void ApplySchemeLayout(ProductionQualityDetailDto detail)
     {
-        var schemeName = detail.inspectionSchemeName?.Trim();
+        var schemeName = ResolveSchemeName(detail);
         var isAcid = string.Equals(schemeName, SchemeAcidPickling, StringComparison.Ordinal);
         var isHeat = IsHeatTreatmentScheme(schemeName);
 
@@ -108,8 +117,10 @@ public partial class MachineQualityDetailPage : ContentPage
         ProcessInputPanel.IsVisible = !isAcid && !isHeat;
         MemoLabel.IsVisible = !isHeat;
         MemoEditor.IsVisible = !isHeat;
-        CompleteButton.IsVisible = IsSamplingOrFullScheme(schemeName);
-        ScanMaterialButton.IsVisible = IsSamplingOrFullScheme(schemeName);
+        CompleteButton.IsVisible = _isManualInspection || IsSamplingOrFullScheme(schemeName);
+        Grid.SetColumnSpan(SubmitButton, CompleteButton.IsVisible ? 1 : 2);
+        ScanMaterialButton.IsVisible = false;
+        InfoScanMaterialButton.IsVisible = IsSamplingOrFullScheme(schemeName);
     }
 
     private void FillAcidInputs(ProductionQualityDetailDto detail)
@@ -153,14 +164,19 @@ public partial class MachineQualityDetailPage : ContentPage
         }
     }
 
+    private static string? ResolveSchemeName(ProductionQualityDetailDto detail)
+    {
+        return FirstNonEmpty(detail.processName, detail.processCode, detail.inspectionSchemeName, detail.qualityTypeName, detail.inspectionSchemeTypeName).Trim();
+    }
+
     private static (string Label, string? Value)[] BuildInfoRows(ProductionQualityDetailDto detail)
     {
-        var schemeName = detail.inspectionSchemeName?.Trim();
+        var schemeName = ResolveSchemeName(detail);
         if (IsPicklingScheme(schemeName))
         {
             return new[]
             {
-                ("检验日期", DateTime.Now.ToString("yyyy-MM-dd")), ("工单号", detail.workOrderNo)
+                ("检验日期", DateTime.Now.ToString("yyyy-MM-dd"))
             };
         }
 
@@ -168,7 +184,7 @@ public partial class MachineQualityDetailPage : ContentPage
         {
             return new[]
             {
-                ("日期", DateTime.Now.ToString("yyyyMMdd")), ("机台号", detail.deviceName ?? detail.deviceCode),
+                ("日期", DateTime.Now.ToString("yyyyMMdd")), ("机台", detail.deviceName ?? detail.deviceCode),
                 ("批号", FirstNonEmpty(detail.batchNo, detail.businessType)), ("炉号", detail.furnaceNo),
                 ("产地", FirstNonEmpty(detail.originPlace, detail.freeAcid)), ("钢号", detail.steelGrade),
                 ("工号", detail.workOrderNo), ("班次", FirstNonEmpty(detail.shiftNo, detail.targetSpecification)),
@@ -192,7 +208,78 @@ public partial class MachineQualityDetailPage : ContentPage
             };
         }
 
-        return new[] { ("日期", DateTime.Now.ToString("yyyyMMdd")), ("工单号", detail.workOrderNo), ("质检方案", detail.inspectionSchemeName) };
+        return new[]
+        {
+            ("日期", DateTime.Now.ToString("yyyyMMdd")), ("巡检单号", detail.qualityNo),
+            ("工单号", detail.workOrderNo), ("工序", FirstNonEmpty(detail.processName, detail.processCode)),
+            ("质检方案", detail.inspectionSchemeName), ("方案类型", detail.inspectionSchemeTypeName),
+            ("质检类型", FirstNonEmpty(detail.qualityTypeName, detail.qualityType)), ("状态", detail.inspectStatus),
+            ("设备", FirstNonEmpty(detail.deviceName, detail.deviceCode)), ("炉号", detail.furnaceNo),
+            ("钢号", detail.steelGrade), ("规格", FirstNonEmpty(detail.targetSpecification, detail.inputSpecification))
+        };
+    }
+
+    private void RenderMaterialInfo(ProductionQualityDetailDto detail)
+    {
+        var material = detail.materialList?.FirstOrDefault();
+        MaterialInfoCard.IsVisible = _isManualInspection && material is not null;
+        MaterialGrid.Children.Clear();
+        MaterialGrid.RowDefinitions.Clear();
+        if (material is null) return;
+
+        var rows = new[]
+        {
+            ("物料编码", material.materialCode), ("物料名称", material.materialName),
+            ("二维码", material.qrCode), ("扫码次数", material.qrTimes?.ToString()),
+            ("质检物料ID", material.qualityMaterialId), ("工单号", material.workOrderNo),
+            ("炉号", material.furnaceNo), ("钢号", material.steelGrade),
+            ("规格", FirstNonEmpty(material.spec, material.inputSpecification, material.targetSpecification)), ("设备", FirstNonEmpty(material.deviceName, material.deviceCode)),
+            ("实测直径", material.actualDiameterMm), ("成品直径", material.productDiameter),
+            ("强度", material.strengthMpa), ("表面状态", material.surfaceCondition),
+            ("结果已保存", material.resultSaved ? "是" : "否"), ("备注", material.memo)
+        };
+
+        for (var i = 0; i < rows.Length; i++)
+        {
+            if (i % 2 == 0) MaterialGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            MaterialGrid.Add(CreateInfoCell(rows[i].Item1, rows[i].Item2), i % 2, i / 2);
+        }
+    }
+
+    private void RenderInspectionItems(ProductionQualityDetailDto detail)
+    {
+        InspectionItemList.Children.Clear();
+        var items = detail.inspectionItemList ?? new List<ProductionQualityInspectionItemDto>();
+        InspectionItemCard.IsVisible = _isManualInspection && items.Count > 0;
+        foreach (var item in items)
+        {
+            var standard = FirstNonEmpty(item.inspectionStandard, item.standardValue, BuildLimitText(item));
+            InspectionItemList.Children.Add(new Border
+            {
+                BackgroundColor = Color.FromArgb("#F8FAFD"),
+                Stroke = Color.FromArgb("#DDE6F1"),
+                StrokeThickness = 1,
+                Padding = 12,
+                StrokeShape = new RoundRectangle { CornerRadius = 10 },
+                Content = new VerticalStackLayout
+                {
+                    Spacing = 4,
+                    Children =
+                    {
+                        new Label { Text = FirstNonEmpty(item.itemName, item.itemCode, "检验项目"), TextColor = Color.FromArgb("#051B3D"), FontAttributes = FontAttributes.Bold },
+                        new Label { Text = $"标准：{(string.IsNullOrWhiteSpace(standard) ? "-" : standard)}", TextColor = Color.FromArgb("#38557C"), FontSize = 13 },
+                        new Label { Text = $"方式：{FirstNonEmpty(item.inspectionMode, "-")}  单位：{FirstNonEmpty(item.unit, "-")}", TextColor = Color.FromArgb("#38557C"), FontSize = 13 }
+                    }
+                }
+            });
+        }
+    }
+
+    private static string BuildLimitText(ProductionQualityInspectionItemDto item)
+    {
+        var lower = string.IsNullOrWhiteSpace(item.lowerLimit) ? "-" : item.lowerLimit;
+        var upper = string.IsNullOrWhiteSpace(item.upperLimit) ? "-" : item.upperLimit;
+        return lower == "-" && upper == "-" ? string.Empty : $"{lower} ~ {upper}";
     }
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
@@ -370,6 +457,8 @@ public partial class MachineQualityDetailPage : ContentPage
         _detail.workOrderNo = FirstNonEmpty(material.workOrderNo, _detail.workOrderNo);
 
         RenderInfo(_detail);
+        RenderMaterialInfo(_detail);
+        RenderInspectionItems(_detail);
         StandardDiameterEntry.Text = FirstNonEmpty(_detail.standardDiameterMm, _detail.productDiameter);
     }
 
@@ -415,7 +504,23 @@ public partial class MachineQualityDetailPage : ContentPage
                 workOrderNo = _workOrderNo
             };
 
-            var committed = IsPicklingScheme(_inspectionSchemeName)
+            var committed = _isManualInspection
+                ? await _qualityApi.SaveManualInspectionResultAsync(new ProductionManualInspectionSaveResultRequestDto
+                {
+                    actualDiameterMm = HeatTreatmentInputPanel.IsVisible ? HeatActualDiameterEntry.Text?.Trim() : ActualDiameterEntry.Text?.Trim(),
+                    coilDiameterControl = CoilDiameterPicker.SelectedItem?.ToString(),
+                    coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
+                    elongationRate = HeatTreatmentInputPanel.IsVisible ? HeatElongationEntry.Text?.Trim() : ElongationEntry.Text?.Trim(),
+                    inspectResult = InspectResultPicker.SelectedItem?.ToString(),
+                    memo = MemoEditor.Text?.Trim(),
+                    qrCode = _qrCode,
+                    qualityMaterialId = _qualityMaterialId,
+                    qualityNo = _qualityNo,
+                    strengthMpa = HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text?.Trim() : StrengthEntry.Text?.Trim(),
+                    surfaceCondition = SurfaceEntry.Text?.Trim(),
+                    workOrderNo = _workOrderNo
+                })
+                : IsPicklingScheme(_inspectionSchemeName)
                 ? await _qualityApi.CommitProductionPicklingAsync(new ProductionPicklingCommitRequestDto
                 {
                     acidRatio = AcidRatioEntry.Text?.Trim(),
@@ -483,23 +588,30 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private async void OnCompleteClicked(object sender, EventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(_qualityNo) || string.IsNullOrWhiteSpace(_workOrderNo))
+        if (string.IsNullOrWhiteSpace(_qualityNo) || (!_isManualInspection && string.IsNullOrWhiteSpace(_workOrderNo)))
         {
-            await DisplayAlert("提示", "质检单号或工单号为空，无法完成。", "确定");
+            await DisplayAlert("提示", _isManualInspection ? "质检单号为空，无法完成。" : "质检单号或工单号为空，无法完成。", "确定");
             return;
         }
 
         try
         {
-            var completed = await _qualityApi.CompleteProductionSamplingOrFullAsync(new ProductionSamplingOrFullCompleteRequestDto
+            if (_isManualInspection)
             {
-                qualityNo = _qualityNo,
-                workOrderNo = _workOrderNo
-            });
-            if (!completed)
+                await _qualityApi.CompleteManualInspectionAsync(_qualityNo);
+            }
+            else
             {
-                await DisplayAlert("完成失败", "接口未返回完成成功，请稍后重试。", "确定");
-                return;
+                var completed = await _qualityApi.CompleteProductionSamplingOrFullAsync(new ProductionSamplingOrFullCompleteRequestDto
+                {
+                    qualityNo = _qualityNo,
+                    workOrderNo = _workOrderNo
+                });
+                if (!completed)
+                {
+                    await DisplayAlert("完成失败", "接口未返回完成成功，请稍后重试。", "确定");
+                    return;
+                }
             }
 
             await DisplayAlert("完成成功", "质检任务已完成。", "确定");
