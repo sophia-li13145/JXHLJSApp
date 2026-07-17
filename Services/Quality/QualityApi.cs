@@ -255,12 +255,45 @@ public sealed class QualityApi : IQualityApi
 
     public async Task<ProductionQualityDetailDto> GetProductionQualityDetailAsync(string qualityNo, string workOrderNo, CancellationToken ct = default)
     {
-        var endpoint = $"{_productionQualityDetailByNoEndpoint}?qualityNo={Uri.EscapeDataString(qualityNo)}&workOrderNo={Uri.EscapeDataString(workOrderNo)}";
-        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, endpoint);
-        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        var detail = await GetManualInspectionDetailAsync(qualityNo, ct).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(detail.workOrderNo)) detail.workOrderNo = workOrderNo;
+        return detail;
+    }
+
+    public async Task<ProductionQualityDetailDto> CreateManualInspectionAsync(string qrCode, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _manualInspectionCreateEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, new { qrCode }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<ProductionQualityDetailDto>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new ProductionQualityDetailDto { workOrderNo = workOrderNo };
+        return data.result ?? new ProductionQualityDetailDto { qrCode = qrCode };
+    }
+
+    public async Task<ProductionQualityDetailDto> GetManualInspectionDetailAsync(string qualityNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _manualInspectionDetailEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, new { qualityNo }, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<ProductionQualityDetailDto>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new ProductionQualityDetailDto { qualityNo = qualityNo };
+    }
+
+    public async Task<bool> SaveManualInspectionResultAsync(ProductionManualInspectionSaveResultRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _manualInspectionSaveResultEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        return BooleanResultOrFalse(data);
+    }
+
+    public async Task<ProductionQualityDetailDto> CompleteManualInspectionAsync(string qualityNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _manualInspectionCompleteEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, new { qualityNo }, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<ProductionQualityDetailDto>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new ProductionQualityDetailDto { qualityNo = qualityNo };
     }
 
     public async Task<ProductionQualityDetailDto> CreateManualInspectionAsync(string qrCode, CancellationToken ct = default)
