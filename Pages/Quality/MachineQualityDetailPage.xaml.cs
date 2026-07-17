@@ -9,6 +9,7 @@ namespace JXHLJSApp.Pages.Quality;
 [QueryProperty(nameof(QualityNo), "qualityNo")]
 [QueryProperty(nameof(WorkOrderNo), "workOrderNo")]
 [QueryProperty(nameof(InspectStatus), "inspectStatus")]
+[QueryProperty(nameof(ManualInspection), "manualInspection")]
 public partial class MachineQualityDetailPage : ContentPage
 {
     private const string SchemeAcidPickling = "酸洗";
@@ -25,10 +26,12 @@ public partial class MachineQualityDetailPage : ContentPage
     private string? _qrCode;
     private string? _qualityMaterialId;
     private bool _isManualInspection;
+    private bool _manualInspectionFromQuery;
 
     public string? QualityNo { get => _qualityNo; set => _qualityNo = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? WorkOrderNo { get => _workOrderNo; set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? InspectStatus { get => _inspectStatus; set => _inspectStatus = Uri.UnescapeDataString(value ?? string.Empty); }
+    public string? ManualInspection { get => _manualInspectionFromQuery ? "true" : "false"; set => _manualInspectionFromQuery = string.Equals(Uri.UnescapeDataString(value ?? string.Empty), "true", StringComparison.OrdinalIgnoreCase); }
 
     public MachineQualityDetailPage(IQualityApi qualityApi, IScanService scanService)
     {
@@ -59,7 +62,7 @@ public partial class MachineQualityDetailPage : ContentPage
 
         try
         {
-            _isManualInspection = string.IsNullOrWhiteSpace(_workOrderNo);
+            _isManualInspection = _manualInspectionFromQuery || string.IsNullOrWhiteSpace(_workOrderNo);
             var detail = _isManualInspection
                 ? await _qualityApi.GetManualInspectionDetailAsync(_qualityNo)
                 : await _qualityApi.GetProductionQualityDetailAsync(_qualityNo, _workOrderNo);
