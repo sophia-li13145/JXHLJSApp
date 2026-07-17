@@ -120,8 +120,8 @@ public partial class MachineQualityDetailPage : ContentPage
         ProcessInputPanel.IsVisible = !isAcid && !isHeat;
         MemoLabel.IsVisible = !isHeat;
         MemoEditor.IsVisible = !isHeat;
-        CompleteButton.IsVisible = _isManualInspection || IsSamplingOrFullScheme(schemeName);
-        Grid.SetColumnSpan(SubmitButton, CompleteButton.IsVisible ? 1 : 2);
+        CompleteButton.IsVisible = true;
+        Grid.SetColumnSpan(SubmitButton, 1);
         ScanMaterialButton.IsVisible = false;
         InfoScanMaterialButton.IsVisible = IsSamplingOrFullScheme(schemeName) || IsProcessCardScheme(schemeName);
     }
