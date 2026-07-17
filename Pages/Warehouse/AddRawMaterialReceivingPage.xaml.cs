@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using Serilog;
 using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.Warehouse;
@@ -259,11 +260,13 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             return;
         }
 
+        SetLoadingState(true, "正在读取照片...");
         try
         {
             var photo = await GetTicketPhotoAsync();
             if (photo is null) return;
 
+            SetLoadingState(true, "正在上传票签...");
             _pendingTicketAttachment = await _warehouseApi.UploadAttachmentAsync(photo, "toolingManager", "images");
         }
         catch (Exception ex) when (ex is PermissionException or UnauthorizedAccessException)
@@ -291,16 +294,42 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             await DisplayAlert("拍照或上传失败", ex.Message, "确定");
             return;
         }
+        finally
+        {
+            if (_pendingTicketAttachment is null)
+            {
+                SetLoadingState(false);
+            }
+        }
 
         try
         {
+            SetLoadingState(true, "正在识别票签，请稍候...");
             var ocr = await _warehouseApi.RecognizeIncomingAsync(_pendingTicketAttachment, _instockNo);
             ShowTicketConfirmDialog(ocr, false);
         }
-        catch
+        catch (Exception ex)
         {
+            Log.Error(ex, "原料入库OCR识别失败，InstockNo={InstockNo}", _instockNo);
+            await DisplayAlert("OCR识别失败", ex.Message, "确定");
             ShowTicketConfirmDialog(new RawMaterialOcrDto(), true);
         }
+        finally
+        {
+            SetLoadingState(false);
+        }
+    }
+
+    private void SetLoadingState(bool isLoading, string? message = null)
+    {
+        LoadingOverlay.IsVisible = isLoading;
+        LoadingIndicator.IsRunning = isLoading;
+        if (!string.IsNullOrWhiteSpace(message))
+        {
+            LoadingMessageLabel.Text = message;
+        }
+
+        TakePhotoButton.IsEnabled = !isLoading;
     }
 
     private async Task<FileResult?> GetTicketPhotoAsync()
@@ -580,25 +609,44 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             return;
         }
 
-        var success = await _warehouseApi.SaveOcrIncomingImageAsync(new SaveOcrIncomingImageRequestDto
+        SetLoadingState(true, "正在保存票签...");
+        try
         {
-            coilCount = ParseNullableInt(ticket.coilCount),
-            coilDiameter = ParseNullableDecimal(ticket.coilDiameter),
-            fileInfo = _pendingTicketAttachment,
-            furnaceNo = ticket.furnaceNo,
-            instockNo = _instockNo,
-            materialClass = ticket.materialClass,
-            materialName = ticket.materialName,
-            materialType = ticket.materialType,
-            originPlace = ticket.originPlace,
-            pieceWeight = ParseNullableDecimal(ticket.pieceWeight),
-            spec = ticket.spec,
-            strength = ticket.strength
-        });
+            var success = await _warehouseApi.SaveOcrIncomingImageAsync(new SaveOcrIncomingImageRequestDto
+            {
+                coilCount = ParseNullableInt(ticket.coilCount),
+                coilDiameter = ParseNullableDecimal(ticket.coilDiameter),
+                coilNo = ticket.coilNo,
+                companyName = ticket.companyName,
+                confidence = ticket.confidence,
+                fileInfo = _pendingTicketAttachment,
+                furnaceNo = ticket.furnaceNo,
+                instockNo = _instockNo,
+                materialClass = ticket.materialClass,
+                materialCode = ticket.materialCode,
+                materialName = ticket.materialName,
+                materialType = ticket.materialType,
+                ocrRawText = ticket.ocrRawText,
+                originPlace = ticket.originPlace,
+                pieceWeight = ParseNullableDecimal(ticket.pieceWeight),
+                pieceWeightUnit = ticket.pieceWeightUnit,
+                productName = ticket.productName,
+                productionDate = ticket.productionDate,
+                qrCode = ticket.qrCode,
+                spec = ticket.spec,
+                standard = ticket.standard,
+                strength = ticket.strength,
+                workshop = ticket.workshop
+            });
 
-        if (success is false)
+            if (success != true)
+            {
+                throw new InvalidOperationException("保存OCR票签失败，接口未返回明确的成功结果。");
+            }
+        }
+        finally
         {
-            throw new InvalidOperationException("保存OCR识别图片接口返回失败。");
+            SetLoadingState(false);
         }
 
         _pendingTicketAttachment = null;
@@ -805,9 +853,9 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             };
 
             var success = await _warehouseApi.QuickInstockAsync(request);
-            if (success is false)
+            if (success != true)
             {
-                await DisplayAlert("提交失败", "接口返回失败，请稍后重试。", "确定");
+                await DisplayAlert("提交失败", "接口未返回明确的成功结果。", "确定");
                 return;
             }
 
