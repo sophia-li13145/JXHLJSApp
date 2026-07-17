@@ -120,7 +120,7 @@ public partial class MachineQualityDetailPage : ContentPage
         CompleteButton.IsVisible = _isManualInspection || IsSamplingOrFullScheme(schemeName);
         Grid.SetColumnSpan(SubmitButton, CompleteButton.IsVisible ? 1 : 2);
         ScanMaterialButton.IsVisible = false;
-        InfoScanMaterialButton.IsVisible = IsSamplingOrFullScheme(schemeName);
+        InfoScanMaterialButton.IsVisible = IsSamplingOrFullScheme(schemeName) || IsProcessCardScheme(schemeName);
     }
 
     private void FillAcidInputs(ProductionQualityDetailDto detail)
