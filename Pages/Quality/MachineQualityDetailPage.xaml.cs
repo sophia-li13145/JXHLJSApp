@@ -341,8 +341,11 @@ public partial class MachineQualityDetailPage : ContentPage
             ColumnDefinitions = new ColumnDefinitionCollection(new ColumnDefinition { Width = GridLength.Auto }, new ColumnDefinition { Width = GridLength.Star }),
             ColumnSpacing = 10
         };
-        grid.Add(new Label { Text = label, TextColor = Color.FromArgb("#38557C"), FontSize = 14 });
-        grid.Add(new Label { Text = string.IsNullOrWhiteSpace(value) ? "-" : value, TextColor = Color.FromArgb("#0042AD"), FontSize = 14, FontAttributes = FontAttributes.Bold, HorizontalTextAlignment = TextAlignment.End }, 1);
+        var isWorkNo = string.Equals(label, "工号", StringComparison.Ordinal);
+        var textColor = isWorkNo ? Color.FromArgb("#FF3B30") : Color.FromArgb("#38557C");
+        var valueColor = isWorkNo ? Color.FromArgb("#FF3B30") : Color.FromArgb("#0042AD");
+        grid.Add(new Label { Text = label, TextColor = textColor, FontSize = 14 });
+        grid.Add(new Label { Text = string.IsNullOrWhiteSpace(value) ? "-" : value, TextColor = valueColor, FontSize = 14, FontAttributes = FontAttributes.Bold, HorizontalTextAlignment = TextAlignment.End }, 1);
         return grid;
     }
 
