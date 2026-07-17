@@ -4,47 +4,78 @@
              x:Class="JXHLJSApp.Pages.Quality.ProductionQualityOrderListPage"
              BackgroundColor="#F4F6FA"
              Shell.NavBarIsVisible="False">
-    <Grid RowDefinitions="Auto,Auto,*">
-        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="16,22,16,14" HeightRequest="66">
-            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,16,16" /></Border.StrokeShape>
-            <Grid ColumnDefinitions="Auto,*">
-                <Label Text="‹ 返回主页" TextColor="White" FontSize="15" VerticalOptions="Center">
-                    <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers>
-                </Label>
-                <Label Grid.Column="1" Text="生产质检记录" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,74,0" />
-            </Grid>
-        </Border>
+    <Grid>
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
+            <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="16,22,16,14" HeightRequest="66">
+                <Border.StrokeShape><RoundRectangle CornerRadius="0,0,16,16" /></Border.StrokeShape>
+                <Grid ColumnDefinitions="Auto,*">
+                    <Label Text="‹ 返回主页" TextColor="White" FontSize="15" VerticalOptions="Center">
+                        <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers>
+                    </Label>
+                    <Label Grid.Column="1" Text="生产质检记录" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,74,0" />
+                </Grid>
+            </Border>
 
-        <VerticalStackLayout Grid.Row="1" Padding="20,30,20,16" Spacing="14" BackgroundColor="White">
-            <Entry x:Name="ResourceNameEntry" Placeholder="输入机台名称模糊筛选..." PlaceholderColor="#7A8797" BackgroundColor="#F8FAFD" HeightRequest="40" />
-            <Picker x:Name="StatusPicker" ItemDisplayBinding="{Binding Name}" BackgroundColor="#F8FAFD" HeightRequest="42" />
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                <Button Text="重 置" TextColor="#051B3D" BackgroundColor="White" BorderColor="#D2DBE8" BorderWidth="1" CornerRadius="6" HeightRequest="42" Clicked="OnResetClicked" />
-                <Button Grid.Column="1" Text="筛 选" TextColor="White" BackgroundColor="#244B88" CornerRadius="6" HeightRequest="42" Clicked="OnFilterClicked" />
-            </Grid>
-        </VerticalStackLayout>
+            <VerticalStackLayout Grid.Row="1" Padding="18,30,18,16" Spacing="12" BackgroundColor="White">
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                    <Entry x:Name="ResourceNameEntry" Placeholder="输入机台名称模糊筛选..." PlaceholderColor="#7A8797" BackgroundColor="#F8FAFD" HeightRequest="40" />
+                    <Entry x:Name="QualityNoEntry" Grid.Column="1" Placeholder="输入单号..." PlaceholderColor="#7A8797" BackgroundColor="#F8FAFD" HeightRequest="40" />
+                </Grid>
+                <Picker x:Name="StatusPicker" ItemDisplayBinding="{Binding Name}" BackgroundColor="#F8FAFD" HeightRequest="42" />
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                    <Button Text="重置" TextColor="#051B3D" BackgroundColor="White" BorderColor="#D2DBE8" BorderWidth="1" CornerRadius="6" HeightRequest="42" Clicked="OnResetClicked" />
+                    <Button Grid.Column="1" Text="筛选" TextColor="White" BackgroundColor="#244B88" CornerRadius="6" HeightRequest="42" Clicked="OnFilterClicked" />
+                </Grid>
+            </VerticalStackLayout>
 
-        <RefreshView Grid.Row="2" x:Name="RefreshContainer" Refreshing="OnRefreshing">
-            <CollectionView x:Name="OrderList" EmptyView="当前没有生产质检记录" Margin="20,12,20,0">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Border BackgroundColor="White" StrokeThickness="0" Padding="20,18" Margin="0,0,0,12">
-                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnOrderTapped" /></Border.GestureRecognizers>
-                            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
-                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="8">
-                                <Label Text="{Binding titleDisplay}" TextColor="#051B3D" FontSize="18" FontAttributes="Bold" />
-                                <Border Grid.Column="1" BackgroundColor="#FFF9E8" StrokeThickness="0" Padding="10,5" VerticalOptions="Start">
-                                    <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
-                                    <Label Text="{Binding statusDisplay}" TextColor="#D87500" FontSize="13" FontAttributes="Bold" />
-                                </Border>
-                                <Label Grid.Row="1" TextColor="#38557C" FontSize="14">
-                                    <Label.FormattedText><FormattedString><Span Text="机台: " /><Span Text="{Binding machineDisplay}" /><Span Text="  工单: " /><Span Text="{Binding orderNumberDisplay}" /></FormattedString></Label.FormattedText>
-                                </Label>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
-        </RefreshView>
+            <RefreshView Grid.Row="2" x:Name="RefreshContainer" Refreshing="OnRefreshing">
+                <CollectionView x:Name="OrderList" EmptyView="当前没有生产质检记录" Margin="18,12,18,0">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border BackgroundColor="White" StrokeThickness="0" Padding="20,18" Margin="0,0,0,12">
+                                <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnOrderTapped" /></Border.GestureRecognizers>
+                                <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="3">
+                                    <Label Text="{Binding titleDisplay}" TextColor="#051B3D" FontSize="18" FontAttributes="Bold" />
+                                    <Border Grid.Column="1" BackgroundColor="{Binding statusBackground}" StrokeThickness="0" Padding="9,4" VerticalOptions="Start">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
+                                        <Label Text="{Binding statusDisplay}" TextColor="{Binding statusColor}" FontSize="12" FontAttributes="Bold" />
+                                    </Border>
+                                    <Label Grid.Row="1" Text="{Binding qualityNoDisplay, StringFormat='单号: {0}'}" TextColor="#00356E" FontSize="14" FontAttributes="Bold" />
+                                    <Label Grid.Row="2" Text="{Binding machineDisplay, StringFormat='机台: {0}'}" TextColor="#051B3D" FontSize="14" FontAttributes="Bold" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </RefreshView>
+
+            <Border Grid.Row="3" BackgroundColor="White" Stroke="#D8DEE8" StrokeThickness="1" Padding="18,16,18,26">
+                <Button Text="+ 新增巡检任务" TextColor="White" BackgroundColor="#18BD86" CornerRadius="9" HeightRequest="54" FontSize="17" FontAttributes="Bold" Clicked="OnAddManualInspectionClicked" />
+            </Border>
+        </Grid>
+
+        <Grid x:Name="ScanOverlay" IsVisible="False" BackgroundColor="#99091A34">
+            <Border BackgroundColor="White" StrokeThickness="0" Padding="20,22" VerticalOptions="End" Margin="0,0,0,0">
+                <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
+                <VerticalStackLayout Spacing="18">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="扫码新增巡检" TextColor="#051B3D" FontSize="18" FontAttributes="Bold" />
+                        <Button Grid.Column="1" Text="×" TextColor="#8A96A8" FontSize="26" BackgroundColor="Transparent" Padding="0" WidthRequest="36" HeightRequest="36" Clicked="OnCancelScanClicked" />
+                    </Grid>
+                    <BoxView HeightRequest="1" Color="#E2E8F0" />
+                    <Border BackgroundColor="#EFF6FF" Stroke="#2F7BFF" StrokeThickness="1.5" Padding="20" HeightRequest="210">
+                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanManualMaterialClicked" /></Border.GestureRecognizers>
+                        <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                        <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="10">
+                            <Label Text="📷" FontSize="34" HorizontalTextAlignment="Center" />
+                            <Label Text="扫描物料二维码" TextColor="#005BFF" FontSize="18" HorizontalTextAlignment="Center" />
+                            <Label Text="系统将自动识别物料归属工序" TextColor="#50627A" FontSize="13" HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Button Text="取消" TextColor="#051B3D" BackgroundColor="White" BorderColor="#D2DBE8" BorderWidth="1" CornerRadius="10" HeightRequest="54" FontSize="17" FontAttributes="Bold" Clicked="OnCancelScanClicked" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
     </Grid>
 </ContentPage>
