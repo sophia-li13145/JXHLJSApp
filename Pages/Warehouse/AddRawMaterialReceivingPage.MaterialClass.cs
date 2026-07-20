@@ -559,54 +559,64 @@ public partial class AddRawMaterialReceivingPage
         object sender,
         EventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(_instockNo))
+        if (_isSubmittingInstock)
         {
-            await DisplayAlert(
-                "提示",
-                "入库单号尚未生成，请稍后重试。",
-                "确定");
             return;
         }
 
-        var warehouse = GetSelectedWarehouse();
-        if (warehouse is null ||
-            string.IsNullOrWhiteSpace(
-                warehouse.selectedName) ||
-            string.IsNullOrWhiteSpace(
-                warehouse.selectedCode))
-        {
-            await DisplayAlert(
-                "提示",
-                "请选择有效的入库仓库。",
-                "确定");
-            return;
-        }
-
-        if (_ocrItems.Count == 0)
-        {
-            await DisplayAlert(
-                "提示",
-                "请先扫码绑定至少一条待入库物料。",
-                "确定");
-            return;
-        }
-
-        var invalidItem = _ocrItems.FirstOrDefault(item =>
-            string.IsNullOrWhiteSpace(item.qrCode) ||
-            string.IsNullOrWhiteSpace(item.materialClass) ||
-            ParsePieceWeightValueV2(item.pieceWeight) <= 0m);
-
-        if (invalidItem is not null)
-        {
-            await DisplayAlert(
-                "提示",
-                "请确认每条明细都已填写追溯码、物料分类和有效件重。",
-                "确定");
-            return;
-        }
+        _isSubmittingInstock = true;
+        SubmitInstockButton.IsEnabled = false;
+        SubmitInstockButton.Text = "提交中...";
+        var submitSucceeded = false;
 
         try
         {
+            if (string.IsNullOrWhiteSpace(_instockNo))
+            {
+                await DisplayAlert(
+                    "提示",
+                    "入库单号尚未生成，请稍后重试。",
+                    "确定");
+                return;
+            }
+
+            var warehouse = GetSelectedWarehouse();
+            if (warehouse is null ||
+                string.IsNullOrWhiteSpace(
+                    warehouse.selectedName) ||
+                string.IsNullOrWhiteSpace(
+                    warehouse.selectedCode))
+            {
+                await DisplayAlert(
+                    "提示",
+                    "请选择有效的入库仓库。",
+                    "确定");
+                return;
+            }
+
+            if (_ocrItems.Count == 0)
+            {
+                await DisplayAlert(
+                    "提示",
+                    "请先扫码绑定至少一条待入库物料。",
+                    "确定");
+                return;
+            }
+
+            var invalidItem = _ocrItems.FirstOrDefault(item =>
+                string.IsNullOrWhiteSpace(item.qrCode) ||
+                string.IsNullOrWhiteSpace(item.materialClass) ||
+                ParsePieceWeightValueV2(item.pieceWeight) <= 0m);
+
+            if (invalidItem is not null)
+            {
+                await DisplayAlert(
+                    "提示",
+                    "请确认每条明细都已填写追溯码、物料分类和有效件重。",
+                    "确定");
+                return;
+            }
+
             var request = new QuickInstockRequestDto
             {
                 detailList = _ocrItems
@@ -674,12 +684,9 @@ public partial class AddRawMaterialReceivingPage
                 return;
             }
 
-            await DisplayAlert(
-                "提交成功",
-                "采购入库已提交。",
-                "确定");
-
-            await Shell.Current.GoToAsync("..");
+            submitSucceeded = true;
+            await Shell.Current.GoToAsync(
+                AppShell.RouteRawMaterialReceivingSuccess);
         }
         catch (Exception ex)
         {
@@ -687,6 +694,15 @@ public partial class AddRawMaterialReceivingPage
                 "提交失败",
                 ex.Message,
                 "确定");
+        }
+        finally
+        {
+            if (!submitSucceeded)
+            {
+                _isSubmittingInstock = false;
+                SubmitInstockButton.IsEnabled = true;
+                SubmitInstockButton.Text = "提交入库";
+            }
         }
     }
 }

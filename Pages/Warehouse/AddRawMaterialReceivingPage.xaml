@@ -429,7 +429,8 @@
                         CornerRadius="10"
                         HeightRequest="50"
                         Clicked="OnCancelClicked" />
-                <Button Grid.Column="1"
+                <Button x:Name="SubmitInstockButton"
+                        Grid.Column="1"
                         Text="提交入库"
                         BackgroundColor="#1F447E"
                         TextColor="White"

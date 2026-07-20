@@ -28,6 +28,7 @@ public sealed class RawMaterialReceivingDetailDto
     public string statusDisplay => FirstNonEmpty(instockStatusName, instockStatus, "--");
     public string instockDateDisplay => FirstNonEmpty(instockDate, "--");
     public string warehouseDisplay => FirstNonEmpty(detailList?.FirstOrDefault(item => !string.IsNullOrWhiteSpace(item.instockWarehouse))?.instockWarehouse, "--");
+    public string locationDisplay => FirstNonEmpty(detailList?.FirstOrDefault(item => !string.IsNullOrWhiteSpace(item.location))?.location, "--");
     public IReadOnlyList<RawMaterialReceivingDetailItemDto> detailItems => detailList ?? new List<RawMaterialReceivingDetailItemDto>();
     public IReadOnlyList<AttachmentDto> mainAttachments => ocrList?
         .SelectMany(ocr => ocr.attachmentList ?? new List<AttachmentDto>())
@@ -53,6 +54,10 @@ public sealed class RawMaterialReceivingDetailItemDto
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
     public string? memo { get; set; }
+    public decimal? coilCount { get; set; }
+    public decimal? coilDiameter { get; set; }
+    public string? strength { get; set; }
+    public int? countSeq { get; set; }
     public string? model { get; set; }
     public string? origin { get; set; }
     public decimal? pieceWeight { get; set; }
@@ -69,16 +74,26 @@ public sealed class RawMaterialReceivingDetailItemDto
     public string specDisplay => FirstNonEmpty(spec, model, "--");
     public string furnaceNoDisplay => FirstNonEmpty(furnaceNo, "--");
     public string originDisplay => FirstNonEmpty(origin, "--");
-    public string strengthDisplay => FirstNonEmpty(pieceWeight?.ToString("0.##"), "--");
-    public string coilCountDisplay => FirstNonEmpty(count?.ToString("0.##"), "--");
-    public string pieceWeightDisplay => JoinNonEmpty(FirstNonEmpty(instockQty?.ToString("0.##"), weight), unit);
-    public string materialTypeDisplay => FirstNonEmpty(materialClass, manufactureName, "原料");
+    public string strengthDisplay => FirstNonEmpty(strength, "--");
+    public string coilCountDisplay => FirstNonEmpty(coilCount?.ToString("0.##"), count?.ToString("0.##"), "--");
+    public string coilDiameterDisplay => FirstNonEmpty(coilDiameter?.ToString("0.##"), "--");
+    public string pieceWeightDisplay => JoinNonEmpty(FirstNonEmpty(instockQty?.ToString("0.##"), pieceWeight?.ToString("0.##"), weight), unit);
+    public string countSeqDisplay => FirstNonEmpty(countSeq?.ToString(), "--");
+    public string materialTypeDisplay => isSemiFinished ? "半成品" : "原料";
+    public bool isSemiFinished => ContainsAny(materialClass, "半成品", "SEMIFINISHED", "SEMI_FINISHED") ||
+        ContainsAny(manufactureName, "半成品", "SEMIFINISHED", "SEMI_FINISHED");
+    public bool isRawMaterial => !isSemiFinished;
 
     private static string JoinNonEmpty(params string?[] values)
     {
         var text = string.Join(" ", values.Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value!.Trim()));
         return string.IsNullOrWhiteSpace(text) ? "--" : text;
     }
+
+
+    private static bool ContainsAny(string? value, params string[] candidates) =>
+        !string.IsNullOrWhiteSpace(value) &&
+        candidates.Any(candidate => value.Contains(candidate, StringComparison.OrdinalIgnoreCase));
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "--";
 }
