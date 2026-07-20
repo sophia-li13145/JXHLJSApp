@@ -549,6 +549,17 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         BindConfirmOverlay.IsVisible = false;
     }
 
+    private void OnRemovePendingMaterialTapped(object sender, TappedEventArgs e)
+    {
+        if (sender is not BindableObject { BindingContext: RawMaterialOcrDto item })
+        {
+            return;
+        }
+
+        _ocrItems.Remove(item);
+        MaterialListTitle.Text = $"待入库列表 ({_ocrItems.Count})";
+    }
+
     private void OnCloseBindConfirmTapped(object sender, TappedEventArgs e) => BindConfirmOverlay.IsVisible = false;
 
     private void OnCancelBindConfirmClicked(object sender, EventArgs e) => BindConfirmOverlay.IsVisible = false;

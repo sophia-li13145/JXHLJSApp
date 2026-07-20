@@ -369,7 +369,11 @@
                                                 <Label Grid.Column="1"
                                                        Text="移除"
                                                        TextColor="#F64148"
-                                                       FontAttributes="Bold" />
+                                                       FontAttributes="Bold">
+                                                    <Label.GestureRecognizers>
+                                                        <TapGestureRecognizer Tapped="OnRemovePendingMaterialTapped" />
+                                                    </Label.GestureRecognizers>
+                                                </Label>
                                             </Grid>
 
                                             <Label Grid.Row="2"

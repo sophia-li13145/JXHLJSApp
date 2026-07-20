@@ -506,8 +506,7 @@ public sealed class WarehouseApi : IWarehouseApi
         }
         if (data.success == false)
         {
-            var message = string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message;
-            throw new InvalidOperationException($"{message} 响应内容：{TrimResponseBody(body)}");
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
         }
         return data;
     }
