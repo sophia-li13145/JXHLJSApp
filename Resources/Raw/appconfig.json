@@ -85,7 +85,8 @@
       "updateQuantity": "/pda/wmsMaterialOutstock/updateOutQuantity"
     },
     "device": {
-      "queryDevList": "/pda/dev/queryDevList"
+      "queryDevList": "/pda/dev/queryDevList",
+      "queryDevTypeList": "/pda/dev/queryDevTypeList"
     },
     "workOrder": {
       "list": "/pda/pmsWorkOrder/getWorkOrderList",

@@ -39,6 +39,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly HttpClient _http;
     private readonly string _listEndpoint;
     private readonly string _deviceListEndpoint;
+    private readonly string _deviceTypeListEndpoint;
     private readonly string _bindWorkerMachineEndpoint;
     private readonly string _scanToWorkEndpoint;
     private readonly string _currentUserMachinesWorkOrderEndpoint;
@@ -60,6 +61,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _orderStopEndpoint;
     private readonly string _productionStatisticsEndpoint;
     private IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? _workOrderDictNames;
+    private IReadOnlyDictionary<string, string>? _deviceTypeNames;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public WorkOrderApi(HttpClient http, IConfigLoader configLoader)
@@ -70,6 +72,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
             configLoader.GetApiPath("workOrder.list", "/pda/pmsWorkOrder/getWorkOrderList"), servicePath);
         _deviceListEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("device.queryDevList", "/pda/dev/queryDevList"), servicePath);
+        _deviceTypeListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("device.queryDevTypeList", "/pda/dev/queryDevTypeList"), servicePath);
         _bindWorkerMachineEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.bindWorkerMachine", "/pda/devUserMachineBindRecord/workerBindDev"), servicePath);
         _scanToWorkEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -230,7 +234,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
         var data = await JsonSerializer.DeserializeAsync<ApiResp<WorkOrderDetailDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
         var detail = data?.result;
-        await ApplyWorkOrderStatusNameAsync(detail, ct).ConfigureAwait(false);
+        await ApplyWorkOrderDetailDisplayNamesAsync(detail, ct).ConfigureAwait(false);
         return detail;
     }
 
@@ -247,7 +251,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
         var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
         var tasks = ReadWorkOrderDetailResult(data);
-        await ApplyWorkOrderStatusNamesAsync(tasks, ct).ConfigureAwait(false);
+        await ApplyWorkOrderDetailDisplayNamesAsync(tasks, ct).ConfigureAwait(false);
         return tasks;
     }
 
@@ -488,12 +492,25 @@ public sealed class WorkOrderApi : IWorkOrderApi
         }
     }
 
-    private async Task ApplyWorkOrderStatusNameAsync(WorkOrderDetailDto? detail, CancellationToken ct)
+    private async Task ApplyWorkOrderDetailDisplayNamesAsync(WorkOrderDetailDto? detail, CancellationToken ct)
     {
         if (detail is null) return;
 
         var dictNames = await GetWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
         ApplyWorkOrderDetailDictNames(detail, dictNames);
+        var deviceTypeNames = await GetDeviceTypeNamesAsync(ct).ConfigureAwait(false);
+        detail.machineType = MapDeviceTypeName(detail.machineType, deviceTypeNames);
+    }
+
+    private async Task ApplyWorkOrderDetailDisplayNamesAsync(IEnumerable<WorkOrderDetailDto> details, CancellationToken ct)
+    {
+        var dictNames = await GetWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
+        var deviceTypeNames = await GetDeviceTypeNamesAsync(ct).ConfigureAwait(false);
+        foreach (var detail in details)
+        {
+            ApplyWorkOrderDetailDictNames(detail, dictNames);
+            detail.machineType = MapDeviceTypeName(detail.machineType, deviceTypeNames);
+        }
     }
 
     private static void ApplyWorkOrderDetailDictNames(WorkOrderDetailDto detail, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> dictNames)
@@ -532,6 +549,39 @@ public sealed class WorkOrderApi : IWorkOrderApi
             ?? new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
 
         return _workOrderDictNames;
+    }
+
+    private async Task<IReadOnlyDictionary<string, string>> GetDeviceTypeNamesAsync(CancellationToken ct)
+    {
+        if (_deviceTypeNames is not null)
+        {
+            return _deviceTypeNames;
+        }
+
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _deviceTypeListEndpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<List<DeviceTypeDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccessOrCodeZero(data);
+
+        _deviceTypeNames = data?.result?
+            .Where(type => !string.IsNullOrWhiteSpace(type.devTypeCode) && !string.IsNullOrWhiteSpace(type.devTypeName))
+            .GroupBy(type => type.devTypeCode!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First().devTypeName!, StringComparer.OrdinalIgnoreCase)
+            ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        return _deviceTypeNames;
+    }
+
+    private static string? MapDeviceTypeName(string? value, IReadOnlyDictionary<string, string> deviceTypeNames)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        return deviceTypeNames.TryGetValue(value, out var name) ? name : value;
     }
 
     private static string? MapWorkOrderDictName(string? value, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> dictNames, string field)
