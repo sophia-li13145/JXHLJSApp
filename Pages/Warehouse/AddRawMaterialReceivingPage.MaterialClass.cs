@@ -297,6 +297,36 @@ public partial class AddRawMaterialReceivingPage
         return isKg ? value / 1000m : value;
     }
 
+    private static string NormalizeSummaryTextV2(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? "--"
+            : value.Trim();
+    }
+
+    private static string ResolveSummaryMaterialTypeV2(RawMaterialOcrDto item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.materialClassName))
+        {
+            return item.materialClassName.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(item.materialType))
+        {
+            return item.materialType.Trim();
+        }
+
+        return IsSemiFinishedV2(item) ? "半成品" : "原料";
+    }
+
+    private static string ResolveSummaryWeightUnitV2(RawMaterialOcrDto item)
+    {
+        var unit = ResolvePieceWeightUnitV2(item);
+        return unit.Equals("kg", StringComparison.OrdinalIgnoreCase)
+            ? "KG"
+            : unit;
+    }
+
     private async void OnConfirmTicketV2Clicked(
         object sender,
         EventArgs e)
@@ -481,35 +511,31 @@ public partial class AddRawMaterialReceivingPage
         _summaryItems.Clear();
 
         var summaries = _ocrItems
-            .GroupBy(item =>
-                string.IsNullOrWhiteSpace(item.materialName)
-                    ? "--"
-                    : item.materialName.Trim())
+            .GroupBy(item => new
+            {
+                materialName = NormalizeSummaryTextV2(
+                    item.materialName),
+                materialType = ResolveSummaryMaterialTypeV2(item),
+                originPlace = NormalizeSummaryTextV2(
+                    item.originPlace),
+                weightUnit = ResolveSummaryWeightUnitV2(item)
+            })
             .Select(group =>
             {
-                var first = group.First();
-                var totalWeightInTons =
-                    group.Sum(ParsePieceWeightInTonsV2);
-
-                var materialType =
-                    !string.IsNullOrWhiteSpace(
-                        first.materialClassName)
-                        ? first.materialClassName.Trim()
-                        : IsSemiFinishedV2(first)
-                            ? "半成品"
-                            : "原料";
+                var totalWeight = group.Sum(item =>
+                    ParsePieceWeightValueV2(item.pieceWeight));
 
                 return new MaterialSummaryItem(
-                    group.Key,
-                    materialType,
-                    string.IsNullOrWhiteSpace(
-                        first.originPlace)
-                        ? "--"
-                        : first.originPlace.Trim(),
+                    group.Key.materialName,
+                    group.Key.materialType,
+                    group.Key.originPlace,
                     group.Count(),
-                    totalWeightInTons);
+                    totalWeight,
+                    group.Key.weightUnit);
             })
             .OrderBy(item => item.materialName)
+            .ThenBy(item => item.materialType)
+            .ThenBy(item => item.originPlace)
             .ToList();
 
         foreach (var summary in summaries)

@@ -617,7 +617,7 @@
               Grid.RowSpan="3"
               IsVisible="False"
               BackgroundColor="#99000000"
-              Padding="54,0"
+              Padding="36,0"
               VerticalOptions="Fill"
               HorizontalOptions="Fill"
               PropertyChanged="OnBindOverlayPropertyChangedV2">
@@ -776,6 +776,7 @@
                                     BackgroundColor="#1F447E"
                                     TextColor="White"
                                     FontAttributes="Bold"
+                                    FontSize="14"
                                     CornerRadius="10"
                                     HeightRequest="50"
                                     Clicked="OnConfirmBindV2Clicked" />

@@ -226,6 +226,7 @@ public sealed class WarehouseApi : IWarehouseApi
 
     public async Task<RawMaterialReceivingDetailDto> GetRawMaterialReceivingDetailAsync(string instockNo, CancellationToken ct = default)
     {
+        var instockStatusNames = await LoadInstockStatusNamesAsync(ct).ConfigureAwait(false);
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_rawMaterialReceivingDetailEndpoint, new Dictionary<string, string?>
         {
             [nameof(instockNo)] = instockNo
@@ -233,7 +234,9 @@ public sealed class WarehouseApi : IWarehouseApi
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<RawMaterialReceivingDetailDto>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new RawMaterialReceivingDetailDto();
+        var detail = data.result ?? new RawMaterialReceivingDetailDto();
+        ApplyInstockStatusName(detail, instockStatusNames);
+        return detail;
     }
 
     public async Task<BlankInstockDto> AddBlankInstockAsync(CancellationToken ct = default)
@@ -453,6 +456,14 @@ public sealed class WarehouseApi : IWarehouseApi
             {
                 item.instockStatusName = name;
             }
+        }
+    }
+
+    private static void ApplyInstockStatusName(RawMaterialReceivingDetailDto detail, IReadOnlyDictionary<string, string> instockStatusNames)
+    {
+        if (!string.IsNullOrWhiteSpace(detail.instockStatus) && instockStatusNames.TryGetValue(detail.instockStatus, out var name))
+        {
+            detail.instockStatusName = name;
         }
     }
 
