@@ -475,8 +475,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
         var dictNames = await GetWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
         foreach (var task in tasks)
         {
-            task.workOrderStatus = MapWorkOrderDictName(task.workOrderStatus, dictNames, "workOrderStatus");
-            task.wireTakeUpMode = MapWorkOrderDictName(task.wireTakeUpMode, dictNames, "wireTakeUpMode");
+            ApplyWorkOrderDetailDictNames(task, dictNames);
         }
     }
 
@@ -494,8 +493,15 @@ public sealed class WorkOrderApi : IWorkOrderApi
         if (detail is null) return;
 
         var dictNames = await GetWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
+        ApplyWorkOrderDetailDictNames(detail, dictNames);
+    }
+
+    private static void ApplyWorkOrderDetailDictNames(WorkOrderDetailDto detail, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> dictNames)
+    {
         detail.workOrderStatus = MapWorkOrderDictName(detail.workOrderStatus, dictNames, "workOrderStatus");
         detail.wireTakeUpMode = MapWorkOrderDictName(detail.wireTakeUpMode, dictNames, "wireTakeUpMode");
+        detail.wireTakeUpSpeed = MapWorkOrderDictName(detail.wireTakeUpSpeed, dictNames, "wireTakeUpSpeed");
+        detail.packageMethod = MapWorkOrderDictName(detail.packageMethod, dictNames, "packageMethod");
     }
 
     private async Task<IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>> GetWorkOrderDictNamesAsync(CancellationToken ct)
