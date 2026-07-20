@@ -26,6 +26,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private string? _pendingQrCode;
     private bool _isExistingInstock;
     private bool _loadedExistingInstock;
+    private bool _isSubmittingInstock;
 
     public AddRawMaterialReceivingPage(
         IWarehouseApi warehouseApi,

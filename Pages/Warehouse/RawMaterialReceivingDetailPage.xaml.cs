@@ -44,6 +44,7 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
             StatusLabel.Text = detail.statusDisplay;
             InstockDateLabel.Text = detail.instockDateDisplay;
             WarehouseLabel.Text = detail.warehouseDisplay;
+            LocationLabel.Text = detail.locationDisplay;
             DetailTitleLabel.Text = $"入库明细 (共 {detail.detailItems.Count} 件)";
             DetailList.ItemsSource = detail.detailItems;
             AttachmentList.ItemsSource = detail.mainAttachments;

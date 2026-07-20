@@ -30,6 +30,7 @@ public partial class AppShell : Shell
     public const string RouteRawMaterialReceiving = "RawMaterialReceiving";
     public const string RouteAddRawMaterialReceiving = "AddRawMaterialReceiving";
     public const string RouteRawMaterialReceivingDetail = "RawMaterialReceivingDetail";
+    public const string RouteRawMaterialReceivingSuccess = "RawMaterialReceivingSuccess";
     public const string RouteDeliveryOrders = "DeliveryOrders";
     public const string RouteDeliveryOrderDetail = "DeliveryOrderDetail";
     public const string RouteDeliveryCompletionSuccess = "DeliveryCompletionSuccess";
@@ -72,6 +73,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteRawMaterialReceiving, typeof(RawMaterialReceivingListPage));
         Routing.RegisterRoute(RouteAddRawMaterialReceiving, typeof(AddRawMaterialReceivingPage));
         Routing.RegisterRoute(RouteRawMaterialReceivingDetail, typeof(RawMaterialReceivingDetailPage));
+        Routing.RegisterRoute(RouteRawMaterialReceivingSuccess, typeof(RawMaterialReceivingSuccessPage));
         Routing.RegisterRoute(RouteDeliveryOrders, typeof(DeliveryOrderListPage));
         Routing.RegisterRoute(RouteDeliveryOrderDetail, typeof(DeliveryOrderDetailPage));
         Routing.RegisterRoute(RouteDeliveryCompletionSuccess, typeof(DeliveryCompletionSuccessPage));

@@ -58,6 +58,7 @@ namespace JXHLJSApp
             builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.RawMaterialReceivingListPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.AddRawMaterialReceivingPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.RawMaterialReceivingDetailPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.RawMaterialReceivingSuccessPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.DeliveryOrderListPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.DeliveryOrderDetailPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Warehouse.DeliveryCompletionSuccessPage>();
