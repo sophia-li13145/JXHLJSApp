@@ -202,7 +202,7 @@ public partial class MachineQualityDetailPage : ContentPage
                 ("日期", DateTime.Now.ToString("yyyyMMdd")), ("机台", detail.deviceName ?? detail.deviceCode),
                 ("客户代码", FirstNonEmpty(detail.customerCode, detail.businessType)), ("炉号", detail.furnaceNo),
                 ("钢号", detail.steelGrade), ("挂牌", detail.inputSpecification),
-                ("工号", detail.workOrderNo), ("件号", detail.targetSpecification),
+                ("工号", detail.workOrderNo), ("件号", ResolvePieceNo(detail)),
                 ("产地", FirstNonEmpty(detail.originPlace, detail.freeAcid)), ("投料直径mm", detail.inputDiameterMm),
                 ("成品直径mm", detail.productDiameter), ("上公差", detail.upperToleranceValue),
                 ("下公差", detail.lowerToleranceValue), ("强度要求", detail.spoolWeightRequirement),
@@ -218,7 +218,8 @@ public partial class MachineQualityDetailPage : ContentPage
             ("质检方案", detail.inspectionSchemeName), ("方案类型", detail.inspectionSchemeTypeName),
             ("质检类型", FirstNonEmpty(detail.qualityTypeName, detail.qualityType)), ("状态", detail.inspectStatus),
             ("设备", FirstNonEmpty(detail.deviceName, detail.deviceCode)), ("炉号", detail.furnaceNo),
-            ("钢号", detail.steelGrade), ("规格", FirstNonEmpty(detail.targetSpecification, detail.inputSpecification))
+            ("钢号", detail.steelGrade), ("件号", ResolvePieceNo(detail)),
+            ("规格", FirstNonEmpty(detail.targetSpecification, detail.inputSpecification))
         };
     }
 
@@ -236,7 +237,8 @@ public partial class MachineQualityDetailPage : ContentPage
             ("二维码", material.qrCode), ("扫码次数", material.qrTimes?.ToString()),
             ("质检物料ID", material.qualityMaterialId), ("工单号", material.workOrderNo),
             ("炉号", material.furnaceNo), ("钢号", material.steelGrade),
-            ("规格", FirstNonEmpty(material.spec, material.inputSpecification, material.targetSpecification)), ("设备", FirstNonEmpty(material.deviceName, material.deviceCode)),
+            ("件号", material.pieceNo), ("规格", FirstNonEmpty(material.spec, material.inputSpecification, material.targetSpecification)),
+            ("设备", FirstNonEmpty(material.deviceName, material.deviceCode)),
             ("实测直径", material.actualDiameterMm), ("成品直径", material.productDiameter),
             ("强度", material.strengthMpa), ("表面状态", material.surfaceCondition),
             ("结果已保存", material.resultSaved ? "是" : "否"), ("备注", material.memo)
@@ -276,6 +278,11 @@ public partial class MachineQualityDetailPage : ContentPage
                 }
             });
         }
+    }
+
+    private static string ResolvePieceNo(ProductionQualityDetailDto detail)
+    {
+        return FirstNonEmpty(detail.pieceNo, detail.materialList?.FirstOrDefault()?.pieceNo);
     }
 
     private static string BuildLimitText(ProductionQualityInspectionItemDto item)
