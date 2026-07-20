@@ -387,6 +387,7 @@ public sealed class ProductionQualityDetailDto
     public string? lowerToleranceValue { get; set; }
     public string? memo { get; set; }
     public string? phosphatingTemperature { get; set; }
+    public string? pieceNo { get; set; }
     public string? productDiameter { get; set; }
     public string? saponificationPhValue { get; set; }
     public string? saponificationTemperature { get; set; }
@@ -446,6 +447,7 @@ public sealed class ProductionQualityMaterialDto
     public string? materialName { get; set; }
     public string? memo { get; set; }
     public string? phosphatingTemperature { get; set; }
+    public string? pieceNo { get; set; }
     public string? productDiameter { get; set; }
     public string? qrCode { get; set; }
     public int? qrTimes { get; set; }
