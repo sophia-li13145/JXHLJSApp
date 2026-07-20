@@ -947,7 +947,13 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private async void OnCancelClicked(object sender, EventArgs e) => await Shell.Current.GoToAsync("..");
 }
 
-internal sealed record MaterialSummaryItem(string materialName, string materialType, string originPlace, int count, decimal totalWeight)
+internal sealed record MaterialSummaryItem(
+    string materialName,
+    string materialType,
+    string originPlace,
+    int count,
+    decimal totalWeight,
+    string weightUnit = "吨")
 {
-    public string totalWeightDisplay => $"{totalWeight:0.00} 吨";
+    public string totalWeightDisplay => $"{totalWeight:0.##} {weightUnit}";
 }
