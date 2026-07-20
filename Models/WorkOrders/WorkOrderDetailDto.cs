@@ -4,6 +4,12 @@ public sealed class WorkOrderDetailDto
 {
     public decimal? actualQuantity { get; set; }
     public decimal? actualWeight { get; set; }
+    public string? batchNo { get; set; }
+    public string? productionBatch { get; set; }
+    public string? productionBatchNo { get; set; }
+    public string? productionDate { get; set; }
+    public string? shiftName { get; set; }
+    public string? shiftNo { get; set; }
     public string? billetLowerTolerance { get; set; }
     public string? billetUpperTolerance { get; set; }
     public string? blankSpecification { get; set; }
