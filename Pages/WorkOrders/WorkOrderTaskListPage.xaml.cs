@@ -51,9 +51,10 @@ public partial class WorkOrderTaskListPage : ContentPage
             .Select(group => group.First())
             .ToList();
 
-        if (_devices.All(device => !string.Equals(device.machineNo, _selectedMachineNo, StringComparison.OrdinalIgnoreCase)))
+        if (!string.IsNullOrWhiteSpace(_selectedMachineNo)
+            && _devices.All(device => !string.Equals(device.machineNo, _selectedMachineNo, StringComparison.OrdinalIgnoreCase)))
         {
-            _selectedMachineNo = _devices.FirstOrDefault()?.machineNo;
+            _selectedMachineNo = null;
         }
 
         BuildMachineButtons();
@@ -70,11 +71,7 @@ public partial class WorkOrderTaskListPage : ContentPage
     {
         MachineButtonLayout.Children.Clear();
 
-        if (_devices.Count == 0)
-        {
-            MachineButtonLayout.Children.Add(CreateMachineButton("全部", null));
-            return;
-        }
+        MachineButtonLayout.Children.Add(CreateMachineButton("全部机台", null));
 
         foreach (var device in _devices)
         {
@@ -89,17 +86,33 @@ public partial class WorkOrderTaskListPage : ContentPage
         {
             Text = text,
             CommandParameter = machineNo,
-            Padding = new Thickness(16, 8),
-            CornerRadius = 18,
-            MinimumWidthRequest = 86,
-            BackgroundColor = isSelected ? Color.FromArgb("#1677FF") : Colors.White,
-            BorderColor = isSelected ? Color.FromArgb("#1677FF") : Color.FromArgb("#D8E3F3"),
+            Padding = new Thickness(20, 10),
+            CornerRadius = 20,
+            MinimumWidthRequest = 100,
+            BackgroundColor = isSelected ? Color.FromArgb("#1F447E") : Colors.White,
+            BorderColor = isSelected ? Color.FromArgb("#1F447E") : Color.FromArgb("#D8E3F3"),
             BorderWidth = 1,
             TextColor = isSelected ? Colors.White : Color.FromArgb("#0A2E69"),
             FontAttributes = isSelected ? FontAttributes.Bold : FontAttributes.None
         };
         button.Clicked += OnMachineButtonClicked;
         return button;
+    }
+
+    private async void OnBackTapped(object sender, TappedEventArgs e)
+    {
+        await Shell.Current.GoToAsync("..");
+    }
+
+    private async void OnInstructionClicked(object sender, EventArgs e)
+    {
+        if (sender is not Button { CommandParameter: string id } || string.IsNullOrWhiteSpace(id))
+        {
+            await DisplayAlert("提示", "工单列表主键为空，无法查看生产作业指令卡。", "确定");
+            return;
+        }
+
+        await Shell.Current.GoToAsync($"{AppShell.RouteWorkOrderInstruction}?id={Uri.EscapeDataString(id)}");
     }
 
     private async void OnMachineButtonClicked(object? sender, EventArgs e)
