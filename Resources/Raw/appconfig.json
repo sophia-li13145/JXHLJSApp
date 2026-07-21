@@ -163,6 +163,7 @@
     "manualInspection": {
       "create": "/pda/manualInspection/create",
       "detail": "/pda/manualInspection/detail",
+      "addMaterial": "/pda/manualInspection/addMaterial",
       "saveResult": "/pda/manualInspection/saveResult",
       "complete": "/pda/manualInspection/complete"
     }
