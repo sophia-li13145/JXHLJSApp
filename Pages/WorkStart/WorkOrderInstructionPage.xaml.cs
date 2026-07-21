@@ -213,7 +213,7 @@ public partial class WorkOrderInstructionPage : ContentPage
         AddProductInfoCell(1, 2, "机台号", ValueOrDash(FirstNonEmpty(detail.machineNo, detail.deviceName, detail.deviceCode)));
         AddProductInfoCell(2, 0, "挂牌", ValueOrDash(detail.steelGrade));
         AddProductInfoCell(2, 2, "下料规格", ValueOrDash(detail.inputSpecification));
-        AddProductInfoCell(3, 0, "生产", ValueOrDash(detail.materialProperty));
+        AddProductInfoCell(3, 0, "生/淬", ValueOrDash(detail.materialProperty));
         AddProductInfoCell(3, 2, "拉拔方式", ValueOrDash(detail.drawMode));
         AddProductInfoCell(4, 0, "圈径", ValueOrDash(detail.coilDiameterControl));
         AddProductInfoCell(4, 2, "件重(KG)", FormatDecimalOrFallback(detail.pieceWeight, FormatDecimalOrFallback(FirstMoldSequenceValue(detail.moldSequenceList, item => item.pieceWeight), null)));
@@ -225,10 +225,11 @@ public partial class WorkOrderInstructionPage : ContentPage
     {
         ProductInfoGrid.Add(new Label
         {
-            Text = label,
+            Text = FormatParamLabel(label),
             TextColor = Color.FromArgb("#5C6F8F"),
             FontSize = 13,
-            VerticalTextAlignment = TextAlignment.Center
+            VerticalTextAlignment = TextAlignment.Center,
+            LineBreakMode = LineBreakMode.WordWrap
         }, column, row);
         var valueLabel = new Label
         {
@@ -346,10 +347,11 @@ public partial class WorkOrderInstructionPage : ContentPage
         };
         grid.Add(new Label
         {
-            Text = label,
+            Text = FormatParamLabel(label),
             TextColor = Color.FromArgb("#5C6F8F"),
             FontSize = 14,
-            VerticalTextAlignment = TextAlignment.Center
+            VerticalTextAlignment = TextAlignment.Center,
+            LineBreakMode = LineBreakMode.WordWrap
         }, 0, 0);
         grid.Add(new Label
         {
@@ -610,10 +612,10 @@ public partial class WorkOrderInstructionPage : ContentPage
     {
         ProcessParamsGrid.Add(new Label
         {
-            Text = label,
+            Text = FormatParamLabel(label),
             TextColor = Color.FromArgb("#5C6F8F"),
             FontSize = 13,
-            LineBreakMode = LineBreakMode.NoWrap,
+            LineBreakMode = LineBreakMode.WordWrap,
             Margin = margin
         }, column, row);
     }
@@ -723,7 +725,13 @@ public partial class WorkOrderInstructionPage : ContentPage
 
     private static string FormatParamLabel(string label)
     {
-        return label;
+        const int maxSingleLineLabelLength = 4;
+        if (string.IsNullOrEmpty(label) || label.Length <= maxSingleLineLabelLength || label.Contains('\n', StringComparison.Ordinal))
+        {
+            return label;
+        }
+
+        return label.Insert(maxSingleLineLabelLength, Environment.NewLine);
     }
 
     private static string? FormatDecimalOrFallback(decimal? value, string? fallback)
@@ -845,7 +853,13 @@ public partial class WorkOrderInstructionPage : ContentPage
 
     private static void AddInlineValue(Grid grid, int column, string label, string value, Color valueColor)
     {
-        grid.Add(new Label { Text = label, TextColor = Color.FromArgb("#5C6F8F"), FontSize = 14 }, column, 0);
+        grid.Add(new Label
+        {
+            Text = FormatParamLabel(label),
+            TextColor = Color.FromArgb("#5C6F8F"),
+            FontSize = 14,
+            LineBreakMode = LineBreakMode.WordWrap
+        }, column, 0);
         grid.Add(new Label { Text = value, TextColor = valueColor, FontAttributes = FontAttributes.Bold, FontSize = 15, HorizontalTextAlignment = TextAlignment.End }, column + 1, 0);
     }
 
