@@ -122,7 +122,7 @@ public partial class MachineQualityDetailPage : ContentPage
         MemoLabel.IsVisible = !isHeat;
         MemoEditor.IsVisible = !isHeat;
         var isSubmitOnlyProcess = isAcid || isDrawing;
-        SubmitButton.Text = isAcid ? "完 成" : "提交质检";
+        SubmitButton.Text = isSubmitOnlyProcess ? "完成" : "提交质检";
         CompleteButton.IsVisible = !isSubmitOnlyProcess;
         Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
         ScanMaterialButton.IsVisible = false;
@@ -211,7 +211,7 @@ public partial class MachineQualityDetailPage : ContentPage
         {
             return new[]
             {
-                ("日期", DateTime.Now.ToString("yyyyMMdd")), ("机台", detail.deviceName ?? detail.deviceCode),
+                ("日期", ResolveHeatTreatmentCardDate(detail)), ("机台", detail.deviceName ?? detail.deviceCode),
                 ("批号", FirstNonEmpty(detail.batchNo, detail.businessType)), ("炉号", detail.furnaceNo),
                 ("产地", FirstNonEmpty(detail.originPlace, detail.freeAcid)), ("钢号", detail.steelGrade),
                 ("工号", detail.workOrderNo), ("班次", FirstNonEmpty(detail.shiftNo, detail.targetSpecification)),
@@ -308,6 +308,13 @@ public partial class MachineQualityDetailPage : ContentPage
     private static string ResolvePieceNo(ProductionQualityDetailDto detail)
     {
         return FirstNonEmpty(detail.pieceNo, detail.materialList?.FirstOrDefault()?.pieceNo);
+    }
+
+    private static string ResolveHeatTreatmentCardDate(ProductionQualityDetailDto detail)
+    {
+        return DateTime.TryParse(FirstNonEmpty(detail.inspectDate), CultureInfo.CurrentCulture, DateTimeStyles.None, out var inspectDate)
+            ? inspectDate.ToString("yyyyMMdd", CultureInfo.InvariantCulture)
+            : DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
     }
 
     private static string BuildLimitText(ProductionQualityInspectionItemDto item)
@@ -424,7 +431,12 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static bool IsSamplingOrFullScheme(string? schemeName)
     {
-        return HasSchemeToken(schemeName, SchemeBlankOpening, "抽检") || IsHeatTreatmentScheme(schemeName);
+        return IsBlankOpeningScheme(schemeName) || HasSchemeToken(schemeName, "抽检") || IsHeatTreatmentScheme(schemeName);
+    }
+
+    private static bool IsBlankOpeningScheme(string? schemeName)
+    {
+        return HasSchemeToken(schemeName, SchemeBlankOpening);
     }
 
     private static bool IsProcessCardScheme(string? schemeName)
@@ -593,6 +605,7 @@ public partial class MachineQualityDetailPage : ContentPage
             };
 
             var isAcid = IsPicklingScheme(_inspectionSchemeName);
+            var shouldStayAfterSubmit = IsBlankOpeningScheme(_inspectionSchemeName);
             var committed = _isManualInspection
                 ? await _qualityApi.SaveManualInspectionResultAsync(new ProductionManualInspectionSaveResultRequestDto
                 {
@@ -673,7 +686,10 @@ public partial class MachineQualityDetailPage : ContentPage
             }
 
             await DisplayAlert("提交成功", "质检结果已提交。", "确定");
-            await Shell.Current.GoToAsync("..");
+            if (!shouldStayAfterSubmit)
+            {
+                await Shell.Current.GoToAsync("..");
+            }
         }
         catch (Exception ex)
         {
