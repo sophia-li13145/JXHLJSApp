@@ -1,3 +1,4 @@
+using JXHLJSApp.Services;
 using JXHLJSApp.Models.WorkOrders;
 using JXHLJSApp.Services.WorkOrders;
 using Microsoft.Maui.Controls.Shapes;
@@ -49,7 +50,7 @@ public partial class WorkOrderInstructionPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("查询失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "查询失败", ex.Message, "确定");
         }
         finally
         {

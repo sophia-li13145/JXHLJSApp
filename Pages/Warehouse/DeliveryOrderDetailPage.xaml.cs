@@ -49,7 +49,7 @@ public partial class DeliveryOrderDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("加载失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "加载失败", ex.Message, "确定");
         }
     }
 
@@ -103,7 +103,7 @@ public partial class DeliveryOrderDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("扫码确认失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "扫码确认失败", ex.Message, "确定");
         }
     }
 
@@ -157,7 +157,7 @@ public partial class DeliveryOrderDetailPage : ContentPage
             var success = await _warehouseApi.ConfirmDeliveryCompletionAsync(_deliveryNo);
             if (success is false)
             {
-                await DisplayAlert("确认失败", "接口返回确认失败，请稍后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "确认失败", "接口返回确认失败，请稍后重试。", "确定");
                 return;
             }
 
@@ -165,7 +165,7 @@ public partial class DeliveryOrderDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("确认失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "确认失败", ex.Message, "确定");
         }
     }
 

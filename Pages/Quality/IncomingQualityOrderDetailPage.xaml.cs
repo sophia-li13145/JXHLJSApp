@@ -74,7 +74,7 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("加载失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "加载失败", ex.Message, "确定");
         }
         finally
         {
@@ -186,7 +186,7 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
             var completed = await _qualityApi.CompleteIncomingQualityOrderAsync(_incomingQualityNo);
             if (!completed)
             {
-                await DisplayAlert("完成失败", "接口未返回完成成功，请稍后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "完成失败", "接口未返回完成成功，请稍后重试。", "确定");
                 return;
             }
             await DisplayAlert("完成成功", "来料质检单已完成。", "确定");
@@ -194,7 +194,7 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("完成失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "完成失败", ex.Message, "确定");
         }
     }
 
@@ -214,7 +214,7 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
             var deleted = await _qualityApi.DeleteIncomingQualityOrderAsync(_incomingQualityNo);
             if (!deleted)
             {
-                await DisplayAlert("删除失败", "接口未返回删除成功，请稍后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "删除失败", "接口未返回删除成功，请稍后重试。", "确定");
                 return;
             }
 
@@ -223,7 +223,7 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("删除失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "删除失败", ex.Message, "确定");
         }
     }
 

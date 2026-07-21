@@ -55,7 +55,7 @@ public partial class AbnormalReportPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("字典加载失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "字典加载失败", ex.Message, "确定");
         }
     }
 
@@ -122,7 +122,7 @@ public partial class AbnormalReportPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("识别失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "识别失败", ex.Message, "确定");
         }
     }
 
@@ -236,27 +236,27 @@ public partial class AbnormalReportPage : ContentPage
         }
         catch (Exception ex) when (ex is FeatureNotSupportedException or FeatureNotEnabledException)
         {
-            await DisplayAlert("拍照失败", "当前设备不支持调用相机或相机功能未启用。", "确定");
+            await ErrorDialogService.ShowAsync(this, "拍照失败", "当前设备不支持调用相机或相机功能未启用。", "确定");
         }
         catch (Exception ex) when (ex is PermissionException or UnauthorizedAccessException)
         {
-            await DisplayAlert("权限错误", "没有相机或照片文件访问权限，请在系统设置中授权后重试。", "确定");
+            await ErrorDialogService.ShowAsync(this, "权限错误", "没有相机或照片文件访问权限，请在系统设置中授权后重试。", "确定");
         }
         catch (HttpRequestException ex)
         {
-            await DisplayAlert("接口错误", $"照片上传接口请求失败：{ex.Message}", "确定");
+            await ErrorDialogService.ShowAsync(this, "接口错误", $"照片上传接口请求失败：{ex.Message}", "确定");
         }
         catch (InvalidOperationException ex)
         {
-            await DisplayAlert("接口错误", $"照片上传接口返回异常：{ex.Message}", "确定");
+            await ErrorDialogService.ShowAsync(this, "接口错误", $"照片上传接口返回异常：{ex.Message}", "确定");
         }
         catch (IOException ex)
         {
-            await DisplayAlert("照片读取失败", $"已拍摄照片读取失败：{ex.Message}", "确定");
+            await ErrorDialogService.ShowAsync(this, "照片读取失败", $"已拍摄照片读取失败：{ex.Message}", "确定");
         }
         catch (Exception ex)
         {
-            await DisplayAlert("拍照或上传失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "拍照或上传失败", ex.Message, "确定");
         }
     }
 
@@ -315,7 +315,7 @@ public partial class AbnormalReportPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("上报失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "上报失败", ex.Message, "确定");
         }
     }
 

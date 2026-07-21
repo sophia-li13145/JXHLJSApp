@@ -33,7 +33,7 @@ public partial class ProcessTransferScanPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("获取转运单失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "获取转运单失败", ex.Message, "确定");
         }
         finally
         {

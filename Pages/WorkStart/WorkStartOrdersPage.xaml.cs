@@ -1,3 +1,4 @@
+using JXHLJSApp.Services;
 using JXHLJSApp.Models.WorkOrders;
 using JXHLJSApp.Services.WorkOrders;
 
@@ -40,7 +41,7 @@ public partial class WorkStartOrdersPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("查询失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "查询失败", ex.Message, "确定");
         }
         finally
         {
@@ -98,7 +99,7 @@ public partial class WorkStartOrdersPage : ContentPage
             var result = await _workOrderApi.StartWorkOrderAsync(order.workOrderNo);
             if (!result)
             {
-                await DisplayAlert("开工失败", "接口返回开工失败，请稍后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "开工失败", "接口返回开工失败，请稍后重试。", "确定");
                 return;
             }
 
@@ -117,7 +118,7 @@ public partial class WorkStartOrdersPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("开工失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "开工失败", ex.Message, "确定");
         }
     }
 }

@@ -1,3 +1,4 @@
+using JXHLJSApp.Services;
 using JXHLJSApp.Models.Quality;
 using JXHLJSApp.Services.Quality;
 using Microsoft.Maui.Controls.Shapes;
@@ -36,7 +37,7 @@ public partial class IncomingQualityOrderListPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("加载失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "加载失败", ex.Message, "确定");
         }
         finally
         {
@@ -53,7 +54,7 @@ public partial class IncomingQualityOrderListPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("加载失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "加载失败", ex.Message, "确定");
         }
         finally
         {
@@ -131,7 +132,7 @@ public partial class IncomingQualityOrderListPage : ContentPage
             var deleted = await _qualityApi.DeleteIncomingQualityOrderAsync(incomingQualityNo);
             if (!deleted)
             {
-                await DisplayAlert("删除失败", "接口未返回删除成功，请稍后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "删除失败", "接口未返回删除成功，请稍后重试。", "确定");
                 return;
             }
 
@@ -143,7 +144,7 @@ public partial class IncomingQualityOrderListPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("删除失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "删除失败", ex.Message, "确定");
         }
     }
 

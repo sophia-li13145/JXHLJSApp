@@ -31,7 +31,7 @@ public partial class MachineQualityScanPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("查询失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "查询失败", ex.Message, "确定");
         }
     }
 }
