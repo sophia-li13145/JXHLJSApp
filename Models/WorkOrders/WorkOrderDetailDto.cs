@@ -53,6 +53,7 @@ public sealed class WorkOrderDetailDto
     public string? qualityNo { get; set; }
     public string? saleMode { get; set; }
     public string? steelGrade { get; set; }
+    public string? steelWireShape { get; set; }
     public string? usagePurpose { get; set; }
     public string? wireTakeUpLength { get; set; }
     public string? wireTakeUpMode { get; set; }
