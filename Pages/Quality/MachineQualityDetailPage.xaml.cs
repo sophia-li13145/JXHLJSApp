@@ -449,7 +449,7 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static bool IsBlankOpeningScheme(string? schemeName)
     {
-        return HasSchemeToken(schemeName, SchemeBlankOpening);
+        return HasSchemeToken(schemeName, SchemeBlankOpening, "开胚");
     }
 
     private static bool IsProcessCardScheme(string? schemeName)
@@ -518,6 +518,17 @@ public partial class MachineQualityDetailPage : ContentPage
     private bool ShouldUseManualInspectionAddMaterial()
     {
         return _manualInspectionFromQuery || (_detail is not null && IsPatrolInspection(_detail));
+    }
+
+    private bool ShouldUseSamplingOrFullComplete()
+    {
+        if (_detail is not null && IsPatrolInspection(_detail)) return false;
+
+        var processName = _detail is null ? _inspectionSchemeName : ResolveProcessName(_detail);
+        return IsHeatTreatmentScheme(processName) ||
+            IsBlankOpeningScheme(processName) ||
+            IsHeatTreatmentScheme(_inspectionSchemeName) ||
+            IsBlankOpeningScheme(_inspectionSchemeName);
     }
 
     private static bool IsPatrolInspection(ProductionQualityDetailDto detail)
@@ -815,15 +826,32 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private async void OnCompleteClicked(object sender, EventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(_qualityNo) || (!_isManualInspection && string.IsNullOrWhiteSpace(_workOrderNo)))
+        var useSamplingOrFullComplete = ShouldUseSamplingOrFullComplete();
+        if (string.IsNullOrWhiteSpace(_qualityNo) || (useSamplingOrFullComplete && string.IsNullOrWhiteSpace(_workOrderNo)) || (!_isManualInspection && string.IsNullOrWhiteSpace(_workOrderNo)))
         {
-            await DisplayAlert("提示", _isManualInspection ? "质检单号为空，无法完成。" : "质检单号或工单号为空，无法完成。", "确定");
+            var message = useSamplingOrFullComplete || !_isManualInspection
+                ? "质检单号或工单号为空，无法完成。"
+                : "质检单号为空，无法完成。";
+            await DisplayAlert("提示", message, "确定");
             return;
         }
 
         try
         {
-            if (_isManualInspection)
+            if (useSamplingOrFullComplete)
+            {
+                var completed = await _qualityApi.CompleteProductionSamplingOrFullAsync(new ProductionSamplingOrFullCompleteRequestDto
+                {
+                    qualityNo = _qualityNo,
+                    workOrderNo = _workOrderNo
+                });
+                if (!completed)
+                {
+                    await ErrorDialogService.ShowAsync(this, "完成失败", "接口未返回完成成功，请稍后重试。", "确定");
+                    return;
+                }
+            }
+            else if (_isManualInspection)
             {
                 await _qualityApi.CompleteManualInspectionAsync(_qualityNo);
             }
