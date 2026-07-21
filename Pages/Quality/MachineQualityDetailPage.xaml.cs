@@ -183,11 +183,11 @@ public partial class MachineQualityDetailPage : ContentPage
         {
             if (i % 2 == 0) InfoGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var cell = CreateInfoCell(rows[i].Label, rows[i].Value);
+            InfoGrid.Add(cell, i % 2, i / 2);
             if (rows.Length == 1)
             {
                 Grid.SetColumnSpan(cell, 2);
             }
-            InfoGrid.Add(cell, i % 2, i / 2);
         }
     }
 
@@ -418,12 +418,22 @@ public partial class MachineQualityDetailPage : ContentPage
         var grid = new Grid
         {
             ColumnDefinitions = new ColumnDefinitionCollection(new ColumnDefinition { Width = GridLength.Auto }, new ColumnDefinition { Width = GridLength.Star }),
-            ColumnSpacing = 10
+            ColumnSpacing = 10,
+            HorizontalOptions = LayoutOptions.Fill
         };
         var labelColor = Color.FromArgb("#38557C");
         var valueColor = Color.FromArgb("#0042AD");
         grid.Add(new Label { Text = label, TextColor = labelColor, FontSize = 14, LineBreakMode = LineBreakMode.NoWrap });
-        grid.Add(new Label { Text = string.IsNullOrWhiteSpace(value) ? "-" : value, TextColor = valueColor, FontSize = 14, FontAttributes = FontAttributes.Bold, HorizontalTextAlignment = TextAlignment.End, LineBreakMode = LineBreakMode.NoWrap }, 1);
+        grid.Add(new Label
+        {
+            Text = string.IsNullOrWhiteSpace(value) ? "-" : value,
+            TextColor = valueColor,
+            FontSize = 14,
+            FontAttributes = FontAttributes.Bold,
+            HorizontalOptions = LayoutOptions.Fill,
+            HorizontalTextAlignment = TextAlignment.End,
+            LineBreakMode = LineBreakMode.NoWrap
+        }, 1);
         return grid;
     }
 
