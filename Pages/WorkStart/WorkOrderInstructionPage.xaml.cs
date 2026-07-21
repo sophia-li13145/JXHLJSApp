@@ -46,7 +46,7 @@ public partial class WorkOrderInstructionPage : ContentPage
                 return;
             }
 
-            BindDetail(detail);
+            await BindDetailAsync(detail);
         }
         catch (Exception ex)
         {
@@ -79,19 +79,20 @@ public partial class WorkOrderInstructionPage : ContentPage
             : $"{text}工序";
     }
 
-    private void BindDetail(WorkOrderDetailDto detail)
+    private async Task BindDetailAsync(WorkOrderDetailDto detail)
     {
         WorkOrderNoLabel.Text = ValueOrDash(detail.workOrderNo);
         OperationLabel.Text = FormatOperationBadge(detail.operationName);
         StatusLabel.Text = ValueOrDash(detail.workOrderStatus);
         ApplyStatusBadgeStyle(detail.workOrderStatus);
         CurrentOperationLabel.Text = ValueOrDash(detail.operationName);
-        MachineLabel.Text = ValueOrDash(string.IsNullOrWhiteSpace(detail.machineNo) ? detail.deviceName : detail.machineNo);
+
+        var processKind = GetProcessInstructionKind(detail);
+        var isHeatTreatment = processKind == ProcessInstructionKind.HeatTreatment;
+        MachineLabel.Text = await ResolveMachineDisplayAsync(detail, isHeatTreatment);
         ProductLabel.Text = JoinNonEmpty(detail.steelGrade, detail.productSpecification, detail.materialProperty);
         MemoLabel.Text = detail.memo ?? string.Empty;
 
-        var processKind = GetProcessInstructionKind(detail.operationName);
-        var isHeatTreatment = processKind == ProcessInstructionKind.HeatTreatment;
         ProductInfoTitleLabel.IsVisible = !isHeatTreatment;
         ProductInfoDivider.IsVisible = !isHeatTreatment;
         ProductInfoGrid.IsVisible = !isHeatTreatment;
@@ -130,7 +131,7 @@ public partial class WorkOrderInstructionPage : ContentPage
 
         if (processKind == ProcessInstructionKind.BlankOpening || processKind == ProcessInstructionKind.Drawing)
         {
-            BindPrimaryProductionInfo(detail);
+            BindPrimaryProductionInfo(detail, processKind);
         }
         else
         {
@@ -150,6 +151,27 @@ public partial class WorkOrderInstructionPage : ContentPage
         }
     }
 
+    private async Task<string> ResolveMachineDisplayAsync(WorkOrderDetailDto detail, bool isHeatTreatment)
+    {
+        if (!isHeatTreatment)
+        {
+            return ValueOrDash(string.IsNullOrWhiteSpace(detail.machineNo) ? detail.deviceName : detail.machineNo);
+        }
+
+        var machineCodeCandidates = new[] { detail.machineNo, detail.deviceCode, detail.deviceName }
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value!.Trim())
+            .ToArray();
+        if (machineCodeCandidates.Length == 0)
+        {
+            return "--";
+        }
+
+        var devices = await _workOrderApi.GetDeviceListAsync();
+        var device = devices.FirstOrDefault(item => machineCodeCandidates.Any(candidate =>
+            string.Equals(item.devCode, candidate, StringComparison.OrdinalIgnoreCase)));
+        return ValueOrDash(FirstNonEmptyOrDefault(device?.devName, detail.deviceName, detail.machineNo, detail.deviceCode));
+    }
 
     private void BindDefaultProductInfo(WorkOrderDetailDto detail)
     {
@@ -238,23 +260,41 @@ public partial class WorkOrderInstructionPage : ContentPage
         HeatTreatment
     }
 
-    private static ProcessInstructionKind GetProcessInstructionKind(string? operationName)
+    private static ProcessInstructionKind GetProcessInstructionKind(WorkOrderDetailDto detail)
     {
-        var normalizedOperationName = operationName?.Trim();
-        if (string.Equals(normalizedOperationName, "开胚", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalizedOperationName, "开坯", StringComparison.OrdinalIgnoreCase))
+        var normalizedOperationName = detail.operationName?.Trim() ?? string.Empty;
+        var normalizedOperationCode = detail.operationCode?.Trim() ?? string.Empty;
+        var normalizedWorkOrderNo = detail.workOrderNo?.Trim() ?? string.Empty;
+
+        if (ContainsAny(normalizedOperationName, "开胚")
+            || string.Equals(normalizedOperationCode, "KP", StringComparison.OrdinalIgnoreCase)
+            || normalizedWorkOrderNo.Contains("-KP-", StringComparison.OrdinalIgnoreCase))
         {
             return ProcessInstructionKind.BlankOpening;
         }
 
-        if (string.Equals(normalizedOperationName, "拉拔", StringComparison.OrdinalIgnoreCase))
+        if (ContainsAny(normalizedOperationName, "拉拔")
+            || string.Equals(normalizedOperationCode, "LB", StringComparison.OrdinalIgnoreCase)
+            || normalizedOperationCode.Contains("draw", StringComparison.OrdinalIgnoreCase)
+            || normalizedWorkOrderNo.Contains("-LB-", StringComparison.OrdinalIgnoreCase))
         {
             return ProcessInstructionKind.Drawing;
         }
 
-        return string.Equals(normalizedOperationName, "热处理", StringComparison.OrdinalIgnoreCase)
-            ? ProcessInstructionKind.HeatTreatment
-            : ProcessInstructionKind.Default;
+        if (ContainsAny(normalizedOperationName, "热处理")
+            || string.Equals(normalizedOperationCode, "RL", StringComparison.OrdinalIgnoreCase)
+            || normalizedOperationCode.Contains("heat", StringComparison.OrdinalIgnoreCase)
+            || normalizedWorkOrderNo.Contains("-RL-", StringComparison.OrdinalIgnoreCase))
+        {
+            return ProcessInstructionKind.HeatTreatment;
+        }
+
+        return ProcessInstructionKind.Default;
+    }
+
+    private static bool ContainsAny(string value, params string[] keywords)
+    {
+        return keywords.Any(keyword => value.Contains(keyword, StringComparison.OrdinalIgnoreCase));
     }
 
     private void BindHeatTreatmentParams(WorkOrderDetailDto detail)
@@ -326,19 +366,32 @@ public partial class WorkOrderInstructionPage : ContentPage
     }
 
 
-    private void BindPrimaryProductionInfo(WorkOrderDetailDto detail)
+    private void BindPrimaryProductionInfo(WorkOrderDetailDto detail, ProcessInstructionKind processKind)
     {
         MoldSequenceLayout.Children.Clear();
         var firstSequence = detail.moldSequenceList?.FirstOrDefault();
         var displayItem = new WorkOrderMoldSequenceDto
         {
-            moldSequence = firstSequence?.moldSequence,
+            moldSequence = JoinMoldSequences(detail.moldSequenceList),
             pieceWeight = detail.pieceWeight ?? firstSequence?.pieceWeight,
             productionQuantity = detail.productionQuantity ?? firstSequence?.productionQuantity,
             productionWeight = detail.productionWeight ?? firstSequence?.productionWeight
         };
 
-        MoldSequenceLayout.Children.Add(BuildDrawingMoldSequenceCard(displayItem));
+        MoldSequenceLayout.Children.Add(BuildPrimaryProductionCard(displayItem, processKind));
+    }
+
+    private static string? JoinMoldSequences(IReadOnlyList<WorkOrderMoldSequenceDto>? sequences)
+    {
+        if (sequences is null || sequences.Count == 0)
+        {
+            return null;
+        }
+
+        var text = string.Join("-", sequences
+            .Select(item => item.moldSequence?.Trim())
+            .Where(value => !string.IsNullOrWhiteSpace(value)));
+        return string.IsNullOrWhiteSpace(text) ? null : text;
     }
 
     private void BindMoldSequences(IReadOnlyList<WorkOrderMoldSequenceDto>? sequences, ProcessInstructionKind processKind)
@@ -394,10 +447,14 @@ public partial class WorkOrderInstructionPage : ContentPage
         return card;
     }
 
-    private static VerticalStackLayout BuildDrawingMoldSequenceCard(WorkOrderMoldSequenceDto item)
+    private static VerticalStackLayout BuildDrawingMoldSequenceCard(WorkOrderMoldSequenceDto item) =>
+        BuildPrimaryProductionCard(item, ProcessInstructionKind.Drawing);
+
+    private static VerticalStackLayout BuildPrimaryProductionCard(WorkOrderMoldSequenceDto item, ProcessInstructionKind processKind)
     {
+        var weightLabel = processKind == ProcessInstructionKind.BlankOpening ? "生产总重量(吨)" : "生产重量(吨)";
         var card = new VerticalStackLayout { Spacing = 10 };
-        card.Children.Add(BuildTwoColumnRow("生产重量(吨)", FormatDecimal(item.productionWeight), "生产件数", FormatDecimal(item.productionQuantity)));
+        card.Children.Add(BuildTwoColumnRow(weightLabel, FormatDecimal(item.productionWeight), "生产件数", FormatDecimal(item.productionQuantity)));
         card.Children.Add(new BoxView
         {
             HeightRequest = 1,
@@ -439,10 +496,29 @@ public partial class WorkOrderInstructionPage : ContentPage
         ProcessParamsGrid.Children.Clear();
         ProcessParamsGrid.RowDefinitions.Clear();
 
+        if (processKind == ProcessInstructionKind.Drawing)
+        {
+            BindDrawingProcessParams(detail);
+            return;
+        }
+
+        if (processKind == ProcessInstructionKind.BlankOpening)
+        {
+            BindBlankOpeningProcessParams(detail);
+            return;
+        }
+
+        ProcessParamsTitleLabel.IsVisible = true;
+        ProcessParamsTitleLabel.Text = "⚙️ 工艺基础参数";
+        ProcessParamsBorder.BackgroundColor = Color.FromArgb("#F8FAFD");
+        ProcessParamsBorder.Stroke = Color.FromArgb("#DDE6F1");
+        ProcessParamsBorder.StrokeThickness = 1;
+        ProcessParamsBorder.Padding = new Thickness(12);
+        ProcessParamsGrid.RowSpacing = 14;
+
         var items = processKind switch
         {
             ProcessInstructionKind.BlankOpening => BuildBlankOpeningParams(detail),
-            ProcessInstructionKind.Drawing => BuildDrawingParams(detail),
             _ => BuildDefaultProcessParams(detail)
         };
         var row = 0;
@@ -458,6 +534,103 @@ public partial class WorkOrderInstructionPage : ContentPage
         }
     }
 
+    private void BindDrawingProcessParams(WorkOrderDetailDto detail)
+    {
+        ProcessParamsTitleLabel.IsVisible = false;
+        ProcessParamsBorder.BackgroundColor = Colors.Transparent;
+        ProcessParamsBorder.StrokeThickness = 0;
+        ProcessParamsBorder.Padding = Thickness.Zero;
+        ProcessParamsGrid.RowSpacing = 16;
+
+        var row = 0;
+        AddDrawingFullWidthParamRow(row++, "收线速度", detail.wireTakeUpSpeed);
+        AddDrawingTwoParamRow(row++, "收线方式", detail.wireTakeUpMode, "钢丝形状", detail.steelWireShape);
+        AddDrawingFullWidthParamRow(row++, "收线长度", FormatLengthWithUnit(detail.wireTakeUpLength));
+        AddDrawingFullWidthParamRow(row++, "盘重要求", detail.coilWeightRequirement);
+        AddDrawingFullWidthParamRow(row++, "产品直径", detail.productSpecification);
+        AddDrawingTwoParamRow(row++, "下公差(mm)", detail.billetLowerTolerance, "上公差(mm)", detail.billetUpperTolerance);
+        AddDrawingTwoParamRow(row++, "圈距控制", detail.pitchControl, "圈径控制", detail.coilDiameterControl);
+        AddDrawingTwoParamRow(row, "椭圆度控制", detail.ovalityControl, "质检方式", detail.inspectionSchemeName);
+    }
+
+    private void BindBlankOpeningProcessParams(WorkOrderDetailDto detail)
+    {
+        ProcessParamsTitleLabel.IsVisible = false;
+        ProcessParamsBorder.BackgroundColor = Colors.Transparent;
+        ProcessParamsBorder.StrokeThickness = 0;
+        ProcessParamsBorder.Padding = Thickness.Zero;
+        ProcessParamsGrid.RowSpacing = 16;
+
+        var row = 0;
+        AddDrawingTwoParamRow(row++, "收线速度", detail.wireTakeUpSpeed, "收线方式", detail.wireTakeUpMode);
+        AddDrawingFullWidthParamRow(row++, "炉号", detail.furnaceNo);
+        AddDrawingFullWidthParamRow(row++, "收线长度", FormatLengthWithUnit(detail.wireTakeUpLength));
+        AddDrawingFullWidthParamRow(row++, "盘重要求", detail.coilWeightRequirement);
+        AddDrawingTwoParamRow(row++, "投料钢号", detail.inputSteelGrade, "上料规格", detail.inputSpecification);
+        AddDrawingTwoParamRow(row++, "钢号", detail.steelGrade, "下料规格", detail.blankSpecification);
+        AddDrawingTwoParamRow(row++, "开胚下公差(mm)", detail.billetLowerTolerance, "开胚上公差(mm)", detail.billetUpperTolerance);
+        AddDrawingTwoParamRow(row++, "圈距控制", detail.pitchControl, "圈径控制", detail.coilDiameterControl);
+        AddDrawingTwoParamRow(row++, "椭圆度控制", detail.ovalityControl, "质检方式", detail.inspectionSchemeName);
+        AddDrawingSeparator(row++);
+        AddDrawingFullWidthParamRow(row, "用途", detail.usagePurpose);
+    }
+
+    private void AddDrawingSeparator(int row)
+    {
+        ProcessParamsGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        var separator = new BoxView
+        {
+            HeightRequest = 1,
+            Color = Color.FromArgb("#D8E0EA"),
+            Margin = new Thickness(0, 2)
+        };
+        ProcessParamsGrid.Add(separator, 0, row);
+        Grid.SetColumnSpan(separator, 4);
+    }
+
+    private void AddDrawingFullWidthParamRow(int row, string label, string? value)
+    {
+        ProcessParamsGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        AddDrawingParamLabel(row, 0, label, Thickness.Zero);
+        var valueLabel = BuildDrawingParamValue(value);
+        ProcessParamsGrid.Add(valueLabel, 1, row);
+        Grid.SetColumnSpan(valueLabel, 3);
+    }
+
+    private void AddDrawingTwoParamRow(int row, string leftLabel, string? leftValue, string rightLabel, string? rightValue)
+    {
+        ProcessParamsGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        AddDrawingParamLabel(row, 0, leftLabel, Thickness.Zero);
+        ProcessParamsGrid.Add(BuildDrawingParamValue(leftValue), 1, row);
+        AddDrawingParamLabel(row, 2, rightLabel, new Thickness(14, 0, 0, 0));
+        ProcessParamsGrid.Add(BuildDrawingParamValue(rightValue), 3, row);
+    }
+
+    private void AddDrawingParamLabel(int row, int column, string label, Thickness margin)
+    {
+        ProcessParamsGrid.Add(new Label
+        {
+            Text = label,
+            TextColor = Color.FromArgb("#5C6F8F"),
+            FontSize = 13,
+            LineBreakMode = LineBreakMode.NoWrap,
+            Margin = margin
+        }, column, row);
+    }
+
+    private static Label BuildDrawingParamValue(string? value)
+    {
+        return new Label
+        {
+            Text = ProcessParamValueOrEmpty(value),
+            TextColor = Colors.Black,
+            FontAttributes = FontAttributes.Bold,
+            FontSize = 13,
+            HorizontalTextAlignment = TextAlignment.End,
+            LineBreakMode = LineBreakMode.WordWrap
+        };
+    }
+
     private static (string Label, string? Value)[] BuildBlankOpeningParams(WorkOrderDetailDto detail)
     {
         return new (string Label, string? Value)[]
@@ -470,32 +643,14 @@ public partial class WorkOrderInstructionPage : ContentPage
             ("投料钢号", detail.inputSteelGrade),
             ("投料规格", detail.inputSpecification),
             ("钢号", detail.steelGrade),
-            ("开坯规格", detail.blankSpecification),
-            ("开坯下公差(mm)", detail.billetLowerTolerance),
-            ("开坯上公差(mm)", detail.billetUpperTolerance),
+            ("开胚规格", detail.blankSpecification),
+            ("开胚下公差(mm)", detail.billetLowerTolerance),
+            ("开胚上公差(mm)", detail.billetUpperTolerance),
             ("圈距控制", detail.pitchControl),
             ("圈径控制", detail.coilDiameterControl),
             ("椭圆度控制", detail.ovalityControl),
             ("质检方式", detail.inspectionSchemeName),
             ("用途", detail.usagePurpose)
-        };
-    }
-
-    private static (string Label, string? Value)[] BuildDrawingParams(WorkOrderDetailDto detail)
-    {
-        return new (string Label, string? Value)[]
-        {
-            ("收线速度", detail.wireTakeUpSpeed),
-            ("收线方式", detail.wireTakeUpMode),
-            ("收线长度", FormatLengthWithUnit(detail.wireTakeUpLength)),
-            ("盘重要求", detail.coilWeightRequirement),
-            ("产品直径", detail.productSpecification),
-            ("下公差(mm)", detail.billetLowerTolerance),
-            ("上公差(mm)", detail.billetUpperTolerance),
-            ("圈距控制", detail.pitchControl),
-            ("圈径控制", detail.coilDiameterControl),
-            ("椭圆度控制", detail.ovalityControl),
-            ("质检方式", detail.inspectionSchemeName)
         };
     }
 
@@ -531,9 +686,9 @@ public partial class WorkOrderInstructionPage : ContentPage
             ("圈径控制", detail.coilDiameterControl),
             ("拉拔方式", detail.drawMode),
             ("用途", detail.usagePurpose),
-            ("开坯规格", detail.blankSpecification),
-            ("开坯下公差(mm)", detail.billetLowerTolerance),
-            ("开坯上公差(mm)", detail.billetUpperTolerance),
+            ("开胚规格", detail.blankSpecification),
+            ("开胚下公差(mm)", detail.billetLowerTolerance),
+            ("开胚上公差(mm)", detail.billetUpperTolerance),
             ("DV(主线速度Hz)", detail.dvSpeed),
             ("生产件数", FormatDecimalOrFallback(detail.productionQuantity, FormatMoldSequenceTotal(detail.moldSequenceList, item => item.productionQuantity))),
             ("生产总重量(t)", FormatDecimalOrFallback(detail.productionWeight, FormatMoldSequenceTotal(detail.moldSequenceList, item => item.productionWeight))),
@@ -698,6 +853,11 @@ public partial class WorkOrderInstructionPage : ContentPage
     {
         var text = string.Join(" ", values.Where(value => !string.IsNullOrWhiteSpace(value)));
         return string.IsNullOrWhiteSpace(text) ? "--" : text;
+    }
+
+    private static string? FirstNonEmptyOrDefault(params string?[] values)
+    {
+        return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim();
     }
 
     private static string ValueOrDash(string? value)
