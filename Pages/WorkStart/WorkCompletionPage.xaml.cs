@@ -145,10 +145,13 @@ public partial class WorkCompletionPage : ContentPage
         {
             _isBusy = true;
             ConfirmButton.IsEnabled = false;
-            var success = await _workOrderApi.ConfirmCompletionAsync(workOrderNo);
-            if (!success)
+            var result = await _workOrderApi.ConfirmCompletionAsync(workOrderNo);
+            if (!result.success)
             {
-                await ErrorDialogService.ShowAsync(this, "完工失败", "工单完工未成功，请稍后重试。", "确定");
+                var message = string.IsNullOrWhiteSpace(result.message)
+                    ? "工单完工未成功，请稍后重试。"
+                    : result.message;
+                await ErrorDialogService.ShowAsync(this, "完工失败", message, "确定");
                 return;
             }
 
