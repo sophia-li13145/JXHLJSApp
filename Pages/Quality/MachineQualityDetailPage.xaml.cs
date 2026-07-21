@@ -10,6 +10,7 @@ namespace JXHLJSApp.Pages.Quality;
 [QueryProperty(nameof(WorkOrderNo), "workOrderNo")]
 [QueryProperty(nameof(InspectStatus), "inspectStatus")]
 [QueryProperty(nameof(ManualInspection), "manualInspection")]
+[QueryProperty(nameof(ProcessName), "processName")]
 public partial class MachineQualityDetailPage : ContentPage
 {
     private const string SchemeAcidPickling = "酸洗";
@@ -23,6 +24,7 @@ public partial class MachineQualityDetailPage : ContentPage
     private string? _workOrderNo;
     private string? _inspectionSchemeName;
     private string? _inspectStatus;
+    private string? _processNameFromScan;
     private string? _qrCode;
     private string? _qualityMaterialId;
     private bool _isManualInspection;
@@ -32,6 +34,7 @@ public partial class MachineQualityDetailPage : ContentPage
     public string? WorkOrderNo { get => _workOrderNo; set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? InspectStatus { get => _inspectStatus; set => _inspectStatus = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? ManualInspection { get => _manualInspectionFromQuery ? "true" : "false"; set => _manualInspectionFromQuery = string.Equals(Uri.UnescapeDataString(value ?? string.Empty), "true", StringComparison.OrdinalIgnoreCase); }
+    public string? ProcessName { get => _processNameFromScan; set => _processNameFromScan = Uri.UnescapeDataString(value ?? string.Empty); }
 
     public MachineQualityDetailPage(IQualityApi qualityApi, IScanService scanService)
     {
@@ -67,7 +70,8 @@ public partial class MachineQualityDetailPage : ContentPage
                 ? await _qualityApi.GetManualInspectionDetailAsync(_qualityNo)
                 : await _qualityApi.GetProductionQualityDetailAsync(_qualityNo, _workOrderNo);
             _detail = detail;
-            _inspectionSchemeName = ResolveSchemeName(detail);
+            ApplyScannedProcessNameFallback(detail);
+            _inspectionSchemeName = ResolveProcessName(detail);
             if (!string.IsNullOrWhiteSpace(detail.inspectStatus)) _inspectStatus = detail.inspectStatus;
             if (!string.IsNullOrWhiteSpace(detail.workOrderNo)) _workOrderNo = detail.workOrderNo;
             var firstMaterial = detail.materialList?.FirstOrDefault();
@@ -97,33 +101,24 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private void ApplySchemeLayout(ProductionQualityDetailDto detail)
     {
-        var schemeName = ResolveSchemeName(detail);
-        var isAcid = string.Equals(schemeName, SchemeAcidPickling, StringComparison.Ordinal);
-        var isHeat = IsHeatTreatmentScheme(schemeName);
+        var processName = ResolveProcessName(detail);
+        var isAcid = IsPicklingScheme(processName);
+        var isHeat = IsHeatTreatmentScheme(processName);
+        var isDrawing = IsDrawingScheme(processName);
 
-        TitleLabel.Text = schemeName switch
-        {
-            SchemeAcidPickling => "执行酸洗质检",
-            SchemeHeatTreatment or "全检" => "执行热处理质检",
-            SchemeBlankOpening or SchemeDrawing => "执行工序质检",
-            _ => "执行工序质检"
-        };
-        InfoTitleLabel.Text = schemeName switch
-        {
-            SchemeAcidPickling => "酸洗任务信息",
-            SchemeHeatTreatment or "全检" => "热处理卡片信息",
-            _ => "生产卡片信息"
-        };
+        TitleLabel.Text = isAcid ? "执行酸洗质检" : isHeat ? "执行热处理质检" : "执行工序质检";
+        InfoTitleLabel.Text = isAcid ? "酸洗任务信息" : isHeat ? "热处理卡片信息" : "生产卡片信息";
         InputTitleLabel.Text = isAcid ? "酸洗检验录入" : isHeat ? "理化检验录入" : "检验项目录入";
         AcidInputPanel.IsVisible = isAcid;
         HeatTreatmentInputPanel.IsVisible = isHeat;
         ProcessInputPanel.IsVisible = !isAcid && !isHeat;
         MemoLabel.IsVisible = !isHeat;
         MemoEditor.IsVisible = !isHeat;
-        CompleteButton.IsVisible = true;
-        Grid.SetColumnSpan(SubmitButton, 1);
+        var isSubmitOnlyProcess = isAcid || isDrawing;
+        CompleteButton.IsVisible = !isSubmitOnlyProcess;
+        Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
         ScanMaterialButton.IsVisible = false;
-        InfoScanMaterialButton.IsVisible = IsSamplingOrFullScheme(schemeName) || IsProcessCardScheme(schemeName);
+        InfoScanMaterialButton.IsVisible = IsSamplingOrFullScheme(processName) || IsProcessCardScheme(processName);
     }
 
     private void FillAcidInputs(ProductionQualityDetailDto detail)
@@ -167,14 +162,22 @@ public partial class MachineQualityDetailPage : ContentPage
         }
     }
 
-    private static string? ResolveSchemeName(ProductionQualityDetailDto detail)
+    private void ApplyScannedProcessNameFallback(ProductionQualityDetailDto detail)
+    {
+        if (_isManualInspection && string.IsNullOrWhiteSpace(detail.processName) && !string.IsNullOrWhiteSpace(_processNameFromScan))
+        {
+            detail.processName = _processNameFromScan;
+        }
+    }
+
+    private static string? ResolveProcessName(ProductionQualityDetailDto detail)
     {
         return FirstNonEmpty(detail.processName, detail.processCode, detail.inspectionSchemeName, detail.qualityTypeName, detail.inspectionSchemeTypeName).Trim();
     }
 
     private static (string Label, string? Value)[] BuildInfoRows(ProductionQualityDetailDto detail)
     {
-        var schemeName = ResolveSchemeName(detail);
+        var schemeName = ResolveProcessName(detail);
         if (IsPicklingScheme(schemeName))
         {
             return new[]
@@ -381,6 +384,11 @@ public partial class MachineQualityDetailPage : ContentPage
     private static bool IsProcessCardScheme(string? schemeName)
     {
         return HasSchemeToken(schemeName, SchemeBlankOpening, SchemeDrawing, "抽检") || IsFirstInspectionScheme(schemeName);
+    }
+
+    private static bool IsDrawingScheme(string? schemeName)
+    {
+        return HasSchemeToken(schemeName, SchemeDrawing);
     }
 
     private static bool IsFirstInspectionScheme(string? schemeName)
