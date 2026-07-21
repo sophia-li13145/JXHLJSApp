@@ -266,7 +266,7 @@ public partial class WorkOrderInstructionPage : ContentPage
         var normalizedOperationCode = detail.operationCode?.Trim() ?? string.Empty;
         var normalizedWorkOrderNo = detail.workOrderNo?.Trim() ?? string.Empty;
 
-        if (ContainsAny(normalizedOperationName, "开坯")
+        if (ContainsAny(normalizedOperationName, "开胚")
             || string.Equals(normalizedOperationCode, "KP", StringComparison.OrdinalIgnoreCase)
             || normalizedWorkOrderNo.Contains("-KP-", StringComparison.OrdinalIgnoreCase))
         {
@@ -568,7 +568,7 @@ public partial class WorkOrderInstructionPage : ContentPage
         AddDrawingFullWidthParamRow(row++, "盘重要求", detail.coilWeightRequirement);
         AddDrawingTwoParamRow(row++, "投料钢号", detail.inputSteelGrade, "上料规格", detail.inputSpecification);
         AddDrawingTwoParamRow(row++, "钢号", detail.steelGrade, "下料规格", detail.blankSpecification);
-        AddDrawingTwoParamRow(row++, "开坯下公差(mm)", detail.billetLowerTolerance, "开坯上公差(mm)", detail.billetUpperTolerance);
+        AddDrawingTwoParamRow(row++, "开胚下公差(mm)", detail.billetLowerTolerance, "开胚上公差(mm)", detail.billetUpperTolerance);
         AddDrawingTwoParamRow(row++, "圈距控制", detail.pitchControl, "圈径控制", detail.coilDiameterControl);
         AddDrawingTwoParamRow(row++, "椭圆度控制", detail.ovalityControl, "质检方式", detail.inspectionSchemeName);
         AddDrawingSeparator(row++);
@@ -643,9 +643,9 @@ public partial class WorkOrderInstructionPage : ContentPage
             ("投料钢号", detail.inputSteelGrade),
             ("投料规格", detail.inputSpecification),
             ("钢号", detail.steelGrade),
-            ("开坯规格", detail.blankSpecification),
-            ("开坯下公差(mm)", detail.billetLowerTolerance),
-            ("开坯上公差(mm)", detail.billetUpperTolerance),
+            ("开胚规格", detail.blankSpecification),
+            ("开胚下公差(mm)", detail.billetLowerTolerance),
+            ("开胚上公差(mm)", detail.billetUpperTolerance),
             ("圈距控制", detail.pitchControl),
             ("圈径控制", detail.coilDiameterControl),
             ("椭圆度控制", detail.ovalityControl),
@@ -686,9 +686,9 @@ public partial class WorkOrderInstructionPage : ContentPage
             ("圈径控制", detail.coilDiameterControl),
             ("拉拔方式", detail.drawMode),
             ("用途", detail.usagePurpose),
-            ("开坯规格", detail.blankSpecification),
-            ("开坯下公差(mm)", detail.billetLowerTolerance),
-            ("开坯上公差(mm)", detail.billetUpperTolerance),
+            ("开胚规格", detail.blankSpecification),
+            ("开胚下公差(mm)", detail.billetLowerTolerance),
+            ("开胚上公差(mm)", detail.billetUpperTolerance),
             ("DV(主线速度Hz)", detail.dvSpeed),
             ("生产件数", FormatDecimalOrFallback(detail.productionQuantity, FormatMoldSequenceTotal(detail.moldSequenceList, item => item.productionQuantity))),
             ("生产总重量(t)", FormatDecimalOrFallback(detail.productionWeight, FormatMoldSequenceTotal(detail.moldSequenceList, item => item.productionWeight))),
