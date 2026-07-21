@@ -1,3 +1,5 @@
+using Microsoft.Maui.Controls.Shapes;
+
 namespace JXHLJSApp.Services;
 
 public static class ErrorDialogService
