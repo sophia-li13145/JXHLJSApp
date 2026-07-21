@@ -13,7 +13,7 @@ namespace JXHLJSApp.Pages.Quality;
 public partial class MachineQualityDetailPage : ContentPage
 {
     private const string SchemeAcidPickling = "酸洗";
-    private const string SchemeBlankOpening = "开胚";
+    private const string SchemeBlankOpening = "开坯";
     private const string SchemeHeatTreatment = "热处理";
     private const string SchemeDrawing = "拉拔";
     private readonly IQualityApi _qualityApi;
