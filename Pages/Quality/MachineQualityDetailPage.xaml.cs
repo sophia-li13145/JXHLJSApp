@@ -11,6 +11,7 @@ namespace JXHLJSApp.Pages.Quality;
 [QueryProperty(nameof(InspectStatus), "inspectStatus")]
 [QueryProperty(nameof(ManualInspection), "manualInspection")]
 [QueryProperty(nameof(ProcessName), "processName")]
+[QueryProperty(nameof(WorkOrderStatus), "workOrderStatus")]
 public partial class MachineQualityDetailPage : ContentPage
 {
     private const string SchemeAcidPickling = "酸洗";
@@ -24,6 +25,7 @@ public partial class MachineQualityDetailPage : ContentPage
     private string? _workOrderNo;
     private string? _inspectionSchemeName;
     private string? _inspectStatus;
+    private string? _workOrderStatus;
     private string? _processNameFromScan;
     private string? _qrCode;
     private string? _qualityMaterialId;
@@ -35,6 +37,7 @@ public partial class MachineQualityDetailPage : ContentPage
     public string? InspectStatus { get => _inspectStatus; set => _inspectStatus = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? ManualInspection { get => _manualInspectionFromQuery ? "true" : "false"; set => _manualInspectionFromQuery = string.Equals(Uri.UnescapeDataString(value ?? string.Empty), "true", StringComparison.OrdinalIgnoreCase); }
     public string? ProcessName { get => _processNameFromScan; set => _processNameFromScan = Uri.UnescapeDataString(value ?? string.Empty); }
+    public string? WorkOrderStatus { get => _workOrderStatus; set => _workOrderStatus = Uri.UnescapeDataString(value ?? string.Empty); }
 
     public MachineQualityDetailPage(IQualityApi qualityApi, IScanService scanService)
     {
@@ -71,8 +74,9 @@ public partial class MachineQualityDetailPage : ContentPage
                 : await _qualityApi.GetProductionQualityDetailAsync(_qualityNo, _workOrderNo);
             _detail = detail;
             ApplyScannedProcessNameFallback(detail);
-            _inspectionSchemeName = ResolveProcessName(detail);
+            _inspectionSchemeName = ResolveQualityFlowName(detail);
             if (!string.IsNullOrWhiteSpace(detail.inspectStatus)) _inspectStatus = detail.inspectStatus;
+            if (!string.IsNullOrWhiteSpace(detail.workOrderStatus)) _workOrderStatus = detail.workOrderStatus;
             if (!string.IsNullOrWhiteSpace(detail.workOrderNo)) _workOrderNo = detail.workOrderNo;
             var firstMaterial = detail.materialList?.FirstOrDefault();
             _qrCode = FirstNonEmpty(detail.qrCode, firstMaterial?.qrCode);
@@ -102,11 +106,13 @@ public partial class MachineQualityDetailPage : ContentPage
     private void ApplySchemeLayout(ProductionQualityDetailDto detail)
     {
         var processName = ResolveProcessName(detail);
+        var qualityFlowName = ResolveQualityFlowName(detail);
         var isAcid = IsPicklingScheme(processName);
         var isHeat = IsHeatTreatmentScheme(processName);
         var isDrawing = IsDrawingScheme(processName);
+        var isFirstInspection = isDrawing && HasSchemeToken(qualityFlowName, "首检", "首件检");
 
-        TitleLabel.Text = isAcid ? "执行酸洗质检" : isHeat ? "执行热处理质检" : "执行工序质检";
+        TitleLabel.Text = isAcid ? "执行酸洗质检" : isHeat ? "执行热处理质检" : isFirstInspection ? "执行拉拔工序质检" : "执行工序质检";
         InfoTitleLabel.Text = isAcid ? "酸洗任务信息" : isHeat ? "热处理卡片信息" : "生产卡片信息";
         InputTitleLabel.Text = isAcid ? "酸洗检验录入" : isHeat ? "理化检验录入" : "检验项目录入";
         AcidInputPanel.IsVisible = isAcid;
@@ -118,7 +124,7 @@ public partial class MachineQualityDetailPage : ContentPage
         CompleteButton.IsVisible = !isSubmitOnlyProcess;
         Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
         ScanMaterialButton.IsVisible = false;
-        InfoScanMaterialButton.IsVisible = IsSamplingOrFullScheme(processName) || IsProcessCardScheme(processName);
+        InfoScanMaterialButton.IsVisible = !IsInspectionCompleted(_inspectStatus) && !IsWorkOrderInspectionCompleted(_workOrderStatus) && !isAcid && !isDrawing && (IsSamplingOrFullScheme(processName) || IsProcessCardScheme(processName));
     }
 
     private void FillAcidInputs(ProductionQualityDetailDto detail)
@@ -172,7 +178,12 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static string? ResolveProcessName(ProductionQualityDetailDto detail)
     {
-        return FirstNonEmpty(detail.processName, detail.processCode, detail.inspectionSchemeName, detail.qualityTypeName, detail.inspectionSchemeTypeName).Trim();
+        return FirstNonEmpty(detail.processName, detail.processCode).Trim();
+    }
+
+    private static string? ResolveQualityFlowName(ProductionQualityDetailDto detail)
+    {
+        return FirstNonEmpty(detail.inspectionSchemeName, detail.qualityTypeName, detail.inspectionSchemeTypeName, detail.processName, detail.processCode).Trim();
     }
 
     private static (string Label, string? Value)[] BuildInfoRows(ProductionQualityDetailDto detail)
@@ -220,6 +231,7 @@ public partial class MachineQualityDetailPage : ContentPage
             ("工单号", detail.workOrderNo), ("工序", FirstNonEmpty(detail.processName, detail.processCode)),
             ("质检方案", detail.inspectionSchemeName), ("方案类型", detail.inspectionSchemeTypeName),
             ("质检类型", FirstNonEmpty(detail.qualityTypeName, detail.qualityType)), ("状态", detail.inspectStatus),
+            ("工单状态", detail.workOrderStatus),
             ("设备", FirstNonEmpty(detail.deviceName, detail.deviceCode)), ("炉号", detail.furnaceNo),
             ("钢号", detail.steelGrade), ("件号", ResolvePieceNo(detail)),
             ("规格", FirstNonEmpty(detail.targetSpecification, detail.inputSpecification))
@@ -307,9 +319,21 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static bool IsInspectionCompleted(string? inspectStatus)
     {
-        return string.Equals(inspectStatus, "3", StringComparison.Ordinal) ||
-            string.Equals(inspectStatus, "检验完成", StringComparison.Ordinal) ||
-            string.Equals(inspectStatus, "已完成", StringComparison.Ordinal);
+        return IsCompletedStatus(inspectStatus);
+    }
+
+    private static bool IsWorkOrderInspectionCompleted(string? workOrderStatus)
+    {
+        return IsCompletedStatus(workOrderStatus);
+    }
+
+    private static bool IsCompletedStatus(string? status)
+    {
+        return string.Equals(status, "3", StringComparison.Ordinal) ||
+            string.Equals(status, "检验完成", StringComparison.Ordinal) ||
+            string.Equals(status, "已完成", StringComparison.Ordinal) ||
+            string.Equals(status, "completed", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "complete", StringComparison.OrdinalIgnoreCase);
     }
 
     private static void SetReadOnly(Element element)
@@ -368,12 +392,12 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static bool IsPicklingScheme(string? schemeName)
     {
-        return HasSchemeToken(schemeName, SchemeAcidPickling, "表检");
+        return HasSchemeToken(schemeName, SchemeAcidPickling);
     }
 
     private static bool IsHeatTreatmentScheme(string? schemeName)
     {
-        return HasSchemeToken(schemeName, SchemeHeatTreatment, "全检");
+        return HasSchemeToken(schemeName, SchemeHeatTreatment);
     }
 
     private static bool IsSamplingOrFullScheme(string? schemeName)
@@ -393,7 +417,7 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static bool IsFirstInspectionScheme(string? schemeName)
     {
-        return HasSchemeToken(schemeName, SchemeDrawing, "首检", "首件检");
+        return HasSchemeToken(schemeName, SchemeDrawing) && HasSchemeToken(schemeName, "首检", "首件检");
     }
 
     private static bool HasSchemeToken(string? schemeName, params string[] tokens)
