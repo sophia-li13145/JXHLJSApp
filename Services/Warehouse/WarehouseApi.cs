@@ -20,6 +20,7 @@ public interface IWarehouseApi
     Task<RawMaterialReceivingDetailDto> GetRawMaterialReceivingDetailAsync(string instockNo, CancellationToken ct = default);
     Task<BlankInstockDto> AddBlankInstockAsync(CancellationToken ct = default);
     Task<List<WarehouseInfoDto>> QueryWarehouseInfoAsync(CancellationToken ct = default);
+    Task<List<WarehouseAreaDto>> QueryWarehouseAreaByWarehouseCodeAsync(string? warehouseCode, CancellationToken ct = default);
     Task<List<DictGroupDto>> GetRawMaterialReceivingDictListAsync(CancellationToken ct = default);
     Task<AttachmentDto> UploadAttachmentAsync(FileResult photo, string attachmentFolder, string attachmentLocation, CancellationToken ct = default);
     Task<RawMaterialOcrDto> RecognizeIncomingAsync(AttachmentDto fileInfo, string instockNo, CancellationToken ct = default);
@@ -36,6 +37,7 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _addBlankInstockEndpoint;
     private readonly string _rawMaterialReceivingDetailEndpoint;
     private readonly string _queryWarehouseInfoEndpoint;
+    private readonly string _queryWarehouseAreaEndpoint;
     private readonly string _uploadAttachmentEndpoint;
     private readonly string _previewAttachmentEndpoint;
     private readonly string _ocrIncomingEndpoint;
@@ -67,6 +69,8 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("rawMaterialReceiving.queryDetailByInstockNo", "/pda/rawMaterialReceiving/queryDetailByInstockNo"), servicePath);
         _queryWarehouseInfoEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.queryWarehouseInfo", "/pda/rawMaterialReceiving/queryWarehouseInfo"), servicePath);
+        _queryWarehouseAreaEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("rawMaterialReceiving.queryWarehouseAreaByWarehouseCode", "/pda/rawMaterialReceiving/queryWarehouseAreaByWarehouseCode"), servicePath);
         _uploadAttachmentEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("attachment.uploadAttachment", "/pda/attachment/uploadAttachment"), servicePath);
         _previewAttachmentEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -255,6 +259,18 @@ public sealed class WarehouseApi : IWarehouseApi
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<List<WarehouseInfoDto>>(resp, ct).ConfigureAwait(false);
         return data.result ?? new List<WarehouseInfoDto>();
+    }
+
+    public async Task<List<WarehouseAreaDto>> QueryWarehouseAreaByWarehouseCodeAsync(string? warehouseCode, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_queryWarehouseAreaEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(warehouseCode)] = warehouseCode
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<List<WarehouseAreaDto>>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new List<WarehouseAreaDto>();
     }
 
     public async Task<List<DictGroupDto>> GetRawMaterialReceivingDictListAsync(CancellationToken ct = default)

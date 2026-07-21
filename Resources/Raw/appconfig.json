@@ -20,6 +20,7 @@
       "addBlankInstock": "/pda/rawMaterialReceiving/addBlankInstock",
       "queryDetailByInstockNo": "/pda/rawMaterialReceiving/queryDetailByInstockNo",
       "queryWarehouseInfo": "/pda/rawMaterialReceiving/queryWarehouseInfo",
+      "queryWarehouseAreaByWarehouseCode": "/pda/rawMaterialReceiving/queryWarehouseAreaByWarehouseCode",
       "ocrIncoming": "/pda/rawMaterialReceiving/ocrIncoming",
       "saveOcrIncomingImage": "/pda/rawMaterialReceiving/saveOcrIncomingImage",
       "queryQrCodeInfo": "/pda/rawMaterialReceiving/queryQrCodeInfo",

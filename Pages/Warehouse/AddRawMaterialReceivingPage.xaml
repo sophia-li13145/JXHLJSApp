@@ -34,7 +34,7 @@
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="14" />
                     </Border.StrokeShape>
-                    <Grid RowDefinitions="Auto,Auto"
+                    <Grid RowDefinitions="Auto,Auto,Auto"
                           ColumnDefinitions="Auto,*"
                           RowSpacing="14">
                         <Label Text="入库单号" TextColor="#38557C" FontSize="14" />
@@ -54,6 +54,20 @@
                         <Picker Grid.Row="1"
                                 Grid.Column="1"
                                 x:Name="WarehousePicker"
+                                Title="请选择"
+                                ItemDisplayBinding="{Binding displayName}"
+                                BackgroundColor="#F8FAFD"
+                                TextColor="#051B3D"
+                                SelectedIndexChanged="OnWarehouseSelectedIndexChanged" />
+
+                        <Label Grid.Row="2"
+                               Text="入库库位 *"
+                               TextColor="#38557C"
+                               FontSize="14"
+                               VerticalOptions="Center" />
+                        <Picker Grid.Row="2"
+                                Grid.Column="1"
+                                x:Name="WarehouseAreaPicker"
                                 Title="请选择"
                                 ItemDisplayBinding="{Binding displayName}"
                                 BackgroundColor="#F8FAFD"

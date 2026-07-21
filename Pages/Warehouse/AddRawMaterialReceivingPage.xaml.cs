@@ -21,6 +21,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private RawMaterialOcrDto? _selectedTicket;
     private AttachmentDto? _pendingTicketAttachment;
     private List<WarehouseInfoDto> _warehouses = new();
+    private List<WarehouseAreaDto> _warehouseAreas = new();
     private List<DictItemDto> _materialClassOptions = CreateDefaultMaterialClassOptions();
     private string? _instockNo;
     private string? _pendingQrCode;
@@ -184,6 +185,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         {
             WarehousePicker.SelectedIndex = 0;
             WarehousePicker.SelectedItem = _warehouses[0];
+            await LoadWarehouseAreasAsync(_warehouses[0]);
         }
     }
 
@@ -198,6 +200,51 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         {
             WarehousePicker.SelectedIndex = index;
             WarehousePicker.SelectedItem = _warehouses[index];
+            _ = LoadWarehouseAreasAsync(_warehouses[index], firstDetail.location);
+        }
+    }
+
+
+    private async void OnWarehouseSelectedIndexChanged(object sender, EventArgs e)
+    {
+        await LoadWarehouseAreasAsync(GetSelectedWarehouse());
+    }
+
+    private async Task LoadWarehouseAreasAsync(WarehouseInfoDto? warehouse, string? preferredLocation = null)
+    {
+        _warehouseAreas = new List<WarehouseAreaDto>();
+        WarehouseAreaPicker.ItemsSource = _warehouseAreas;
+        WarehouseAreaPicker.SelectedIndex = -1;
+
+        if (warehouse is null || string.IsNullOrWhiteSpace(warehouse.selectedCode))
+        {
+            return;
+        }
+
+        try
+        {
+            _warehouseAreas = await _warehouseApi.QueryWarehouseAreaByWarehouseCodeAsync(warehouse.selectedCode);
+            WarehouseAreaPicker.ItemsSource = _warehouseAreas;
+            if (_warehouseAreas.Count == 0)
+            {
+                return;
+            }
+
+            var selectedIndex = 0;
+            if (!string.IsNullOrWhiteSpace(preferredLocation))
+            {
+                var matchedIndex = _warehouseAreas.FindIndex(area =>
+                    string.Equals(area.selectedLocation, preferredLocation, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(area.selectedLocationId, preferredLocation, StringComparison.OrdinalIgnoreCase));
+                selectedIndex = matchedIndex >= 0 ? matchedIndex : 0;
+            }
+
+            WarehouseAreaPicker.SelectedIndex = selectedIndex;
+            WarehouseAreaPicker.SelectedItem = _warehouseAreas[selectedIndex];
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("库位加载失败", ex.Message, "确定");
         }
     }
 
@@ -865,6 +912,21 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private void OnCancelTicketConfirmClicked(object sender, EventArgs e) => TicketConfirmOverlay.IsVisible = false;
 
 
+    private WarehouseAreaDto? GetSelectedWarehouseArea()
+    {
+        if (WarehouseAreaPicker.SelectedItem is WarehouseAreaDto selected)
+        {
+            return selected;
+        }
+
+        if (WarehouseAreaPicker.SelectedIndex >= 0 && WarehouseAreaPicker.SelectedIndex < _warehouseAreas.Count)
+        {
+            return _warehouseAreas[WarehouseAreaPicker.SelectedIndex];
+        }
+
+        return _warehouseAreas.FirstOrDefault();
+    }
+
     private WarehouseInfoDto? GetSelectedWarehouse()
     {
         if (WarehousePicker.SelectedItem is WarehouseInfoDto selected)
@@ -892,6 +954,13 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         if (warehouse is null || string.IsNullOrWhiteSpace(warehouse.selectedName) || string.IsNullOrWhiteSpace(warehouse.selectedCode))
         {
             await DisplayAlert("提示", "请选择有效的入库仓库。", "确定");
+            return;
+        }
+
+        var warehouseArea = GetSelectedWarehouseArea();
+        if (warehouseArea is null || string.IsNullOrWhiteSpace(warehouseArea.selectedLocation))
+        {
+            await DisplayAlert("提示", "请选择有效的入库库位。", "确定");
             return;
         }
 
@@ -927,6 +996,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                     instockQty = ParseWeight(item.pieceWeight),
                     instockWarehouse = warehouse.selectedName,
                     instockWarehouseCode = warehouse.selectedCode,
+                    warehouseAreaNo = warehouseArea.selectedLocation,
                     materialClass = item.materialClass,
                     materialCode = item.materialCode,
                     materialName = item.materialName,
