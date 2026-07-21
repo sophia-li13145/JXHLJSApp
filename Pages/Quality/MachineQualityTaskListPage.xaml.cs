@@ -34,6 +34,6 @@ public partial class MachineQualityTaskListPage : ContentPage
             return;
         }
 
-        await Shell.Current.GoToAsync($"{AppShell.RouteMachineQualityDetail}?qualityNo={Uri.EscapeDataString(item.qualityNo)}&workOrderNo={Uri.EscapeDataString(item.orderNumber)}&inspectStatus={Uri.EscapeDataString(item.inspectStatus ?? string.Empty)}&workOrderStatus={Uri.EscapeDataString(item.workOrderStatus ?? string.Empty)}");
+        await Shell.Current.GoToAsync($"{AppShell.RouteMachineQualityDetail}?qualityNo={Uri.EscapeDataString(item.qualityNo)}&workOrderNo={Uri.EscapeDataString(item.orderNumber)}&inspectStatus={Uri.EscapeDataString(item.inspectStatus ?? string.Empty)}");
     }
 }
