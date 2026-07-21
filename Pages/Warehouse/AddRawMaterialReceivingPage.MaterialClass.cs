@@ -37,6 +37,7 @@ public partial class AddRawMaterialReceivingPage
         }
 
         WarehousePicker.IsEnabled = !BindConfirmOverlay.IsVisible;
+        WarehouseAreaPicker.IsEnabled = !BindConfirmOverlay.IsVisible;
 
         if (BindConfirmOverlay.IsVisible)
         {
@@ -594,6 +595,18 @@ public partial class AddRawMaterialReceivingPage
                 return;
             }
 
+            var warehouseArea = GetSelectedWarehouseArea();
+            if (warehouseArea is null ||
+                string.IsNullOrWhiteSpace(
+                    warehouseArea.selectedLocation))
+            {
+                await DisplayAlert(
+                    "提示",
+                    "请选择有效的入库库位。",
+                    "确定");
+                return;
+            }
+
             if (_ocrItems.Count == 0)
             {
                 await DisplayAlert(
@@ -649,6 +662,8 @@ public partial class AddRawMaterialReceivingPage
                                 warehouse.selectedName,
                             instockWarehouseCode =
                                 warehouse.selectedCode,
+                            warehouseAreaNo =
+                                warehouseArea.selectedLocation,
                             materialClass =
                                 item.materialClass,
                             materialCode =
