@@ -174,6 +174,10 @@ public partial class MachineQualityDetailPage : ContentPage
         {
             if (i % 2 == 0) InfoGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var cell = CreateInfoCell(rows[i].Label, rows[i].Value);
+            if (rows.Length == 1)
+            {
+                Grid.SetColumnSpan(cell, 2);
+            }
             InfoGrid.Add(cell, i % 2, i / 2);
         }
     }
@@ -409,8 +413,8 @@ public partial class MachineQualityDetailPage : ContentPage
         };
         var labelColor = Color.FromArgb("#38557C");
         var valueColor = Color.FromArgb("#0042AD");
-        grid.Add(new Label { Text = label, TextColor = labelColor, FontSize = 14 });
-        grid.Add(new Label { Text = string.IsNullOrWhiteSpace(value) ? "-" : value, TextColor = valueColor, FontSize = 14, FontAttributes = FontAttributes.Bold, HorizontalTextAlignment = TextAlignment.End }, 1);
+        grid.Add(new Label { Text = label, TextColor = labelColor, FontSize = 14, LineBreakMode = LineBreakMode.NoWrap });
+        grid.Add(new Label { Text = string.IsNullOrWhiteSpace(value) ? "-" : value, TextColor = valueColor, FontSize = 14, FontAttributes = FontAttributes.Bold, HorizontalTextAlignment = TextAlignment.End, LineBreakMode = LineBreakMode.NoWrap }, 1);
         return grid;
     }
 
