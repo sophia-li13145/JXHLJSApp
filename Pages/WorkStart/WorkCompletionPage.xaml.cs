@@ -67,7 +67,7 @@ public partial class WorkCompletionPage : ContentPage
             var result = await _workOrderApi.BindWorkerMachineAsync(devCode);
             if (!result)
             {
-                await DisplayAlert("验证失败", "机台验证未成功，请确认机台二维码后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "验证失败", "机台验证未成功，请确认机台二维码后重试。", "确定");
                 return;
             }
 
@@ -80,7 +80,7 @@ public partial class WorkCompletionPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("验证失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "验证失败", ex.Message, "确定");
         }
         finally
         {
@@ -148,7 +148,7 @@ public partial class WorkCompletionPage : ContentPage
             var success = await _workOrderApi.ConfirmCompletionAsync(workOrderNo);
             if (!success)
             {
-                await DisplayAlert("完工失败", "工单完工未成功，请稍后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "完工失败", "工单完工未成功，请稍后重试。", "确定");
                 return;
             }
 
@@ -158,7 +158,7 @@ public partial class WorkCompletionPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("完工失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "完工失败", ex.Message, "确定");
         }
         finally
         {

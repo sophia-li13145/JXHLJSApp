@@ -66,7 +66,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("加载失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "加载失败", ex.Message, "确定");
         }
     }
 
@@ -87,7 +87,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("包装扫码失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "包装扫码失败", ex.Message, "确定");
         }
     }
 
@@ -162,7 +162,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
             var saved = await _warehouseApi.SavePackagingAsync(request);
             if (saved != true)
             {
-                await DisplayAlert("保存失败", "包装作业保存失败，请稍后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "保存失败", "包装作业保存失败，请稍后重试。", "确定");
                 return;
             }
 
@@ -171,7 +171,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("保存失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "保存失败", ex.Message, "确定");
         }
         finally
         {

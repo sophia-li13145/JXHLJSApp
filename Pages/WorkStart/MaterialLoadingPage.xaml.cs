@@ -86,7 +86,7 @@ public partial class MaterialLoadingPage : ContentPage
             var result = await _workOrderApi.ScanToWorkAsync(devCode, workOrderNo);
             if (!result)
             {
-                await DisplayAlert("识别失败", "机台识别未成功，请确认机台码后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "识别失败", "机台识别未成功，请确认机台码后重试。", "确定");
                 return;
             }
 
@@ -97,7 +97,7 @@ public partial class MaterialLoadingPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("识别失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "识别失败", ex.Message, "确定");
         }
         finally
         {
@@ -141,7 +141,7 @@ public partial class MaterialLoadingPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("扫码失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "扫码失败", ex.Message, "确定");
         }
         finally
         {
@@ -218,7 +218,7 @@ public partial class MaterialLoadingPage : ContentPage
             var result = await _workOrderApi.ConfirmMaterialInputAsync(_confirmInput);
             if (!result)
             {
-                await DisplayAlert("确认失败", "接口返回上料确认失败，请稍后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "确认失败", "接口返回上料确认失败，请稍后重试。", "确定");
                 return;
             }
 
@@ -226,7 +226,7 @@ public partial class MaterialLoadingPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("确认失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "确认失败", ex.Message, "确定");
         }
         finally
         {

@@ -274,7 +274,7 @@ public sealed class ScanService : IScanService
             }
             catch (Exception ex)
             {
-                await DisplayAlert("图片识别失败", ex.Message, "确定");
+                await ErrorDialogService.ShowAsync(this, "图片识别失败", ex.Message, "确定");
             }
             finally
             {

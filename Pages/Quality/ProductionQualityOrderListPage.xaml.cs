@@ -44,7 +44,7 @@ public partial class ProductionQualityOrderListPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("加载失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "加载失败", ex.Message, "确定");
         }
         finally
         {
@@ -96,7 +96,7 @@ public partial class ProductionQualityOrderListPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("创建失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "创建失败", ex.Message, "确定");
         }
     }
 

@@ -1,3 +1,4 @@
+using JXHLJSApp.Services;
 using JXHLJSApp.Models.WorkOrders;
 using JXHLJSApp.Services.WorkOrders;
 
@@ -33,7 +34,7 @@ public partial class WorkOrderTaskListPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("加载失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "加载失败", ex.Message, "确定");
         }
         finally
         {
@@ -124,7 +125,7 @@ public partial class WorkOrderTaskListPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("加载失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "加载失败", ex.Message, "确定");
         }
         finally
         {

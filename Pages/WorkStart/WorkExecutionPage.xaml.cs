@@ -50,7 +50,7 @@ public partial class WorkExecutionPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("查询失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "查询失败", ex.Message, "确定");
         }
         finally
         {
@@ -123,7 +123,7 @@ public partial class WorkExecutionPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("跳转失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "跳转失败", ex.Message, "确定");
         }
     }
 
@@ -158,7 +158,7 @@ public partial class WorkExecutionPage : ContentPage
             var success = await _workOrderApi.StopWorkOrderAsync(workOrderNo);
             if (!success)
             {
-                await DisplayAlert("暂停失败", "接口未返回成功，请稍后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "暂停失败", "接口未返回成功，请稍后重试。", "确定");
                 return;
             }
 
@@ -167,7 +167,7 @@ public partial class WorkExecutionPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("暂停失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "暂停失败", ex.Message, "确定");
         }
         finally
         {
@@ -206,7 +206,7 @@ public partial class WorkExecutionPage : ContentPage
             var success = await _workOrderApi.BindWorkerMachineAsync(devCode);
             if (!success)
             {
-                await DisplayAlert("切换失败", "机台绑定未成功，请确认机台编号后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "切换失败", "机台绑定未成功，请确认机台编号后重试。", "确定");
                 return;
             }
 
@@ -215,7 +215,7 @@ public partial class WorkExecutionPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("切换失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "切换失败", ex.Message, "确定");
         }
         finally
         {

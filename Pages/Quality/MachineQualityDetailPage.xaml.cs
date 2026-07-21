@@ -91,7 +91,7 @@ public partial class MachineQualityDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("加载失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "加载失败", ex.Message, "确定");
         }
     }
 
@@ -437,7 +437,7 @@ public partial class MachineQualityDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("扫码物料失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "扫码物料失败", ex.Message, "确定");
         }
     }
 
@@ -585,7 +585,7 @@ public partial class MachineQualityDetailPage : ContentPage
                     : await _qualityApi.CommitProductionQualityAsync(request);
             if (!committed)
             {
-                await DisplayAlert("提交失败", "接口未返回提交成功，请稍后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "提交失败", "接口未返回提交成功，请稍后重试。", "确定");
                 return;
             }
 
@@ -594,7 +594,7 @@ public partial class MachineQualityDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("提交失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "提交失败", ex.Message, "确定");
         }
     }
 
@@ -621,7 +621,7 @@ public partial class MachineQualityDetailPage : ContentPage
                 });
                 if (!completed)
                 {
-                    await DisplayAlert("完成失败", "接口未返回完成成功，请稍后重试。", "确定");
+                    await ErrorDialogService.ShowAsync(this, "完成失败", "接口未返回完成成功，请稍后重试。", "确定");
                     return;
                 }
             }
@@ -631,7 +631,7 @@ public partial class MachineQualityDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("完成失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "完成失败", ex.Message, "确定");
         }
     }
 }

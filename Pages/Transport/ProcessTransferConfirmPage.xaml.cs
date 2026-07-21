@@ -1,3 +1,4 @@
+using JXHLJSApp.Services;
 using JXHLJSApp.Models;
 using JXHLJSApp.Services.Transport;
 using System.Globalization;
@@ -51,7 +52,7 @@ public partial class ProcessTransferConfirmPage : ContentPage
             var success = await _transportOrderApi.CompleteTransportOrderAsync(transportOrderNo);
             if (!success)
             {
-                await DisplayAlert("完成转运失败", "接口未确认转运完成，请稍后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "完成转运失败", "接口未确认转运完成，请稍后重试。", "确定");
                 return;
             }
 
@@ -59,7 +60,7 @@ public partial class ProcessTransferConfirmPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("完成转运失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "完成转运失败", ex.Message, "确定");
         }
         finally
         {

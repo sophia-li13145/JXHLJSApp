@@ -65,7 +65,7 @@ public partial class IncomingQualityScanPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("加载失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "加载失败", ex.Message, "确定");
         }
     }
 
@@ -79,7 +79,7 @@ public partial class IncomingQualityScanPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("扫码失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "扫码失败", ex.Message, "确定");
         }
     }
 
@@ -175,7 +175,7 @@ public partial class IncomingQualityScanPage : ContentPage
 
             if (!saved)
             {
-                await DisplayAlert("保存失败", "接口未返回保存成功，请稍后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, "保存失败", "接口未返回保存成功，请稍后重试。", "确定");
                 return;
             }
 
@@ -184,7 +184,7 @@ public partial class IncomingQualityScanPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("保存失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "保存失败", ex.Message, "确定");
         }
     }
 

@@ -84,7 +84,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         }
         catch (Exception ex)
         {
-            await DisplayAlert("初始化失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "初始化失败", ex.Message, "确定");
         }
     }
 
@@ -108,7 +108,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         }
         catch (Exception ex)
         {
-            await DisplayAlert("加载失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "加载失败", ex.Message, "确定");
         }
     }
 
@@ -244,7 +244,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         }
         catch (Exception ex)
         {
-            await DisplayAlert("库位加载失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "库位加载失败", ex.Message, "确定");
         }
     }
 
@@ -353,27 +353,27 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         }
         catch (Exception ex) when (ex is PermissionException or UnauthorizedAccessException)
         {
-            await DisplayAlert("权限错误", "没有相机、相册或照片文件访问权限，请在系统设置中授权后重试。", "确定");
+            await ErrorDialogService.ShowAsync(this, "权限错误", "没有相机、相册或照片文件访问权限，请在系统设置中授权后重试。", "确定");
             return;
         }
         catch (HttpRequestException ex)
         {
-            await DisplayAlert("接口错误", $"附件上传接口请求失败：{ex.Message}", "确定");
+            await ErrorDialogService.ShowAsync(this, "接口错误", $"附件上传接口请求失败：{ex.Message}", "确定");
             return;
         }
         catch (InvalidOperationException ex)
         {
-            await DisplayAlert("接口错误", $"附件上传接口返回异常：{ex.Message}", "确定");
+            await ErrorDialogService.ShowAsync(this, "接口错误", $"附件上传接口返回异常：{ex.Message}", "确定");
             return;
         }
         catch (IOException ex)
         {
-            await DisplayAlert("照片读取失败", $"票签照片读取失败：{ex.Message}", "确定");
+            await ErrorDialogService.ShowAsync(this, "照片读取失败", $"票签照片读取失败：{ex.Message}", "确定");
             return;
         }
         catch (Exception ex)
         {
-            await DisplayAlert("拍照或上传失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "拍照或上传失败", ex.Message, "确定");
             return;
         }
         finally
@@ -409,7 +409,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                 compressionStopwatch.ElapsedMilliseconds,
                 uploadStopwatch.ElapsedMilliseconds,
                 ocrStopwatch.ElapsedMilliseconds);
-            await DisplayAlert("OCR识别失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "OCR识别失败", ex.Message, "确定");
             ShowTicketConfirmDialog(new RawMaterialOcrDto(), true);
         }
         finally
@@ -547,7 +547,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         }
         catch (Exception ex)
         {
-            await DisplayAlert("扫码绑定失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "扫码绑定失败", ex.Message, "确定");
         }
     }
 
@@ -726,7 +726,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         }
         catch (Exception ex)
         {
-            await DisplayAlert("保存票签失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "保存票签失败", ex.Message, "确定");
             return;
         }
 
@@ -1011,7 +1011,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             var success = await _warehouseApi.QuickInstockAsync(request);
             if (success != true)
             {
-                await DisplayAlert("提交失败", "接口未返回明确的成功结果。", "确定");
+                await ErrorDialogService.ShowAsync(this, "提交失败", "接口未返回明确的成功结果。", "确定");
                 return;
             }
 
@@ -1020,7 +1020,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         }
         catch (Exception ex)
         {
-            await DisplayAlert("提交失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "提交失败", ex.Message, "确定");
         }
     }
 

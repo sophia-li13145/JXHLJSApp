@@ -1,3 +1,4 @@
+using JXHLJSApp.Services;
 using System.ComponentModel;
 using JXHLJSApp.Models.Warehouse;
 
@@ -424,10 +425,7 @@ public partial class AddRawMaterialReceivingPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert(
-                "保存票签失败",
-                ex.Message,
-                "确定");
+            await ErrorDialogService.ShowAsync(this, "保存票签失败", ex.Message, "确定");
             return;
         }
 
@@ -692,10 +690,7 @@ public partial class AddRawMaterialReceivingPage
 
             if (success != true)
             {
-                await DisplayAlert(
-                    "提交失败",
-                    "接口未返回明确的成功结果。",
-                    "确定");
+                await ErrorDialogService.ShowAsync(this, "提交失败", "接口未返回明确的成功结果。", "确定");
                 return;
             }
 
@@ -705,10 +700,7 @@ public partial class AddRawMaterialReceivingPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert(
-                "提交失败",
-                ex.Message,
-                "确定");
+            await ErrorDialogService.ShowAsync(this, "提交失败", ex.Message, "确定");
         }
         finally
         {
