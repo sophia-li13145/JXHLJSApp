@@ -24,18 +24,20 @@
                     <VerticalStackLayout Spacing="16">
                         <Grid ColumnDefinitions="*,Auto,Auto" Padding="0,18,0,2" ColumnSpacing="10">
                             <Label x:Name="WorkOrderNoLabel" Text="--" TextColor="#0A2E69" FontSize="18" FontAttributes="Bold" />
-                            <Border Grid.Column="1" BackgroundColor="#EEF4FF" StrokeThickness="0" Padding="10,4">
+                            <Border x:Name="OperationBadgeBorder" Grid.Column="1" BackgroundColor="#EEF4FF" StrokeThickness="0" Padding="10,4">
                                 <Border.StrokeShape><RoundRectangle CornerRadius="5" /></Border.StrokeShape>
                                 <Label x:Name="OperationLabel" Text="--" TextColor="#004AEF" FontSize="12" FontAttributes="Bold" />
                             </Border>
-                            <Border Grid.Column="2" BackgroundColor="#EAF9EF" StrokeThickness="0" Padding="10,4">
+                            <Border x:Name="StatusBadgeBorder" Grid.Column="2" BackgroundColor="#EAF9EF" StrokeThickness="0" Padding="10,4">
                                 <Border.StrokeShape><RoundRectangle CornerRadius="5" /></Border.StrokeShape>
                                 <Label x:Name="StatusLabel" Text="--" TextColor="#00A651" FontSize="12" FontAttributes="Bold" />
                             </Border>
                         </Grid>
                         <BoxView HeightRequest="1" Color="#E1E7F0" Margin="-20,0" />
 
-                        <Grid x:Name="ProductInfoGrid" ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="14" RowSpacing="12">
+                        <Label x:Name="ProductInfoTitleLabel" Text="单据与产品信息" TextColor="#001431" FontSize="15" FontAttributes="Bold" />
+                        <BoxView x:Name="ProductInfoDivider" HeightRequest="1" Color="#D8E0EA" />
+                        <Grid x:Name="ProductInfoGrid" ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="14">
                             <Label Text="当前工序" TextColor="#5C6F8F" />
                             <Label Grid.Column="1" x:Name="CurrentOperationLabel" Text="--" TextColor="#C45A00" FontAttributes="Bold" />
                             <Label Grid.Column="2" Text="所属机台" TextColor="#5C6F8F" />
@@ -44,8 +46,8 @@
                             <Label Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" x:Name="ProductLabel" Text="--" TextColor="#001431" FontAttributes="Bold" LineBreakMode="WordWrap" />
                         </Grid>
 
-                        <Label x:Name="MoldSequenceTitleLabel" Text="📚 模序要求" TextColor="#001431" FontSize="16" FontAttributes="Bold" />
-                        <Border x:Name="MoldSequenceBorder" BackgroundColor="#FFFDF2" Stroke="#FFD86B" Padding="12">
+                        <Label x:Name="MoldSequenceTitleLabel" Text="生产信息" TextColor="#001431" FontSize="16" FontAttributes="Bold" />
+                        <Border x:Name="MoldSequenceBorder" BackgroundColor="#F8FAFD" Stroke="#DDE6F1" Padding="12">
                             <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
                             <VerticalStackLayout x:Name="MoldSequenceLayout" Spacing="12" />
                         </Border>

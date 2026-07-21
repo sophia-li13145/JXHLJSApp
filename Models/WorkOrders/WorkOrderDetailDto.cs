@@ -15,6 +15,7 @@ public sealed class WorkOrderDetailDto
     public string? blankSpecification { get; set; }
     public string? coilDiameterControl { get; set; }
     public string? coilWeightRequirement { get; set; }
+    public string? customerCode { get; set; }
     public string? deviceCode { get; set; }
     public string? deviceName { get; set; }
     public string? drawMode { get; set; }
@@ -42,6 +43,7 @@ public sealed class WorkOrderDetailDto
     public string? packageMethod { get; set; }
     public string? packageWeight { get; set; }
     public string? packagingClothColor { get; set; }
+    public decimal? pieceWeight { get; set; }
     public string? pitchControl { get; set; }
     public decimal? plannedQuantity { get; set; }
     public decimal? plannedWeight { get; set; }
