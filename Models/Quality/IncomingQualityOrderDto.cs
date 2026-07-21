@@ -399,6 +399,7 @@ public sealed class ProductionQualityDetailDto
     public string? totalAcid { get; set; }
     public string? totalAcidSampling { get; set; }
     public string? upperToleranceValue { get; set; }
+    public string? workOrderStatus { get; set; }
     public string? workOrderNo { get; set; }
     public string? qualityNo { get; set; }
     public string? qualityType { get; set; }
@@ -464,5 +465,6 @@ public sealed class ProductionQualityMaterialDto
     public string? totalAcid { get; set; }
     public string? totalAcidSampling { get; set; }
     public string? upperToleranceValue { get; set; }
+    public string? workOrderStatus { get; set; }
     public string? workOrderNo { get; set; }
 }

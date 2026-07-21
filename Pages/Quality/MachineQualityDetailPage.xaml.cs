@@ -12,6 +12,7 @@ namespace JXHLJSApp.Pages.Quality;
 [QueryProperty(nameof(InspectStatus), "inspectStatus")]
 [QueryProperty(nameof(ManualInspection), "manualInspection")]
 [QueryProperty(nameof(ProcessName), "processName")]
+[QueryProperty(nameof(WorkOrderStatus), "workOrderStatus")]
 public partial class MachineQualityDetailPage : ContentPage
 {
     private const string SchemeAcidPickling = "酸洗";
@@ -25,6 +26,7 @@ public partial class MachineQualityDetailPage : ContentPage
     private string? _workOrderNo;
     private string? _inspectionSchemeName;
     private string? _inspectStatus;
+    private string? _workOrderStatus;
     private string? _processNameFromScan;
     private string? _qrCode;
     private string? _qualityMaterialId;
@@ -36,6 +38,7 @@ public partial class MachineQualityDetailPage : ContentPage
     public string? InspectStatus { get => _inspectStatus; set => _inspectStatus = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? ManualInspection { get => _manualInspectionFromQuery ? "true" : "false"; set => _manualInspectionFromQuery = string.Equals(Uri.UnescapeDataString(value ?? string.Empty), "true", StringComparison.OrdinalIgnoreCase); }
     public string? ProcessName { get => _processNameFromScan; set => _processNameFromScan = Uri.UnescapeDataString(value ?? string.Empty); }
+    public string? WorkOrderStatus { get => _workOrderStatus; set => _workOrderStatus = Uri.UnescapeDataString(value ?? string.Empty); }
 
     public MachineQualityDetailPage(IQualityApi qualityApi, IScanService scanService)
     {
@@ -74,6 +77,7 @@ public partial class MachineQualityDetailPage : ContentPage
             ApplyScannedProcessNameFallback(detail);
             _inspectionSchemeName = ResolveQualityFlowName(detail);
             if (!string.IsNullOrWhiteSpace(detail.inspectStatus)) _inspectStatus = detail.inspectStatus;
+            if (!string.IsNullOrWhiteSpace(detail.workOrderStatus)) _workOrderStatus = detail.workOrderStatus;
             if (!string.IsNullOrWhiteSpace(detail.workOrderNo)) _workOrderNo = detail.workOrderNo;
             var firstMaterial = detail.materialList?.FirstOrDefault();
             _qrCode = FirstNonEmpty(detail.qrCode, firstMaterial?.qrCode);
@@ -237,6 +241,7 @@ public partial class MachineQualityDetailPage : ContentPage
             ("工单号", detail.workOrderNo), ("工序", FirstNonEmpty(detail.processName, detail.processCode)),
             ("质检方案", detail.inspectionSchemeName), ("方案类型", detail.inspectionSchemeTypeName),
             ("质检类型", FirstNonEmpty(detail.qualityTypeName, detail.qualityType)), ("状态", detail.inspectStatus),
+            ("工单状态", detail.workOrderStatus),
             ("设备", FirstNonEmpty(detail.deviceName, detail.deviceCode)), ("炉号", detail.furnaceNo),
             ("钢号", detail.steelGrade), ("件号", ResolvePieceNo(detail)),
             ("规格", FirstNonEmpty(detail.targetSpecification, detail.inputSpecification))
