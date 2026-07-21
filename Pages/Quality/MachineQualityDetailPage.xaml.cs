@@ -3,6 +3,7 @@ using JXHLJSApp.Pages;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.Quality;
 using Microsoft.Maui.Controls.Shapes;
+using System.Globalization;
 
 namespace JXHLJSApp.Pages.Quality;
 
@@ -121,15 +122,16 @@ public partial class MachineQualityDetailPage : ContentPage
         MemoLabel.IsVisible = !isHeat;
         MemoEditor.IsVisible = !isHeat;
         var isSubmitOnlyProcess = isAcid || isDrawing;
+        SubmitButton.Text = isAcid ? "完 成" : "提交质检";
         CompleteButton.IsVisible = !isSubmitOnlyProcess;
         Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
         ScanMaterialButton.IsVisible = false;
-        InfoScanMaterialButton.IsVisible = !IsInspectionCompleted(_inspectStatus) && !IsWorkOrderInspectionCompleted(_workOrderStatus) && !isAcid && !isDrawing && (IsSamplingOrFullScheme(processName) || IsProcessCardScheme(processName));
+        InfoScanMaterialButton.IsVisible = !IsInspectionCompleted(_inspectStatus) && !isAcid && !isDrawing && (IsSamplingOrFullScheme(processName) || IsProcessCardScheme(processName));
     }
 
     private void FillAcidInputs(ProductionQualityDetailDto detail)
     {
-        AcidDateEntry.Text = DateTime.Now.ToString("yyyy/MM/dd");
+        AcidDatePicker.Date = ResolveAcidInspectDate(detail);
         PhosphatingTemperatureEntry.Text = detail.phosphatingTemperature;
         TotalAcidEntry.Text = detail.totalAcid;
         FreeAcidEntry.Text = detail.freeAcid;
@@ -140,7 +142,15 @@ public partial class MachineQualityDetailPage : ContentPage
         TotalAcidSamplingEntry.Text = detail.totalAcidSampling;
         FreeAcidSamplingEntry.Text = detail.freeAcidSampling;
         AcidRatioEntry.Text = detail.acidRatio;
-        RecorderEntry.Text = $"{Preferences.Get(UserSessionKeys.RealName, string.Empty)} ({Preferences.Get(UserSessionKeys.WorkNumber, string.Empty)})".Trim();
+        RecorderEntry.Text = BuildCurrentRecorderDisplay();
+    }
+
+
+    private static DateTime ResolveAcidInspectDate(ProductionQualityDetailDto detail)
+    {
+        return DateTime.TryParse(FirstNonEmpty(detail.inspectDate), CultureInfo.CurrentCulture, DateTimeStyles.None, out var inspectDate)
+            ? inspectDate
+            : DateTime.Today;
     }
 
     private void FillHeatTreatmentInputs(ProductionQualityDetailDto detail)
@@ -309,6 +319,19 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
 
+    private static string BuildCurrentRecorderDisplay()
+    {
+        var realName = Preferences.Get(UserSessionKeys.RealName, string.Empty).Trim();
+        var workNumber = Preferences.Get(UserSessionKeys.WorkNumber, string.Empty).Trim();
+
+        if (string.IsNullOrWhiteSpace(realName))
+        {
+            return string.IsNullOrWhiteSpace(workNumber) ? string.Empty : workNumber;
+        }
+
+        return string.IsNullOrWhiteSpace(workNumber) ? realName : $"{realName} ({workNumber})";
+    }
+
     private void ApplyReadOnlyStateIfCompleted()
     {
         if (!IsInspectionCompleted(_inspectStatus)) return;
@@ -322,10 +345,6 @@ public partial class MachineQualityDetailPage : ContentPage
         return IsCompletedStatus(inspectStatus);
     }
 
-    private static bool IsWorkOrderInspectionCompleted(string? workOrderStatus)
-    {
-        return IsCompletedStatus(workOrderStatus);
-    }
 
     private static bool IsCompletedStatus(string? status)
     {
@@ -348,6 +367,9 @@ public partial class MachineQualityDetailPage : ContentPage
                 break;
             case Picker picker:
                 picker.IsEnabled = false;
+                break;
+            case DatePicker datePicker:
+                datePicker.IsEnabled = false;
                 break;
             case Button button:
                 button.IsEnabled = false;
@@ -424,6 +446,28 @@ public partial class MachineQualityDetailPage : ContentPage
     {
         if (string.IsNullOrWhiteSpace(schemeName)) return false;
         return tokens.Any(token => schemeName.Contains(token, StringComparison.Ordinal));
+    }
+
+
+    private void OnIncrementNumericClicked(object sender, EventArgs e)
+    {
+        AdjustNumericEntry(sender, 1m);
+    }
+
+    private void OnDecrementNumericClicked(object sender, EventArgs e)
+    {
+        AdjustNumericEntry(sender, -1m);
+    }
+
+    private static void AdjustNumericEntry(object sender, decimal delta)
+    {
+        if (sender is not Button { CommandParameter: Entry entry } || entry.IsReadOnly) return;
+
+        var text = entry.Text?.Trim();
+        var currentValue = decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out var parsedValue)
+            ? parsedValue
+            : 0m;
+        entry.Text = (currentValue + delta).ToString("0.##", CultureInfo.CurrentCulture);
     }
 
     private void OnHeatDiameterTextChanged(object sender, TextChangedEventArgs e)
@@ -548,6 +592,7 @@ public partial class MachineQualityDetailPage : ContentPage
                 workOrderNo = _workOrderNo
             };
 
+            var isAcid = IsPicklingScheme(_inspectionSchemeName);
             var committed = _isManualInspection
                 ? await _qualityApi.SaveManualInspectionResultAsync(new ProductionManualInspectionSaveResultRequestDto
                 {
@@ -564,7 +609,7 @@ public partial class MachineQualityDetailPage : ContentPage
                     surfaceCondition = SurfaceEntry.Text?.Trim(),
                     workOrderNo = _workOrderNo
                 })
-                : IsPicklingScheme(_inspectionSchemeName)
+                : isAcid
                 ? await _qualityApi.CommitProductionPicklingAsync(new ProductionPicklingCommitRequestDto
                 {
                     acidRatio = AcidRatioEntry.Text?.Trim(),
@@ -572,7 +617,7 @@ public partial class MachineQualityDetailPage : ContentPage
                     freeAcidSampling = FreeAcidSamplingEntry.Text?.Trim(),
                     hydrochloricAcidConcentration1 = HydrochloricAcid1Entry.Text?.Trim(),
                     hydrochloricAcidConcentration2 = HydrochloricAcid2Entry.Text?.Trim(),
-                    inspectDate = AcidDateEntry.Text?.Trim(),
+                    inspectDate = AcidDatePicker.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     inspectResult = InspectResultPicker.SelectedItem?.ToString(),
                     inspector = RecorderEntry.Text?.Trim(),
                     memo = MemoEditor.Text?.Trim(),
@@ -617,7 +662,13 @@ public partial class MachineQualityDetailPage : ContentPage
                     : await _qualityApi.CommitProductionQualityAsync(request);
             if (!committed)
             {
-                await ErrorDialogService.ShowAsync(this, "提交失败", "接口未返回提交成功，请稍后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, isAcid ? "完成失败" : "提交失败", isAcid ? "接口未返回完成成功，请稍后重试。" : "接口未返回提交成功，请稍后重试。", "确定");
+                return;
+            }
+
+            if (isAcid)
+            {
+                await Shell.Current.GoToAsync(AppShell.RouteProductionQualitySuccess);
                 return;
             }
 
