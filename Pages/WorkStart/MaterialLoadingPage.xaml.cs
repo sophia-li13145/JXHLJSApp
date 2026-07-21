@@ -179,7 +179,8 @@ public partial class MaterialLoadingPage : ContentPage
         SteelGradeLabel.Text = ValueOrDash(material.steelGrade);
         OriginPlaceLabel.Text = ValueOrDash(material.originPlace);
         SpecLabel.Text = ValueOrDash(_confirmInput.spec);
-        WeightLabel.Text = FormatDecimalWithUnit(material.weight, FirstNonEmpty(material.weightUnit, material.unit, "KG"));
+        var (pieceWeight, pieceWeightUnit) = NormalizePieceWeightForDisplay(material.weight, material.unit);
+        WeightLabel.Text = FormatDecimalWithUnit(pieceWeight, pieceWeightUnit);
         LengthLabel.Text = FormatDecimalWithUnit(material.length, FirstNonEmpty(material.lengthUnit, "m"));
     }
 
@@ -239,6 +240,20 @@ public partial class MaterialLoadingPage : ContentPage
 
     private static string FirstNonEmpty(params string?[] values) =>
         values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
+
+    private static (decimal? value, string unit) NormalizePieceWeightForDisplay(decimal? value, string? unit)
+    {
+        if (IsTonUnit(unit))
+        {
+            return (value * 1000m, "KG");
+        }
+
+        return (value, "KG");
+    }
+
+    private static bool IsTonUnit(string? unit) =>
+        string.Equals(unit?.Trim(), "吨", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(unit?.Trim(), "t", StringComparison.OrdinalIgnoreCase);
 
     private static string FormatDecimalWithUnit(decimal? value, string? unit)
     {
