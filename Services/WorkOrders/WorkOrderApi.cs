@@ -29,10 +29,12 @@ public interface IWorkOrderApi
     Task<AttachmentDto> UploadReworkAttachmentAsync(FileResult photo, CancellationToken ct = default);
     Task<bool> AddAbnormalRecordAsync(WorkOrderAbnormalAddRequestDto request, CancellationToken ct = default);
     Task<WorkOrderCompletionStatusDto?> GetWorkOrderCompletionStatusAsync(string workOrderNo, CancellationToken ct = default);
-    Task<bool> ConfirmCompletionAsync(string workOrderNo, CancellationToken ct = default);
+    Task<WorkOrderOperationResult> ConfirmCompletionAsync(string workOrderNo, CancellationToken ct = default);
     Task<bool> StopWorkOrderAsync(string workOrderNo, CancellationToken ct = default);
     Task<ProductionStatisticsDto?> GetProductionStatisticsAsync(string date, CancellationToken ct = default);
 }
+
+public sealed record WorkOrderOperationResult(bool success, string? message);
 
 public sealed class WorkOrderApi : IWorkOrderApi
 {
@@ -402,15 +404,20 @@ public sealed class WorkOrderApi : IWorkOrderApi
         return data?.result;
     }
 
-    public async Task<bool> ConfirmCompletionAsync(string workOrderNo, CancellationToken ct = default)
+    public async Task<WorkOrderOperationResult> ConfirmCompletionAsync(string workOrderNo, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _confirmCompletionEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new { workOrderNo }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        if (data?.success == false)
+        {
+            return new WorkOrderOperationResult(false, data.message);
+        }
+
         EnsureApiSuccess(data);
-        return ReadFlexibleBooleanResult(data);
+        return new WorkOrderOperationResult(ReadFlexibleBooleanResult(data), data?.message);
     }
 
 
