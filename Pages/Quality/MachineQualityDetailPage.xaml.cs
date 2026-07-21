@@ -3,6 +3,7 @@ using JXHLJSApp.Pages;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.Quality;
 using Microsoft.Maui.Controls.Shapes;
+using System.Globalization;
 
 namespace JXHLJSApp.Pages.Quality;
 
@@ -71,7 +72,7 @@ public partial class MachineQualityDetailPage : ContentPage
                 : await _qualityApi.GetProductionQualityDetailAsync(_qualityNo, _workOrderNo);
             _detail = detail;
             ApplyScannedProcessNameFallback(detail);
-            _inspectionSchemeName = ResolveProcessName(detail);
+            _inspectionSchemeName = ResolveQualityFlowName(detail);
             if (!string.IsNullOrWhiteSpace(detail.inspectStatus)) _inspectStatus = detail.inspectStatus;
             if (!string.IsNullOrWhiteSpace(detail.workOrderNo)) _workOrderNo = detail.workOrderNo;
             var firstMaterial = detail.materialList?.FirstOrDefault();
@@ -102,11 +103,13 @@ public partial class MachineQualityDetailPage : ContentPage
     private void ApplySchemeLayout(ProductionQualityDetailDto detail)
     {
         var processName = ResolveProcessName(detail);
+        var qualityFlowName = ResolveQualityFlowName(detail);
         var isAcid = IsPicklingScheme(processName);
         var isHeat = IsHeatTreatmentScheme(processName);
         var isDrawing = IsDrawingScheme(processName);
+        var isFirstInspection = isDrawing && HasSchemeToken(qualityFlowName, "首检", "首件检");
 
-        TitleLabel.Text = isAcid ? "执行酸洗质检" : isHeat ? "执行热处理质检" : "执行工序质检";
+        TitleLabel.Text = isAcid ? "执行酸洗质检" : isHeat ? "执行热处理质检" : isFirstInspection ? "执行拉拔工序质检" : "执行工序质检";
         InfoTitleLabel.Text = isAcid ? "酸洗任务信息" : isHeat ? "热处理卡片信息" : "生产卡片信息";
         InputTitleLabel.Text = isAcid ? "酸洗检验录入" : isHeat ? "理化检验录入" : "检验项目录入";
         AcidInputPanel.IsVisible = isAcid;
@@ -115,15 +118,16 @@ public partial class MachineQualityDetailPage : ContentPage
         MemoLabel.IsVisible = !isHeat;
         MemoEditor.IsVisible = !isHeat;
         var isSubmitOnlyProcess = isAcid || isDrawing;
+        SubmitButton.Text = isAcid ? "完 成" : "提交质检";
         CompleteButton.IsVisible = !isSubmitOnlyProcess;
         Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
         ScanMaterialButton.IsVisible = false;
-        InfoScanMaterialButton.IsVisible = IsSamplingOrFullScheme(processName) || IsProcessCardScheme(processName);
+        InfoScanMaterialButton.IsVisible = !IsInspectionCompleted(_inspectStatus) && !isAcid && !isDrawing && (IsSamplingOrFullScheme(processName) || IsProcessCardScheme(processName));
     }
 
     private void FillAcidInputs(ProductionQualityDetailDto detail)
     {
-        AcidDateEntry.Text = DateTime.Now.ToString("yyyy/MM/dd");
+        AcidDatePicker.Date = ResolveAcidInspectDate(detail);
         PhosphatingTemperatureEntry.Text = detail.phosphatingTemperature;
         TotalAcidEntry.Text = detail.totalAcid;
         FreeAcidEntry.Text = detail.freeAcid;
@@ -134,7 +138,15 @@ public partial class MachineQualityDetailPage : ContentPage
         TotalAcidSamplingEntry.Text = detail.totalAcidSampling;
         FreeAcidSamplingEntry.Text = detail.freeAcidSampling;
         AcidRatioEntry.Text = detail.acidRatio;
-        RecorderEntry.Text = $"{Preferences.Get(UserSessionKeys.RealName, string.Empty)} ({Preferences.Get(UserSessionKeys.WorkNumber, string.Empty)})".Trim();
+        RecorderEntry.Text = BuildCurrentRecorderDisplay();
+    }
+
+
+    private static DateTime ResolveAcidInspectDate(ProductionQualityDetailDto detail)
+    {
+        return DateTime.TryParse(FirstNonEmpty(detail.inspectDate), CultureInfo.CurrentCulture, DateTimeStyles.None, out var inspectDate)
+            ? inspectDate
+            : DateTime.Today;
     }
 
     private void FillHeatTreatmentInputs(ProductionQualityDetailDto detail)
@@ -172,7 +184,12 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static string? ResolveProcessName(ProductionQualityDetailDto detail)
     {
-        return FirstNonEmpty(detail.processName, detail.processCode, detail.inspectionSchemeName, detail.qualityTypeName, detail.inspectionSchemeTypeName).Trim();
+        return FirstNonEmpty(detail.processName, detail.processCode).Trim();
+    }
+
+    private static string? ResolveQualityFlowName(ProductionQualityDetailDto detail)
+    {
+        return FirstNonEmpty(detail.inspectionSchemeName, detail.qualityTypeName, detail.inspectionSchemeTypeName, detail.processName, detail.processCode).Trim();
     }
 
     private static (string Label, string? Value)[] BuildInfoRows(ProductionQualityDetailDto detail)
@@ -297,6 +314,19 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
 
+    private static string BuildCurrentRecorderDisplay()
+    {
+        var realName = Preferences.Get(UserSessionKeys.RealName, string.Empty).Trim();
+        var workNumber = Preferences.Get(UserSessionKeys.WorkNumber, string.Empty).Trim();
+
+        if (string.IsNullOrWhiteSpace(realName))
+        {
+            return string.IsNullOrWhiteSpace(workNumber) ? string.Empty : workNumber;
+        }
+
+        return string.IsNullOrWhiteSpace(workNumber) ? realName : $"{realName} ({workNumber})";
+    }
+
     private void ApplyReadOnlyStateIfCompleted()
     {
         if (!IsInspectionCompleted(_inspectStatus)) return;
@@ -307,9 +337,17 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static bool IsInspectionCompleted(string? inspectStatus)
     {
-        return string.Equals(inspectStatus, "3", StringComparison.Ordinal) ||
-            string.Equals(inspectStatus, "检验完成", StringComparison.Ordinal) ||
-            string.Equals(inspectStatus, "已完成", StringComparison.Ordinal);
+        return IsCompletedStatus(inspectStatus);
+    }
+
+
+    private static bool IsCompletedStatus(string? status)
+    {
+        return string.Equals(status, "3", StringComparison.Ordinal) ||
+            string.Equals(status, "检验完成", StringComparison.Ordinal) ||
+            string.Equals(status, "已完成", StringComparison.Ordinal) ||
+            string.Equals(status, "completed", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "complete", StringComparison.OrdinalIgnoreCase);
     }
 
     private static void SetReadOnly(Element element)
@@ -324,6 +362,9 @@ public partial class MachineQualityDetailPage : ContentPage
                 break;
             case Picker picker:
                 picker.IsEnabled = false;
+                break;
+            case DatePicker datePicker:
+                datePicker.IsEnabled = false;
                 break;
             case Button button:
                 button.IsEnabled = false;
@@ -368,12 +409,12 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static bool IsPicklingScheme(string? schemeName)
     {
-        return HasSchemeToken(schemeName, SchemeAcidPickling, "表检");
+        return HasSchemeToken(schemeName, SchemeAcidPickling);
     }
 
     private static bool IsHeatTreatmentScheme(string? schemeName)
     {
-        return HasSchemeToken(schemeName, SchemeHeatTreatment, "全检");
+        return HasSchemeToken(schemeName, SchemeHeatTreatment);
     }
 
     private static bool IsSamplingOrFullScheme(string? schemeName)
@@ -393,13 +434,35 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static bool IsFirstInspectionScheme(string? schemeName)
     {
-        return HasSchemeToken(schemeName, SchemeDrawing, "首检", "首件检");
+        return HasSchemeToken(schemeName, SchemeDrawing) && HasSchemeToken(schemeName, "首检", "首件检");
     }
 
     private static bool HasSchemeToken(string? schemeName, params string[] tokens)
     {
         if (string.IsNullOrWhiteSpace(schemeName)) return false;
         return tokens.Any(token => schemeName.Contains(token, StringComparison.Ordinal));
+    }
+
+
+    private void OnIncrementNumericClicked(object sender, EventArgs e)
+    {
+        AdjustNumericEntry(sender, 1m);
+    }
+
+    private void OnDecrementNumericClicked(object sender, EventArgs e)
+    {
+        AdjustNumericEntry(sender, -1m);
+    }
+
+    private static void AdjustNumericEntry(object sender, decimal delta)
+    {
+        if (sender is not Button { CommandParameter: Entry entry } || entry.IsReadOnly) return;
+
+        var text = entry.Text?.Trim();
+        var currentValue = decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out var parsedValue)
+            ? parsedValue
+            : 0m;
+        entry.Text = (currentValue + delta).ToString("0.##", CultureInfo.CurrentCulture);
     }
 
     private void OnHeatDiameterTextChanged(object sender, TextChangedEventArgs e)
@@ -524,6 +587,7 @@ public partial class MachineQualityDetailPage : ContentPage
                 workOrderNo = _workOrderNo
             };
 
+            var isAcid = IsPicklingScheme(_inspectionSchemeName);
             var committed = _isManualInspection
                 ? await _qualityApi.SaveManualInspectionResultAsync(new ProductionManualInspectionSaveResultRequestDto
                 {
@@ -540,7 +604,7 @@ public partial class MachineQualityDetailPage : ContentPage
                     surfaceCondition = SurfaceEntry.Text?.Trim(),
                     workOrderNo = _workOrderNo
                 })
-                : IsPicklingScheme(_inspectionSchemeName)
+                : isAcid
                 ? await _qualityApi.CommitProductionPicklingAsync(new ProductionPicklingCommitRequestDto
                 {
                     acidRatio = AcidRatioEntry.Text?.Trim(),
@@ -548,7 +612,7 @@ public partial class MachineQualityDetailPage : ContentPage
                     freeAcidSampling = FreeAcidSamplingEntry.Text?.Trim(),
                     hydrochloricAcidConcentration1 = HydrochloricAcid1Entry.Text?.Trim(),
                     hydrochloricAcidConcentration2 = HydrochloricAcid2Entry.Text?.Trim(),
-                    inspectDate = AcidDateEntry.Text?.Trim(),
+                    inspectDate = AcidDatePicker.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     inspectResult = InspectResultPicker.SelectedItem?.ToString(),
                     inspector = RecorderEntry.Text?.Trim(),
                     memo = MemoEditor.Text?.Trim(),
@@ -593,7 +657,13 @@ public partial class MachineQualityDetailPage : ContentPage
                     : await _qualityApi.CommitProductionQualityAsync(request);
             if (!committed)
             {
-                await ErrorDialogService.ShowAsync(this, "提交失败", "接口未返回提交成功，请稍后重试。", "确定");
+                await ErrorDialogService.ShowAsync(this, isAcid ? "完成失败" : "提交失败", isAcid ? "接口未返回完成成功，请稍后重试。" : "接口未返回提交成功，请稍后重试。", "确定");
+                return;
+            }
+
+            if (isAcid)
+            {
+                await Shell.Current.GoToAsync(AppShell.RouteProductionQualitySuccess);
                 return;
             }
 

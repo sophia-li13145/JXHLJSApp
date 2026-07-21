@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.Quality.ProductionQualitySuccessPage"
+             BackgroundColor="#F4F6FA"
+             Shell.NavBarIsVisible="False">
+    <Grid Padding="30,96,30,0">
+        <VerticalStackLayout Spacing="22" HorizontalOptions="Center" VerticalOptions="Start">
+            <Border WidthRequest="70" HeightRequest="70" BackgroundColor="#4FD18B" StrokeThickness="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="8" />
+                </Border.StrokeShape>
+                <Label Text="✓" TextColor="White" FontSize="54" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+            </Border>
+            <Label Text="检验单已完成" TextColor="#001431" FontSize="25" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+            <Label Text="当前质检任务已结束并提交至后台" TextColor="#4B6688" FontSize="15" HorizontalTextAlignment="Center" />
+            <Button Text="返回列表" BackgroundColor="#1F447E" TextColor="White" FontSize="18" FontAttributes="Bold" CornerRadius="10" HeightRequest="54" WidthRequest="348" Margin="0,24,0,0" Clicked="OnReturnClicked" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

@@ -51,27 +51,75 @@
                         <Label x:Name="InputTitleLabel" Text="检验项目录入" TextColor="#051B3D" FontSize="18" FontAttributes="Bold" />
                         <VerticalStackLayout x:Name="AcidInputPanel" Spacing="16" IsVisible="False">
                             <Label Text="检验日期 (年月日) *" TextColor="#051B3D" FontAttributes="Bold" />
-                            <Entry x:Name="AcidDateEntry" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <DatePicker x:Name="AcidDatePicker" Format="yyyy/MM/dd" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
                             <Label Text="磷化温度" TextColor="#051B3D" FontAttributes="Bold" />
-                            <Entry x:Name="PhosphatingTemperatureEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Grid ColumnDefinitions="*,36" ColumnSpacing="0">
+                                <Entry x:Name="PhosphatingTemperatureEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                    <Button Text="▲" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference PhosphatingTemperatureEntry}" Clicked="OnIncrementNumericClicked" />
+                                    <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference PhosphatingTemperatureEntry}" Clicked="OnDecrementNumericClicked" />
+                                </VerticalStackLayout>
+                            </Grid>
                             <Label Text="总酸" TextColor="#051B3D" FontAttributes="Bold" />
-                            <Entry x:Name="TotalAcidEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Grid ColumnDefinitions="*,36" ColumnSpacing="0">
+                                <Entry x:Name="TotalAcidEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                    <Button Text="▲" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference TotalAcidEntry}" Clicked="OnIncrementNumericClicked" />
+                                    <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference TotalAcidEntry}" Clicked="OnDecrementNumericClicked" />
+                                </VerticalStackLayout>
+                            </Grid>
                             <Label Text="游离酸" TextColor="#051B3D" FontAttributes="Bold" />
-                            <Entry x:Name="FreeAcidEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Grid ColumnDefinitions="*,36" ColumnSpacing="0">
+                                <Entry x:Name="FreeAcidEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                    <Button Text="▲" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference FreeAcidEntry}" Clicked="OnIncrementNumericClicked" />
+                                    <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference FreeAcidEntry}" Clicked="OnDecrementNumericClicked" />
+                                </VerticalStackLayout>
+                            </Grid>
                             <Label Text="皂化温度" TextColor="#051B3D" FontAttributes="Bold" />
-                            <Entry x:Name="SaponificationTemperatureEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Grid ColumnDefinitions="*,36" ColumnSpacing="0">
+                                <Entry x:Name="SaponificationTemperatureEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                    <Button Text="▲" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference SaponificationTemperatureEntry}" Clicked="OnIncrementNumericClicked" />
+                                    <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference SaponificationTemperatureEntry}" Clicked="OnDecrementNumericClicked" />
+                                </VerticalStackLayout>
+                            </Grid>
                             <Label Text="皂化PH值" TextColor="#051B3D" FontAttributes="Bold" />
-                            <Entry x:Name="SaponificationPhEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Grid ColumnDefinitions="*,36" ColumnSpacing="0">
+                                <Entry x:Name="SaponificationPhEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                    <Button Text="▲" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference SaponificationPhEntry}" Clicked="OnIncrementNumericClicked" />
+                                    <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference SaponificationPhEntry}" Clicked="OnDecrementNumericClicked" />
+                                </VerticalStackLayout>
+                            </Grid>
                             <Label Text="盐酸1浓度" TextColor="#051B3D" FontAttributes="Bold" />
-                            <Entry x:Name="HydrochloricAcid1Entry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Grid ColumnDefinitions="*,36" ColumnSpacing="0">
+                                <Entry x:Name="HydrochloricAcid1Entry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                    <Button Text="▲" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference HydrochloricAcid1Entry}" Clicked="OnIncrementNumericClicked" />
+                                    <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference HydrochloricAcid1Entry}" Clicked="OnDecrementNumericClicked" />
+                                </VerticalStackLayout>
+                            </Grid>
                             <Label Text="盐酸2浓度" TextColor="#051B3D" FontAttributes="Bold" />
-                            <Entry x:Name="HydrochloricAcid2Entry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Grid ColumnDefinitions="*,36" ColumnSpacing="0">
+                                <Entry x:Name="HydrochloricAcid2Entry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                    <Button Text="▲" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference HydrochloricAcid2Entry}" Clicked="OnIncrementNumericClicked" />
+                                    <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference HydrochloricAcid2Entry}" Clicked="OnDecrementNumericClicked" />
+                                </VerticalStackLayout>
+                            </Grid>
                             <Label Text="总酸取样" TextColor="#051B3D" FontAttributes="Bold" />
                             <Entry x:Name="TotalAcidSamplingEntry" Placeholder="手动录入" BackgroundColor="#F8FAFD" />
                             <Label Text="游离酸取样" TextColor="#051B3D" FontAttributes="Bold" />
                             <Entry x:Name="FreeAcidSamplingEntry" Placeholder="手动录入" BackgroundColor="#F8FAFD" />
                             <Label Text="酸比" TextColor="#051B3D" FontAttributes="Bold" />
-                            <Entry x:Name="AcidRatioEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Grid ColumnDefinitions="*,36" ColumnSpacing="0">
+                                <Entry x:Name="AcidRatioEntry" Placeholder="手动录入" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                    <Button Text="▲" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference AcidRatioEntry}" Clicked="OnIncrementNumericClicked" />
+                                    <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference AcidRatioEntry}" Clicked="OnDecrementNumericClicked" />
+                                </VerticalStackLayout>
+                            </Grid>
                             <Label Text="记录人 *" TextColor="#051B3D" FontAttributes="Bold" />
                             <Entry x:Name="RecorderEntry" IsReadOnly="True" BackgroundColor="#EEF3FA" />
                         </VerticalStackLayout>

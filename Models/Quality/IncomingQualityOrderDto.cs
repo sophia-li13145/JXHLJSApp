@@ -319,7 +319,6 @@ public sealed class ProductionQualityOrderDto
     public string? qualityTypeName { get; set; }
     public string? resourceCode { get; set; }
     public string? resourceName { get; set; }
-    public string? workOrderStatus { get; set; }
 
     public string titleDisplay => FirstNonEmpty(inspectionSchemeName, qualityTypeName, inspectionSchemeTypeName, "质检任务");
     public string machineDisplay => FirstNonEmpty(resourceName, machineNo, resourceCode, "-");
@@ -383,6 +382,7 @@ public sealed class ProductionQualityDetailDto
     public string? inspectResult { get; set; }
     public string? inspectionSchemeCode { get; set; }
     public string? inspectionSchemeName { get; set; }
+    public string? inspectDate { get; set; }
     public string? inspectStatus { get; set; }
     public string? lowerToleranceValue { get; set; }
     public string? memo { get; set; }

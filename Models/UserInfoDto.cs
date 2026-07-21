@@ -11,6 +11,10 @@ namespace JXHLJSApp.Models;
         public string? roleCode { get; set; }
         public string? roleName { get; set; }
         public string? workNumber { get; set; }
+        public string? workNo { get; set; }
+        public string? employeeNo { get; set; }
+        public string? empNo { get; set; }
+        public string? userCode { get; set; }
         public string? factoryName { get; set; }
         public string? workshopName { get; set; }
         public string? teamName { get; set; }
