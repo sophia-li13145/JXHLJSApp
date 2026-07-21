@@ -23,6 +23,7 @@ public interface IQualityApi
     Task<ProductionQualityDetailDto> GetProductionQualityDetailAsync(string qualityNo, string workOrderNo, CancellationToken ct = default);
     Task<ProductionQualityDetailDto> CreateManualInspectionAsync(string qrCode, CancellationToken ct = default);
     Task<ProductionQualityDetailDto> GetManualInspectionDetailAsync(string qualityNo, CancellationToken ct = default);
+    Task<ProductionQualityScanMaterialDto> AddManualInspectionMaterialAsync(ProductionQualityScanMaterialRequestDto request, CancellationToken ct = default);
     Task<bool> SaveManualInspectionResultAsync(ProductionManualInspectionSaveResultRequestDto request, CancellationToken ct = default);
     Task<ProductionQualityDetailDto> CompleteManualInspectionAsync(string qualityNo, CancellationToken ct = default);
     Task<ProductionQualityScanMaterialDto> ScanProductionQualityMaterialAsync(ProductionQualityScanMaterialRequestDto request, CancellationToken ct = default);
@@ -53,6 +54,7 @@ public sealed class QualityApi : IQualityApi
     private readonly string _productionQualitySamplingOrFullCompleteEndpoint;
     private readonly string _manualInspectionCreateEndpoint;
     private readonly string _manualInspectionDetailEndpoint;
+    private readonly string _manualInspectionAddMaterialEndpoint;
     private readonly string _manualInspectionSaveResultEndpoint;
     private readonly string _manualInspectionCompleteEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -95,6 +97,8 @@ public sealed class QualityApi : IQualityApi
             configLoader.GetApiPath("manualInspection.create", "/pda/manualInspection/create"), servicePath);
         _manualInspectionDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("manualInspection.detail", "/pda/manualInspection/detail"), servicePath);
+        _manualInspectionAddMaterialEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("manualInspection.addMaterial", "/pda/manualInspection/addMaterial"), servicePath);
         _manualInspectionSaveResultEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("manualInspection.saveResult", "/pda/manualInspection/saveResult"), servicePath);
         _manualInspectionCompleteEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -281,6 +285,19 @@ public sealed class QualityApi : IQualityApi
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<ProductionQualityDetailDto>(resp, ct).ConfigureAwait(false);
         return data.result ?? new ProductionQualityDetailDto { qualityNo = qualityNo };
+    }
+
+    public async Task<ProductionQualityScanMaterialDto> AddManualInspectionMaterialAsync(ProductionQualityScanMaterialRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _manualInspectionAddMaterialEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, new
+        {
+            qrCode = request.qrCode,
+            qualityNo = request.qualityNo
+        }, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<ProductionQualityScanMaterialDto>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new ProductionQualityScanMaterialDto { qrCode = request.qrCode };
     }
 
     public async Task<bool> SaveManualInspectionResultAsync(ProductionManualInspectionSaveResultRequestDto request, CancellationToken ct = default)

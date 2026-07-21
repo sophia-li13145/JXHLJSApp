@@ -129,17 +129,41 @@
                         <Label Text="圈距控制" TextColor="#051B3D" FontAttributes="Bold" />
                         <Picker x:Name="CoilPitchPicker" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
                         <Label Text="实测直径 (mm) *" TextColor="#051B3D" FontAttributes="Bold" />
-                        <Entry x:Name="ActualDiameterEntry" Placeholder="输入测量直径" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                        <Grid ColumnDefinitions="*,36" ColumnSpacing="0">
+                            <Entry x:Name="ActualDiameterEntry" Placeholder="输入测量直径" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                <Button Text="▲" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference ActualDiameterEntry}" Clicked="OnIncrementNumericClicked" />
+                                <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference ActualDiameterEntry}" Clicked="OnDecrementNumericClicked" />
+                            </VerticalStackLayout>
+                        </Grid>
                         <Label Text="实测强度 (MPa)" TextColor="#051B3D" FontAttributes="Bold" />
-                        <Entry x:Name="StrengthEntry" Placeholder="检测强度值" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                        <Grid ColumnDefinitions="*,36" ColumnSpacing="0">
+                            <Entry x:Name="StrengthEntry" Placeholder="检测强度值" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                <Button Text="▲" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference StrengthEntry}" Clicked="OnIncrementNumericClicked" />
+                                <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference StrengthEntry}" Clicked="OnDecrementNumericClicked" />
+                            </VerticalStackLayout>
+                        </Grid>
                         <Label Text="延伸率 (%)" TextColor="#051B3D" FontAttributes="Bold" />
-                        <Entry x:Name="ElongationEntry" Placeholder="可为空" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                        <Grid ColumnDefinitions="*,36" ColumnSpacing="0">
+                            <Entry x:Name="ElongationEntry" Placeholder="可为空" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                <Button Text="▲" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference ElongationEntry}" Clicked="OnIncrementNumericClicked" />
+                                <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference ElongationEntry}" Clicked="OnDecrementNumericClicked" />
+                            </VerticalStackLayout>
+                        </Grid>
                         <Label Text="表面状态" TextColor="#051B3D" FontAttributes="Bold" />
                         <Entry x:Name="SurfaceEntry" Placeholder="正常" BackgroundColor="#F8FAFD" />
                         </VerticalStackLayout>
                         <VerticalStackLayout x:Name="HeatTreatmentInputPanel" Spacing="16" IsVisible="False">
                             <Label Text="实测直径 (mm) *" TextColor="#051B3D" FontAttributes="Bold" />
-                            <Entry x:Name="HeatActualDiameterEntry" Placeholder="输入测量直径" Keyboard="Numeric" TextChanged="OnHeatDiameterTextChanged" BackgroundColor="#F8FAFD" />
+                            <Grid ColumnDefinitions="*,36" ColumnSpacing="0">
+                                <Entry x:Name="HeatActualDiameterEntry" Placeholder="输入测量直径" Keyboard="Numeric" TextChanged="OnHeatDiameterTextChanged" BackgroundColor="#F8FAFD" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                    <Button Text="▲" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference HeatActualDiameterEntry}" Clicked="OnIncrementNumericClicked" />
+                                    <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference HeatActualDiameterEntry}" Clicked="OnDecrementNumericClicked" />
+                                </VerticalStackLayout>
+                            </Grid>
                             <Label Text="标准直径 (mm)" TextColor="#051B3D" FontAttributes="Bold" />
                             <Entry x:Name="StandardDiameterEntry" Placeholder="标准直径" Keyboard="Numeric" BackgroundColor="#EEF3FA" IsReadOnly="True" FontAttributes="Bold" />
                             <Label Text="断后直径 (mm) *" TextColor="#051B3D" FontAttributes="Bold" />
@@ -152,9 +176,21 @@
                                 </VerticalStackLayout>
                             </Border>
                             <Label Text="实测抗拉强度 (MPa) *" TextColor="#051B3D" FontAttributes="Bold" />
-                            <Entry x:Name="TensileStrengthEntry" Placeholder="输入抗拉强度" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Grid ColumnDefinitions="*,36" ColumnSpacing="0">
+                                <Entry x:Name="TensileStrengthEntry" Placeholder="输入抗拉强度" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                    <Button Text="▲" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference TensileStrengthEntry}" Clicked="OnIncrementNumericClicked" />
+                                    <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference TensileStrengthEntry}" Clicked="OnDecrementNumericClicked" />
+                                </VerticalStackLayout>
+                            </Grid>
                             <Label Text="延伸率 (%)" TextColor="#051B3D" FontAttributes="Bold" />
-                            <Entry x:Name="HeatElongationEntry" Placeholder="可为空" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Grid ColumnDefinitions="*,36" ColumnSpacing="0">
+                                <Entry x:Name="HeatElongationEntry" Placeholder="可为空" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                    <Button Text="▲" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference HeatElongationEntry}" Clicked="OnIncrementNumericClicked" />
+                                    <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference HeatElongationEntry}" Clicked="OnDecrementNumericClicked" />
+                                </VerticalStackLayout>
+                            </Grid>
                             <Label Text="扭转次数" TextColor="#051B3D" FontAttributes="Bold" />
                             <Entry x:Name="TwistCountEntry" Placeholder="输入扭转次数" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
                         </VerticalStackLayout>
