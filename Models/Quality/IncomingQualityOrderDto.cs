@@ -161,25 +161,55 @@ public sealed class ProductionQualityScanMaterialRequestDto
 
 public sealed class ProductionQualityScanMaterialDto
 {
+    public string? acidRatio { get; set; }
+    public string? actualDiameterMm { get; set; }
     public string? batchNo { get; set; }
     public string? businessType { get; set; }
+    public long? childSeq { get; set; }
+    public string? coilDiameterControl { get; set; }
+    public string? coilPitchControl { get; set; }
     public string? customerCode { get; set; }
     public string? deviceCode { get; set; }
     public string? deviceName { get; set; }
+    public string? elongationRate { get; set; }
+    public string? freeAcid { get; set; }
+    public string? freeAcidSampling { get; set; }
     public string? furnaceNo { get; set; }
+    public string? hydrochloricAcidConcentration1 { get; set; }
+    public string? hydrochloricAcidConcentration2 { get; set; }
     public string? inputDiameterMm { get; set; }
     public string? inputSpecification { get; set; }
+    public string? inspectResult { get; set; }
+    public string? inspectionSchemeCode { get; set; }
+    public string? inspectionSchemeName { get; set; }
+    public string? listing { get; set; }
+    public string? lowerToleranceValue { get; set; }
+    public string? machineNo { get; set; }
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
+    public string? memo { get; set; }
     public string? originPlace { get; set; }
+    public string? phosphatingTemperature { get; set; }
+    public string? pieceNo { get; set; }
     public string? plateNo { get; set; }
     public string? productDiameter { get; set; }
+    public string? productionDate { get; set; }
     public string? qrCode { get; set; }
+    public int? qrTimes { get; set; }
     public string? qualityMaterialId { get; set; }
+    public bool resultSaved { get; set; }
+    public string? saponificationPhValue { get; set; }
+    public string? saponificationTemperature { get; set; }
     public string? shiftNo { get; set; }
-    public string? steelGrade { get; set; }
-    public string? targetSpecification { get; set; }
-    public string? upperToleranceValue { get; set; }
-    public string? lowerToleranceValue { get; set; }
+    public string? spec { get; set; }
     public string? spoolWeightRequirement { get; set; }
+    public string? steelGrade { get; set; }
+    public string? strengthMpa { get; set; }
+    public string? surfaceCondition { get; set; }
+    public string? targetSpecification { get; set; }
+    public string? totalAcid { get; set; }
+    public string? totalAcidSampling { get; set; }
+    public string? upperToleranceValue { get; set; }
     public string? workOrderNo { get; set; }
 }
 
@@ -355,6 +385,7 @@ public sealed class ProductionQualityDetailDto
     public string? acidRatio { get; set; }
     public string? actualDiameterMm { get; set; }
     public string? businessType { get; set; }
+    public long? childSeq { get; set; }
     public string? coilDiameterControl { get; set; }
     public string? coilPitchControl { get; set; }
     public string? deviceCode { get; set; }
@@ -428,6 +459,7 @@ public sealed class ProductionQualityMaterialDto
     public string? acidRatio { get; set; }
     public string? actualDiameterMm { get; set; }
     public string? businessType { get; set; }
+    public long? childSeq { get; set; }
     public string? coilDiameterControl { get; set; }
     public string? coilPitchControl { get; set; }
     public string? deviceCode { get; set; }
@@ -443,13 +475,16 @@ public sealed class ProductionQualityMaterialDto
     public string? inspectResult { get; set; }
     public string? inspectionSchemeCode { get; set; }
     public string? inspectionSchemeName { get; set; }
+    public string? listing { get; set; }
     public string? lowerToleranceValue { get; set; }
+    public string? machineNo { get; set; }
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
     public string? memo { get; set; }
     public string? phosphatingTemperature { get; set; }
     public string? pieceNo { get; set; }
     public string? productDiameter { get; set; }
+    public string? productionDate { get; set; }
     public string? qrCode { get; set; }
     public int? qrTimes { get; set; }
     public string? qualityMaterialId { get; set; }
