@@ -71,10 +71,31 @@ public partial class WorkOrderInstructionPage : ContentPage
 
         var processKind = GetProcessInstructionKind(detail.operationName);
         var isHeatTreatment = processKind == ProcessInstructionKind.HeatTreatment;
+        ProductInfoTitleLabel.IsVisible = !isHeatTreatment;
+        ProductInfoDivider.IsVisible = !isHeatTreatment;
         ProductInfoGrid.IsVisible = !isHeatTreatment;
         MoldSequenceTitleLabel.IsVisible = !isHeatTreatment;
         MoldSequenceBorder.IsVisible = !isHeatTreatment;
         HeatTreatmentParamsLayout.IsVisible = isHeatTreatment;
+
+        switch (processKind)
+        {
+            case ProcessInstructionKind.BlankOpening:
+                BindBlankOpeningProductInfo(detail);
+                MoldSequenceTitleLabel.Text = "生产信息";
+                break;
+            case ProcessInstructionKind.Drawing:
+                BindDrawingProductInfo(detail);
+                MoldSequenceTitleLabel.Text = "生产信息";
+                break;
+            default:
+                BindDefaultProductInfo(detail);
+                MoldSequenceTitleLabel.Text = "模序要求";
+                break;
+        }
+
+        MoldSequenceBorder.BackgroundColor = Color.FromArgb("#F8FAFD");
+        MoldSequenceBorder.Stroke = Color.FromArgb("#DDE6F1");
 
         if (isHeatTreatment)
         {
@@ -86,7 +107,14 @@ public partial class WorkOrderInstructionPage : ContentPage
             return;
         }
 
-        BindMoldSequences(detail.moldSequenceList, processKind);
+        if (processKind == ProcessInstructionKind.BlankOpening || processKind == ProcessInstructionKind.Drawing)
+        {
+            BindPrimaryProductionInfo(detail);
+        }
+        else
+        {
+            BindMoldSequences(detail.moldSequenceList, processKind);
+        }
         var showProcessParams = !IsPicklingProcess(detail.operationName);
         ProcessParamsTitleLabel.IsVisible = showProcessParams;
         ProcessParamsBorder.IsVisible = showProcessParams;
@@ -98,6 +126,81 @@ public partial class WorkOrderInstructionPage : ContentPage
         {
             ProcessParamsGrid.Children.Clear();
             ProcessParamsGrid.RowDefinitions.Clear();
+        }
+    }
+
+
+    private void BindDefaultProductInfo(WorkOrderDetailDto detail)
+    {
+        ProductInfoGrid.Children.Clear();
+        ProductInfoGrid.RowDefinitions.Clear();
+        ProductInfoGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        ProductInfoGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        AddProductInfoCell(0, 0, "当前工序", ValueOrDash(detail.operationName));
+        AddProductInfoCell(0, 2, "所属机台", ValueOrDash(string.IsNullOrWhiteSpace(detail.machineNo) ? detail.deviceName : detail.machineNo));
+        AddProductInfoCell(1, 0, "成品要求", JoinNonEmpty(detail.steelGrade, detail.productSpecification, detail.materialProperty), 3);
+    }
+
+    private void BindBlankOpeningProductInfo(WorkOrderDetailDto detail)
+    {
+        ProductInfoGrid.Children.Clear();
+        ProductInfoGrid.RowDefinitions.Clear();
+        ProductInfoGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        ProductInfoGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        ProductInfoGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        AddProductInfoCell(0, 0, "聚合单号", FirstNonEmpty(detail.qualityNo, detail.workOrderNo), 3);
+        AddProductInfoCell(1, 0, "机台类型", ValueOrDash(detail.machineType));
+        AddProductInfoCell(1, 2, "机台号", ValueOrDash(FirstNonEmpty(detail.machineNo, detail.deviceName, detail.deviceCode)));
+        AddProductInfoCell(2, 0, "件重(KG)", FormatDecimalOrFallback(detail.pieceWeight, FormatDecimalOrFallback(FirstMoldSequenceValue(detail.moldSequenceList, item => item.pieceWeight), null)));
+        AddProductInfoCell(2, 2, "拉拔方式", FirstNonEmpty(detail.drawMode, detail.wireTakeUpMode));
+    }
+
+
+    private void BindDrawingProductInfo(WorkOrderDetailDto detail)
+    {
+        ProductInfoGrid.Children.Clear();
+        ProductInfoGrid.RowDefinitions.Clear();
+        for (var i = 0; i < 6; i++)
+        {
+            ProductInfoGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        }
+
+        AddProductInfoCell(0, 0, "聚合单号", FirstNonEmpty(detail.qualityNo, detail.workOrderNo), 3);
+        AddProductInfoCell(1, 0, "机台类型", ValueOrDash(detail.machineType));
+        AddProductInfoCell(1, 2, "机台号", ValueOrDash(FirstNonEmpty(detail.machineNo, detail.deviceName, detail.deviceCode)));
+        AddProductInfoCell(2, 0, "挂牌", ValueOrDash(detail.steelGrade));
+        AddProductInfoCell(2, 2, "下料规格", ValueOrDash(detail.inputSpecification));
+        AddProductInfoCell(3, 0, "生产", ValueOrDash(detail.materialProperty));
+        AddProductInfoCell(3, 2, "拉拔方式", ValueOrDash(detail.drawMode));
+        AddProductInfoCell(4, 0, "圈径", ValueOrDash(detail.coilDiameterControl));
+        AddProductInfoCell(4, 2, "件重(KG)", FormatDecimalOrFallback(detail.pieceWeight, FormatDecimalOrFallback(FirstMoldSequenceValue(detail.moldSequenceList, item => item.pieceWeight), null)));
+        AddProductInfoCell(5, 0, "包装", ValueOrDash(detail.packageMethod));
+        AddProductInfoCell(5, 2, "客户代码", ValueOrDash(detail.customerCode));
+    }
+
+    private void AddProductInfoCell(int row, int column, string label, string? value, int valueColumnSpan = 1)
+    {
+        ProductInfoGrid.Add(new Label
+        {
+            Text = label,
+            TextColor = Color.FromArgb("#5C6F8F"),
+            FontSize = 13,
+            VerticalTextAlignment = TextAlignment.Center
+        }, column, row);
+        var valueLabel = new Label
+        {
+            Text = ProcessParamValueOrEmpty(value),
+            TextColor = Colors.Black,
+            FontAttributes = FontAttributes.Bold,
+            FontSize = 13,
+            HorizontalTextAlignment = TextAlignment.End,
+            VerticalTextAlignment = TextAlignment.Center,
+            LineBreakMode = LineBreakMode.WordWrap
+        };
+        ProductInfoGrid.Add(valueLabel, column + 1, row);
+        if (valueColumnSpan > 1)
+        {
+            Grid.SetColumnSpan(valueLabel, valueColumnSpan);
         }
     }
 
@@ -201,6 +304,22 @@ public partial class WorkOrderInstructionPage : ContentPage
         return grid;
     }
 
+
+    private void BindPrimaryProductionInfo(WorkOrderDetailDto detail)
+    {
+        MoldSequenceLayout.Children.Clear();
+        var firstSequence = detail.moldSequenceList?.FirstOrDefault();
+        var displayItem = new WorkOrderMoldSequenceDto
+        {
+            moldSequence = firstSequence?.moldSequence,
+            pieceWeight = detail.pieceWeight ?? firstSequence?.pieceWeight,
+            productionQuantity = detail.productionQuantity ?? firstSequence?.productionQuantity,
+            productionWeight = detail.productionWeight ?? firstSequence?.productionWeight
+        };
+
+        MoldSequenceLayout.Children.Add(BuildDrawingMoldSequenceCard(displayItem));
+    }
+
     private void BindMoldSequences(IReadOnlyList<WorkOrderMoldSequenceDto>? sequences, ProcessInstructionKind processKind)
     {
         MoldSequenceLayout.Children.Clear();
@@ -242,9 +361,7 @@ public partial class WorkOrderInstructionPage : ContentPage
         switch (processKind)
         {
             case ProcessInstructionKind.BlankOpening:
-                card.Children.Add(BuildSingleValueRow("生产重量(吨)", FormatDecimal(item.productionWeight), Colors.Black));
-                card.Children.Add(BuildSingleValueRow("生产产数", FormatDecimal(item.productionQuantity), Color.FromArgb("#00A651")));
-                break;
+                return BuildDrawingMoldSequenceCard(item);
             default:
                 card.Children.Add(BuildTwoColumnRow("生产重量(吨)", FormatDecimal(item.productionWeight), "件重(KG)", FormatDecimal(item.pieceWeight)));
                 card.Children.Add(BuildSingleValueRow("生产件数", FormatDecimal(item.productionQuantity), Color.FromArgb("#00A651")));
@@ -338,7 +455,8 @@ public partial class WorkOrderInstructionPage : ContentPage
             ("圈距控制", detail.pitchControl),
             ("圈径控制", detail.coilDiameterControl),
             ("椭圆度控制", detail.ovalityControl),
-            ("质检方式", detail.inspectionSchemeName)
+            ("质检方式", detail.inspectionSchemeName),
+            ("用途", detail.usagePurpose)
         };
     }
 
@@ -348,7 +466,6 @@ public partial class WorkOrderInstructionPage : ContentPage
         {
             ("收线速度", detail.wireTakeUpSpeed),
             ("收线方式", detail.wireTakeUpMode),
-            ("钢丝形状", detail.materialProperty),
             ("收线长度", FormatLengthWithUnit(detail.wireTakeUpLength)),
             ("盘重要求", detail.coilWeightRequirement),
             ("产品直径", detail.productSpecification),
@@ -482,6 +599,13 @@ public partial class WorkOrderInstructionPage : ContentPage
         return string.IsNullOrWhiteSpace(value) || value.Equals("none", StringComparison.OrdinalIgnoreCase)
             ? string.Empty
             : value;
+    }
+
+    private static decimal? FirstMoldSequenceValue(
+        IReadOnlyList<WorkOrderMoldSequenceDto>? sequences,
+        Func<WorkOrderMoldSequenceDto, decimal?> selector)
+    {
+        return sequences?.Select(selector).FirstOrDefault(value => value.HasValue);
     }
 
     private static string? FormatMoldSequenceTotal(
