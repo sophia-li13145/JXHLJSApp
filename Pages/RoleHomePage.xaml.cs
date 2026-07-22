@@ -58,13 +58,12 @@ public partial class RoleHomePage : ContentPage
         var realName = Preferences.Get(UserSessionKeys.RealName, "未命名");
         var workNumber = Preferences.Get(UserSessionKeys.WorkNumber, string.Empty);
         var department = Preferences.Get(UserSessionKeys.DepartmentName, string.Empty);
-        var team = Preferences.Get(UserSessionKeys.TeamName, string.Empty);
         var shift = Preferences.Get(UserSessionKeys.ShiftName, string.Empty);
 
         var role = RoleHomeDefinition.FromRoleCode(roleCode);
         TitleLabel.Text = role.Title;
         ContentStack.Children.Clear();
-        ContentStack.Children.Add(CreateProfileCard(role, realName, workNumber, department, team, shift));
+        ContentStack.Children.Add(CreateProfileCard(role, realName, workNumber, department, shift));
 
         if (role.RoleCode == "production")
         {
@@ -96,10 +95,10 @@ public partial class RoleHomePage : ContentPage
         }
     }
 
-    private static View CreateProfileCard(RoleHomeDefinition role, string realName, string workNumber, string department, string team, string shift)
+    private static View CreateProfileCard(RoleHomeDefinition role, string realName, string workNumber, string department, string shift)
     {
         var tag1 = role.ProfileLabel(realName, workNumber, department);
-        var tag2 = role.SecondaryProfileLabel(shift, team);
+        var tag2 = role.SecondaryProfileLabel(shift);
 
         var details = new VerticalStackLayout { Spacing = 8, VerticalOptions = LayoutOptions.Center };
         details.Children.Add(new Label
@@ -454,9 +453,9 @@ internal sealed record RoleHomeDefinition(
         };
     }
 
-    public string SecondaryProfileLabel(string shift, string team)
+    public string SecondaryProfileLabel(string shift)
     {
-        return RoleCode == "production" ? $"🕘 班次: {FirstNonEmpty(shift, "白班")}   👥 班组: {FirstNonEmpty(team, "甲组")}" : string.Empty;
+        return RoleCode == "production" ? $"🕘 班次: {FirstNonEmpty(shift, "白班")}" : string.Empty;
     }
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
