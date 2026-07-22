@@ -15,6 +15,7 @@ namespace JXHLJSApp.Pages.Quality;
 [QueryProperty(nameof(WorkOrderStatus), "workOrderStatus")]
 [QueryProperty(nameof(QualityType), "qualityType")]
 [QueryProperty(nameof(QualityTypeName), "qualityTypeName")]
+[QueryProperty(nameof(ListInspectionSchemeName), "inspectionSchemeName")]
 public partial class MachineQualityDetailPage : ContentPage
 {
     private const string SchemeAcidPickling = "酸洗";
@@ -32,10 +33,13 @@ public partial class MachineQualityDetailPage : ContentPage
     private string? _processNameFromScan;
     private string? _qualityTypeFromQuery;
     private string? _qualityTypeNameFromQuery;
+    private string? _listInspectionSchemeName;
     private string? _qrCode;
     private string? _qualityMaterialId;
     private bool _isManualInspection;
     private bool _manualInspectionFromQuery;
+    private bool _hasLoadedDetail;
+    private string? _loadedQualityNo;
 
     public string? QualityNo { get => _qualityNo; set => _qualityNo = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? WorkOrderNo { get => _workOrderNo; set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty); }
@@ -45,6 +49,7 @@ public partial class MachineQualityDetailPage : ContentPage
     public string? WorkOrderStatus { get => _workOrderStatus; set => _workOrderStatus = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? QualityType { get => _qualityTypeFromQuery; set => _qualityTypeFromQuery = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? QualityTypeName { get => _qualityTypeNameFromQuery; set => _qualityTypeNameFromQuery = Uri.UnescapeDataString(value ?? string.Empty); }
+    public string? ListInspectionSchemeName { get => _listInspectionSchemeName; set => _listInspectionSchemeName = Uri.UnescapeDataString(value ?? string.Empty); }
 
     public MachineQualityDetailPage(IQualityApi qualityApi, IScanService scanService)
     {
@@ -62,7 +67,26 @@ public partial class MachineQualityDetailPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        if (_hasLoadedDetail && string.Equals(_loadedQualityNo, _qualityNo, StringComparison.Ordinal))
+        {
+            return;
+        }
+
         await LoadAsync();
+    }
+
+    private async Task RefreshAfterSuccessfulOperationAsync()
+    {
+        try
+        {
+            _hasLoadedDetail = false;
+            _loadedQualityNo = null;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorDialogService.ShowAsync(this, "刷新失败", ex.Message, "确定");
+        }
     }
 
     private async Task LoadAsync()
@@ -75,7 +99,7 @@ public partial class MachineQualityDetailPage : ContentPage
 
         try
         {
-            _isManualInspection = _manualInspectionFromQuery || string.IsNullOrWhiteSpace(_workOrderNo);
+            _isManualInspection = _manualInspectionFromQuery || string.IsNullOrWhiteSpace(_workOrderNo) || IsPatrolInspectionFromList();
             var detail = _isManualInspection
                 ? await _qualityApi.GetManualInspectionDetailAsync(_qualityNo)
                 : await _qualityApi.GetProductionQualityDetailAsync(_qualityNo, _workOrderNo);
@@ -86,7 +110,6 @@ public partial class MachineQualityDetailPage : ContentPage
             if (!string.IsNullOrWhiteSpace(detail.workOrderStatus)) _workOrderStatus = detail.workOrderStatus;
             if (string.IsNullOrWhiteSpace(detail.qualityType)) detail.qualityType = _qualityTypeFromQuery;
             if (string.IsNullOrWhiteSpace(detail.qualityTypeName)) detail.qualityTypeName = _qualityTypeNameFromQuery;
-            _isManualInspection = _isManualInspection || IsPatrolInspection(detail);
             if (!string.IsNullOrWhiteSpace(detail.workOrderNo)) _workOrderNo = detail.workOrderNo;
             var firstMaterial = detail.materialList?.FirstOrDefault();
             _qrCode = FirstNonEmpty(detail.qrCode, firstMaterial?.qrCode);
@@ -106,6 +129,8 @@ public partial class MachineQualityDetailPage : ContentPage
             SelectQualifiedOption(CoilPitchPicker, detail.coilPitchControl);
             SelectQualifiedOption(InspectResultPicker, detail.inspectResult);
             ApplyReadOnlyStateIfCompleted();
+            _hasLoadedDetail = true;
+            _loadedQualityNo = _qualityNo;
         }
         catch (Exception ex)
         {
@@ -131,7 +156,7 @@ public partial class MachineQualityDetailPage : ContentPage
         MemoLabel.IsVisible = !isHeat;
         MemoEditor.IsVisible = !isHeat;
         var isSubmitOnlyProcess = isAcid || isDrawing;
-        SubmitButton.Text = isSubmitOnlyProcess ? "完成" : "提交质检";
+        SubmitButton.Text = "提交质检";
         CompleteButton.IsVisible = !isSubmitOnlyProcess;
         Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
         ScanMaterialButton.IsVisible = false;
@@ -352,6 +377,14 @@ public partial class MachineQualityDetailPage : ContentPage
         return string.IsNullOrWhiteSpace(workNumber) ? realName : $"{realName} ({workNumber})";
     }
 
+    private static string BuildCurrentRecorderUsername()
+    {
+        return FirstNonEmpty(
+            Preferences.Get(UserSessionKeys.UserName, string.Empty).Trim(),
+            Preferences.Get(UserSessionKeys.WorkNumber, string.Empty).Trim(),
+            Preferences.Get(UserSessionKeys.RealName, string.Empty).Trim());
+    }
+
     private void ApplyReadOnlyStateIfCompleted()
     {
         if (!IsInspectionCompleted(_inspectStatus)) return;
@@ -477,6 +510,25 @@ public partial class MachineQualityDetailPage : ContentPage
         return HasSchemeToken(schemeName, SchemeDrawing) && HasSchemeToken(schemeName, "首检", "首件检");
     }
 
+    private string? CurrentProcessName => _detail is null ? _inspectionSchemeName : ResolveProcessName(_detail);
+
+    private bool ShouldUsePicklingCommit()
+    {
+        return IsPicklingScheme(CurrentProcessName) || IsPicklingScheme(_inspectionSchemeName);
+    }
+
+    private bool ShouldUseFirstInspectionCommit()
+    {
+        return IsDrawingScheme(CurrentProcessName) || IsFirstInspectionScheme(_inspectionSchemeName);
+    }
+
+    private bool ShouldUseSamplingOrFullCommit()
+    {
+        return IsHeatTreatmentScheme(CurrentProcessName) ||
+            IsBlankOpeningScheme(CurrentProcessName) ||
+            IsSamplingOrFullScheme(_inspectionSchemeName);
+    }
+
     private static bool HasSchemeToken(string? schemeName, params string[] tokens)
     {
         if (string.IsNullOrWhiteSpace(schemeName)) return false;
@@ -527,26 +579,28 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private bool ShouldUseManualInspectionAddMaterial()
     {
-        return _manualInspectionFromQuery || (_detail is not null && IsPatrolInspection(_detail));
+        return ShouldUseManualInspectionResultApi();
+    }
+
+    private bool ShouldUseManualInspectionResultApi()
+    {
+        return _isManualInspection || IsPatrolInspectionFromList();
+    }
+
+    private bool IsPatrolInspectionFromList()
+    {
+        return HasSchemeToken(_listInspectionSchemeName, "巡检");
     }
 
     private bool ShouldUseSamplingOrFullComplete()
     {
-        if (_detail is not null && IsPatrolInspection(_detail)) return false;
+        if (ShouldUseManualInspectionResultApi()) return false;
 
         var processName = _detail is null ? _inspectionSchemeName : ResolveProcessName(_detail);
         return IsHeatTreatmentScheme(processName) ||
             IsBlankOpeningScheme(processName) ||
             IsHeatTreatmentScheme(_inspectionSchemeName) ||
             IsBlankOpeningScheme(_inspectionSchemeName);
-    }
-
-    private static bool IsPatrolInspection(ProductionQualityDetailDto detail)
-    {
-        return HasSchemeToken(detail.qualityTypeName, "巡检") ||
-            HasSchemeToken(detail.qualityType, "巡检") ||
-            HasSchemeToken(detail.inspectionSchemeName, "巡检") ||
-            HasSchemeToken(detail.inspectionSchemeTypeName, "巡检");
     }
 
     private async void OnScanMaterialClicked(object sender, EventArgs e)
@@ -741,9 +795,19 @@ public partial class MachineQualityDetailPage : ContentPage
                 workOrderNo = _workOrderNo
             };
 
-            var isAcid = IsPicklingScheme(_inspectionSchemeName);
-            var shouldStayAfterSubmit = IsBlankOpeningScheme(_inspectionSchemeName);
-            var committed = _isManualInspection
+            var useManualInspectionApi = ShouldUseManualInspectionResultApi();
+            var isAcid = !useManualInspectionApi && ShouldUsePicklingCommit();
+            var shouldStayAfterSubmit = IsBlankOpeningScheme(CurrentProcessName) || IsBlankOpeningScheme(_inspectionSchemeName);
+            var useFirstInspectionCommit = !useManualInspectionApi && ShouldUseFirstInspectionCommit();
+            var useSamplingOrFullCommit = !useManualInspectionApi && ShouldUseSamplingOrFullCommit();
+            var picklingInspector = isAcid ? BuildCurrentRecorderUsername() : string.Empty;
+            if (isAcid && string.IsNullOrWhiteSpace(picklingInspector))
+            {
+                await DisplayAlert("提示", "当前操作人 username 为空，无法提交酸洗质检。", "确定");
+                return;
+            }
+
+            var committed = useManualInspectionApi
                 ? await _qualityApi.SaveManualInspectionResultAsync(new ProductionManualInspectionSaveResultRequestDto
                 {
                     actualDiameterMm = HeatTreatmentInputPanel.IsVisible ? HeatActualDiameterEntry.Text?.Trim() : ActualDiameterEntry.Text?.Trim(),
@@ -769,7 +833,7 @@ public partial class MachineQualityDetailPage : ContentPage
                     hydrochloricAcidConcentration2 = HydrochloricAcid2Entry.Text?.Trim(),
                     inspectDate = AcidDatePicker.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     inspectResult = InspectResultPicker.SelectedItem?.ToString(),
-                    inspector = RecorderEntry.Text?.Trim(),
+                    inspector = picklingInspector,
                     memo = MemoEditor.Text?.Trim(),
                     phosphatingTemperature = PhosphatingTemperatureEntry.Text?.Trim(),
                     qualityNo = _qualityNo,
@@ -779,7 +843,7 @@ public partial class MachineQualityDetailPage : ContentPage
                     totalAcidSampling = TotalAcidSamplingEntry.Text?.Trim(),
                     workOrderNo = _workOrderNo
                 })
-                : IsSamplingOrFullScheme(_inspectionSchemeName)
+                : useSamplingOrFullCommit
                     ? await _qualityApi.CommitProductionSamplingOrFullAsync(new ProductionSamplingOrFullCommitRequestDto
                     {
                         actualDiameterMm = HeatTreatmentInputPanel.IsVisible ? HeatActualDiameterEntry.Text?.Trim() : ActualDiameterEntry.Text?.Trim(),
@@ -795,7 +859,7 @@ public partial class MachineQualityDetailPage : ContentPage
                         surfaceCondition = SurfaceEntry.Text?.Trim(),
                         workOrderNo = _workOrderNo
                     })
-                    : IsFirstInspectionScheme(_inspectionSchemeName)
+                    : useFirstInspectionCommit
                     ? await _qualityApi.CommitProductionFirstInspectionAsync(new ProductionFirstInspectionCommitRequestDto
                     {
                         actualDiameterMm = ActualDiameterEntry.Text?.Trim(),
@@ -815,6 +879,8 @@ public partial class MachineQualityDetailPage : ContentPage
                 await ErrorDialogService.ShowAsync(this, isAcid ? "完成失败" : "提交失败", isAcid ? "接口未返回完成成功，请稍后重试。" : "接口未返回提交成功，请稍后重试。", "确定");
                 return;
             }
+
+            await RefreshAfterSuccessfulOperationAsync();
 
             if (isAcid)
             {
@@ -836,12 +902,13 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private async void OnCompleteClicked(object sender, EventArgs e)
     {
+        var useManualInspectionApi = ShouldUseManualInspectionResultApi();
         var useSamplingOrFullComplete = ShouldUseSamplingOrFullComplete();
-        if (string.IsNullOrWhiteSpace(_qualityNo) || (useSamplingOrFullComplete && string.IsNullOrWhiteSpace(_workOrderNo)) || (!_isManualInspection && string.IsNullOrWhiteSpace(_workOrderNo)))
+        if (string.IsNullOrWhiteSpace(_qualityNo) || (!useManualInspectionApi && string.IsNullOrWhiteSpace(_workOrderNo)))
         {
-            var message = useSamplingOrFullComplete || !_isManualInspection
-                ? "质检单号或工单号为空，无法完成。"
-                : "质检单号为空，无法完成。";
+            var message = useManualInspectionApi
+                ? "质检单号为空，无法完成。"
+                : "质检单号或工单号为空，无法完成。";
             await DisplayAlert("提示", message, "确定");
             return;
         }
@@ -861,9 +928,14 @@ public partial class MachineQualityDetailPage : ContentPage
                     return;
                 }
             }
-            else if (_isManualInspection)
+            else if (useManualInspectionApi)
             {
-                await _qualityApi.CompleteManualInspectionAsync(_qualityNo);
+                var completed = await _qualityApi.CompleteManualInspectionAsync(_qualityNo);
+                if (!completed)
+                {
+                    await ErrorDialogService.ShowAsync(this, "完成失败", "接口未返回完成成功，请稍后重试。", "确定");
+                    return;
+                }
             }
             else
             {
