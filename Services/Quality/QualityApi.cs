@@ -208,7 +208,7 @@ public sealed class QualityApi : IQualityApi
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
-        return BooleanResultOrFalse(data);
+        return SuccessfulResponse(data);
     }
 
     public async Task<bool> CompleteIncomingQualityOrderAsync(string incomingQualityNo, CancellationToken ct = default)
@@ -226,7 +226,7 @@ public sealed class QualityApi : IQualityApi
         using var resp = await _http.PostAsJsonAsync(url, new { incomingQualityNo }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
-        return BooleanResultOrFalse(data);
+        return SuccessfulResponse(data);
     }
 
     public Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersByResourceAsync(string resourceCode, CancellationToken ct = default)
@@ -306,7 +306,7 @@ public sealed class QualityApi : IQualityApi
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
-        return BooleanResultOrFalse(data);
+        return SuccessfulResponse(data);
     }
 
     public async Task<bool> CompleteManualInspectionAsync(string qualityNo, CancellationToken ct = default)
@@ -315,7 +315,7 @@ public sealed class QualityApi : IQualityApi
         using var resp = await _http.PostAsJsonAsync(url, new { qualityNo }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
-        return BooleanResultOrFalse(data);
+        return SuccessfulResponse(data);
     }
 
     public async Task<ProductionQualityScanMaterialDto> ScanProductionQualityMaterialAsync(ProductionQualityScanMaterialRequestDto request, CancellationToken ct = default)
@@ -333,7 +333,7 @@ public sealed class QualityApi : IQualityApi
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
-        return BooleanResultOrFalse(data);
+        return SuccessfulResponse(data);
     }
 
     public async Task<bool> CommitProductionFirstInspectionAsync(ProductionFirstInspectionCommitRequestDto request, CancellationToken ct = default)
@@ -342,7 +342,7 @@ public sealed class QualityApi : IQualityApi
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
-        return BooleanResultOrFalse(data);
+        return SuccessfulResponse(data);
     }
 
     public async Task<bool> CommitProductionPicklingAsync(ProductionPicklingCommitRequestDto request, CancellationToken ct = default)
@@ -351,7 +351,7 @@ public sealed class QualityApi : IQualityApi
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
-        return BooleanResultOrFalse(data);
+        return SuccessfulResponse(data);
     }
 
     public async Task<bool> CommitProductionSamplingOrFullAsync(ProductionSamplingOrFullCommitRequestDto request, CancellationToken ct = default)
@@ -360,7 +360,7 @@ public sealed class QualityApi : IQualityApi
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
-        return BooleanResultOrFalse(data);
+        return SuccessfulResponse(data);
     }
 
     public async Task<bool> CompleteProductionSamplingOrFullAsync(ProductionSamplingOrFullCompleteRequestDto request, CancellationToken ct = default)
@@ -369,12 +369,12 @@ public sealed class QualityApi : IQualityApi
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
-        return BooleanResultOrFalse(data);
+        return SuccessfulResponse(data);
     }
 
-    private static bool BooleanResultOrFalse(ApiResp<bool?> data)
+    private static bool SuccessfulResponse(ApiResp<bool?> data)
     {
-        return data.result == true;
+        return data.success;
     }
 
     private async Task<IReadOnlyDictionary<string, string>> LoadIncomingQualityStatusNamesAsync(CancellationToken ct)

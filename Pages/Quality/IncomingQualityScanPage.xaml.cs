@@ -12,6 +12,8 @@ public partial class IncomingQualityScanPage : ContentPage
     private readonly IScanService _scanService;
     private string? _incomingQualityNo;
     private string? _qrCode;
+    private bool _hasLoadedScanForm;
+    private string? _loadedQrCode;
     private List<QualityDictOption> _problemOptions = new();
     private IncomingQualityScanMaterialDto? _scanMaterial;
 
@@ -37,6 +39,11 @@ public partial class IncomingQualityScanPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        if (_hasLoadedScanForm && string.Equals(_loadedQrCode, _qrCode, StringComparison.Ordinal))
+        {
+            return;
+        }
+
         await LoadScanFormAsync();
     }
 
@@ -62,6 +69,9 @@ public partial class IncomingQualityScanPage : ContentPage
                 ScanPanel.IsVisible = _scanMaterial is null;
                 MaterialInfoCard.IsVisible = _scanMaterial is not null;
             }
+
+            _hasLoadedScanForm = true;
+            _loadedQrCode = _qrCode;
         }
         catch (Exception ex)
         {
@@ -91,6 +101,8 @@ public partial class IncomingQualityScanPage : ContentPage
         MaterialHintLabel.Text = _scanMaterial.materialDisplay == "-" ? "未提交单据无法获取物料明细" : _scanMaterial.materialDisplay;
         ScanPanel.IsVisible = false;
         MaterialInfoCard.IsVisible = true;
+        _hasLoadedScanForm = true;
+        _loadedQrCode = _qrCode;
     }
 
     private async void OnProblemPointTapped(object sender, TappedEventArgs e)

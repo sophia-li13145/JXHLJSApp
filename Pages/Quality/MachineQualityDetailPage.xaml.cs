@@ -38,6 +38,8 @@ public partial class MachineQualityDetailPage : ContentPage
     private string? _qualityMaterialId;
     private bool _isManualInspection;
     private bool _manualInspectionFromQuery;
+    private bool _hasLoadedDetail;
+    private string? _loadedQualityNo;
 
     public string? QualityNo { get => _qualityNo; set => _qualityNo = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? WorkOrderNo { get => _workOrderNo; set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty); }
@@ -65,7 +67,26 @@ public partial class MachineQualityDetailPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        if (_hasLoadedDetail && string.Equals(_loadedQualityNo, _qualityNo, StringComparison.Ordinal))
+        {
+            return;
+        }
+
         await LoadAsync();
+    }
+
+    private async Task RefreshAfterSuccessfulOperationAsync()
+    {
+        try
+        {
+            _hasLoadedDetail = false;
+            _loadedQualityNo = null;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorDialogService.ShowAsync(this, "刷新失败", ex.Message, "确定");
+        }
     }
 
     private async Task LoadAsync()
@@ -108,6 +129,8 @@ public partial class MachineQualityDetailPage : ContentPage
             SelectQualifiedOption(CoilPitchPicker, detail.coilPitchControl);
             SelectQualifiedOption(InspectResultPicker, detail.inspectResult);
             ApplyReadOnlyStateIfCompleted();
+            _hasLoadedDetail = true;
+            _loadedQualityNo = _qualityNo;
         }
         catch (Exception ex)
         {
@@ -856,6 +879,8 @@ public partial class MachineQualityDetailPage : ContentPage
                 await ErrorDialogService.ShowAsync(this, isAcid ? "完成失败" : "提交失败", isAcid ? "接口未返回完成成功，请稍后重试。" : "接口未返回提交成功，请稍后重试。", "确定");
                 return;
             }
+
+            await RefreshAfterSuccessfulOperationAsync();
 
             if (isAcid)
             {
