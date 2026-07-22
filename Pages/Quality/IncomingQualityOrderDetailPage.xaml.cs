@@ -10,6 +10,7 @@ namespace JXHLJSApp.Pages.Quality;
 public partial class IncomingQualityOrderDetailPage : ContentPage
 {
     private readonly IQualityApi _qualityApi;
+    private readonly IScanService _scanService;
     private readonly ObservableCollection<IncomingQualityScanDetailDto> _records = new();
     private string? _incomingQualityNo;
     private IncomingQualityOrderDetailDto? _detail;
@@ -24,6 +25,7 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
     {
         InitializeComponent();
         _qualityApi = qualityApi;
+        _scanService = scanService;
         ScanRecordList.ItemsSource = _records;
     }
 
@@ -51,16 +53,8 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
             InstockNoLabel.Text = _detail.instockNoDisplay;
             StatusLabel.Text = _detail.statusDisplay;
             ScanCountLabel.Text = $"共 {_detail.scanCount} 次";
-            MaterialNameLabel.Text = _detail.materialNameDisplay;
-            SpecLabel.Text = _detail.specDisplay;
             TotalLabel.Text = _detail.totalDisplay;
-            var showMaterial = !_detail.isUnsubmitted;
-            MaterialNameTitle.IsVisible = showMaterial;
-            MaterialNameLabel.IsVisible = showMaterial;
-            SpecTitle.IsVisible = showMaterial;
-            SpecLabel.IsVisible = showMaterial;
-            TotalTitle.IsVisible = showMaterial;
-            TotalLabel.IsVisible = showMaterial;
+            RenderMaterialDetails(_detail);
             ApplyStatusStyle(_detail);
             ScanRecordsHeader.IsVisible = true;
             ScanRecordList.IsVisible = true;
@@ -80,6 +74,59 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
         {
             RefreshContainer.IsRefreshing = false;
         }
+    }
+
+    private void RenderMaterialDetails(IncomingQualityOrderDetailDto detail)
+    {
+        MaterialDetailList.Children.Clear();
+        MaterialDetailTitle.Text = $"物料明细（{detail.materialDetailCount}项）";
+        foreach (var item in detail.materialDetails)
+        {
+            MaterialDetailList.Add(CreateMaterialDetailRow(item));
+        }
+    }
+
+    private static Border CreateMaterialDetailRow(IncomingQualityMaterialDetailDto detail)
+    {
+        var grid = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition(GridLength.Star),
+                new ColumnDefinition(GridLength.Auto)
+            },
+            ColumnSpacing = 8
+        };
+
+        var materialLabel = new Label
+        {
+            Text = detail.materialSpecDisplay,
+            TextColor = Color.FromArgb("#38557C"),
+            FontSize = 13,
+            LineBreakMode = LineBreakMode.TailTruncation
+        };
+
+        var quantityLabel = new Label
+        {
+            Text = detail.countDisplay,
+            TextColor = Color.FromArgb("#051B3D"),
+            FontSize = 13,
+            FontAttributes = FontAttributes.Bold,
+            HorizontalTextAlignment = TextAlignment.End
+        };
+
+        grid.Add(materialLabel, 0);
+        grid.Add(quantityLabel, 1);
+
+        return new Border
+        {
+            BackgroundColor = Color.FromArgb("#F8FAFD"),
+            Stroke = Color.FromArgb("#DDE7F2"),
+            StrokeThickness = 1,
+            StrokeShape = new RoundRectangle { CornerRadius = 6 },
+            Padding = new Thickness(10, 8),
+            Content = grid
+        };
     }
 
     private void ApplyStatusStyle(IncomingQualityOrderDetailDto detail)
@@ -172,7 +219,18 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
 
     private async void OnScanClicked(object? sender, EventArgs e)
     {
-        await Shell.Current.GoToAsync($"{AppShell.RouteIncomingQualityScan}?incomingQualityNo={Uri.EscapeDataString(_incomingQualityNo ?? string.Empty)}");
+        var code = await _scanService.ScanAsync("来料质检扫码");
+        if (string.IsNullOrWhiteSpace(code)) return;
+
+        try
+        {
+            await _qualityApi.ScanIncomingQualityMaterialAsync(code.Trim());
+            await LoadDetailAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorDialogService.ShowAsync(this, "扫码失败", ex.Message, "确定");
+        }
     }
 
     private async void OnCompleteClicked(object? sender, EventArgs e)
