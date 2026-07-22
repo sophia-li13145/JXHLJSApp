@@ -10,19 +10,46 @@ public partial class RoleHomePage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
+    private readonly IAuthApi _authApi;
+    private bool _isRefreshingUserInfo;
 
-    public RoleHomePage(IWorkOrderApi workOrderApi, IScanService scanService)
+    public RoleHomePage(IWorkOrderApi workOrderApi, IScanService scanService, IAuthApi authApi)
     {
         _workOrderApi = workOrderApi;
         _scanService = scanService;
+        _authApi = authApi;
         InitializeComponent();
         BuildRoleHome();
     }
 
-    protected override void OnAppearing()
+    protected override async void OnAppearing()
     {
         base.OnAppearing();
+        await RefreshUserInfoAsync();
         BuildRoleHome();
+    }
+
+    private async Task RefreshUserInfoAsync()
+    {
+        if (_isRefreshingUserInfo) return;
+
+        try
+        {
+            _isRefreshingUserInfo = true;
+            var userInfo = await _authApi.GetUserInfoAsync();
+            if (userInfo is not null)
+            {
+                UserSessionStore.Save(userInfo);
+            }
+        }
+        catch
+        {
+            // 首页人员卡片优先使用本地登录信息，刷新用户信息失败时不阻断首页功能。
+        }
+        finally
+        {
+            _isRefreshingUserInfo = false;
+        }
     }
 
     private void BuildRoleHome()
@@ -103,7 +130,7 @@ public partial class RoleHomePage : ContentPage
             BackgroundColor = Color.FromArgb(role.ProfileBackground),
             StrokeThickness = 0,
             Padding = new Thickness(24, 20),
-            HeightRequest = 124,
+            HeightRequest = role.RoleCode == "production" ? 156 : 124,
             StrokeShape = new RoundRectangle { CornerRadius = 16 },
             Shadow = new Shadow { Brush = Brush.Black, Opacity = 0.2f, Offset = new Point(0, 6), Radius = 10 },
             Content = grid
