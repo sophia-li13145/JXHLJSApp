@@ -9,6 +9,7 @@ namespace JXHLJSApp.Services;
 public interface IAuthApi
 {
     Task<LoginResult> LoginAsync(string username, string password, CancellationToken ct = default);
+    Task<UserInfoDto?> GetUserInfoAsync(CancellationToken ct = default);
     Task<List<UserInfoDto>> GetAllUsersAsync(CancellationToken ct = default);
 }
 
@@ -20,6 +21,7 @@ public sealed class AuthApi : IAuthApi
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private string _loginEndpoint = string.Empty;
     private string _allUserEndpoint = string.Empty;
+    private string _userInfoEndpoint = string.Empty;
 
     public AuthApi(HttpClient http, IConfigLoader configLoader)
     {
@@ -59,6 +61,21 @@ public sealed class AuthApi : IAuthApi
         var success = data?.success == true || data?.code == 0;
 
         return new LoginResult(success, token, data?.message, data?.result?.userInfo);
+    }
+
+    public async Task<UserInfoDto?> GetUserInfoAsync(CancellationToken ct = default)
+    {
+        ApplyLatestConfig();
+        var full = ServiceUrlHelper.BuildFullUrl(_baseAddress, _userInfoEndpoint);
+        using var req = new HttpRequestMessage(HttpMethod.Get, full);
+        using var resp = await _http.SendAsync(req, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+
+        await using var s = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<UserInfoDto>>(s, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccessOrCodeZero(data);
+
+        return data?.result;
     }
 
     public async Task<List<UserInfoDto>> GetAllUsersAsync(CancellationToken ct = default)
@@ -114,6 +131,8 @@ public sealed class AuthApi : IAuthApi
             _configLoader.GetApiPath("login", "/pda/auth/login"), servicePath);
         _allUserEndpoint = ServiceUrlHelper.NormalizeRelative(
             _configLoader.GetApiPath("auth.alluser", "/pda/auth/allUsers"), servicePath);
+        _userInfoEndpoint = ServiceUrlHelper.NormalizeRelative(
+            _configLoader.GetApiPath("auth.userinfo", "/pda/auth/getUserInfo"), servicePath);
     }
 }
 
