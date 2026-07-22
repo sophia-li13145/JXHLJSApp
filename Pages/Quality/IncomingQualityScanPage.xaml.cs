@@ -1,6 +1,7 @@
 using JXHLJSApp.Models.Quality;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.Quality;
+using Microsoft.Maui.Controls.Shapes;
 
 namespace JXHLJSApp.Pages.Quality;
 
