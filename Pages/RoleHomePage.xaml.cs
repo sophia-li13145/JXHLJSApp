@@ -130,7 +130,7 @@ public partial class RoleHomePage : ContentPage
             BackgroundColor = Color.FromArgb(role.ProfileBackground),
             StrokeThickness = 0,
             Padding = new Thickness(24, 20),
-            HeightRequest = 124,
+            HeightRequest = role.RoleCode == "production" ? 156 : 124,
             StrokeShape = new RoundRectangle { CornerRadius = 16 },
             Shadow = new Shadow { Brush = Brush.Black, Opacity = 0.2f, Offset = new Point(0, 6), Radius = 10 },
             Content = grid
