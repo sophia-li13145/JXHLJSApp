@@ -31,27 +31,18 @@
                     <VerticalStackLayout Spacing="12">
                         <Label Text="物料解析明细" TextColor="#00346F" FontSize="16" FontAttributes="Bold" />
                         <BoxView HeightRequest="1" Color="#C8D2DF" />
-                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="10">
+                        <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="10">
                             <Label Text="二维码编号:" TextColor="#38557C" FontSize="14" />
                             <Label x:Name="QrCodeLabel" Grid.Column="1" TextColor="#C95F00" FontSize="14" FontAttributes="Bold" />
 
                             <Label Grid.Row="1" Text="归属入库单:" TextColor="#38557C" FontSize="14" />
                             <Label x:Name="InstockNoLabel" Grid.Row="1" Grid.Column="1" TextColor="#051B3D" FontSize="14" FontAttributes="Bold" />
 
-                            <Label Grid.Row="2" Text="物料编码:" TextColor="#38557C" FontSize="14" />
-                            <Label x:Name="MaterialCodeLabel" Grid.Row="2" Grid.Column="1" TextColor="#051B3D" FontSize="14" FontAttributes="Bold" />
+                            <Label Grid.Row="2" Text="物料名称:" TextColor="#38557C" FontSize="14" />
+                            <Label x:Name="MaterialNameLabel" Grid.Row="2" Grid.Column="1" TextColor="#051B3D" FontSize="14" FontAttributes="Bold" />
 
-                            <Label Grid.Row="3" Text="物料名称:" TextColor="#38557C" FontSize="14" />
-                            <Label x:Name="MaterialNameLabel" Grid.Row="3" Grid.Column="1" TextColor="#051B3D" FontSize="14" FontAttributes="Bold" />
-
-                            <Label Grid.Row="4" Text="钢号:" TextColor="#38557C" FontSize="14" />
-                            <Label x:Name="FurnaceNoLabel" Grid.Row="4" Grid.Column="1" TextColor="#051B3D" FontSize="14" FontAttributes="Bold" />
-
-                            <Label Grid.Row="5" Text="产地:" TextColor="#38557C" FontSize="14" />
-                            <Label x:Name="OriginLabel" Grid.Row="5" Grid.Column="1" TextColor="#051B3D" FontSize="14" FontAttributes="Bold" />
-
-                            <Label Grid.Row="6" Text="规格参数:" TextColor="#38557C" FontSize="14" />
-                            <Label x:Name="SpecLabel" Grid.Row="6" Grid.Column="1" TextColor="#0042AD" FontSize="14" FontAttributes="Bold" />
+                            <Label Grid.Row="3" Text="规格参数:" TextColor="#38557C" FontSize="14" />
+                            <Label x:Name="SpecLabel" Grid.Row="3" Grid.Column="1" TextColor="#0042AD" FontSize="14" FontAttributes="Bold" />
                         </Grid>
                     </VerticalStackLayout>
                 </Border>

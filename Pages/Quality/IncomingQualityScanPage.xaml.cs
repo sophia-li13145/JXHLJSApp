@@ -124,10 +124,7 @@ public partial class IncomingQualityScanPage : ContentPage, IQueryAttributable
     {
         QrCodeLabel.Text = scanMaterial.qrCodeDisplay;
         InstockNoLabel.Text = DisplayValue(scanMaterial.instockNo);
-        MaterialCodeLabel.Text = DisplayValue(scanMaterial.materialCode);
         MaterialNameLabel.Text = DisplayValue(scanMaterial.materialName);
-        FurnaceNoLabel.Text = DisplayValue(scanMaterial.furnaceNo);
-        OriginLabel.Text = DisplayValue(scanMaterial.origin);
         SpecLabel.Text = DisplayValue(scanMaterial.spec);
         ScanPanel.IsVisible = false;
         MaterialInfoCard.IsVisible = true;
