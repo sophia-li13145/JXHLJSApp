@@ -635,10 +635,12 @@ public partial class MachineQualityDetailPage : ContentPage
                 qualityNo = _qualityNo,
                 workOrderNo = _workOrderNo
             };
+            var manualInputState = ShouldPreserveManualInputsOnMaterialScan() ? CaptureManualInputState() : null;
             var material = ShouldUseManualInspectionAddMaterial()
                 ? await _qualityApi.AddManualInspectionMaterialAsync(request)
                 : await _qualityApi.ScanProductionQualityMaterialAsync(request);
             ApplyScannedMaterial(material, code);
+            RestoreManualInputState(manualInputState);
             await DisplayAlert("扫码成功", "物料信息已更新到当前质检页面。", "确定");
         }
         catch (Exception ex)
@@ -646,6 +648,77 @@ public partial class MachineQualityDetailPage : ContentPage
             await ErrorDialogService.ShowAsync(this, "扫码物料失败", ex.Message, "确定");
         }
     }
+
+
+    private bool ShouldPreserveManualInputsOnMaterialScan()
+    {
+        return IsHeatTreatmentScheme(CurrentProcessName) ||
+            IsBlankOpeningScheme(CurrentProcessName) ||
+            IsHeatTreatmentScheme(_inspectionSchemeName) ||
+            IsBlankOpeningScheme(_inspectionSchemeName);
+    }
+
+    private ManualInputState CaptureManualInputState()
+    {
+        return new ManualInputState(
+            ActualDiameterEntry.Text,
+            StrengthEntry.Text,
+            ElongationEntry.Text,
+            SurfaceEntry.Text,
+            HeatActualDiameterEntry.Text,
+            BrokenDiameterEntry.Text,
+            TensileStrengthEntry.Text,
+            HeatElongationEntry.Text,
+            TwistCountEntry.Text,
+            MemoEditor.Text,
+            CoilDiameterPicker.SelectedIndex,
+            CoilPitchPicker.SelectedIndex,
+            InspectResultPicker.SelectedIndex);
+    }
+
+    private void RestoreManualInputState(ManualInputState? state)
+    {
+        if (state is null) return;
+
+        RestoreText(ActualDiameterEntry, state.ActualDiameter);
+        RestoreText(StrengthEntry, state.Strength);
+        RestoreText(ElongationEntry, state.Elongation);
+        RestoreText(SurfaceEntry, state.Surface);
+        RestoreText(HeatActualDiameterEntry, state.HeatActualDiameter);
+        RestoreText(BrokenDiameterEntry, state.BrokenDiameter);
+        RestoreText(TensileStrengthEntry, state.TensileStrength);
+        RestoreText(HeatElongationEntry, state.HeatElongation);
+        RestoreText(TwistCountEntry, state.TwistCount);
+        RestoreText(MemoEditor, state.Memo);
+        RestorePicker(CoilDiameterPicker, state.CoilDiameterIndex);
+        RestorePicker(CoilPitchPicker, state.CoilPitchIndex);
+        RestorePicker(InspectResultPicker, state.InspectResultIndex);
+    }
+
+    private static void RestoreText(InputView input, string? text)
+    {
+        if (!string.IsNullOrWhiteSpace(text)) input.Text = text;
+    }
+
+    private static void RestorePicker(Picker picker, int selectedIndex)
+    {
+        if (selectedIndex >= 0 && selectedIndex < picker.Items.Count) picker.SelectedIndex = selectedIndex;
+    }
+
+    private sealed record ManualInputState(
+        string? ActualDiameter,
+        string? Strength,
+        string? Elongation,
+        string? Surface,
+        string? HeatActualDiameter,
+        string? BrokenDiameter,
+        string? TensileStrength,
+        string? HeatElongation,
+        string? TwistCount,
+        string? Memo,
+        int CoilDiameterIndex,
+        int CoilPitchIndex,
+        int InspectResultIndex);
 
     private void ApplyScannedMaterial(ProductionQualityScanMaterialDto material, string fallbackQrCode)
     {

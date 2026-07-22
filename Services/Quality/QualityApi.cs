@@ -207,7 +207,7 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _incomingQualitySaveResultEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<JsonElement?>(resp, ct).ConfigureAwait(false);
         return SuccessfulResponse(data);
     }
 
@@ -216,8 +216,8 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _incomingQualityCompletedEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new { incomingQualityNo }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<int?>(resp, ct).ConfigureAwait(false);
-        return (data.result ?? 0) > 0 || data.success != false;
+        var data = await ReadApiResponseAsync<JsonElement?>(resp, ct).ConfigureAwait(false);
+        return SuccessfulResponse(data);
     }
 
     public async Task<bool> DeleteIncomingQualityOrderAsync(string incomingQualityNo, CancellationToken ct = default)
@@ -225,7 +225,7 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _incomingQualityDeleteEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new { incomingQualityNo }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<JsonElement?>(resp, ct).ConfigureAwait(false);
         return SuccessfulResponse(data);
     }
 
@@ -305,7 +305,7 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _manualInspectionSaveResultEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<JsonElement?>(resp, ct).ConfigureAwait(false);
         return SuccessfulResponse(data);
     }
 
@@ -314,7 +314,7 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _manualInspectionCompleteEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new { qualityNo }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<JsonElement?>(resp, ct).ConfigureAwait(false);
         return SuccessfulResponse(data);
     }
 
@@ -332,7 +332,7 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityCommitEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<JsonElement?>(resp, ct).ConfigureAwait(false);
         return SuccessfulResponse(data);
     }
 
@@ -341,7 +341,7 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityFirstInspectionCommitEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<JsonElement?>(resp, ct).ConfigureAwait(false);
         return SuccessfulResponse(data);
     }
 
@@ -350,7 +350,7 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityPicklingCommitEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<JsonElement?>(resp, ct).ConfigureAwait(false);
         return SuccessfulResponse(data);
     }
 
@@ -359,7 +359,7 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualitySamplingOrFullCommitEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<JsonElement?>(resp, ct).ConfigureAwait(false);
         return SuccessfulResponse(data);
     }
 
@@ -368,11 +368,11 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualitySamplingOrFullCompleteEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<JsonElement?>(resp, ct).ConfigureAwait(false);
         return SuccessfulResponse(data);
     }
 
-    private static bool SuccessfulResponse(ApiResp<bool?> data)
+    private static bool SuccessfulResponse<T>(ApiResp<T> data)
     {
         return data.success;
     }
