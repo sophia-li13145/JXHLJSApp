@@ -80,8 +80,8 @@ public sealed class IncomingQualityOrderDetailDto
     public int? materialDetailCount => materialDetails.Count;
     public string statusDisplay => FirstNonEmpty(statusName, delStatusName, MapStatus(status), MapStatus(delStatus), "未提交");
     public IReadOnlyList<IncomingQualityScanDetailDto> scanDetails => details ?? new List<IncomingQualityScanDetailDto>();
-    public int? scanCount => scanDetails.Count;
     public int? done { get; set; }
+    public int? scanCount => done ?? scanDetails.Count;
     public bool isUnsubmitted => IsStatus("0", "UNSUBMITTED", "unsubmitted", "未提交");
     public bool isWaitInspection => IsStatus("1", "WAIT_INSPECTION", "wait_inspection", "待质检");
     public bool isCompleted => IsStatus("2", "COMPLETED", "completed", "已完成", "检验完成");
