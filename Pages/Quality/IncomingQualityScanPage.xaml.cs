@@ -6,7 +6,7 @@ namespace JXHLJSApp.Pages.Quality;
 
 [QueryProperty(nameof(IncomingQualityNo), "incomingQualityNo")]
 [QueryProperty(nameof(QrCode), "qrCode")]
-public partial class IncomingQualityScanPage : ContentPage
+public partial class IncomingQualityScanPage : ContentPage, IQueryAttributable
 {
     private readonly IQualityApi _qualityApi;
     private readonly IScanService _scanService;
@@ -39,6 +39,15 @@ public partial class IncomingQualityScanPage : ContentPage
         _scanService = scanService;
     }
 
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (query.TryGetValue("scanMaterial", out var value) && value is IncomingQualityScanMaterialDto scanMaterial)
+        {
+            _scanMaterial = scanMaterial;
+            _qrCode = scanMaterial.qrCodeDisplay == "-" ? _qrCode : scanMaterial.qrCodeDisplay;
+        }
+    }
+
     protected override async void OnAppearing()
     {
         base.OnAppearing();
@@ -68,10 +77,14 @@ public partial class IncomingQualityScanPage : ContentPage
             {
                 await LoadScannedMaterialAsync(_qrCode);
             }
+            else if (_scanMaterial is not null)
+            {
+                DisplayScannedMaterial(_scanMaterial);
+            }
             else
             {
-                ScanPanel.IsVisible = _scanMaterial is null;
-                MaterialInfoCard.IsVisible = _scanMaterial is not null;
+                ScanPanel.IsVisible = true;
+                MaterialInfoCard.IsVisible = false;
             }
 
             _hasLoadedScanForm = true;
@@ -101,12 +114,17 @@ public partial class IncomingQualityScanPage : ContentPage
     {
         _qrCode = qrCode;
         _scanMaterial = await _qualityApi.ScanIncomingQualityMaterialAsync(qrCode);
-        QrCodeLabel.Text = _scanMaterial.qrCodeDisplay;
-        MaterialHintLabel.Text = _scanMaterial.materialDisplay == "-" ? "未提交单据无法获取物料明细" : _scanMaterial.materialDisplay;
-        ScanPanel.IsVisible = false;
-        MaterialInfoCard.IsVisible = true;
+        DisplayScannedMaterial(_scanMaterial);
         _hasLoadedScanForm = true;
         _loadedQrCode = _qrCode;
+    }
+
+    private void DisplayScannedMaterial(IncomingQualityScanMaterialDto scanMaterial)
+    {
+        QrCodeLabel.Text = scanMaterial.qrCodeDisplay;
+        MaterialHintLabel.Text = scanMaterial.materialDisplay == "-" ? "未提交单据无法获取物料明细" : scanMaterial.materialDisplay;
+        ScanPanel.IsVisible = false;
+        MaterialInfoCard.IsVisible = true;
     }
 
     private void BuildInspectResultOptions()
