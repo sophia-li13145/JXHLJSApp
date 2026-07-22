@@ -377,12 +377,25 @@ public partial class MachineQualityDetailPage : ContentPage
         return string.IsNullOrWhiteSpace(workNumber) ? realName : $"{realName} ({workNumber})";
     }
 
-    private static string BuildCurrentRecorderUsername()
+    private static string BuildCurrentRecorderUsername(string? recorderDisplay)
     {
         return FirstNonEmpty(
             Preferences.Get(UserSessionKeys.UserName, string.Empty).Trim(),
+            Preferences.Get(UserSessionKeys.RealName, string.Empty).Trim(),
+            recorderDisplay?.Trim(),
             Preferences.Get(UserSessionKeys.WorkNumber, string.Empty).Trim(),
-            Preferences.Get(UserSessionKeys.RealName, string.Empty).Trim());
+            ExtractWorkNumberFromRecorderDisplay(recorderDisplay));
+    }
+
+    private static string ExtractWorkNumberFromRecorderDisplay(string? recorderDisplay)
+    {
+        if (string.IsNullOrWhiteSpace(recorderDisplay)) return string.Empty;
+
+        var start = recorderDisplay.LastIndexOf('(');
+        var end = recorderDisplay.LastIndexOf(')');
+        return start >= 0 && end > start
+            ? recorderDisplay[(start + 1)..end].Trim()
+            : string.Empty;
     }
 
     private void ApplyReadOnlyStateIfCompleted()
@@ -800,7 +813,7 @@ public partial class MachineQualityDetailPage : ContentPage
             var shouldStayAfterSubmit = IsBlankOpeningScheme(CurrentProcessName) || IsBlankOpeningScheme(_inspectionSchemeName);
             var useFirstInspectionCommit = !useManualInspectionApi && ShouldUseFirstInspectionCommit();
             var useSamplingOrFullCommit = !useManualInspectionApi && ShouldUseSamplingOrFullCommit();
-            var picklingInspector = isAcid ? BuildCurrentRecorderUsername() : string.Empty;
+            var picklingInspector = isAcid ? BuildCurrentRecorderUsername(RecorderEntry.Text) : string.Empty;
             if (isAcid && string.IsNullOrWhiteSpace(picklingInspector))
             {
                 await DisplayAlert("提示", "当前操作人 username 为空，无法提交酸洗质检。", "确定");
