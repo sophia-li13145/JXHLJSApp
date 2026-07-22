@@ -123,10 +123,17 @@ public partial class IncomingQualityScanPage : ContentPage, IQueryAttributable
     private void DisplayScannedMaterial(IncomingQualityScanMaterialDto scanMaterial)
     {
         QrCodeLabel.Text = scanMaterial.qrCodeDisplay;
-        MaterialHintLabel.Text = scanMaterial.materialDisplay == "-" ? "未提交单据无法获取物料明细" : scanMaterial.materialDisplay;
+        InstockNoLabel.Text = DisplayValue(scanMaterial.instockNo);
+        MaterialCodeLabel.Text = DisplayValue(scanMaterial.materialCode);
+        MaterialNameLabel.Text = DisplayValue(scanMaterial.materialName);
+        FurnaceNoLabel.Text = DisplayValue(scanMaterial.furnaceNo);
+        OriginLabel.Text = DisplayValue(scanMaterial.origin);
+        SpecLabel.Text = DisplayValue(scanMaterial.spec);
         ScanPanel.IsVisible = false;
         MaterialInfoCard.IsVisible = true;
     }
+
+    private static string DisplayValue(string? value) => string.IsNullOrWhiteSpace(value) ? "-" : value!;
 
     private void BuildInspectResultOptions()
     {
@@ -373,7 +380,7 @@ public partial class IncomingQualityScanPage : ContentPage, IQueryAttributable
                 instockNo = _scanMaterial.instockNo ?? string.Empty,
                 materialCode = _scanMaterial.materialCode ?? string.Empty,
                 materialName = _scanMaterial.materialName ?? string.Empty,
-                otherExceptionDesc = RemarkEditor.Text?.Trim(),
+                otherExceptionDesc = null,
                 otherProblemItem = OtherProblemEditor.Text?.Trim(),
                 problemPoint = string.Join(",", selectedProblems.Select(item => item.Value)),
                 qrCode = _scanMaterial.qrCode ?? _qrCode ?? string.Empty
