@@ -349,7 +349,7 @@ internal static class UserSessionStore
     {
         Preferences.Set(UserSessionKeys.RoleCode, userInfo?.roleCode ?? string.Empty);
         Preferences.Set(UserSessionKeys.RealName, FirstNonEmpty(userInfo?.realname, userInfo?.username, "未命名"));
-        Preferences.Set(UserSessionKeys.UserName, userInfo?.username ?? string.Empty);
+        Preferences.Set(UserSessionKeys.UserName, FirstNonEmpty(userInfo?.username, userInfo?.workNumber, userInfo?.workNo, userInfo?.employeeNo, userInfo?.empNo, userInfo?.userCode, userInfo?.id, string.Empty));
         Preferences.Set(UserSessionKeys.WorkNumber, FirstNonEmpty(userInfo?.workNumber, userInfo?.workNo, userInfo?.employeeNo, userInfo?.empNo, userInfo?.userCode, userInfo?.id, string.Empty));
         Preferences.Set(UserSessionKeys.DepartmentName, FirstNonEmpty(userInfo?.workshopName, userInfo?.factoryName, string.Empty));
         Preferences.Set(UserSessionKeys.TeamName, FirstNonEmpty(userInfo?.teamName, userInfo?.roleName, string.Empty));

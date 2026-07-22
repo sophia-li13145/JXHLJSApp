@@ -356,7 +356,10 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static string BuildCurrentRecorderUsername()
     {
-        return Preferences.Get(UserSessionKeys.UserName, string.Empty).Trim();
+        return FirstNonEmpty(
+            Preferences.Get(UserSessionKeys.UserName, string.Empty).Trim(),
+            Preferences.Get(UserSessionKeys.WorkNumber, string.Empty).Trim(),
+            Preferences.Get(UserSessionKeys.RealName, string.Empty).Trim());
     }
 
     private void ApplyReadOnlyStateIfCompleted()
@@ -774,6 +777,13 @@ public partial class MachineQualityDetailPage : ContentPage
             var shouldStayAfterSubmit = IsBlankOpeningScheme(CurrentProcessName) || IsBlankOpeningScheme(_inspectionSchemeName);
             var useFirstInspectionCommit = !useManualInspectionApi && ShouldUseFirstInspectionCommit();
             var useSamplingOrFullCommit = !useManualInspectionApi && ShouldUseSamplingOrFullCommit();
+            var picklingInspector = isAcid ? BuildCurrentRecorderUsername() : string.Empty;
+            if (isAcid && string.IsNullOrWhiteSpace(picklingInspector))
+            {
+                await DisplayAlert("提示", "当前操作人 username 为空，无法提交酸洗质检。", "确定");
+                return;
+            }
+
             var committed = useManualInspectionApi
                 ? await _qualityApi.SaveManualInspectionResultAsync(new ProductionManualInspectionSaveResultRequestDto
                 {
@@ -800,7 +810,7 @@ public partial class MachineQualityDetailPage : ContentPage
                     hydrochloricAcidConcentration2 = HydrochloricAcid2Entry.Text?.Trim(),
                     inspectDate = AcidDatePicker.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     inspectResult = InspectResultPicker.SelectedItem?.ToString(),
-                    inspector = BuildCurrentRecorderUsername(),
+                    inspector = picklingInspector,
                     memo = MemoEditor.Text?.Trim(),
                     phosphatingTemperature = PhosphatingTemperatureEntry.Text?.Trim(),
                     qualityNo = _qualityNo,
