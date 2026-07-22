@@ -15,6 +15,9 @@ public partial class IncomingQualityScanPage : ContentPage
     private bool _hasLoadedScanForm;
     private string? _loadedQrCode;
     private List<QualityDictOption> _problemOptions = new();
+    private List<QualityDictOption> _inspectResultOptions = new();
+    private readonly HashSet<string> _pendingProblemValues = new(StringComparer.OrdinalIgnoreCase);
+    private QualityDictOption? _selectedInspectResult;
     private IncomingQualityScanMaterialDto? _scanMaterial;
 
     public string? IncomingQualityNo
@@ -51,13 +54,14 @@ public partial class IncomingQualityScanPage : ContentPage
     {
         try
         {
-            var inspectResults = await _qualityApi.GetInspectResultOptionsAsync();
+            _inspectResultOptions = await _qualityApi.GetInspectResultOptionsAsync();
             _problemOptions = await _qualityApi.GetProblemPointOptionsAsync();
-            InspectResultPicker.ItemsSource = inspectResults;
-            var defaultIndex = inspectResults.FindIndex(item => item.Value.Contains("不合格", StringComparison.OrdinalIgnoreCase) || item.Name.Contains("不合格"));
-            if (inspectResults.Count > 0)
+            BuildInspectResultOptions();
+            BuildProblemPointOptions();
+            var defaultIndex = _inspectResultOptions.FindIndex(item => item.Value.Contains("不合格", StringComparison.OrdinalIgnoreCase) || item.Name.Contains("不合格"));
+            if (_inspectResultOptions.Count > 0)
             {
-                InspectResultPicker.SelectedIndex = defaultIndex >= 0 ? defaultIndex : 0;
+                SetInspectResult(_inspectResultOptions[defaultIndex >= 0 ? defaultIndex : 0]);
             }
 
             if (!string.IsNullOrWhiteSpace(_qrCode) && _scanMaterial is null)
@@ -105,6 +109,79 @@ public partial class IncomingQualityScanPage : ContentPage
         _loadedQrCode = _qrCode;
     }
 
+    private void BuildInspectResultOptions()
+    {
+        InspectResultOptionsLayout.Clear();
+        foreach (var option in _inspectResultOptions)
+        {
+            var row = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitionCollection
+                {
+                    new(GridLength.Auto),
+                    new(GridLength.Star)
+                },
+                Padding = new Thickness(20, 0),
+                HeightRequest = 29,
+                BackgroundColor = Colors.White,
+                BindingContext = option
+            };
+            row.GestureRecognizers.Add(new TapGestureRecognizer { Command = new Command(() => SetInspectResult(option, true)) });
+            row.Add(new Label
+            {
+                Text = GetInspectResultIcon(option),
+                TextColor = GetInspectResultColor(option),
+                FontSize = 18,
+                FontAttributes = FontAttributes.Bold,
+                VerticalTextAlignment = TextAlignment.Center
+            }, 0);
+            row.Add(new Label
+            {
+                Text = option.Name,
+                TextColor = GetInspectResultColor(option),
+                FontSize = 15,
+                FontAttributes = FontAttributes.Bold,
+                Margin = new Thickness(8, 0, 0, 0),
+                VerticalTextAlignment = TextAlignment.Center
+            }, 1);
+            InspectResultOptionsLayout.Add(row);
+        }
+    }
+
+    private void SetInspectResult(QualityDictOption option, bool closeDropdown = false)
+    {
+        _selectedInspectResult = option;
+        InspectResultIconLabel.Text = GetInspectResultIcon(option);
+        InspectResultIconLabel.TextColor = GetInspectResultColor(option);
+        InspectResultLabel.Text = option.Name;
+        InspectResultLabel.TextColor = GetInspectResultColor(option);
+
+        foreach (var row in InspectResultOptionsLayout.Children.OfType<Grid>())
+        {
+            row.BackgroundColor = ReferenceEquals(row.BindingContext, option) ? Color.FromArgb("#7F7F7F") : Colors.White;
+        }
+
+        if (closeDropdown)
+        {
+            InspectResultDropdown.IsVisible = false;
+        }
+    }
+
+    private static string GetInspectResultIcon(QualityDictOption option) =>
+        IsQualifiedResult(option) ? "☑" : "✕";
+
+    private static Color GetInspectResultColor(QualityDictOption option) =>
+        IsQualifiedResult(option) ? Color.FromArgb("#16A34A") : Color.FromArgb("#FF3B4E");
+
+    private static bool IsQualifiedResult(QualityDictOption option) =>
+        option.Name.Contains("合格") && !option.Name.Contains("不合格") ||
+        option.Value.Contains("合格") && !option.Value.Contains("不合格");
+
+    private void OnInspectResultTapped(object sender, TappedEventArgs e)
+    {
+        InspectResultDropdown.IsVisible = !InspectResultDropdown.IsVisible;
+    }
+
     private async void OnProblemPointTapped(object sender, TappedEventArgs e)
     {
         if (_problemOptions.Count == 0)
@@ -113,30 +190,128 @@ public partial class IncomingQualityScanPage : ContentPage
             return;
         }
 
-        while (true)
+        _pendingProblemValues.Clear();
+        foreach (var option in _problemOptions.Where(item => item.IsSelected))
         {
-            var names = _problemOptions
-                .Select(item => $"{(item.IsSelected ? "✓ " : string.Empty)}{item.Name}")
-                .ToArray();
-            var selected = await DisplayActionSheet("选择问题点（可多选）", "取消", "完成", names);
-            if (string.IsNullOrWhiteSpace(selected) || selected == "取消")
+            _pendingProblemValues.Add(option.Value);
+        }
+
+        RefreshProblemPointOptionChecks();
+        ProblemPointSheetOverlay.IsVisible = true;
+    }
+
+    private void BuildProblemPointOptions()
+    {
+        ProblemPointOptionsLayout.Clear();
+        foreach (var option in _problemOptions)
+        {
+            var row = new Grid
             {
-                return;
+                ColumnDefinitions = new ColumnDefinitionCollection
+                {
+                    new(GridLength.Auto),
+                    new(GridLength.Star)
+                },
+                ColumnSpacing = 12,
+                HeightRequest = 55,
+                Padding = new Thickness(4, 0),
+                BindingContext = option
+            };
+            row.GestureRecognizers.Add(new TapGestureRecognizer { Command = new Command(() => ToggleProblemPoint(option)) });
+
+            var checkBox = new Border
+            {
+                WidthRequest = 22,
+                HeightRequest = 22,
+                Stroke = Color.FromArgb("#8C98AA"),
+                StrokeThickness = 1,
+                BackgroundColor = Colors.White,
+                VerticalOptions = LayoutOptions.Center,
+                Content = new Label
+                {
+                    Text = _pendingProblemValues.Contains(option.Value) ? "✓" : string.Empty,
+                    TextColor = Colors.White,
+                    FontSize = 16,
+                    FontAttributes = FontAttributes.Bold,
+                    HorizontalTextAlignment = TextAlignment.Center,
+                    VerticalTextAlignment = TextAlignment.Center
+                }
+            };
+            checkBox.StrokeShape = new RoundRectangle { CornerRadius = 1 };
+
+            row.Add(checkBox, 0);
+            row.Add(new Label
+            {
+                Text = option.Name,
+                TextColor = Color.FromArgb("#12345A"),
+                FontSize = 16,
+                VerticalTextAlignment = TextAlignment.Center
+            }, 1);
+            ProblemPointOptionsLayout.Add(row);
+            ProblemPointOptionsLayout.Add(new BoxView { HeightRequest = 1, Color = Color.FromArgb("#EDF1F6"), Margin = new Thickness(4, 0) });
+        }
+
+        RefreshProblemPointOptionChecks();
+    }
+
+    private void ToggleProblemPoint(QualityDictOption option)
+    {
+        if (!_pendingProblemValues.Add(option.Value))
+        {
+            _pendingProblemValues.Remove(option.Value);
+        }
+
+        RefreshProblemPointOptionChecks();
+    }
+
+    private void RefreshProblemPointOptionChecks()
+    {
+        foreach (var row in ProblemPointOptionsLayout.Children.OfType<Grid>())
+        {
+            if (row.BindingContext is not QualityDictOption option || row.Children.OfType<Border>().FirstOrDefault() is not Border checkBox)
+            {
+                continue;
             }
 
-            if (selected == "完成")
+            var isSelected = _pendingProblemValues.Contains(option.Value);
+            checkBox.BackgroundColor = isSelected ? Color.FromArgb("#FF4B55") : Colors.White;
+            checkBox.Stroke = isSelected ? Color.FromArgb("#FF4B55") : Color.FromArgb("#8C98AA");
+            if (checkBox.Content is Label checkLabel)
             {
-                RefreshProblemPointDisplay();
-                return;
-            }
-
-            var selectedName = selected.StartsWith("✓ ", StringComparison.Ordinal) ? selected[2..] : selected;
-            var option = _problemOptions.FirstOrDefault(item => item.Name == selectedName);
-            if (option is not null)
-            {
-                option.IsSelected = !option.IsSelected;
+                checkLabel.Text = isSelected ? "✓" : string.Empty;
             }
         }
+    }
+
+    private void HideProblemPointSheet()
+    {
+        ProblemPointSheetOverlay.IsVisible = false;
+    }
+
+    private void OnProblemPointSheetBackdropTapped(object sender, TappedEventArgs e)
+    {
+        HideProblemPointSheet();
+    }
+
+    private void OnProblemPointSheetCancelTapped(object sender, TappedEventArgs e)
+    {
+        HideProblemPointSheet();
+    }
+
+    private void OnProblemPointSheetCancelClicked(object sender, EventArgs e)
+    {
+        HideProblemPointSheet();
+    }
+
+    private void OnProblemPointSheetConfirmClicked(object sender, EventArgs e)
+    {
+        foreach (var option in _problemOptions)
+        {
+            option.IsSelected = _pendingProblemValues.Contains(option.Value);
+        }
+
+        RefreshProblemPointDisplay();
+        HideProblemPointSheet();
     }
 
     private void RefreshProblemPointDisplay()
@@ -146,13 +321,13 @@ public partial class IncomingQualityScanPage : ContentPage
             .Select(item => item.Name)
             .ToList();
 
-        ProblemPointLabel.Text = selectedNames.Count == 0 ? "点击选择问题点" : string.Join("、", selectedNames);
+        ProblemPointLabel.Text = selectedNames.Count == 0 ? "点击选择问题点" : string.Join(", ", selectedNames);
         ProblemPointLabel.TextColor = selectedNames.Count == 0 ? Color.FromArgb("#7A889A") : Color.FromArgb("#051B3D");
     }
 
     private async void OnSaveClicked(object sender, EventArgs e)
     {
-        if (InspectResultPicker.SelectedItem is not QualityDictOption inspectResult)
+        if (_selectedInspectResult is not QualityDictOption inspectResult)
         {
             await DisplayAlert("提示", "请选择质检结果。", "确定");
             return;
