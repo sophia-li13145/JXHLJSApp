@@ -354,6 +354,11 @@ public partial class MachineQualityDetailPage : ContentPage
         return string.IsNullOrWhiteSpace(workNumber) ? realName : $"{realName} ({workNumber})";
     }
 
+    private static string BuildCurrentRecorderUsername()
+    {
+        return Preferences.Get(UserSessionKeys.UserName, string.Empty).Trim();
+    }
+
     private void ApplyReadOnlyStateIfCompleted()
     {
         if (!IsInspectionCompleted(_inspectStatus)) return;
@@ -795,7 +800,7 @@ public partial class MachineQualityDetailPage : ContentPage
                     hydrochloricAcidConcentration2 = HydrochloricAcid2Entry.Text?.Trim(),
                     inspectDate = AcidDatePicker.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     inspectResult = InspectResultPicker.SelectedItem?.ToString(),
-                    inspector = RecorderEntry.Text?.Trim(),
+                    inspector = BuildCurrentRecorderUsername(),
                     memo = MemoEditor.Text?.Trim(),
                     phosphatingTemperature = PhosphatingTemperatureEntry.Text?.Trim(),
                     qualityNo = _qualityNo,

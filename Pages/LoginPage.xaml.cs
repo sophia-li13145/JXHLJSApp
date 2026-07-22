@@ -74,9 +74,15 @@ public partial class LoginPage : ContentPage
                 return;
             }
 
+            if (result.UserInfo is not null && string.IsNullOrWhiteSpace(result.UserInfo.username))
+            {
+                result.UserInfo.username = username;
+            }
+
             await TokenStorage.SaveAsync(result.Token);
             ApiClient.SetBearer(result.Token);
             UserSessionStore.Save(result.UserInfo);
+            Preferences.Set(UserSessionKeys.UserName, username);
             ShowMessage("登录成功", isError: false);
             App.SwitchToLoggedInShell();
         }
