@@ -66,8 +66,7 @@ public sealed class IncomingQualityOrderDetailDto
     public List<IncomingQualityScanDetailDto>? details { get; set; }
     public string? incomingQualityNo { get; set; }
     public string? instockNo { get; set; }
-    public string? materialName { get; set; }
-    public string? spec { get; set; }
+    public List<IncomingQualityMaterialDetailDto>? materialDetailList { get; set; }
     public int? total { get; set; }
     public string? status { get; set; }
     public string? statusName { get; set; }
@@ -76,9 +75,9 @@ public sealed class IncomingQualityOrderDetailDto
 
     public string incomingQualityNoDisplay => string.IsNullOrWhiteSpace(incomingQualityNo) ? "-" : incomingQualityNo!;
     public string instockNoDisplay => string.IsNullOrWhiteSpace(instockNo) ? "-" : instockNo!;
-    public string materialNameDisplay => string.IsNullOrWhiteSpace(materialName) ? "-" : materialName!;
-    public string specDisplay => string.IsNullOrWhiteSpace(spec) ? "-" : spec!;
     public string totalDisplay => total.HasValue ? $"{total} 件" : "-";
+    public IReadOnlyList<IncomingQualityMaterialDetailDto> materialDetails => materialDetailList ?? new List<IncomingQualityMaterialDetailDto>();
+    public int? materialDetailCount => materialDetails.Count;
     public string statusDisplay => FirstNonEmpty(statusName, delStatusName, MapStatus(status), MapStatus(delStatus), "未提交");
     public IReadOnlyList<IncomingQualityScanDetailDto> scanDetails => details ?? new List<IncomingQualityScanDetailDto>();
     public int? scanCount => scanDetails.Count;
@@ -98,19 +97,42 @@ public sealed class IncomingQualityOrderDetailDto
     };
 }
 
+public sealed class IncomingQualityMaterialDetailDto
+{
+    public int? count { get; set; }
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
+    public string? spec { get; set; }
+
+    public string countDisplay => count.HasValue ? $"{count} 件" : "-";
+    public string materialSpecDisplay => $"物料 {FirstNonEmpty(materialName, "-")}  |  规格 {FirstNonEmpty(spec, "-")}";
+    private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
+}
+
 public sealed class IncomingQualityScanDetailDto
 {
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
     public string? otherProblemItem { get; set; }
     public string? problemPoint { get; set; }
     public string? problemPointName { get; set; }
     public string? qrCode { get; set; }
     public string? qrCodeNo { get; set; }
+    public string? spec { get; set; }
+    public string? steelGrade { get; set; }
     public string? inspectResult { get; set; }
     public string? inspectResultName { get; set; }
     public string problemPointDisplay => FirstNonEmpty(otherProblemItem, problemPointName, problemPoint, "-");
     public string qrCodeDisplay => string.IsNullOrWhiteSpace(qrCode) ? (string.IsNullOrWhiteSpace(qrCodeNo) ? "-" : qrCodeNo!) : qrCode!;
+    public string materialSpecDisplay => $"物料 {BuildMaterialName()}  规格 {FirstNonEmpty(spec, "-")}";
     public string inspectResultDisplay => FirstNonEmpty(inspectResultName, inspectResult, HasProblemDescription ? "不合格" : "-");
     public Color inspectResultColor => inspectResultDisplay.Contains("合格") && !inspectResultDisplay.Contains("不合格") ? Color.FromArgb("#00A86B") : Color.FromArgb("#FF4D5E");
+    private string BuildMaterialName()
+    {
+        var name = FirstNonEmpty(materialName, "-");
+        return string.IsNullOrWhiteSpace(steelGrade) ? name : $"{name} {steelGrade}";
+    }
+
     private bool HasProblemDescription => !string.IsNullOrWhiteSpace(otherProblemItem) || !string.IsNullOrWhiteSpace(problemPoint);
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
 }
