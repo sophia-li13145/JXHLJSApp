@@ -109,7 +109,7 @@ public partial class ProductionQualityOrderListPage : ContentPage
             return;
         }
 
-        await Shell.Current.GoToAsync($"{AppShell.RouteMachineQualityDetail}?qualityNo={Uri.EscapeDataString(item.qualityNo)}&workOrderNo={Uri.EscapeDataString(item.orderNumber)}&inspectStatus={Uri.EscapeDataString(item.inspectStatus ?? string.Empty)}&qualityType={Uri.EscapeDataString(item.qualityType ?? string.Empty)}&qualityTypeName={Uri.EscapeDataString(item.qualityTypeName ?? string.Empty)}");
+        await Shell.Current.GoToAsync($"{AppShell.RouteMachineQualityDetail}?qualityNo={Uri.EscapeDataString(item.qualityNo)}&workOrderNo={Uri.EscapeDataString(item.orderNumber)}&inspectStatus={Uri.EscapeDataString(item.inspectStatus ?? string.Empty)}&inspectionSchemeName={Uri.EscapeDataString(item.inspectionSchemeName ?? string.Empty)}&qualityType={Uri.EscapeDataString(item.qualityType ?? string.Empty)}&qualityTypeName={Uri.EscapeDataString(item.qualityTypeName ?? string.Empty)}");
     }
 
     private sealed record ProductionQualityStatusOption(string Name, string? Value);

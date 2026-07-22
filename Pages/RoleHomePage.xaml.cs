@@ -336,6 +336,7 @@ internal static class UserSessionKeys
 {
     public const string RoleCode = "RoleCode";
     public const string RealName = "RealName";
+    public const string UserName = "UserName";
     public const string WorkNumber = "WorkNumber";
     public const string DepartmentName = "DepartmentName";
     public const string TeamName = "TeamName";
@@ -348,6 +349,7 @@ internal static class UserSessionStore
     {
         Preferences.Set(UserSessionKeys.RoleCode, userInfo?.roleCode ?? string.Empty);
         Preferences.Set(UserSessionKeys.RealName, FirstNonEmpty(userInfo?.realname, userInfo?.username, "未命名"));
+        Preferences.Set(UserSessionKeys.UserName, FirstNonEmpty(userInfo?.username, userInfo?.realname, userInfo?.workNumber, userInfo?.workNo, userInfo?.employeeNo, userInfo?.empNo, userInfo?.userCode, userInfo?.id, string.Empty));
         Preferences.Set(UserSessionKeys.WorkNumber, FirstNonEmpty(userInfo?.workNumber, userInfo?.workNo, userInfo?.employeeNo, userInfo?.empNo, userInfo?.userCode, userInfo?.id, string.Empty));
         Preferences.Set(UserSessionKeys.DepartmentName, FirstNonEmpty(userInfo?.workshopName, userInfo?.factoryName, string.Empty));
         Preferences.Set(UserSessionKeys.TeamName, FirstNonEmpty(userInfo?.teamName, userInfo?.roleName, string.Empty));
@@ -358,6 +360,7 @@ internal static class UserSessionStore
     {
         Preferences.Remove(UserSessionKeys.RoleCode);
         Preferences.Remove(UserSessionKeys.RealName);
+        Preferences.Remove(UserSessionKeys.UserName);
         Preferences.Remove(UserSessionKeys.WorkNumber);
         Preferences.Remove(UserSessionKeys.DepartmentName);
         Preferences.Remove(UserSessionKeys.TeamName);
