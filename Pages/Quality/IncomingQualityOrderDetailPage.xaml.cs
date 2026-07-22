@@ -224,8 +224,20 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
 
         try
         {
-            await _qualityApi.ScanIncomingQualityMaterialAsync(code.Trim());
-            await LoadDetailAsync();
+            var qrCode = code.Trim();
+            var scanMaterial = await _qualityApi.ScanIncomingQualityMaterialAsync(qrCode);
+            var parameters = new Dictionary<string, object>
+            {
+                ["qrCode"] = qrCode,
+                ["scanMaterial"] = scanMaterial
+            };
+
+            if (!string.IsNullOrWhiteSpace(_incomingQualityNo))
+            {
+                parameters["incomingQualityNo"] = _incomingQualityNo;
+            }
+
+            await Shell.Current.GoToAsync(AppShell.RouteIncomingQualityScan, parameters);
         }
         catch (Exception ex)
         {
