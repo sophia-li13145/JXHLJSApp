@@ -155,12 +155,13 @@ public partial class MachineQualityDetailPage : ContentPage
         ProcessInputPanel.IsVisible = !isAcid && !isHeat;
         MemoLabel.IsVisible = !isHeat;
         MemoEditor.IsVisible = !isHeat;
-        var isSubmitOnlyProcess = isAcid || isDrawing;
+        var isManualPatrol = ShouldUseManualInspectionResultApi();
+        var isSubmitOnlyProcess = isAcid || (isDrawing && !isManualPatrol);
         SubmitButton.Text = "提交质检";
         CompleteButton.IsVisible = !isSubmitOnlyProcess;
         Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
         ScanMaterialButton.IsVisible = false;
-        InfoScanMaterialButton.IsVisible = !IsInspectionCompleted(_inspectStatus) && !isAcid && !isDrawing && (IsSamplingOrFullScheme(processName) || IsProcessCardScheme(processName));
+        InfoScanMaterialButton.IsVisible = !IsInspectionCompleted(_inspectStatus) && !isAcid && (!isDrawing || isManualPatrol) && (IsSamplingOrFullScheme(processName) || IsProcessCardScheme(processName));
     }
 
     private void FillAcidInputs(ProductionQualityDetailDto detail)
@@ -636,9 +637,11 @@ public partial class MachineQualityDetailPage : ContentPage
                 workOrderNo = _workOrderNo
             };
             var manualInputState = ShouldPreserveManualInputsOnMaterialScan() ? CaptureManualInputState() : null;
-            var material = ShouldUseManualInspectionAddMaterial()
-                ? await _qualityApi.AddManualInspectionMaterialAsync(request)
-                : await _qualityApi.ScanProductionQualityMaterialAsync(request);
+            var material = await ScanMaterialForCurrentFlowAsync(request);
+            if (ShouldRefreshDetailAfterMaterialScan())
+            {
+                await RefreshDetailAfterMaterialScanAsync();
+            }
             ApplyScannedMaterial(material, code);
             RestoreManualInputState(manualInputState);
             await DisplayAlert("扫码成功", "物料信息已更新到当前质检页面。", "确定");
@@ -649,10 +652,33 @@ public partial class MachineQualityDetailPage : ContentPage
         }
     }
 
+    private Task<ProductionQualityScanMaterialDto> ScanMaterialForCurrentFlowAsync(ProductionQualityScanMaterialRequestDto request)
+    {
+        return ShouldUseManualInspectionAddMaterial()
+            ? _qualityApi.AddManualInspectionMaterialAsync(request)
+            : _qualityApi.ScanProductionQualityMaterialAsync(request);
+    }
+
+    private bool ShouldRefreshDetailAfterMaterialScan()
+    {
+        return ShouldUseManualInspectionResultApi() ||
+            IsHeatTreatmentScheme(CurrentProcessName) ||
+            IsBlankOpeningScheme(CurrentProcessName) ||
+            IsHeatTreatmentScheme(_inspectionSchemeName) ||
+            IsBlankOpeningScheme(_inspectionSchemeName);
+    }
+
+    private async Task RefreshDetailAfterMaterialScanAsync()
+    {
+        _hasLoadedDetail = false;
+        _loadedQualityNo = null;
+        await LoadAsync();
+    }
 
     private bool ShouldPreserveManualInputsOnMaterialScan()
     {
-        return IsHeatTreatmentScheme(CurrentProcessName) ||
+        return ShouldUseManualInspectionResultApi() ||
+            IsHeatTreatmentScheme(CurrentProcessName) ||
             IsBlankOpeningScheme(CurrentProcessName) ||
             IsHeatTreatmentScheme(_inspectionSchemeName) ||
             IsBlankOpeningScheme(_inspectionSchemeName);
@@ -789,6 +815,7 @@ public partial class MachineQualityDetailPage : ContentPage
         SelectQualifiedOption(CoilPitchPicker, _detail.coilPitchControl);
         SelectQualifiedOption(InspectResultPicker, _detail.inspectResult);
     }
+
 
 
     private static ProductionQualityMaterialDto CreateScannedMaterialInfo(ProductionQualityScanMaterialDto material, string fallbackQrCode)
