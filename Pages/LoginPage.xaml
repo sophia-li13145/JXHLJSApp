@@ -114,15 +114,28 @@
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="10" />
                                 </Border.StrokeShape>
-                                <Entry x:Name="PasswordEntry"
-                                       Placeholder="请输入密码"
-                                       PlaceholderColor="#8A98AA"
-                                       TextColor="#1A2B3C"
-                                       IsPassword="True"
-                                       BackgroundColor="Transparent"
-                                       Margin="12,0"
-                                       ReturnType="Done"
-                                       Completed="OnPasswordCompleted" />
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Entry x:Name="PasswordEntry"
+                                           Placeholder="请输入密码"
+                                           PlaceholderColor="#8A98AA"
+                                           TextColor="#1A2B3C"
+                                           IsPassword="True"
+                                           BackgroundColor="Transparent"
+                                           Margin="12,0,4,0"
+                                           ReturnType="Done"
+                                           Completed="OnPasswordCompleted" />
+                                    <Button x:Name="TogglePasswordVisibilityButton"
+                                            Grid.Column="1"
+                                            Text="显示"
+                                            TextColor="#244B88"
+                                            FontSize="13"
+                                            FontAttributes="Bold"
+                                            BackgroundColor="Transparent"
+                                            Padding="10,0,12,0"
+                                            MinimumWidthRequest="52"
+                                            SemanticProperties.Description="显示密码"
+                                            Clicked="OnTogglePasswordVisibilityClicked" />
+                                </Grid>
                             </Border>
                         </VerticalStackLayout>
                     </VerticalStackLayout>
@@ -133,7 +146,8 @@
                         <CheckBox x:Name="RememberCheckBox"
                                   Color="#244B88"
                                   WidthRequest="22"
-                                  HeightRequest="22" />
+                                  HeightRequest="22"
+                                  CheckedChanged="OnRememberCheckedChanged" />
                         <Label Text="记住密码"
                                TextColor="#334A66"
                                FontSize="15"

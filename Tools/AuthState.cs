@@ -26,10 +26,8 @@ namespace JXHLJSApp.Tools
                 // 1) 清理登录态
                 await TokenStorage.ClearAsync();
                 Preferences.Remove("UserName");
-                Preferences.Remove("Password");
                 Preferences.Remove("WorkshopName");
                 Preferences.Remove("WorkshopScope");
-                Preferences.Set("RememberPassword", false);
                 UserSessionStore.Clear();
                 _productionContext.Clear();
 
