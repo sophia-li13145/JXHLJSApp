@@ -25,7 +25,7 @@ public interface IQualityApi
     Task<ProductionQualityDetailDto> GetManualInspectionDetailAsync(string qualityNo, CancellationToken ct = default);
     Task<ProductionQualityScanMaterialDto> AddManualInspectionMaterialAsync(ProductionQualityScanMaterialRequestDto request, CancellationToken ct = default);
     Task<bool> SaveManualInspectionResultAsync(ProductionManualInspectionSaveResultRequestDto request, CancellationToken ct = default);
-    Task<ProductionQualityDetailDto> CompleteManualInspectionAsync(string qualityNo, CancellationToken ct = default);
+    Task<bool> CompleteManualInspectionAsync(string qualityNo, CancellationToken ct = default);
     Task<ProductionQualityScanMaterialDto> ScanProductionQualityMaterialAsync(ProductionQualityScanMaterialRequestDto request, CancellationToken ct = default);
     Task<bool> CommitProductionQualityAsync(ProductionQualityCommitRequestDto request, CancellationToken ct = default);
     Task<bool> CommitProductionFirstInspectionAsync(ProductionFirstInspectionCommitRequestDto request, CancellationToken ct = default);
@@ -309,13 +309,13 @@ public sealed class QualityApi : IQualityApi
         return BooleanResultOrFalse(data);
     }
 
-    public async Task<ProductionQualityDetailDto> CompleteManualInspectionAsync(string qualityNo, CancellationToken ct = default)
+    public async Task<bool> CompleteManualInspectionAsync(string qualityNo, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _manualInspectionCompleteEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new { qualityNo }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<ProductionQualityDetailDto>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new ProductionQualityDetailDto { qualityNo = qualityNo };
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        return BooleanResultOrFalse(data);
     }
 
     public async Task<ProductionQualityScanMaterialDto> ScanProductionQualityMaterialAsync(ProductionQualityScanMaterialRequestDto request, CancellationToken ct = default)
