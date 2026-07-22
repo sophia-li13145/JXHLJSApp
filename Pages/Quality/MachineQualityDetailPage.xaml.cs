@@ -155,12 +155,13 @@ public partial class MachineQualityDetailPage : ContentPage
         ProcessInputPanel.IsVisible = !isAcid && !isHeat;
         MemoLabel.IsVisible = !isHeat;
         MemoEditor.IsVisible = !isHeat;
-        var isSubmitOnlyProcess = isAcid || isDrawing;
+        var isManualPatrol = ShouldUseManualInspectionResultApi();
+        var isSubmitOnlyProcess = isAcid || (isDrawing && !isManualPatrol);
         SubmitButton.Text = "提交质检";
         CompleteButton.IsVisible = !isSubmitOnlyProcess;
         Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
         ScanMaterialButton.IsVisible = false;
-        InfoScanMaterialButton.IsVisible = !IsInspectionCompleted(_inspectStatus) && !isAcid && !isDrawing && (IsSamplingOrFullScheme(processName) || IsProcessCardScheme(processName));
+        InfoScanMaterialButton.IsVisible = !IsInspectionCompleted(_inspectStatus) && !isAcid && (!isDrawing || isManualPatrol) && (IsSamplingOrFullScheme(processName) || IsProcessCardScheme(processName));
     }
 
     private void FillAcidInputs(ProductionQualityDetailDto detail)
@@ -652,7 +653,8 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private bool ShouldPreserveManualInputsOnMaterialScan()
     {
-        return IsHeatTreatmentScheme(CurrentProcessName) ||
+        return ShouldUseManualInspectionResultApi() ||
+            IsHeatTreatmentScheme(CurrentProcessName) ||
             IsBlankOpeningScheme(CurrentProcessName) ||
             IsHeatTreatmentScheme(_inspectionSchemeName) ||
             IsBlankOpeningScheme(_inspectionSchemeName);
