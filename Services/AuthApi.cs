@@ -54,6 +54,7 @@ public sealed class AuthApi : IAuthApi
         }
 
         var data = JsonSerializer.Deserialize<ApiResp<LoginResponseResult>>(body, JsonOptions);
+        EnsureApiSuccessOrCodeZero(data);
         var token = data?.result?.token;
         var success = data?.success == true || data?.code == 0;
 
@@ -69,16 +70,28 @@ public sealed class AuthApi : IAuthApi
         resp.EnsureSuccessStatusCode();
 
         await using var s = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-        var data = await JsonSerializer.DeserializeAsync<ApiResp<List<UserInfoDto>>>(s, JsonOptions, ct).ConfigureAwait(false)
-                   ?? new ApiResp<List<UserInfoDto>>();
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<List<UserInfoDto>>>(s, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
 
-        var list = data.result ?? new();
+        var list = data?.result ?? new();
 
         return list
             .Where(u => !string.IsNullOrWhiteSpace(u.username) || !string.IsNullOrWhiteSpace(u.id))
             .GroupBy(u => string.IsNullOrWhiteSpace(u.username) ? u.id : u.username, StringComparer.OrdinalIgnoreCase)
             .Select(g => g.First())
             .ToList();
+    }
+
+    private static void EnsureApiSuccess<T>(ApiResp<T>? response)
+    {
+        if (response?.success == true) return;
+        throw new InvalidOperationException(string.IsNullOrWhiteSpace(response?.message) ? "接口返回失败。" : response!.message!);
+    }
+
+    private static void EnsureApiSuccessOrCodeZero<T>(ApiResp<T>? response)
+    {
+        if (response?.success == true || response?.code == 0) return;
+        throw new InvalidOperationException(string.IsNullOrWhiteSpace(response?.message) ? "接口返回失败。" : response!.message!);
     }
 
     private void ApplyLatestConfig()
