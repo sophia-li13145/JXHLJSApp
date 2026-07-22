@@ -316,7 +316,7 @@ public sealed class ProductionPicklingCommitRequestDto
     public string? hydrochloricAcidConcentration2 { get; set; }
     public string? inspectDate { get; set; }
     public string? inspectResult { get; set; }
-    public string? inspector { get; set; }
+    public string? inspecter { get; set; }
     public string? memo { get; set; }
     public string? phosphatingTemperature { get; set; }
     public string? qualityNo { get; set; }
