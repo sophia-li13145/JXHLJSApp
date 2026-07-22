@@ -919,7 +919,7 @@ public partial class MachineQualityDetailPage : ContentPage
                     hydrochloricAcidConcentration2 = HydrochloricAcid2Entry.Text?.Trim(),
                     inspectDate = AcidDatePicker.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     inspectResult = InspectResultPicker.SelectedItem?.ToString(),
-                    inspector = picklingInspector,
+                    inspecter = picklingInspector,
                     memo = MemoEditor.Text?.Trim(),
                     phosphatingTemperature = PhosphatingTemperatureEntry.Text?.Trim(),
                     qualityNo = _qualityNo,
