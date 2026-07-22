@@ -6,6 +6,8 @@ public partial class LoginPage : ContentPage
 {
     private readonly IAuthApi _authApi;
     private bool _isBusy;
+    private bool _credentialsLoaded;
+    private bool _isPasswordVisible;
 
     public LoginPage(IAuthApi authApi)
     {
@@ -13,10 +15,19 @@ public partial class LoginPage : ContentPage
         _authApi = authApi;
     }
 
-    protected override void OnAppearing()
+    protected override async void OnAppearing()
     {
         base.OnAppearing();
-        UsernameEntry.Focus();
+        await LoadRememberedCredentialsAsync();
+
+        if (string.IsNullOrWhiteSpace(UsernameEntry.Text))
+        {
+            UsernameEntry.Focus();
+        }
+        else if (string.IsNullOrWhiteSpace(PasswordEntry.Text))
+        {
+            PasswordEntry.Focus();
+        }
     }
 
     private async void OnPasswordCompleted(object sender, EventArgs e)
@@ -27,6 +38,19 @@ public partial class LoginPage : ContentPage
     private async void OnLoginClicked(object sender, EventArgs e)
     {
         await LoginAsync();
+    }
+
+    private async void OnRememberCheckedChanged(object sender, CheckedChangedEventArgs e)
+    {
+        if (!e.Value)
+        {
+            await RememberedLoginStore.ClearAsync();
+        }
+    }
+
+    private void OnTogglePasswordVisibilityClicked(object sender, EventArgs e)
+    {
+        SetPasswordVisibility(!_isPasswordVisible);
     }
 
     private async void OnAdminTapped(object sender, TappedEventArgs e)
@@ -83,6 +107,7 @@ public partial class LoginPage : ContentPage
             ApiClient.SetBearer(result.Token);
             UserSessionStore.Save(result.UserInfo);
             Preferences.Set(UserSessionKeys.UserName, username);
+            await SaveRememberedCredentialsAsync(username, password);
             ShowMessage("登录成功", isError: false);
             App.SwitchToLoggedInShell();
         }
@@ -94,6 +119,50 @@ public partial class LoginPage : ContentPage
         {
             SetBusy(false);
         }
+    }
+
+    private async Task LoadRememberedCredentialsAsync()
+    {
+        if (_credentialsLoaded)
+        {
+            return;
+        }
+
+        _credentialsLoaded = true;
+
+        var credentials = await RememberedLoginStore.LoadAsync();
+        RememberCheckBox.IsChecked = credentials.RememberPassword;
+
+        if (!string.IsNullOrWhiteSpace(credentials.Username))
+        {
+            UsernameEntry.Text = credentials.Username;
+        }
+
+        if (credentials.RememberPassword && !string.IsNullOrEmpty(credentials.Password))
+        {
+            PasswordEntry.Text = credentials.Password;
+            ShowMessage("已为您填充上次保存的账号和密码", isError: false);
+        }
+    }
+
+    private async Task SaveRememberedCredentialsAsync(string username, string password)
+    {
+        if (RememberCheckBox.IsChecked)
+        {
+            await RememberedLoginStore.SaveAsync(username, password);
+            return;
+        }
+
+        await RememberedLoginStore.ClearAsync();
+        RememberedLoginStore.SaveUsername(username);
+    }
+
+    private void SetPasswordVisibility(bool isVisible)
+    {
+        _isPasswordVisible = isVisible;
+        PasswordEntry.IsPassword = !isVisible;
+        TogglePasswordVisibilityButton.Text = isVisible ? "隐藏" : "显示";
+        SemanticProperties.SetDescription(TogglePasswordVisibilityButton, isVisible ? "隐藏密码" : "显示密码");
     }
 
     private void SetBusy(bool isBusy)
