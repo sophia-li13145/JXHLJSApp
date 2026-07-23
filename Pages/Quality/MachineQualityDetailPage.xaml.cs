@@ -271,7 +271,7 @@ public partial class MachineQualityDetailPage : ContentPage
                 ("成品直径mm", ResolveProductDiameter(detail)), ("上公差", detail.upperToleranceValue),
                 ("下公差", detail.lowerToleranceValue), ("强度要求", detail.spoolWeightRequirement),
                 ("圈径", FirstNonEmpty(detail.workOrderRingDiameter, detail.coilDiameterControl)), ("圈径控制", FirstNonEmpty(detail.workOrderCoilDiameterControl, detail.coilDiameterControl)),
-                ("圈距控制", FirstNonEmpty(detail.workOrderCoilPitchControl, detail.coilPitchControl))
+                ("圈距控制", FormatCoilPitchControl(FirstNonEmpty(detail.workOrderCoilPitchControl, detail.coilPitchControl)))
             };
         }
 
@@ -383,6 +383,17 @@ public partial class MachineQualityDetailPage : ContentPage
         var lower = string.IsNullOrWhiteSpace(item.lowerLimit) ? "-" : item.lowerLimit;
         var upper = string.IsNullOrWhiteSpace(item.upperLimit) ? "-" : item.upperLimit;
         return lower == "-" && upper == "-" ? string.Empty : $"{lower} ~ {upper}";
+    }
+
+    private static string FormatCoilPitchControl(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+        var text = value.Trim();
+        text = text.StartsWith("<=", StringComparison.Ordinal) ? text[2..].TrimStart() : text;
+        text = text.StartsWith("≤", StringComparison.Ordinal) ? text[1..].TrimStart() : text;
+        text = text.EndsWith("mm", StringComparison.OrdinalIgnoreCase) ? text[..^2].TrimEnd() : text;
+        return string.IsNullOrWhiteSpace(text) ? string.Empty : $"<={text}mm";
     }
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
