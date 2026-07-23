@@ -4,6 +4,7 @@ public sealed class WorkOrderDetailDto
 {
     public decimal? actualQuantity { get; set; }
     public decimal? actualWeight { get; set; }
+    public string? aggregateNo { get; set; }
     public string? batchNo { get; set; }
     public string? productionBatch { get; set; }
     public string? productionBatchNo { get; set; }
@@ -21,6 +22,7 @@ public sealed class WorkOrderDetailDto
     public string? drawMode { get; set; }
     public string? dvSpeed { get; set; }
     public string? furnaceNo { get; set; }
+    public string? hangCard { get; set; }
     public string? id { get; set; }
     public string? inputSpecification { get; set; }
     public string? inputSteelGrade { get; set; }
@@ -51,13 +53,15 @@ public sealed class WorkOrderDetailDto
     public decimal? productionQuantity { get; set; }
     public decimal? productionWeight { get; set; }
     public string? qualityNo { get; set; }
+    public string? rawOrQuench { get; set; }
     public string? saleMode { get; set; }
+    public string? shiftCode { get; set; }
     public string? steelGrade { get; set; }
-    public string? steelWireShape { get; set; }
     public string? usagePurpose { get; set; }
     public string? wireTakeUpLength { get; set; }
     public string? wireTakeUpMode { get; set; }
     public string? wireTakeUpSpeed { get; set; }
+    public string? wireShape { get; set; }
     public string? workOrderNo { get; set; }
     public string? workOrderStatus { get; set; }
 
