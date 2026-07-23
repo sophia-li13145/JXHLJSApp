@@ -293,6 +293,7 @@ public sealed class ProductionManualInspectionSaveResultRequestDto
 public sealed class ProductionSamplingOrFullCommitRequestDto
 {
     public string? actualDiameterMm { get; set; }
+    public string? brokenDiameter { get; set; }
     public string? coilDiameterControl { get; set; }
     public string? coilPitchControl { get; set; }
     public string? elongationRate { get; set; }
@@ -301,8 +302,10 @@ public sealed class ProductionSamplingOrFullCommitRequestDto
     public string? qrCode { get; set; }
     public string? qualityMaterialId { get; set; }
     public string? qualityNo { get; set; }
+    public string? reductionOfAreaRate { get; set; }
     public string? strengthMpa { get; set; }
     public string? surfaceCondition { get; set; }
+    public string? torsion { get; set; }
     public string? workOrderNo { get; set; }
 }
 
