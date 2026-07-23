@@ -3,7 +3,6 @@ using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Models.WorkOrders;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.Warehouse;
-using JXHLJSApp.Services.WorkOrders;
 
 namespace JXHLJSApp.Pages.Warehouse;
 
@@ -12,7 +11,6 @@ public partial class PackagingSubTaskDetailPage : ContentPage
 {
     private readonly IWarehouseApi _warehouseApi;
     private readonly IScanService _scanService;
-    private readonly IWorkOrderApi _workOrderApi;
     private string? _id;
     private PackagingSubTaskDetailDto? _detail;
     private MaterialQrCodeInfoDto? _scannedMaterial;
@@ -25,12 +23,11 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         set => _id = Uri.UnescapeDataString(value ?? string.Empty);
     }
 
-    public PackagingSubTaskDetailPage(IWarehouseApi warehouseApi, IScanService scanService, IWorkOrderApi workOrderApi)
+    public PackagingSubTaskDetailPage(IWarehouseApi warehouseApi, IScanService scanService)
     {
         InitializeComponent();
         _warehouseApi = warehouseApi;
         _scanService = scanService;
-        _workOrderApi = workOrderApi;
     }
 
     protected override async void OnAppearing()
@@ -82,7 +79,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         try
         {
             var qrCode = code.Trim();
-            var material = await _workOrderApi.ScanQueryMaterialInfoAsync(qrCode);
+            var material = await _warehouseApi.ScanFinishedPackageQrCodeAsync(qrCode);
             ApplyScannedMaterial(material, qrCode);
         }
         catch (Exception ex)
@@ -104,8 +101,9 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         ScannedSpecLabel.Text = Display(material.specification ?? material.spec);
         ScannedOriginLabel.Text = Display(material.originPlace);
         ScannedLengthLabel.Text = FormatQuantity(material.length, material.lengthUnit);
-        ScannedWeightLabel.Text = FormatQuantity(material.weight, material.weightUnit ?? material.unit ?? "KG");
-        ActualWeightEntry.Text = material.weight?.ToString("0.##") ?? string.Empty;
+        var pieceWeight = material.pieceWeight ?? material.weight;
+        ScannedWeightLabel.Text = FormatQuantity(pieceWeight, material.weightUnit ?? material.unit ?? "KG");
+        ActualWeightEntry.Text = pieceWeight?.ToString("0.##") ?? string.Empty;
     }
 
     private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
@@ -152,7 +150,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
                 materialCode = _scannedMaterial.materialCode,
                 materialName = _scannedMaterial.materialName,
                 originPlace = _scannedMaterial.originPlace,
-                pieceWeight = _scannedMaterial.weight,
+                pieceWeight = _scannedMaterial.pieceWeight ?? _scannedMaterial.weight,
                 qrCode = _scannedQrCode,
                 specification = _scannedMaterial.specification ?? _scannedMaterial.spec,
                 steelGrade = _scannedMaterial.steelGrade,
