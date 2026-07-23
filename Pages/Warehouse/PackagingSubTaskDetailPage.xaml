@@ -22,15 +22,15 @@
                         <Label x:Name="PackagedTaskNoLabel" TextColor="#0A2E69" FontSize="18" FontAttributes="Bold" />
                         <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="14">
                             <Label Text="单据状态" TextColor="#4B6688" />
-                            <Label x:Name="PackagedStatusLabel" Grid.Column="1" TextColor="#0057FF" FontAttributes="Bold" />
+                            <Label x:Name="PackagedStatusLabel" Grid.Column="1" TextColor="#0057FF" FontAttributes="Bold" HorizontalOptions="End" HorizontalTextAlignment="End" />
                             <BoxView Grid.Row="1" Grid.ColumnSpan="2" HeightRequest="1" Color="#E1E7F0" />
                             <Label Grid.Row="2" Text="生产工单" TextColor="#4B6688" />
-                            <Label x:Name="PackagedWorkOrderLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
+                            <Label x:Name="PackagedWorkOrderLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalOptions="End" HorizontalTextAlignment="End" />
                         </Grid>
                         <BoxView HeightRequest="1" Color="#E1E7F0" />
                         <Grid ColumnDefinitions="*,Auto">
                             <Label Text="完成时间" TextColor="#4B6688" />
-                            <Label x:Name="PackagedCompleteTimeLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
+                            <Label x:Name="PackagedCompleteTimeLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalOptions="End" HorizontalTextAlignment="End" />
                         </Grid>
                     </VerticalStackLayout>
                 </Border>
@@ -63,19 +63,19 @@
                 <Border BackgroundColor="White" StrokeThickness="0" Padding="20,18">
                     <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
                     <VerticalStackLayout Spacing="14">
-                        <Label Text="包装指令明细" TextColor="#0A2E69" FontSize="17" FontAttributes="Bold" />
+                        <Label x:Name="InstructionTitleLabel" Text="包装指令明细" TextColor="#0A2E69" FontSize="17" FontAttributes="Bold" />
                         <BoxView HeightRequest="1" Color="#E1E7F0" />
                         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto,*" RowSpacing="18" ColumnSpacing="12">
                             <Label Text="任务单号" TextColor="#4B6688" /><Label x:Name="TaskNoLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
                             <Label Grid.Column="2" Text="目标物料" TextColor="#4B6688" /><Label x:Name="MaterialLabel" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" />
                             <Label Grid.Row="1" Text="打印模板" TextColor="#4B6688" /><Label x:Name="TemplateLabel" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" TextColor="#0057FF" FontAttributes="Bold" LineBreakMode="WordWrap" />
-                            <Label x:Name="DetailActualWeightTitleLabel" Grid.Row="2" Grid.Column="2" IsVisible="False" Text="实际重量" TextColor="#4B6688" /><Label x:Name="DetailActualWeightLabel" Grid.Row="2" Grid.Column="3" IsVisible="False" TextColor="#C75A00" FontAttributes="Bold" FontSize="16" />
+                            <Label x:Name="DetailActualWeightTitleLabel" Grid.Row="1" Grid.Column="2" IsVisible="False" Text="实际重量" TextColor="#4B6688" /><Label x:Name="DetailActualWeightLabel" Grid.Row="1" Grid.Column="3" IsVisible="False" TextColor="#C75A00" FontAttributes="Bold" FontSize="16" />
                             <Label Grid.Row="2" Text="物料属性" TextColor="#4B6688" /><Label x:Name="PropertyLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
-                            <Label Grid.Row="3" Text="包装方式" TextColor="#4B6688" /><Label x:Name="MethodLabel" Grid.Row="3" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
-                            <Label Grid.Row="3" Grid.Column="2" Text="包装称重" TextColor="#4B6688" /><Label x:Name="WeightLabel" Grid.Row="3" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" />
-                            <Label Grid.Row="4" Text="需包装布" TextColor="#4B6688" /><Label x:Name="ClothLabel" Grid.Row="4" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
-                            <Label Grid.Row="4" Grid.Column="2" Text="包装布颜色" TextColor="#4B6688" /><Label x:Name="ColorLabel" Grid.Row="4" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" />
-                            <Label Grid.Row="5" Text="是否打托" TextColor="#4B6688" /><Label x:Name="PalletLabel" Grid.Row="5" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
+                            <Label Grid.Row="2" Grid.Column="2" Text="包装方式" TextColor="#4B6688" /><Label x:Name="MethodLabel" Grid.Row="2" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" />
+                            <Label Grid.Row="3" Text="包装称重" TextColor="#4B6688" /><Label x:Name="WeightLabel" Grid.Row="3" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
+                            <Label Grid.Row="3" Grid.Column="2" Text="需包装布" TextColor="#4B6688" /><Label x:Name="ClothLabel" Grid.Row="3" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" />
+                            <Label Grid.Row="4" Text="包装布颜色" TextColor="#4B6688" /><Label x:Name="ColorLabel" Grid.Row="4" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
+                            <Label Grid.Row="4" Grid.Column="2" Text="是否打托" TextColor="#4B6688" /><Label x:Name="PalletLabel" Grid.Row="4" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" />
                             <Label Grid.Row="6" Text="其他要求" TextColor="#4B6688" /><Label x:Name="RequirementLabel" Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="3" TextColor="#001431" FontAttributes="Bold" LineBreakMode="WordWrap" />
                             <Label Grid.Row="7" Text="生产备注" TextColor="#4B6688" /><Label x:Name="MemoLabel" Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="3" TextColor="#001431" FontAttributes="Bold" LineBreakMode="WordWrap" />
                         </Grid>
