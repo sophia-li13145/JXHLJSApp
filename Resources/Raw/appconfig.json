@@ -41,7 +41,8 @@
     "packagingSubTask": {
       "list": "/pda/pmsWorkOrder/getPackagingSubTaskList",
       "detail": "/pda/pmsWorkOrder/getPackagingSubTaskDetail",
-      "packingSave": "/pda/pmsWorkOrder/packingSave"
+      "packingSave": "/pda/pmsWorkOrder/packingSave",
+      "scanFinishedPackageQrCode": "/pda/pmsWorkOrder/scanFinishedPackageQrCode"
     },
     "incomingQualityOrder": {
       "getDictList": "/pda/qs/qsIncomingQualityOrder/getDictList",
