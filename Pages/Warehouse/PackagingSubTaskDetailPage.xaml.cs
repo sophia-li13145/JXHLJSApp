@@ -61,7 +61,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
             PalletLabel.Text = detail.needPalletizingDisplay;
             RequirementLabel.Text = detail.otherRequirementDisplay;
             MemoLabel.Text = detail.memoDisplay;
-            if (IsPackagedStatus(detail.workOrderStatus))
+            if (IsCompletedStatus(detail.workOrderStatus))
             {
                 ApplyPackagedDetail(detail);
             }
@@ -114,17 +114,17 @@ public partial class PackagingSubTaskDetailPage : ContentPage
 
     private void ApplyPageMode(PackagingSubTaskDetailDto detail)
     {
-        var isPackaged = IsPackagedStatus(detail.workOrderStatus);
-        PageTitleLabel.Text = isPackaged ? "包装详情" : "执行包装作业";
-        PackagedSummaryPanel.IsVisible = isPackaged;
-        PackagedMaterialTitleLabel.IsVisible = isPackaged;
-        ScanButton.IsVisible = !isPackaged;
+        var isCompleted = IsCompletedStatus(detail.workOrderStatus);
+        PageTitleLabel.Text = isCompleted ? "包装详情" : "执行包装作业";
+        PackagedSummaryPanel.IsVisible = isCompleted;
+        PackagedMaterialTitleLabel.IsVisible = isCompleted;
+        ScanButton.IsVisible = !isCompleted;
         ScanSuccessPanel.IsVisible = false;
-        ScannedMaterialPanel.IsVisible = isPackaged;
-        ActualWeightPanel.IsVisible = !isPackaged;
-        ActionBar.IsVisible = !isPackaged;
-        DetailActualWeightTitleLabel.IsVisible = isPackaged;
-        DetailActualWeightLabel.IsVisible = isPackaged;
+        ScannedMaterialPanel.IsVisible = isCompleted;
+        ActualWeightPanel.IsVisible = !isCompleted;
+        ActionBar.IsVisible = !isCompleted;
+        DetailActualWeightTitleLabel.IsVisible = isCompleted;
+        DetailActualWeightLabel.IsVisible = isCompleted;
     }
 
     private void ApplyPackagedDetail(PackagingSubTaskDetailDto detail)
@@ -185,11 +185,13 @@ public partial class PackagingSubTaskDetailPage : ContentPage
             || string.Equals(normalized, "tons", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool IsPackagedStatus(string? status)
+    private static bool IsCompletedStatus(string? status)
     {
         return !string.IsNullOrWhiteSpace(status)
-            && (status.Contains("已包装", StringComparison.OrdinalIgnoreCase)
-                || status.Contains("packaged", StringComparison.OrdinalIgnoreCase));
+            && (status.Trim() == "3"
+                || status.Contains("已完工", StringComparison.OrdinalIgnoreCase)
+                || status.Contains("completed", StringComparison.OrdinalIgnoreCase)
+                || status.Contains("finished", StringComparison.OrdinalIgnoreCase));
     }
 
 
