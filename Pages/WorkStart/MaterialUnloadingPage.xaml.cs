@@ -192,10 +192,10 @@ public partial class MaterialUnloadingPage : ContentPage
         SteelGradeLabel.Text = $"钢号: {ValueOrDash(FirstNonEmpty(inputOutput?.outputSteel, inputOutput?.outputSteelGrade, inputOutput?.outputMaterialName))}";
         OriginPlaceLabel.Text = $"产地: {ValueOrDash(inputOutput?.outputOriginPlace)}";
         SpecLabel.Text = $"规格: {ValueOrDash(inputOutput?.outputSpecification)}";
-        OutputWorkOrderNoLabel.Text = $"生产者 {ValueOrDash(FirstNonEmpty(inputOutput?.workOrderNo, _productionContext.Current?.WorkOrderNo))}";
-        OutputMachineLabel.Text = $"机台 {ValueOrDash(FirstNonEmpty(inputOutput?.machineNo, inputOutput?.machineType, inputOutput?.deviceName, _productionContext.Current?.MachineCode))}";
-        OutputCustomerCodeLabel.Text = $"客户代码 {ValueOrDash(inputOutput?.customerCode)}";
-        OutputSequenceLabel.Text = $"当前序号 {FormatDecimal(inputOutput?.currentSequenceNo)}";
+        OutputWorkOrderNoLabel.Text = ValueOrDash(FirstNonEmpty(inputOutput?.workOrderNo, _productionContext.Current?.WorkOrderNo));
+        OutputMachineLabel.Text = ValueOrDash(FirstNonEmpty(inputOutput?.machineNo, inputOutput?.machineType, inputOutput?.deviceName, _productionContext.Current?.MachineCode));
+        OutputCustomerCodeLabel.Text = ValueOrDash(inputOutput?.customerCode);
+        OutputSequenceLabel.Text = FormatDecimal(inputOutput?.currentSequenceNo);
         RecalculateOutputFields();
     }
 
