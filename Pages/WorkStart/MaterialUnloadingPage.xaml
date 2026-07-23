@@ -96,10 +96,18 @@
                                         <Label x:Name="SpecLabel" Grid.Row="1" Grid.Column="1" TextColor="#001431" />
                                         <Label x:Name="LengthLabel" Grid.Row="2" TextColor="#4B6688" />
                                         <Label x:Name="WeightLabel" Grid.Row="2" Grid.Column="1" TextColor="#4B6688" />
-                                        <Label x:Name="OutputWorkOrderNoLabel" Grid.Row="3" TextColor="#4B6688" FontSize="12" />
-                                        <Label x:Name="OutputMachineLabel" Grid.Row="3" Grid.Column="1" TextColor="#001431" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
-                                        <Label x:Name="OutputCustomerCodeLabel" Grid.Row="4" TextColor="#4B6688" FontSize="12" />
-                                        <Label x:Name="OutputSequenceLabel" Grid.Row="4" Grid.Column="1" TextColor="#4B6688" FontSize="12" HorizontalTextAlignment="End" />
+                                        <Grid Grid.Row="3" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8" Margin="0,8,0,0">
+                                            <Label Text="生产指令单" TextColor="#4B6688" FontSize="12" VerticalOptions="Center" />
+                                            <Label x:Name="OutputWorkOrderNoLabel" Grid.Column="1" TextColor="#0057FF" FontSize="12" FontAttributes="Bold" LineBreakMode="WordWrap" />
+                                            <Label Text="机台" Grid.Column="2" TextColor="#4B6688" FontSize="12" VerticalOptions="Center" HorizontalTextAlignment="End" />
+                                            <Label x:Name="OutputMachineLabel" Grid.Column="3" TextColor="#001431" FontSize="12" FontAttributes="Bold" VerticalOptions="Center" HorizontalTextAlignment="End" />
+                                        </Grid>
+                                        <Grid Grid.Row="4" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+                                            <Label Text="客户代码" TextColor="#4B6688" FontSize="12" VerticalOptions="Center" />
+                                            <Label x:Name="OutputCustomerCodeLabel" Grid.Column="1" TextColor="#001431" FontSize="12" FontAttributes="Bold" />
+                                            <Label Text="当前序号" Grid.Column="2" TextColor="#4B6688" FontSize="12" VerticalOptions="Center" HorizontalTextAlignment="End" />
+                                            <Label x:Name="OutputSequenceLabel" Grid.Column="3" TextColor="#001431" FontSize="12" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                                        </Grid>
                                     </Grid>
                                 </VerticalStackLayout>
                             </Border>
