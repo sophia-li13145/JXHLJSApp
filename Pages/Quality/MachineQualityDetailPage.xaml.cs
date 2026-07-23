@@ -20,6 +20,7 @@ public partial class MachineQualityDetailPage : ContentPage
 {
     private const string SchemeAcidPickling = "酸洗";
     private const string SchemeBlankOpening = "开坯";
+    private const string SchemeBlankOpeningAlias = "开胚";
     private const string SchemeHeatTreatment = "热处理";
     private const string SchemeDrawing = "拉拔";
     private readonly IQualityApi _qualityApi;
@@ -262,15 +263,15 @@ public partial class MachineQualityDetailPage : ContentPage
         {
             return new[]
             {
-                ("日期", DateTime.Now.ToString("yyyyMMdd")), ("机台", detail.deviceName ?? detail.deviceCode),
+                ("日期", ResolveProcessCardDate(detail)), ("机台", ResolveMachine(detail)),
                 ("客户代码", FirstNonEmpty(detail.customerCode, detail.businessType)), ("炉号", detail.furnaceNo),
                 ("钢号", detail.steelGrade), ("挂牌", detail.inputSpecification),
                 ("工号", detail.workOrderNo), ("件号", ResolvePieceNo(detail)),
                 ("产地", FirstNonEmpty(detail.originPlace, detail.freeAcid)), ("投料直径mm", detail.inputDiameterMm),
-                ("成品直径mm", detail.productDiameter), ("上公差", detail.upperToleranceValue),
+                ("成品直径mm", ResolveProductDiameter(detail)), ("上公差", detail.upperToleranceValue),
                 ("下公差", detail.lowerToleranceValue), ("强度要求", detail.spoolWeightRequirement),
-                ("圈径", detail.coilDiameterControl), ("圈径控制", detail.coilDiameterControl),
-                ("圈距控制", detail.coilPitchControl)
+                ("圈径", FirstNonEmpty(detail.workOrderRingDiameter, detail.coilDiameterControl)), ("圈径控制", FirstNonEmpty(detail.workOrderCoilDiameterControl, detail.coilDiameterControl)),
+                ("圈距控制", FirstNonEmpty(detail.workOrderCoilPitchControl, detail.coilPitchControl))
             };
         }
 
@@ -342,6 +343,27 @@ public partial class MachineQualityDetailPage : ContentPage
                 }
             });
         }
+    }
+
+
+    private static string ResolveMachine(ProductionQualityDetailDto detail)
+    {
+        return FirstNonEmpty(detail.machine, detail.deviceName, detail.deviceCode);
+    }
+
+    private static string ResolveProductDiameter(ProductionQualityDetailDto detail)
+    {
+        return FirstNonEmpty(detail.productDiameter, detail.prodcutDiameter);
+    }
+
+    private static string ResolveProcessCardDate(ProductionQualityDetailDto detail)
+    {
+        if (DateTime.TryParse(FirstNonEmpty(detail.productionDate, detail.inspectDate), CultureInfo.CurrentCulture, DateTimeStyles.None, out var date))
+        {
+            return date.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+        }
+
+        return FirstNonEmpty(detail.productionDate, DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture));
     }
 
     private static string ResolvePieceNo(ProductionQualityDetailDto detail)
@@ -506,12 +528,12 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static bool IsBlankOpeningScheme(string? schemeName)
     {
-        return HasSchemeToken(schemeName, SchemeBlankOpening, "开胚");
+        return HasSchemeToken(schemeName, SchemeBlankOpening, SchemeBlankOpeningAlias);
     }
 
     private static bool IsProcessCardScheme(string? schemeName)
     {
-        return HasSchemeToken(schemeName, SchemeBlankOpening, SchemeDrawing, "抽检") || IsFirstInspectionScheme(schemeName);
+        return HasSchemeToken(schemeName, SchemeBlankOpening, SchemeBlankOpeningAlias, SchemeDrawing, "抽检") || IsFirstInspectionScheme(schemeName);
     }
 
     private static bool IsDrawingScheme(string? schemeName)
@@ -760,7 +782,8 @@ public partial class MachineQualityDetailPage : ContentPage
         _detail.coilPitchControl = FirstNonEmpty(material.coilPitchControl, _detail.coilPitchControl);
         _detail.customerCode = FirstNonEmpty(material.customerCode, _detail.customerCode);
         _detail.deviceCode = FirstNonEmpty(material.deviceCode, _detail.deviceCode);
-        _detail.deviceName = FirstNonEmpty(material.deviceName, material.machineNo, _detail.deviceName);
+        _detail.deviceName = FirstNonEmpty(material.deviceName, material.machineNo, material.machine, _detail.deviceName);
+        _detail.machine = FirstNonEmpty(material.machine, material.machineNo, material.deviceName, _detail.machine);
         _detail.elongationRate = FirstNonEmpty(material.elongationRate, _detail.elongationRate);
         _detail.freeAcid = FirstNonEmpty(material.freeAcid, _detail.freeAcid);
         _detail.freeAcidSampling = FirstNonEmpty(material.freeAcidSampling, _detail.freeAcidSampling);
@@ -778,7 +801,9 @@ public partial class MachineQualityDetailPage : ContentPage
         _detail.pieceNo = FirstNonEmpty(material.pieceNo, _detail.pieceNo);
         _detail.originPlace = FirstNonEmpty(material.originPlace, _detail.originPlace);
         _detail.plateNo = FirstNonEmpty(material.plateNo, _detail.plateNo);
-        _detail.productDiameter = FirstNonEmpty(material.productDiameter, _detail.productDiameter);
+        _detail.productDiameter = FirstNonEmpty(material.productDiameter, material.prodcutDiameter, _detail.productDiameter);
+        _detail.prodcutDiameter = FirstNonEmpty(material.prodcutDiameter, material.productDiameter, _detail.prodcutDiameter);
+        _detail.productionDate = FirstNonEmpty(material.productionDate, _detail.productionDate);
         _detail.qrCode = _qrCode;
         _detail.qualityMaterialId = _qualityMaterialId;
         _detail.saponificationPhValue = FirstNonEmpty(material.saponificationPhValue, _detail.saponificationPhValue);
@@ -792,6 +817,9 @@ public partial class MachineQualityDetailPage : ContentPage
         _detail.totalAcid = FirstNonEmpty(material.totalAcid, _detail.totalAcid);
         _detail.totalAcidSampling = FirstNonEmpty(material.totalAcidSampling, _detail.totalAcidSampling);
         _detail.upperToleranceValue = FirstNonEmpty(material.upperToleranceValue, _detail.upperToleranceValue);
+        _detail.workOrderRingDiameter = FirstNonEmpty(material.workOrderRingDiameter, _detail.workOrderRingDiameter);
+        _detail.workOrderCoilDiameterControl = FirstNonEmpty(material.workOrderCoilDiameterControl, _detail.workOrderCoilDiameterControl);
+        _detail.workOrderCoilPitchControl = FirstNonEmpty(material.workOrderCoilPitchControl, _detail.workOrderCoilPitchControl);
         _detail.workOrderNo = FirstNonEmpty(material.workOrderNo, _detail.workOrderNo);
         if (string.IsNullOrWhiteSpace(_detail.batchNo)) _detail.batchNo = material.productionDate;
         _workOrderNo = FirstNonEmpty(_detail.workOrderNo, _workOrderNo);
@@ -828,7 +856,8 @@ public partial class MachineQualityDetailPage : ContentPage
             coilDiameterControl = material.coilDiameterControl,
             coilPitchControl = material.coilPitchControl,
             deviceCode = material.deviceCode,
-            deviceName = FirstNonEmpty(material.deviceName, material.machineNo),
+            deviceName = FirstNonEmpty(material.deviceName, material.machineNo, material.machine),
+            machine = FirstNonEmpty(material.machine, material.machineNo, material.deviceName),
             elongationRate = material.elongationRate,
             freeAcid = material.freeAcid,
             freeAcidSampling = material.freeAcidSampling,
@@ -846,7 +875,9 @@ public partial class MachineQualityDetailPage : ContentPage
             memo = material.memo,
             phosphatingTemperature = material.phosphatingTemperature,
             pieceNo = material.pieceNo,
-            productDiameter = material.productDiameter,
+            productDiameter = FirstNonEmpty(material.productDiameter, material.prodcutDiameter),
+            prodcutDiameter = FirstNonEmpty(material.prodcutDiameter, material.productDiameter),
+            productionDate = material.productionDate,
             qrCode = FirstNonEmpty(material.qrCode, fallbackQrCode),
             qrTimes = material.qrTimes,
             qualityMaterialId = material.qualityMaterialId,
@@ -862,6 +893,9 @@ public partial class MachineQualityDetailPage : ContentPage
             totalAcid = material.totalAcid,
             totalAcidSampling = material.totalAcidSampling,
             upperToleranceValue = material.upperToleranceValue,
+            workOrderRingDiameter = material.workOrderRingDiameter,
+            workOrderCoilDiameterControl = material.workOrderCoilDiameterControl,
+            workOrderCoilPitchControl = material.workOrderCoilPitchControl,
             workOrderNo = material.workOrderNo
         };
     }
