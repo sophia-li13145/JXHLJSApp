@@ -188,8 +188,8 @@ public partial class PackagingSubTaskDetailPage : ContentPage
     private static bool IsPackagedStatus(string? status)
     {
         return !string.IsNullOrWhiteSpace(status)
-            && (status.Contains("已包装", StringComparison.OrdinalIgnoreCase)
-                || status.Contains("packaged", StringComparison.OrdinalIgnoreCase));
+            && (status.Contains("已完工", StringComparison.OrdinalIgnoreCase)
+                || status.Contains("completed", StringComparison.OrdinalIgnoreCase));
     }
 
 
