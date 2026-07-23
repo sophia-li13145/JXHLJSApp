@@ -268,8 +268,8 @@ public partial class MachineQualityDetailPage : ContentPage
                 ("钢号", detail.steelGrade), ("挂牌", detail.inputSpecification),
                 ("工号", detail.workOrderNo), ("件号", ResolvePieceNo(detail)),
                 ("产地", FirstNonEmpty(detail.originPlace, detail.freeAcid)), ("投料直径mm", detail.inputDiameterMm),
-                ("成品直径mm", ResolveProductDiameter(detail)), ("上公差", detail.upperToleranceValue),
-                ("下公差", detail.lowerToleranceValue), ("强度要求", detail.spoolWeightRequirement),
+                ("成品直径mm", ResolveProductDiameter(detail)), ("上公差", FormatSignedTolerance(detail.upperToleranceValue, '+')),
+                ("下公差", FormatSignedTolerance(detail.lowerToleranceValue, '-')), ("强度要求", detail.spoolWeightRequirement),
                 ("圈径", FirstNonEmpty(detail.workOrderRingDiameter, detail.coilDiameterControl)), ("圈径控制", FirstNonEmpty(detail.workOrderCoilDiameterControl, detail.coilDiameterControl)),
                 ("圈距控制", FormatCoilPitchControl(FirstNonEmpty(detail.workOrderCoilPitchControl, detail.coilPitchControl)))
             };
@@ -302,7 +302,7 @@ public partial class MachineQualityDetailPage : ContentPage
             ("二维码", material.qrCode), ("扫码次数", material.qrTimes?.ToString()),
             ("质检物料ID", material.qualityMaterialId), ("工单号", material.workOrderNo),
             ("炉号", material.furnaceNo), ("钢号", material.steelGrade),
-            ("件号", material.pieceNo), ("规格", FirstNonEmpty(material.spec, material.inputSpecification, material.targetSpecification)),
+            ("件号", FirstNonEmpty(material.pieceNo, "1")), ("规格", FirstNonEmpty(material.spec, material.inputSpecification, material.targetSpecification)),
             ("设备", FirstNonEmpty(material.deviceName, material.deviceCode)),
             ("实测直径", material.actualDiameterMm), ("成品直径", material.productDiameter),
             ("强度", material.strengthMpa), ("表面状态", material.surfaceCondition),
@@ -368,7 +368,7 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static string ResolvePieceNo(ProductionQualityDetailDto detail)
     {
-        return FirstNonEmpty(detail.pieceNo, detail.materialList?.FirstOrDefault()?.pieceNo);
+        return FirstNonEmpty(detail.pieceNo, detail.materialList?.FirstOrDefault()?.pieceNo, "1");
     }
 
     private static string ResolveHeatTreatmentCardDate(ProductionQualityDetailDto detail)
@@ -394,6 +394,15 @@ public partial class MachineQualityDetailPage : ContentPage
         text = text.StartsWith("≤", StringComparison.Ordinal) ? text[1..].TrimStart() : text;
         text = text.EndsWith("mm", StringComparison.OrdinalIgnoreCase) ? text[..^2].TrimEnd() : text;
         return string.IsNullOrWhiteSpace(text) ? string.Empty : $"<={text}mm";
+    }
+
+    private static string FormatSignedTolerance(string? value, char sign)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+        var text = value.Trim();
+        text = text.TrimStart('+', '-', '＋', '－').TrimStart();
+        return string.IsNullOrWhiteSpace(text) ? string.Empty : $"{sign}{text}";
     }
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
