@@ -400,7 +400,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<WorkOrderCompletionStatusDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
-        EnsureApiSuccessOrCodeZero(data);
+        EnsureApiSuccess(data);
         return data?.result;
     }
 
@@ -468,7 +468,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<ProductionStatisticsDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
-        EnsureApiSuccessOrCodeZero(data);
+        EnsureApiSuccess(data);
         return data?.result;
     }
 
@@ -571,7 +571,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<List<DeviceTypeDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
-        EnsureApiSuccessOrCodeZero(data);
+        EnsureApiSuccess(data);
 
         _deviceTypeNames = data?.result?
             .Where(type => !string.IsNullOrWhiteSpace(type.devTypeCode) && !string.IsNullOrWhiteSpace(type.devTypeName))
@@ -648,19 +648,6 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private static void EnsureApiSuccess<T>(ApiResp<T>? response)
     {
         if (response?.success == true) return;
-
-        var message = response?.message;
-        if (string.IsNullOrWhiteSpace(message))
-        {
-            message = "接口返回失败，请稍后重试。";
-        }
-
-        throw new WorkOrderApiException(message);
-    }
-
-    private static void EnsureApiSuccessOrCodeZero<T>(ApiResp<T>? response)
-    {
-        if (response?.success == true || response?.code == 0) return;
 
         var message = response?.message;
         if (string.IsNullOrWhiteSpace(message))
