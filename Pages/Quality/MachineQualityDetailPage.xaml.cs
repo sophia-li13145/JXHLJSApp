@@ -393,7 +393,7 @@ public partial class MachineQualityDetailPage : ContentPage
         text = text.StartsWith("<=", StringComparison.Ordinal) ? text[2..].TrimStart() : text;
         text = text.StartsWith("≤", StringComparison.Ordinal) ? text[1..].TrimStart() : text;
         text = text.EndsWith("mm", StringComparison.OrdinalIgnoreCase) ? text[..^2].TrimEnd() : text;
-        return string.IsNullOrWhiteSpace(text) ? string.Empty : $"<={text}mm";
+        return string.IsNullOrWhiteSpace(text) ? string.Empty : $"≤{text}mm";
     }
 
     private static string FormatSignedTolerance(string? value, char sign)
