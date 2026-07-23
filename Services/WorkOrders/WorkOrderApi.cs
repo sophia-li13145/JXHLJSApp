@@ -527,6 +527,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
         detail.wireTakeUpSpeed = MapWorkOrderDictName(detail.wireTakeUpSpeed, dictNames, "wireTakeUpSpeed");
         detail.packageMethod = MapWorkOrderDictName(detail.packageMethod, dictNames, "packageMethod");
         detail.saleMode = MapWorkOrderDictName(detail.saleMode, dictNames, "saleMode");
+        detail.rawOrQuench = MapWorkOrderDictName(detail.rawOrQuench, dictNames, "rawOrQuench");
+        detail.wireShape = MapWorkOrderDictName(detail.wireShape, dictNames, "wireShape");
     }
 
     private async Task<IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>> GetWorkOrderDictNamesAsync(CancellationToken ct)

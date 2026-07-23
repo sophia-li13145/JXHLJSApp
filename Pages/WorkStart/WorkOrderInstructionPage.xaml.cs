@@ -191,7 +191,7 @@ public partial class WorkOrderInstructionPage : ContentPage
         ProductInfoGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
         ProductInfoGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
         ProductInfoGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-        AddProductInfoCell(0, 0, "聚合单号", FirstNonEmpty(detail.qualityNo, detail.workOrderNo), 3);
+        AddProductInfoCell(0, 0, "聚合单号", FirstNonEmpty(detail.aggregateNo, detail.qualityNo, detail.workOrderNo), 3);
         AddProductInfoCell(1, 0, "机台类型", ValueOrDash(detail.machineType));
         AddProductInfoCell(1, 2, "机台号", ValueOrDash(FirstNonEmpty(detail.machineNo, detail.deviceName, detail.deviceCode)));
         AddProductInfoCell(2, 0, "件重(KG)", FormatDecimalOrFallback(detail.pieceWeight, FormatDecimalOrFallback(FirstMoldSequenceValue(detail.moldSequenceList, item => item.pieceWeight), null)));
@@ -208,12 +208,12 @@ public partial class WorkOrderInstructionPage : ContentPage
             ProductInfoGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
         }
 
-        AddProductInfoCell(0, 0, "聚合单号", FirstNonEmpty(detail.qualityNo, detail.workOrderNo), 3);
+        AddProductInfoCell(0, 0, "聚合单号", FirstNonEmpty(detail.aggregateNo, detail.qualityNo, detail.workOrderNo), 3);
         AddProductInfoCell(1, 0, "机台类型", ValueOrDash(detail.machineType));
         AddProductInfoCell(1, 2, "机台号", ValueOrDash(FirstNonEmpty(detail.machineNo, detail.deviceName, detail.deviceCode)));
-        AddProductInfoCell(2, 0, "挂牌", ValueOrDash(detail.steelGrade));
+        AddProductInfoCell(2, 0, "挂牌", ValueOrDash(FirstNonEmpty(detail.hangCard, detail.steelGrade)));
         AddProductInfoCell(2, 2, "下料规格", ValueOrDash(detail.inputSpecification));
-        AddProductInfoCell(3, 0, "生/淬", ValueOrDash(detail.materialProperty));
+        AddProductInfoCell(3, 0, "生/淬", ValueOrDash(detail.rawOrQuench));
         AddProductInfoCell(3, 2, "拉拔方式", ValueOrDash(detail.drawMode));
         AddProductInfoCell(4, 0, "圈径", ValueOrDash(detail.coilDiameterControl));
         AddProductInfoCell(4, 2, "件重(KG)", FormatDecimalOrFallback(detail.pieceWeight, FormatDecimalOrFallback(FirstMoldSequenceValue(detail.moldSequenceList, item => item.pieceWeight), null)));
@@ -329,7 +329,7 @@ public partial class WorkOrderInstructionPage : ContentPage
             ("是否磷化", FormatBool(detail.needPhosphating)),
             ("日期", FormatCompactDate(detail.productionDate)),
             ("机台", FirstNonEmpty(detail.machineNo, detail.deviceName, detail.deviceCode)),
-            ("班次", FirstNonEmpty(detail.shiftName, detail.shiftNo))
+            ("班次", FirstNonEmpty(detail.shiftName, detail.shiftCode, detail.shiftNo))
         };
     }
 
@@ -546,7 +546,7 @@ public partial class WorkOrderInstructionPage : ContentPage
 
         var row = 0;
         AddDrawingFullWidthParamRow(row++, "收线速度", detail.wireTakeUpSpeed);
-        AddDrawingTwoParamRow(row++, "收线方式", detail.wireTakeUpMode, "钢丝形状", detail.steelWireShape);
+        AddDrawingTwoParamRow(row++, "收线方式", detail.wireTakeUpMode, "钢丝形状", detail.wireShape);
         AddDrawingFullWidthParamRow(row++, "收线长度", FormatLengthWithUnit(detail.wireTakeUpLength));
         AddDrawingFullWidthParamRow(row++, "盘重要求", detail.coilWeightRequirement);
         AddDrawingFullWidthParamRow(row++, "产品直径", detail.productSpecification);
@@ -662,8 +662,10 @@ public partial class WorkOrderInstructionPage : ContentPage
         {
             ("质检方案编号", detail.inspectionSchemeCode),
             ("质检方案名称", detail.inspectionSchemeName),
+            ("聚合单号", detail.aggregateNo),
             ("中间过程规格", detail.intermediateSpecification),
             ("炉号", detail.furnaceNo),
+            ("挂牌", detail.hangCard),
             ("投料规格", detail.inputSpecification),
             ("投料钢号", detail.inputSteelGrade),
             ("机台号", detail.machineNo),
@@ -680,7 +682,10 @@ public partial class WorkOrderInstructionPage : ContentPage
             ("成品规格", detail.productSpecification),
             ("质检单号", detail.qualityNo),
             ("销售方式", detail.saleMode),
+            ("班次编码", detail.shiftCode),
+            ("生/淬", detail.rawOrQuench),
             ("钢号", detail.steelGrade),
+            ("钢丝形状", detail.wireShape),
             ("收线长度(m)", detail.wireTakeUpLength),
             ("收线方式", detail.wireTakeUpMode),
             ("收线速度", detail.wireTakeUpSpeed),
