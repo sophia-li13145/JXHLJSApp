@@ -66,8 +66,8 @@
                         <Label x:Name="InstructionTitleLabel" Text="包装指令明细" TextColor="#0A2E69" FontSize="17" FontAttributes="Bold" />
                         <BoxView HeightRequest="1" Color="#E1E7F0" />
                         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto,*" RowSpacing="18" ColumnSpacing="12">
-                            <Label Text="任务单号" TextColor="#4B6688" /><Label x:Name="TaskNoLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
-                            <Label Grid.Column="2" Text="目标物料" TextColor="#4B6688" /><Label x:Name="MaterialLabel" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" />
+                            <Label x:Name="TaskNoTitleLabel" Text="任务单号" TextColor="#4B6688" /><Label x:Name="TaskNoLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
+                            <Label x:Name="MaterialTitleLabel" Grid.Column="2" Text="目标物料" TextColor="#4B6688" /><Label x:Name="MaterialLabel" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" />
                             <Label Grid.Row="1" Text="打印模板" TextColor="#4B6688" /><Label x:Name="TemplateLabel" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" TextColor="#0057FF" FontAttributes="Bold" LineBreakMode="WordWrap" />
                             <Label x:Name="DetailActualWeightTitleLabel" Grid.Row="1" Grid.Column="2" IsVisible="False" Text="实际重量" TextColor="#4B6688" /><Label x:Name="DetailActualWeightLabel" Grid.Row="1" Grid.Column="3" IsVisible="False" TextColor="#C75A00" FontAttributes="Bold" FontSize="16" />
                             <Label Grid.Row="2" Text="物料属性" TextColor="#4B6688" /><Label x:Name="PropertyLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />

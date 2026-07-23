@@ -117,6 +117,10 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         PageTitleLabel.Text = isPackaged ? "包装详情" : "执行包装作业";
         InstructionTitleLabel.Text = isPackaged ? "包装明细" : "包装指令明细";
         Grid.SetColumnSpan(TemplateLabel, isPackaged ? 1 : 3);
+        TaskNoTitleLabel.IsVisible = !isPackaged;
+        TaskNoLabel.IsVisible = !isPackaged;
+        MaterialTitleLabel.IsVisible = !isPackaged;
+        MaterialLabel.IsVisible = !isPackaged;
         PackagedSummaryPanel.IsVisible = isPackaged;
         PackagedMaterialTitleLabel.IsVisible = isPackaged;
         ScanButton.IsVisible = !isPackaged;
