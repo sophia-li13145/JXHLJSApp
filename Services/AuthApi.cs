@@ -56,9 +56,9 @@ public sealed class AuthApi : IAuthApi
         }
 
         var data = JsonSerializer.Deserialize<ApiResp<LoginResponseResult>>(body, JsonOptions);
-        EnsureApiSuccessOrCodeZero(data);
+        EnsureApiSuccess(data);
         var token = data?.result?.token;
-        var success = data?.success == true || data?.code == 0;
+        var success = data?.success == true;
 
         return new LoginResult(success, token, data?.message, data?.result?.userInfo);
     }
@@ -73,7 +73,7 @@ public sealed class AuthApi : IAuthApi
 
         await using var s = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<UserInfoDto>>(s, JsonOptions, ct).ConfigureAwait(false);
-        EnsureApiSuccessOrCodeZero(data);
+        EnsureApiSuccess(data);
 
         return data?.result;
     }
@@ -102,12 +102,6 @@ public sealed class AuthApi : IAuthApi
     private static void EnsureApiSuccess<T>(ApiResp<T>? response)
     {
         if (response?.success == true) return;
-        throw new InvalidOperationException(string.IsNullOrWhiteSpace(response?.message) ? "接口返回失败。" : response!.message!);
-    }
-
-    private static void EnsureApiSuccessOrCodeZero<T>(ApiResp<T>? response)
-    {
-        if (response?.success == true || response?.code == 0) return;
         throw new InvalidOperationException(string.IsNullOrWhiteSpace(response?.message) ? "接口返回失败。" : response!.message!);
     }
 
