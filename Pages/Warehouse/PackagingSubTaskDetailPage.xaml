@@ -10,36 +10,54 @@
             <Border.StrokeShape><RoundRectangle CornerRadius="0,0,16,16" /></Border.StrokeShape>
             <Grid ColumnDefinitions="Auto,*">
                 <Label Text="‹ 返回" TextColor="White" FontSize="15" VerticalOptions="Center"><Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers></Label>
-                <Label Grid.Column="1" Text="执行包装作业" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,48,0" />
+                <Label x:Name="PageTitleLabel" Grid.Column="1" Text="执行包装作业" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="0,0,48,0" />
             </Grid>
         </Border>
 
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Padding="22,32,22,24" Spacing="16">
-                <Button Text="🔍  包装扫码" BackgroundColor="#EEF6FF" TextColor="#0A2E69" BorderColor="#244B88" BorderWidth="1" CornerRadius="10" HeightRequest="50" FontSize="16" FontAttributes="Bold" Clicked="OnScanClicked" />
+                <Border x:Name="PackagedSummaryPanel" IsVisible="False" BackgroundColor="White" StrokeThickness="0" Padding="20,18">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="16">
+                        <Label x:Name="PackagedTaskNoLabel" TextColor="#0A2E69" FontSize="18" FontAttributes="Bold" />
+                        <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="14">
+                            <Label Text="单据状态" TextColor="#4B6688" />
+                            <Label x:Name="PackagedStatusLabel" Grid.Column="1" TextColor="#0057FF" FontAttributes="Bold" />
+                            <BoxView Grid.Row="1" Grid.ColumnSpan="2" HeightRequest="1" Color="#E1E7F0" />
+                            <Label Grid.Row="2" Text="生产工单" TextColor="#4B6688" />
+                            <Label x:Name="PackagedWorkOrderLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
+                        </Grid>
+                        <BoxView HeightRequest="1" Color="#E1E7F0" />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="完成时间" TextColor="#4B6688" />
+                            <Label x:Name="PackagedCompleteTimeLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Button x:Name="ScanButton" Text="🔍  包装扫码" BackgroundColor="#EEF6FF" TextColor="#0A2E69" BorderColor="#244B88" BorderWidth="1" CornerRadius="10" HeightRequest="50" FontSize="16" FontAttributes="Bold" Clicked="OnScanClicked" />
 
                 <Border x:Name="ScanSuccessPanel" IsVisible="False" BackgroundColor="#EFFFF4" Stroke="#B8F0CB" StrokeThickness="1" Padding="14,9">
                     <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
                     <Label Text="✅ 包装信息获取成功" TextColor="#00A86B" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="Center" />
                 </Border>
 
-                <Border x:Name="ScannedMaterialPanel" IsVisible="False" BackgroundColor="White" Stroke="#58DB95" StrokeThickness="1" Padding="16,12">
+                <Label x:Name="PackagedMaterialTitleLabel" IsVisible="False" Text="包装物料信息" TextColor="#0A2E69" FontSize="16" FontAttributes="Bold" />
+
+                <Border x:Name="ScannedMaterialPanel" IsVisible="False" BackgroundColor="White" Stroke="#58DB95" StrokeThickness="1" Padding="16,14">
                     <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
                     <Border.Shadow><Shadow Brush="#1800A86B" Offset="0,2" Radius="6" Opacity="0.35" /></Border.Shadow>
-                    <Grid ColumnDefinitions="4,*" ColumnSpacing="12">
-                        <BoxView Color="#20D183" WidthRequest="4" CornerRadius="2" />
-                        <VerticalStackLayout Grid.Column="1" Spacing="8">
-                            <Label x:Name="ScannedMaterialCodeLabel" TextColor="#0A2E69" FontSize="16" FontAttributes="Bold" />
-                            <BoxView HeightRequest="1" Color="#E1E7F0" />
-                            <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto,*" RowSpacing="8" ColumnSpacing="12">
-                                <Label Text="钢号:" TextColor="#4B6688" FontSize="13" /><Label x:Name="ScannedSteelGradeLabel" Grid.Column="1" TextColor="#001431" FontSize="13" FontAttributes="Bold" />
-                                <Label Grid.Column="2" Text="规格:" TextColor="#4B6688" FontSize="13" /><Label x:Name="ScannedSpecLabel" Grid.Column="3" TextColor="#001431" FontSize="13" FontAttributes="Bold" />
-                                <Label Grid.Row="1" Text="产地:" TextColor="#4B6688" FontSize="13" /><Label x:Name="ScannedOriginLabel" Grid.Row="1" Grid.Column="1" TextColor="#001431" FontSize="13" FontAttributes="Bold" />
-                                <Label Grid.Row="1" Grid.Column="2" Text="长度:" TextColor="#4B6688" FontSize="13" /><Label x:Name="ScannedLengthLabel" Grid.Row="1" Grid.Column="3" TextColor="#001431" FontSize="13" FontAttributes="Bold" />
-                                <Label Grid.Row="2" Text="件重:" TextColor="#4B6688" FontSize="13" /><Label x:Name="ScannedWeightLabel" Grid.Row="2" Grid.Column="1" TextColor="#00A86B" FontSize="13" FontAttributes="Bold" />
-                            </Grid>
-                        </VerticalStackLayout>
-                    </Grid>
+                    <VerticalStackLayout Spacing="9">
+                        <Label x:Name="ScannedMaterialCodeLabel" TextColor="#0A2E69" FontSize="16" FontAttributes="Bold" />
+                        <BoxView HeightRequest="1" Color="#E1E7F0" />
+                        <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto,*" RowSpacing="8" ColumnSpacing="12">
+                            <Label Text="钢号:" TextColor="#4B6688" FontSize="13" /><Label x:Name="ScannedSteelGradeLabel" Grid.Column="1" TextColor="#001431" FontSize="13" FontAttributes="Bold" />
+                            <Label Grid.Column="2" Text="规格:" TextColor="#4B6688" FontSize="13" /><Label x:Name="ScannedSpecLabel" Grid.Column="3" TextColor="#001431" FontSize="13" FontAttributes="Bold" />
+                            <Label Grid.Row="1" Text="产地:" TextColor="#4B6688" FontSize="13" /><Label x:Name="ScannedOriginLabel" Grid.Row="1" Grid.Column="1" TextColor="#001431" FontSize="13" FontAttributes="Bold" />
+                            <Label Grid.Row="1" Grid.Column="2" Text="长度:" TextColor="#4B6688" FontSize="13" /><Label x:Name="ScannedLengthLabel" Grid.Row="1" Grid.Column="3" TextColor="#001431" FontSize="13" FontAttributes="Bold" />
+                            <Label Grid.Row="2" Text="件重:" TextColor="#4B6688" FontSize="13" /><Label x:Name="ScannedWeightLabel" Grid.Row="2" Grid.Column="1" TextColor="#00A86B" FontSize="13" FontAttributes="Bold" />
+                        </Grid>
+                    </VerticalStackLayout>
                 </Border>
 
                 <Border BackgroundColor="White" StrokeThickness="0" Padding="20,18">
@@ -47,10 +65,11 @@
                     <VerticalStackLayout Spacing="14">
                         <Label Text="包装指令明细" TextColor="#0A2E69" FontSize="17" FontAttributes="Bold" />
                         <BoxView HeightRequest="1" Color="#E1E7F0" />
-                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto,*" RowSpacing="16" ColumnSpacing="12">
+                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto,*" RowSpacing="18" ColumnSpacing="12">
                             <Label Text="任务单号" TextColor="#4B6688" /><Label x:Name="TaskNoLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
                             <Label Grid.Column="2" Text="目标物料" TextColor="#4B6688" /><Label x:Name="MaterialLabel" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" />
-                            <Label Grid.Row="1" Text="打印模板" TextColor="#4B6688" /><Label x:Name="TemplateLabel" Grid.Row="1" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
+                            <Label Grid.Row="1" Text="打印模板" TextColor="#4B6688" /><Label x:Name="TemplateLabel" Grid.Row="1" Grid.Column="1" TextColor="#0057FF" FontAttributes="Bold" />
+                            <Label x:Name="DetailActualWeightTitleLabel" Grid.Row="1" Grid.Column="2" IsVisible="False" Text="实际重量" TextColor="#4B6688" /><Label x:Name="DetailActualWeightLabel" Grid.Row="1" Grid.Column="3" IsVisible="False" TextColor="#C75A00" FontAttributes="Bold" FontSize="16" />
                             <Label Grid.Row="2" Text="物料属性" TextColor="#4B6688" /><Label x:Name="PropertyLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
                             <Label Grid.Row="2" Grid.Column="2" Text="包装方式" TextColor="#4B6688" /><Label x:Name="MethodLabel" Grid.Row="2" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" />
                             <Label Grid.Row="3" Text="包装称重" TextColor="#4B6688" /><Label x:Name="WeightLabel" Grid.Row="3" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" />
@@ -65,7 +84,7 @@
                     </VerticalStackLayout>
                 </Border>
 
-                <Border BackgroundColor="White" StrokeThickness="0" Padding="20,18">
+                <Border x:Name="ActualWeightPanel" BackgroundColor="White" StrokeThickness="0" Padding="20,18">
                     <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
                     <VerticalStackLayout Spacing="10">
                         <Label Text="实际重量 (KG) *" TextColor="#0A2E69" FontAttributes="Bold" />
@@ -75,7 +94,7 @@
             </VerticalStackLayout>
         </ScrollView>
 
-        <Border Grid.Row="2" BackgroundColor="White" StrokeThickness="0" Padding="22,16">
+        <Border x:Name="ActionBar" Grid.Row="2" BackgroundColor="White" StrokeThickness="0" Padding="22,16">
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                 <Button x:Name="SaveButton" Text="🖨️  打印并保存" BackgroundColor="#1F447E" TextColor="White" FontSize="17" FontAttributes="Bold" CornerRadius="10" HeightRequest="50" Clicked="OnSaveClicked" />
                 <Button x:Name="NextTaskButton" Grid.Column="1" Text="⏭  下一个任务" IsVisible="False" BackgroundColor="White" TextColor="#00A86B" BorderColor="#00A86B" BorderWidth="1" FontSize="15" FontAttributes="Bold" CornerRadius="10" HeightRequest="50" Padding="14,0" Clicked="OnNextTaskClicked" />

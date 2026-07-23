@@ -23,6 +23,8 @@ public sealed class MaterialQrCodeInfoDto
     public string? unit { get; set; }
     [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? weight { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? pieceWeight { get; set; }
     public string? qrCode { get; set; }
     public string? qrStatus { get; set; }
     public string? qrStatusName { get; set; }

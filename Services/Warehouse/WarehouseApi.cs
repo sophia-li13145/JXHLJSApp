@@ -1,5 +1,6 @@
 using JXHLJSApp.Models;
 using JXHLJSApp.Models.Warehouse;
+using JXHLJSApp.Models.WorkOrders;
 using JXHLJSApp.Services.Common;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -15,6 +16,7 @@ public interface IWarehouseApi
     Task<PackagingSubTaskDetailDto> GetPackagingSubTaskDetailAsync(string id, CancellationToken ct = default);
     Task<string?> PreviewAttachmentAsync(string attachmentUrl, long? expires = null, CancellationToken ct = default);
     Task<bool?> SavePackagingAsync(PackagingSaveRequestDto request, CancellationToken ct = default);
+    Task<MaterialQrCodeInfoDto> ScanFinishedPackageQrCodeAsync(string qrCode, CancellationToken ct = default);
     Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default);
     Task<bool?> ConfirmDeliveryCompletionAsync(string deliveryOrderNo, CancellationToken ct = default);
     Task<RawMaterialReceivingDetailDto> GetRawMaterialReceivingDetailAsync(string instockNo, CancellationToken ct = default);
@@ -54,6 +56,7 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _packagingSubTaskListEndpoint;
     private readonly string _packagingSubTaskDetailEndpoint;
     private readonly string _packagingSaveEndpoint;
+    private readonly string _packagingScanFinishedPackageQrCodeEndpoint;
     private readonly string _workOrderDictListEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -103,6 +106,8 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("packagingSubTask.detail", "/pda/pmsWorkOrder/getPackagingSubTaskDetail"), servicePath);
         _packagingSaveEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("packagingSubTask.packingSave", "/pda/pmsWorkOrder/packingSave"), servicePath);
+        _packagingScanFinishedPackageQrCodeEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("packagingSubTask.scanFinishedPackageQrCode", "/pda/pmsWorkOrder/scanFinishedPackageQrCode"), servicePath);
         _workOrderDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.dictList", "/pda/pmsWorkOrder/getWorkOrderDictList"), servicePath);
     }
@@ -198,6 +203,19 @@ public sealed class WarehouseApi : IWarehouseApi
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<string?>(resp, ct).ConfigureAwait(false);
         return data.result;
+    }
+
+
+    public async Task<MaterialQrCodeInfoDto> ScanFinishedPackageQrCodeAsync(string qrCode, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_packagingScanFinishedPackageQrCodeEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(qrCode)] = qrCode
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<MaterialQrCodeInfoDto>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new MaterialQrCodeInfoDto();
     }
 
     public async Task<bool?> SavePackagingAsync(PackagingSaveRequestDto request, CancellationToken ct = default)

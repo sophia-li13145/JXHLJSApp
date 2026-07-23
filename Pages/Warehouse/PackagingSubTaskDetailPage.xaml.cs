@@ -3,7 +3,6 @@ using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Models.WorkOrders;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.Warehouse;
-using JXHLJSApp.Services.WorkOrders;
 
 namespace JXHLJSApp.Pages.Warehouse;
 
@@ -12,7 +11,6 @@ public partial class PackagingSubTaskDetailPage : ContentPage
 {
     private readonly IWarehouseApi _warehouseApi;
     private readonly IScanService _scanService;
-    private readonly IWorkOrderApi _workOrderApi;
     private string? _id;
     private PackagingSubTaskDetailDto? _detail;
     private MaterialQrCodeInfoDto? _scannedMaterial;
@@ -25,12 +23,11 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         set => _id = Uri.UnescapeDataString(value ?? string.Empty);
     }
 
-    public PackagingSubTaskDetailPage(IWarehouseApi warehouseApi, IScanService scanService, IWorkOrderApi workOrderApi)
+    public PackagingSubTaskDetailPage(IWarehouseApi warehouseApi, IScanService scanService)
     {
         InitializeComponent();
         _warehouseApi = warehouseApi;
         _scanService = scanService;
-        _workOrderApi = workOrderApi;
     }
 
     protected override async void OnAppearing()
@@ -52,6 +49,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
             var detail = await _warehouseApi.GetPackagingSubTaskDetailAsync(_id);
             _detail = detail;
             ResetSaveState();
+            ApplyPageMode(detail);
             TaskNoLabel.Text = detail.taskNoDisplay;
             MaterialLabel.Text = $"{detail.materialNameDisplay} {detail.materialCodeDisplay}";
             TemplateLabel.Text = detail.printTemplateNameDisplay;
@@ -63,6 +61,10 @@ public partial class PackagingSubTaskDetailPage : ContentPage
             PalletLabel.Text = detail.needPalletizingDisplay;
             RequirementLabel.Text = detail.otherRequirementDisplay;
             MemoLabel.Text = detail.memoDisplay;
+            if (IsPackagedStatus(detail.workOrderStatus))
+            {
+                ApplyPackagedDetail(detail);
+            }
         }
         catch (Exception ex)
         {
@@ -82,7 +84,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         try
         {
             var qrCode = code.Trim();
-            var material = await _workOrderApi.ScanQueryMaterialInfoAsync(qrCode);
+            var material = await _warehouseApi.ScanFinishedPackageQrCodeAsync(qrCode);
             ApplyScannedMaterial(material, qrCode);
         }
         catch (Exception ex)
@@ -104,11 +106,48 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         ScannedSpecLabel.Text = Display(material.specification ?? material.spec);
         ScannedOriginLabel.Text = Display(material.originPlace);
         ScannedLengthLabel.Text = FormatQuantity(material.length, material.lengthUnit);
-        ScannedWeightLabel.Text = FormatQuantity(material.weight, material.weightUnit ?? material.unit ?? "KG");
-        ActualWeightEntry.Text = material.weight?.ToString("0.##") ?? string.Empty;
+        var pieceWeight = material.pieceWeight ?? material.weight;
+        var weightUnit = material.weightUnit ?? material.unit ?? "KG";
+        ScannedWeightLabel.Text = FormatQuantity(pieceWeight, weightUnit);
+        ActualWeightEntry.Text = FormatActualWeightKg(pieceWeight, weightUnit);
+    }
+
+    private void ApplyPageMode(PackagingSubTaskDetailDto detail)
+    {
+        var isPackaged = IsPackagedStatus(detail.workOrderStatus);
+        PageTitleLabel.Text = isPackaged ? "包装详情" : "执行包装作业";
+        PackagedSummaryPanel.IsVisible = isPackaged;
+        PackagedMaterialTitleLabel.IsVisible = isPackaged;
+        ScanButton.IsVisible = !isPackaged;
+        ScanSuccessPanel.IsVisible = false;
+        ScannedMaterialPanel.IsVisible = isPackaged;
+        ActualWeightPanel.IsVisible = !isPackaged;
+        ActionBar.IsVisible = !isPackaged;
+        DetailActualWeightTitleLabel.IsVisible = isPackaged;
+        DetailActualWeightLabel.IsVisible = isPackaged;
+    }
+
+    private void ApplyPackagedDetail(PackagingSubTaskDetailDto detail)
+    {
+        PackagedTaskNoLabel.Text = detail.taskNoDisplay;
+        PackagedStatusLabel.Text = Display(detail.workOrderStatus);
+        PackagedWorkOrderLabel.Text = detail.workOrderNoDisplay;
+        PackagedCompleteTimeLabel.Text = detail.completeTimeDisplay;
+
+        ScannedMaterialCodeLabel.Text = $"物料编号：{Display(detail.materialCode)}";
+        ScannedSteelGradeLabel.Text = Display(detail.steelGrade ?? detail.materialName);
+        ScannedSpecLabel.Text = Display(detail.specification);
+        ScannedOriginLabel.Text = Display(detail.originPlace);
+        ScannedLengthLabel.Text = FormatQuantity(detail.length, FirstNonEmpty(detail.lengthUnit, "m"));
+        var pieceWeight = detail.pieceWeight ?? detail.actualWeight;
+        var weightUnit = FirstNonEmpty(detail.weightUnit, detail.unit, "KG");
+        ScannedWeightLabel.Text = FormatQuantity(pieceWeight, weightUnit);
+        DetailActualWeightLabel.Text = FormatQuantity(detail.actualWeight, "KG");
     }
 
     private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
+
+    private static string? FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
     private static string FormatQuantity(decimal? value, string? unit)
     {
@@ -119,6 +158,38 @@ public partial class PackagingSubTaskDetailPage : ContentPage
 
         var text = value.Value % 1 == 0 ? value.Value.ToString("0") : value.Value.ToString("0.##");
         return string.IsNullOrWhiteSpace(unit) ? text : $"{text} {unit}";
+    }
+
+    private static string FormatActualWeightKg(decimal? value, string? unit)
+    {
+        if (!value.HasValue)
+        {
+            return string.Empty;
+        }
+
+        var kgValue = IsTonUnit(unit) ? value.Value * 1000 : value.Value;
+        return kgValue % 1 == 0 ? kgValue.ToString("0") : kgValue.ToString("0.##");
+    }
+
+    private static bool IsTonUnit(string? unit)
+    {
+        if (string.IsNullOrWhiteSpace(unit))
+        {
+            return false;
+        }
+
+        var normalized = unit.Trim();
+        return normalized == "吨"
+            || string.Equals(normalized, "t", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "ton", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "tons", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPackagedStatus(string? status)
+    {
+        return !string.IsNullOrWhiteSpace(status)
+            && (status.Contains("已包装", StringComparison.OrdinalIgnoreCase)
+                || status.Contains("packaged", StringComparison.OrdinalIgnoreCase));
     }
 
 
@@ -152,7 +223,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
                 materialCode = _scannedMaterial.materialCode,
                 materialName = _scannedMaterial.materialName,
                 originPlace = _scannedMaterial.originPlace,
-                pieceWeight = _scannedMaterial.weight,
+                pieceWeight = _scannedMaterial.pieceWeight ?? _scannedMaterial.weight,
                 qrCode = _scannedQrCode,
                 specification = _scannedMaterial.specification ?? _scannedMaterial.spec,
                 steelGrade = _scannedMaterial.steelGrade,
@@ -222,6 +293,13 @@ public partial class PackagingSubTaskDetailPage : ContentPage
     {
         ScanSuccessPanel.IsVisible = false;
         ScannedMaterialPanel.IsVisible = false;
+        PackagedSummaryPanel.IsVisible = false;
+        PackagedMaterialTitleLabel.IsVisible = false;
+        ScanButton.IsVisible = true;
+        ActualWeightPanel.IsVisible = true;
+        ActionBar.IsVisible = true;
+        DetailActualWeightTitleLabel.IsVisible = false;
+        DetailActualWeightLabel.IsVisible = false;
         NextTaskButton.IsVisible = false;
         ActualWeightEntry.Text = string.Empty;
         _scannedMaterial = null;
