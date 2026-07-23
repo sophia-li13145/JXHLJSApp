@@ -207,6 +207,12 @@ public sealed class ProductionQualityScanMaterialDto
     public string? listing { get; set; }
     public string? lowerToleranceValue { get; set; }
     public string? machineNo { get; set; }
+    public string? machine { get; set; }
+    public string? productionDate { get; set; }
+    public string? prodcutDiameter { get; set; }
+    public string? workOrderRingDiameter { get; set; }
+    public string? workOrderCoilDiameterControl { get; set; }
+    public string? workOrderCoilPitchControl { get; set; }
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
     public string? memo { get; set; }
@@ -215,7 +221,6 @@ public sealed class ProductionQualityScanMaterialDto
     public string? pieceNo { get; set; }
     public string? plateNo { get; set; }
     public string? productDiameter { get; set; }
-    public string? productionDate { get; set; }
     public string? qrCode { get; set; }
     public int? qrTimes { get; set; }
     public string? qualityMaterialId { get; set; }
@@ -428,6 +433,12 @@ public sealed class ProductionQualityDetailDto
     public string? plateNo { get; set; }
     public string? customerCode { get; set; }
     public string? originPlace { get; set; }
+    public string? machine { get; set; }
+    public string? productionDate { get; set; }
+    public string? prodcutDiameter { get; set; }
+    public string? workOrderRingDiameter { get; set; }
+    public string? workOrderCoilDiameterControl { get; set; }
+    public string? workOrderCoilPitchControl { get; set; }
     public string? qrCode { get; set; }
     public string? qualityMaterialId { get; set; }
     public string? inputDiameterMm { get; set; }
@@ -500,13 +511,18 @@ public sealed class ProductionQualityMaterialDto
     public string? listing { get; set; }
     public string? lowerToleranceValue { get; set; }
     public string? machineNo { get; set; }
+    public string? machine { get; set; }
+    public string? productionDate { get; set; }
+    public string? prodcutDiameter { get; set; }
+    public string? workOrderRingDiameter { get; set; }
+    public string? workOrderCoilDiameterControl { get; set; }
+    public string? workOrderCoilPitchControl { get; set; }
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
     public string? memo { get; set; }
     public string? phosphatingTemperature { get; set; }
     public string? pieceNo { get; set; }
     public string? productDiameter { get; set; }
-    public string? productionDate { get; set; }
     public string? qrCode { get; set; }
     public int? qrTimes { get; set; }
     public string? qualityMaterialId { get; set; }
