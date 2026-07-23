@@ -11,6 +11,7 @@ namespace JXHLJSApp.Pages.WorkStart;
 public partial class AbnormalReportPage : ContentPage
 {
     private const string ReportModeAbnormal = "abnormal";
+    private const string DefaultAbnormalType = "in_process_abnormal";
 
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
@@ -50,7 +51,9 @@ public partial class AbnormalReportPage : ContentPage
         try
         {
             _options = await _workOrderApi.GetAbnormalTypeOptionsAsync();
-            _selectedAbnormalType = _options.FirstOrDefault()?.value;
+            _selectedAbnormalType = _options.FirstOrDefault(option =>
+                string.Equals(option.value, DefaultAbnormalType, StringComparison.OrdinalIgnoreCase))?.value
+                ?? _options.FirstOrDefault()?.value;
             RenderOptions();
         }
         catch (Exception ex)
@@ -129,7 +132,8 @@ public partial class AbnormalReportPage : ContentPage
     private void BindMaterial()
     {
         MaterialCard.IsVisible = true;
-        MaterialTypeLabel.Text = $"✅ 识别成功: {ValueOrDash(_material?.materialType)}";
+        ScannedCodeLabel.Text = ValueOrDash(_scannedQrCode);
+        MaterialTypeLabel.Text = "✅ 识别成功";
         MaterialCodeLabel.Text = ValueOrDash(_material?.materialCode);
         SteelLabel.Text = ValueOrDash(_material?.steelGrade);
         OriginLabel.Text = ValueOrDash(_material?.originPlace);
