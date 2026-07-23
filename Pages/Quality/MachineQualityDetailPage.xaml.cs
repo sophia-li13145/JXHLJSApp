@@ -910,7 +910,10 @@ public partial class MachineQualityDetailPage : ContentPage
 
             var useManualInspectionApi = ShouldUseManualInspectionResultApi();
             var isAcid = !useManualInspectionApi && ShouldUsePicklingCommit();
-            var shouldStayAfterSubmit = IsBlankOpeningScheme(CurrentProcessName) || IsBlankOpeningScheme(_inspectionSchemeName);
+            var shouldStayAfterSubmit = IsHeatTreatmentScheme(CurrentProcessName) ||
+                IsHeatTreatmentScheme(_inspectionSchemeName) ||
+                IsBlankOpeningScheme(CurrentProcessName) ||
+                IsBlankOpeningScheme(_inspectionSchemeName);
             var useFirstInspectionCommit = !useManualInspectionApi && ShouldUseFirstInspectionCommit();
             var useSamplingOrFullCommit = !useManualInspectionApi && ShouldUseSamplingOrFullCommit();
             var picklingInspector = isAcid ? BuildCurrentRecorderUsername(RecorderEntry.Text) : string.Empty;
