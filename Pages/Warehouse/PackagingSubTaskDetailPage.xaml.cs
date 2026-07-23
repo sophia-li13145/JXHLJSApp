@@ -107,9 +107,8 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         ScannedOriginLabel.Text = Display(material.originPlace);
         ScannedLengthLabel.Text = FormatQuantity(material.length, material.lengthUnit);
         var pieceWeight = material.pieceWeight ?? material.weight;
-        var weightUnit = material.weightUnit ?? material.unit ?? "KG";
-        ScannedWeightLabel.Text = FormatQuantity(pieceWeight, weightUnit);
-        ActualWeightEntry.Text = FormatActualWeightKg(pieceWeight, weightUnit);
+        ScannedWeightLabel.Text = FormatQuantityWithoutUnitSpace(pieceWeight, "KG");
+        ActualWeightEntry.Text = string.Empty;
     }
 
     private void ApplyPageMode(PackagingSubTaskDetailDto detail)
@@ -140,8 +139,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         ScannedOriginLabel.Text = Display(detail.originPlace);
         ScannedLengthLabel.Text = FormatQuantity(detail.length, FirstNonEmpty(detail.lengthUnit, "m"));
         var pieceWeight = detail.pieceWeight ?? detail.actualWeight;
-        var weightUnit = FirstNonEmpty(detail.weightUnit, detail.unit, "KG");
-        ScannedWeightLabel.Text = FormatQuantity(pieceWeight, weightUnit);
+        ScannedWeightLabel.Text = FormatQuantityWithoutUnitSpace(pieceWeight, "KG");
         DetailActualWeightLabel.Text = FormatQuantity(detail.actualWeight, "KG");
     }
 
@@ -160,29 +158,15 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         return string.IsNullOrWhiteSpace(unit) ? text : $"{text} {unit}";
     }
 
-    private static string FormatActualWeightKg(decimal? value, string? unit)
+    private static string FormatQuantityWithoutUnitSpace(decimal? value, string? unit)
     {
         if (!value.HasValue)
         {
-            return string.Empty;
+            return "--";
         }
 
-        var kgValue = IsTonUnit(unit) ? value.Value * 1000 : value.Value;
-        return kgValue % 1 == 0 ? kgValue.ToString("0") : kgValue.ToString("0.##");
-    }
-
-    private static bool IsTonUnit(string? unit)
-    {
-        if (string.IsNullOrWhiteSpace(unit))
-        {
-            return false;
-        }
-
-        var normalized = unit.Trim();
-        return normalized == "吨"
-            || string.Equals(normalized, "t", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalized, "ton", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalized, "tons", StringComparison.OrdinalIgnoreCase);
+        var text = value.Value % 1 == 0 ? value.Value.ToString("0") : value.Value.ToString("0.##");
+        return string.IsNullOrWhiteSpace(unit) ? text : $"{text}{unit}";
     }
 
     private static bool IsPackagedStatus(string? status)
