@@ -194,7 +194,7 @@ public partial class MachineQualityDetailPage : ContentPage
         HeatActualDiameterEntry.Text = detail.actualDiameterMm;
         StandardDiameterEntry.Text = FirstNonEmpty(detail.standardDiameterMm, detail.productDiameter);
         BrokenDiameterEntry.Text = detail.brokenDiameterMm;
-        SectionShrinkageLabel.Text = string.IsNullOrWhiteSpace(detail.sectionShrinkageRate) ? CalculateSectionShrinkageText() : detail.sectionShrinkageRate;
+        SectionShrinkageLabel.Text = CalculateSectionShrinkageText();
         TensileStrengthEntry.Text = FirstNonEmpty(detail.tensileStrengthMpa, detail.strengthMpa);
         HeatElongationEntry.Text = detail.elongationRate;
         TwistCountEntry.Text = detail.twistCount;
@@ -268,10 +268,10 @@ public partial class MachineQualityDetailPage : ContentPage
                 ("钢号", detail.steelGrade), ("挂牌", detail.inputSpecification),
                 ("工号", detail.workOrderNo), ("件号", ResolvePieceNo(detail)),
                 ("产地", FirstNonEmpty(detail.originPlace, detail.freeAcid)), ("投料直径mm", detail.inputDiameterMm),
-                ("成品直径mm", ResolveProductDiameter(detail)), ("上公差", detail.upperToleranceValue),
-                ("下公差", detail.lowerToleranceValue), ("强度要求", detail.spoolWeightRequirement),
+                ("成品直径mm", ResolveProductDiameter(detail)), ("上公差", FormatSignedTolerance(detail.upperToleranceValue, '+')),
+                ("下公差", FormatSignedTolerance(detail.lowerToleranceValue, '-')), ("强度要求", detail.spoolWeightRequirement),
                 ("圈径", FirstNonEmpty(detail.workOrderRingDiameter, detail.coilDiameterControl)), ("圈径控制", FirstNonEmpty(detail.workOrderCoilDiameterControl, detail.coilDiameterControl)),
-                ("圈距控制", FirstNonEmpty(detail.workOrderCoilPitchControl, detail.coilPitchControl))
+                ("圈距控制", FormatCoilPitchControl(FirstNonEmpty(detail.workOrderCoilPitchControl, detail.coilPitchControl)))
             };
         }
 
@@ -302,7 +302,7 @@ public partial class MachineQualityDetailPage : ContentPage
             ("二维码", material.qrCode), ("扫码次数", material.qrTimes?.ToString()),
             ("质检物料ID", material.qualityMaterialId), ("工单号", material.workOrderNo),
             ("炉号", material.furnaceNo), ("钢号", material.steelGrade),
-            ("件号", material.pieceNo), ("规格", FirstNonEmpty(material.spec, material.inputSpecification, material.targetSpecification)),
+            ("件号", FirstNonEmpty(material.pieceNo, "1")), ("规格", FirstNonEmpty(material.spec, material.inputSpecification, material.targetSpecification)),
             ("设备", FirstNonEmpty(material.deviceName, material.deviceCode)),
             ("实测直径", material.actualDiameterMm), ("成品直径", material.productDiameter),
             ("强度", material.strengthMpa), ("表面状态", material.surfaceCondition),
@@ -368,7 +368,7 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static string ResolvePieceNo(ProductionQualityDetailDto detail)
     {
-        return FirstNonEmpty(detail.pieceNo, detail.materialList?.FirstOrDefault()?.pieceNo);
+        return FirstNonEmpty(detail.pieceNo, detail.materialList?.FirstOrDefault()?.pieceNo, "1");
     }
 
     private static string ResolveHeatTreatmentCardDate(ProductionQualityDetailDto detail)
@@ -383,6 +383,26 @@ public partial class MachineQualityDetailPage : ContentPage
         var lower = string.IsNullOrWhiteSpace(item.lowerLimit) ? "-" : item.lowerLimit;
         var upper = string.IsNullOrWhiteSpace(item.upperLimit) ? "-" : item.upperLimit;
         return lower == "-" && upper == "-" ? string.Empty : $"{lower} ~ {upper}";
+    }
+
+    private static string FormatCoilPitchControl(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+        var text = value.Trim();
+        text = text.StartsWith("<=", StringComparison.Ordinal) ? text[2..].TrimStart() : text;
+        text = text.StartsWith("≤", StringComparison.Ordinal) ? text[1..].TrimStart() : text;
+        text = text.EndsWith("mm", StringComparison.OrdinalIgnoreCase) ? text[..^2].TrimEnd() : text;
+        return string.IsNullOrWhiteSpace(text) ? string.Empty : $"<={text}mm";
+    }
+
+    private static string FormatSignedTolerance(string? value, char sign)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+        var text = value.Trim();
+        text = text.TrimStart('+', '-', '＋', '－').TrimStart();
+        return string.IsNullOrWhiteSpace(text) ? string.Empty : $"{sign}{text}";
     }
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
@@ -600,15 +620,21 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private string CalculateSectionShrinkageText()
     {
-        if (!decimal.TryParse(HeatActualDiameterEntry.Text, out var actualDiameter) ||
-            !decimal.TryParse(BrokenDiameterEntry.Text, out var brokenDiameter) ||
+        if (!TryParseDecimal(HeatActualDiameterEntry.Text, out var actualDiameter) ||
+            !TryParseDecimal(BrokenDiameterEntry.Text, out var brokenDiameter) ||
             actualDiameter <= 0 || brokenDiameter < 0 || brokenDiameter > actualDiameter)
         {
             return "-";
         }
 
         var rate = (1 - (brokenDiameter * brokenDiameter) / (actualDiameter * actualDiameter)) * 100;
-        return $"{rate:F2}%";
+        return $"{rate:0.##}%";
+    }
+
+    private static bool TryParseDecimal(string? text, out decimal value)
+    {
+        return decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out value) ||
+            decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out value);
     }
 
 
@@ -950,6 +976,12 @@ public partial class MachineQualityDetailPage : ContentPage
                 IsBlankOpeningScheme(_inspectionSchemeName);
             var useFirstInspectionCommit = !useManualInspectionApi && ShouldUseFirstInspectionCommit();
             var useSamplingOrFullCommit = !useManualInspectionApi && ShouldUseSamplingOrFullCommit();
+            var isHeatTreatmentSamplingOrFull = useSamplingOrFullCommit &&
+                (IsHeatTreatmentScheme(CurrentProcessName) || IsHeatTreatmentScheme(_inspectionSchemeName));
+            SectionShrinkageLabel.Text = CalculateSectionShrinkageText();
+            var heatReductionOfAreaRate = SectionShrinkageLabel.Text == "-"
+                ? null
+                : SectionShrinkageLabel.Text.TrimEnd('%');
             var picklingInspector = isAcid ? BuildCurrentRecorderUsername(RecorderEntry.Text) : string.Empty;
             if (isAcid && string.IsNullOrWhiteSpace(picklingInspector))
             {
@@ -997,6 +1029,7 @@ public partial class MachineQualityDetailPage : ContentPage
                     ? await _qualityApi.CommitProductionSamplingOrFullAsync(new ProductionSamplingOrFullCommitRequestDto
                     {
                         actualDiameterMm = HeatTreatmentInputPanel.IsVisible ? HeatActualDiameterEntry.Text?.Trim() : ActualDiameterEntry.Text?.Trim(),
+                        brokenDiameter = isHeatTreatmentSamplingOrFull ? BrokenDiameterEntry.Text?.Trim() : null,
                         coilDiameterControl = CoilDiameterPicker.SelectedItem?.ToString(),
                         coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
                         elongationRate = HeatTreatmentInputPanel.IsVisible ? HeatElongationEntry.Text?.Trim() : ElongationEntry.Text?.Trim(),
@@ -1005,8 +1038,10 @@ public partial class MachineQualityDetailPage : ContentPage
                         qrCode = _qrCode,
                         qualityMaterialId = _qualityMaterialId,
                         qualityNo = _qualityNo,
+                        reductionOfAreaRate = isHeatTreatmentSamplingOrFull ? heatReductionOfAreaRate : null,
                         strengthMpa = HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text?.Trim() : StrengthEntry.Text?.Trim(),
                         surfaceCondition = SurfaceEntry.Text?.Trim(),
+                        torsion = isHeatTreatmentSamplingOrFull ? TwistCountEntry.Text?.Trim() : null,
                         workOrderNo = _workOrderNo
                     })
                     : useFirstInspectionCommit
