@@ -221,7 +221,6 @@ public sealed class ProductionQualityScanMaterialDto
     public string? pieceNo { get; set; }
     public string? plateNo { get; set; }
     public string? productDiameter { get; set; }
-    public string? productionDate { get; set; }
     public string? qrCode { get; set; }
     public int? qrTimes { get; set; }
     public string? qualityMaterialId { get; set; }
@@ -524,7 +523,6 @@ public sealed class ProductionQualityMaterialDto
     public string? phosphatingTemperature { get; set; }
     public string? pieceNo { get; set; }
     public string? productDiameter { get; set; }
-    public string? productionDate { get; set; }
     public string? qrCode { get; set; }
     public int? qrTimes { get; set; }
     public string? qualityMaterialId { get; set; }
