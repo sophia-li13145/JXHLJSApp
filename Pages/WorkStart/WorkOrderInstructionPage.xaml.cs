@@ -772,7 +772,7 @@ public partial class WorkOrderInstructionPage : ContentPage
     private static string FormatNegativeTolerance(string? value)
     {
         var text = ProcessParamValueOrEmpty(value).Trim();
-        return string.IsNullOrWhiteSpace(text) || text.StartsWith('-', StringComparison.Ordinal)
+        return string.IsNullOrWhiteSpace(text) || text.StartsWith("-", StringComparison.Ordinal)
             ? text
             : $"-{text}";
     }
