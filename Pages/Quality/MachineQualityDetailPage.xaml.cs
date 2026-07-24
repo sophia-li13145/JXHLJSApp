@@ -252,10 +252,10 @@ public partial class MachineQualityDetailPage : ContentPage
             return new[]
             {
                 ("日期", ResolveHeatTreatmentCardDate(detail)), ("机台", detail.deviceName ?? detail.deviceCode),
-                ("批号", FirstNonEmpty(detail.batchNo, detail.businessType)), ("炉号", detail.furnaceNo),
+                ("批号", FirstNonEmpty(detail.productionBatchNo, detail.productionBatch, detail.businessType)), ("炉号", detail.furnaceNo),
                 ("产地", FirstNonEmpty(detail.originPlace, detail.freeAcid)), ("钢号", detail.steelGrade),
-                ("工号", detail.workOrderNo), ("班次", FirstNonEmpty(detail.shiftNo, detail.targetSpecification)),
-                ("盘号", FirstNonEmpty(detail.plateNo, detail.inputSpecification))
+                ("工号", detail.workOrderNo), ("班次", FirstNonEmpty(detail.shiftName, detail.shiftCode, detail.shiftNo, detail.targetSpecification)),
+                ("盘号", FirstNonEmpty(detail.batchNo, detail.plateNo, detail.inputSpecification))
             };
         }
 
@@ -802,6 +802,8 @@ public partial class MachineQualityDetailPage : ContentPage
 
         _detail.acidRatio = FirstNonEmpty(material.acidRatio, _detail.acidRatio);
         _detail.actualDiameterMm = FirstNonEmpty(material.actualDiameterMm, _detail.actualDiameterMm);
+        _detail.productionBatchNo = FirstNonEmpty(material.productionBatchNo, _detail.productionBatchNo);
+        _detail.productionBatch = FirstNonEmpty(material.productionBatch, _detail.productionBatch);
         _detail.batchNo = FirstNonEmpty(material.batchNo, _detail.batchNo);
         _detail.businessType = FirstNonEmpty(material.businessType, _detail.businessType);
         _detail.coilDiameterControl = FirstNonEmpty(material.coilDiameterControl, _detail.coilDiameterControl);
@@ -835,6 +837,8 @@ public partial class MachineQualityDetailPage : ContentPage
         _detail.saponificationPhValue = FirstNonEmpty(material.saponificationPhValue, _detail.saponificationPhValue);
         _detail.saponificationTemperature = FirstNonEmpty(material.saponificationTemperature, _detail.saponificationTemperature);
         _detail.shiftNo = FirstNonEmpty(material.shiftNo, _detail.shiftNo);
+        _detail.shiftCode = FirstNonEmpty(material.shiftCode, _detail.shiftCode);
+        _detail.shiftName = FirstNonEmpty(material.shiftName, _detail.shiftName);
         _detail.spoolWeightRequirement = FirstNonEmpty(material.spoolWeightRequirement, _detail.spoolWeightRequirement);
         _detail.steelGrade = FirstNonEmpty(material.steelGrade, _detail.steelGrade);
         _detail.strengthMpa = FirstNonEmpty(material.strengthMpa, _detail.strengthMpa);
@@ -878,6 +882,9 @@ public partial class MachineQualityDetailPage : ContentPage
         {
             acidRatio = material.acidRatio,
             actualDiameterMm = material.actualDiameterMm,
+            productionBatchNo = material.productionBatchNo,
+            productionBatch = material.productionBatch,
+            batchNo = material.batchNo,
             businessType = material.businessType,
             coilDiameterControl = material.coilDiameterControl,
             coilPitchControl = material.coilPitchControl,
