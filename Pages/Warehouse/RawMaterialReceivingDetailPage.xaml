@@ -37,7 +37,7 @@
                             </Grid>
                             <BoxView HeightRequest="1" Color="#E7ECF3" />
                             <Grid ColumnDefinitions="*,Auto">
-                                <Label Text="入库库位" TextColor="#38557C" FontSize="14" />
+                                <Label Text="库区" TextColor="#38557C" FontSize="14" />
                                 <Label Grid.Column="1" x:Name="LocationLabel" Text="--" TextColor="#051B3D" FontSize="15" FontAttributes="Bold" />
                             </Grid>
                         </VerticalStackLayout>

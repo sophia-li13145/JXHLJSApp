@@ -600,7 +600,7 @@ public partial class AddRawMaterialReceivingPage
             {
                 await DisplayAlert(
                     "提示",
-                    "请选择有效的入库库位。",
+                    "请选择有效的库区。",
                     "确定");
                 return;
             }
