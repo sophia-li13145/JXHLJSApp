@@ -215,7 +215,10 @@ public sealed class WarehouseApi : IWarehouseApi
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<MaterialQrCodeInfoDto>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new MaterialQrCodeInfoDto();
+        var material = data.result ?? new MaterialQrCodeInfoDto();
+        var dictNames = await LoadWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
+        ApplyMaterialQrCodeDictNames(material, dictNames);
+        return material;
     }
 
     public async Task<bool?> SavePackagingAsync(PackagingSaveRequestDto request, CancellationToken ct = default)
@@ -400,6 +403,12 @@ public sealed class WarehouseApi : IWarehouseApi
         detail.packageMethod = MapDictName(detail.packageMethod, dictNames, "packageMethod");
         detail.packageWeight = MapDictName(detail.packageWeight, dictNames, "packageWeight");
         detail.packagingClothColor = MapDictName(detail.packagingClothColor, dictNames, "packagingClothColor");
+        detail.originPlace = MapDictName(detail.originPlace, dictNames, "originPlace");
+    }
+
+    private static void ApplyMaterialQrCodeDictNames(MaterialQrCodeInfoDto material, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> dictNames)
+    {
+        material.originPlace = MapDictName(material.originPlace, dictNames, "originPlace");
     }
 
     private async Task<IReadOnlyDictionary<string, string>> LoadWorkOrderStatusNamesAsync(CancellationToken ct)
@@ -422,8 +431,8 @@ public sealed class WarehouseApi : IWarehouseApi
                 group => (IReadOnlyDictionary<string, string>)group
                     .SelectMany(item => item.dictItems ?? new List<DictItemDto>())
                     .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue))
-                    .GroupBy(item => item.dictItemValue!)
-                    .ToDictionary(itemGroup => itemGroup.Key, itemGroup => itemGroup.First().dictItemName ?? itemGroup.Key),
+                    .GroupBy(item => item.dictItemValue!, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(itemGroup => itemGroup.Key, itemGroup => itemGroup.First().dictItemName ?? itemGroup.Key, StringComparer.OrdinalIgnoreCase),
                 StringComparer.OrdinalIgnoreCase)
             ?? new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
     }
