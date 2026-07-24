@@ -545,14 +545,14 @@ public partial class WorkOrderInstructionPage : ContentPage
         ProcessParamsGrid.RowSpacing = 16;
 
         var row = 0;
-        AddDrawingFullWidthParamRow(row++, "收线速度", detail.wireTakeUpSpeed);
+        AddDrawingFullWidthParamRow(row++, "收线速度", FormatWireTakeUpSpeed(detail.wireTakeUpSpeed));
         AddDrawingTwoParamRow(row++, "收线方式", detail.wireTakeUpMode, "钢丝形状", detail.wireShape);
         AddDrawingFullWidthParamRow(row++, "收线长度", FormatLengthWithUnit(detail.wireTakeUpLength));
-        AddDrawingFullWidthParamRow(row++, "盘重要求", detail.coilWeightRequirement);
+        AddDrawingFullWidthParamRow(row++, "盘重要求", FormatCoilWeightRequirement(detail.coilWeightRequirement));
         AddDrawingFullWidthParamRow(row++, "产品直径", detail.productSpecification);
-        AddDrawingTwoParamRow(row++, "下公差(mm)", detail.billetLowerTolerance, "上公差(mm)", detail.billetUpperTolerance);
-        AddDrawingTwoParamRow(row++, "圈距控制", detail.pitchControl, "圈径控制", detail.coilDiameterControl);
-        AddDrawingTwoParamRow(row, "椭圆度控制", detail.ovalityControl, "质检方式", detail.inspectionSchemeName);
+        AddDrawingTwoParamRow(row++, "下公差(mm)", FormatNegativeTolerance(detail.billetLowerTolerance), "上公差(mm)", detail.billetUpperTolerance);
+        AddDrawingTwoParamRow(row++, "圈距控制", FormatLessThanOrEqualMillimeter(detail.pitchControl), "圈径控制", FormatMillimeter(detail.coilDiameterControl));
+        AddDrawingTwoParamRow(row, "椭圆度控制", FormatLessThanOrEqualMillimeter(detail.ovalityControl), "质检方式", detail.inspectionSchemeName);
     }
 
     private void BindBlankOpeningProcessParams(WorkOrderDetailDto detail)
@@ -564,15 +564,15 @@ public partial class WorkOrderInstructionPage : ContentPage
         ProcessParamsGrid.RowSpacing = 16;
 
         var row = 0;
-        AddDrawingTwoParamRow(row++, "收线速度", detail.wireTakeUpSpeed, "收线方式", detail.wireTakeUpMode);
+        AddDrawingTwoParamRow(row++, "收线速度", FormatWireTakeUpSpeed(detail.wireTakeUpSpeed), "收线方式", detail.wireTakeUpMode);
         AddDrawingFullWidthParamRow(row++, "炉号", detail.furnaceNo);
         AddDrawingFullWidthParamRow(row++, "收线长度", FormatLengthWithUnit(detail.wireTakeUpLength));
-        AddDrawingFullWidthParamRow(row++, "盘重要求", detail.coilWeightRequirement);
+        AddDrawingFullWidthParamRow(row++, "盘重要求", FormatCoilWeightRequirement(detail.coilWeightRequirement));
         AddDrawingTwoParamRow(row++, "投料钢号", detail.inputSteelGrade, "上料规格", detail.inputSpecification);
         AddDrawingTwoParamRow(row++, "钢号", detail.steelGrade, "下料规格", detail.blankSpecification);
-        AddDrawingTwoParamRow(row++, "开胚下公差(mm)", detail.billetLowerTolerance, "开胚上公差(mm)", detail.billetUpperTolerance);
-        AddDrawingTwoParamRow(row++, "圈距控制", detail.pitchControl, "圈径控制", detail.coilDiameterControl);
-        AddDrawingTwoParamRow(row++, "椭圆度控制", detail.ovalityControl, "质检方式", detail.inspectionSchemeName);
+        AddDrawingTwoParamRow(row++, "开胚下公差(mm)", FormatNegativeTolerance(detail.billetLowerTolerance), "开胚上公差(mm)", detail.billetUpperTolerance);
+        AddDrawingTwoParamRow(row++, "圈距控制", FormatLessThanOrEqualMillimeter(detail.pitchControl), "圈径控制", FormatMillimeter(detail.coilDiameterControl));
+        AddDrawingTwoParamRow(row++, "椭圆度控制", FormatLessThanOrEqualMillimeter(detail.ovalityControl), "质检方式", detail.inspectionSchemeName);
         AddDrawingSeparator(row++);
         AddDrawingFullWidthParamRow(row, "用途", detail.usagePurpose);
     }
@@ -637,20 +637,20 @@ public partial class WorkOrderInstructionPage : ContentPage
     {
         return new (string Label, string? Value)[]
         {
-            ("收线速度", detail.wireTakeUpSpeed),
+            ("收线速度", FormatWireTakeUpSpeed(detail.wireTakeUpSpeed)),
             ("收线方式", detail.wireTakeUpMode),
             ("炉号", detail.furnaceNo),
             ("收线长度", FormatLengthWithUnit(detail.wireTakeUpLength)),
-            ("盘重要求", detail.coilWeightRequirement),
+            ("盘重要求", FormatCoilWeightRequirement(detail.coilWeightRequirement)),
             ("投料钢号", detail.inputSteelGrade),
             ("投料规格", detail.inputSpecification),
             ("钢号", detail.steelGrade),
             ("开胚规格", detail.blankSpecification),
-            ("开胚下公差(mm)", detail.billetLowerTolerance),
+            ("开胚下公差(mm)", FormatNegativeTolerance(detail.billetLowerTolerance)),
             ("开胚上公差(mm)", detail.billetUpperTolerance),
-            ("圈距控制", detail.pitchControl),
-            ("圈径控制", detail.coilDiameterControl),
-            ("椭圆度控制", detail.ovalityControl),
+            ("圈距控制", FormatLessThanOrEqualMillimeter(detail.pitchControl)),
+            ("圈径控制", FormatMillimeter(detail.coilDiameterControl)),
+            ("椭圆度控制", FormatLessThanOrEqualMillimeter(detail.ovalityControl)),
             ("质检方式", detail.inspectionSchemeName),
             ("用途", detail.usagePurpose)
         };
@@ -674,11 +674,11 @@ public partial class WorkOrderInstructionPage : ContentPage
             ("工序编码", detail.operationCode),
             ("工序名称", detail.operationName),
             ("其他要求", detail.otherRequirement),
-            ("椭圆度控制", detail.ovalityControl),
+            ("椭圆度控制", FormatLessThanOrEqualMillimeter(detail.ovalityControl)),
             ("包装方式", detail.packageMethod),
             ("包装称重", detail.packageWeight),
             ("包装布颜色", detail.packagingClothColor),
-            ("圈距控制", detail.pitchControl),
+            ("圈距控制", FormatLessThanOrEqualMillimeter(detail.pitchControl)),
             ("成品规格", detail.productSpecification),
             ("质检单号", detail.qualityNo),
             ("销售方式", detail.saleMode),
@@ -686,15 +686,15 @@ public partial class WorkOrderInstructionPage : ContentPage
             ("生/淬", detail.rawOrQuench),
             ("钢号", detail.steelGrade),
             ("钢丝形状", detail.wireShape),
-            ("收线长度(m)", detail.wireTakeUpLength),
+            ("收线长度(m)", FormatLengthWithUnit(detail.wireTakeUpLength)),
             ("收线方式", detail.wireTakeUpMode),
-            ("收线速度", detail.wireTakeUpSpeed),
-            ("盘重要求", detail.coilWeightRequirement),
-            ("圈径控制", detail.coilDiameterControl),
+            ("收线速度", FormatWireTakeUpSpeed(detail.wireTakeUpSpeed)),
+            ("盘重要求", FormatCoilWeightRequirement(detail.coilWeightRequirement)),
+            ("圈径控制", FormatMillimeter(detail.coilDiameterControl)),
             ("拉拔方式", detail.drawMode),
             ("用途", detail.usagePurpose),
             ("开胚规格", detail.blankSpecification),
-            ("开胚下公差(mm)", detail.billetLowerTolerance),
+            ("开胚下公差(mm)", FormatNegativeTolerance(detail.billetLowerTolerance)),
             ("开胚上公差(mm)", detail.billetUpperTolerance),
             ("DV(主线速度Hz)", detail.dvSpeed),
             ("生产件数", FormatDecimalOrFallback(detail.productionQuantity, FormatMoldSequenceTotal(detail.moldSequenceList, item => item.productionQuantity))),
@@ -749,7 +749,59 @@ public partial class WorkOrderInstructionPage : ContentPage
         var text = ProcessParamValueOrEmpty(value);
         return string.IsNullOrWhiteSpace(text) || text.Contains("米", StringComparison.OrdinalIgnoreCase) || text.Contains("m", StringComparison.OrdinalIgnoreCase)
             ? text
-            : $"{text}米";
+            : $"{text}m";
+    }
+
+    private static string FormatWireTakeUpSpeed(string? value)
+    {
+        var text = ProcessParamValueOrEmpty(value).Trim();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return text;
+        }
+
+        var withUnit = text.Contains("m/s", StringComparison.OrdinalIgnoreCase)
+            ? text
+            : $"{text}m/s";
+
+        return withUnit.Contains("MAX", StringComparison.OrdinalIgnoreCase)
+            ? withUnit
+            : $"{withUnit}, MAX (默认)";
+    }
+
+    private static string FormatNegativeTolerance(string? value)
+    {
+        var text = ProcessParamValueOrEmpty(value).Trim();
+        return string.IsNullOrWhiteSpace(text) || text.StartsWith('-', StringComparison.Ordinal)
+            ? text
+            : $"-{text}";
+    }
+
+    private static string FormatLessThanOrEqualMillimeter(string? value)
+    {
+        var text = FormatMillimeter(value);
+        return string.IsNullOrWhiteSpace(text) || text.StartsWith("≤", StringComparison.Ordinal) || text.StartsWith("<=", StringComparison.Ordinal)
+            ? text
+            : $"≤{text}";
+    }
+
+    private static string FormatMillimeter(string? value)
+    {
+        var text = ProcessParamValueOrEmpty(value).Trim();
+        return string.IsNullOrWhiteSpace(text) || text.Contains("mm", StringComparison.OrdinalIgnoreCase)
+            ? text
+            : $"{text} mm";
+    }
+
+    private static string FormatCoilWeightRequirement(string? value)
+    {
+        var text = ProcessParamValueOrEmpty(value).Trim();
+        if (string.IsNullOrWhiteSpace(text) || text.Contains('±') || text.Contains("kg", StringComparison.OrdinalIgnoreCase))
+        {
+            return text;
+        }
+
+        return $"{text}±5kg";
     }
 
     private static string FirstNonEmpty(params string?[] values)
