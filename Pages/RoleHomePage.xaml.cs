@@ -139,15 +139,26 @@ public partial class RoleHomePage : ContentPage
     private static void AddChip(FlexLayout chips, string text)
     {
         if (string.IsNullOrWhiteSpace(text)) return;
-        chips.Children.Add(new Border
+        var chip = new Border
         {
             BackgroundColor = Color.FromArgb("#33FFFFFF"),
             StrokeThickness = 0,
             Padding = new Thickness(12, 5),
             Margin = new Thickness(0, 0, 6, 6),
+            HorizontalOptions = LayoutOptions.Start,
             StrokeShape = new RoundRectangle { CornerRadius = 7 },
-            Content = new Label { Text = text, TextColor = Colors.White, FontSize = 13 }
-        });
+            Content = new Label
+            {
+                Text = text,
+                TextColor = Colors.White,
+                FontSize = 13,
+                LineBreakMode = LineBreakMode.NoWrap,
+                MaxLines = 1
+            }
+        };
+
+        FlexLayout.SetShrink(chip, 0);
+        chips.Children.Add(chip);
     }
 
     private static View CreateModuleGrid(IReadOnlyList<HomeModule> modules)
