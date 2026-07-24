@@ -56,7 +56,8 @@
                    FontSize="25"
                    FontAttributes="Bold"
                    HorizontalTextAlignment="Center" />
-            <Label Text="数据已录入至 原料库 - 华立，当前状态：待质检"
+            <Label x:Name="SuccessMessageLabel"
+                   Text="数据已录入至 -- - --，当前状态：待质检"
                    TextColor="#4B6688"
                    FontSize="15"
                    HorizontalTextAlignment="Center" />

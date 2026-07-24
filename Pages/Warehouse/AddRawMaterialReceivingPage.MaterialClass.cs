@@ -695,8 +695,10 @@ public partial class AddRawMaterialReceivingPage
             }
 
             submitSucceeded = true;
-            await Shell.Current.GoToAsync(
-                AppShell.RouteRawMaterialReceivingSuccess);
+            var successRoute = $"{AppShell.RouteRawMaterialReceivingSuccess}?" +
+                $"WarehouseName={Uri.EscapeDataString(warehouse.selectedName ?? string.Empty)}&" +
+                $"WarehouseArea={Uri.EscapeDataString(warehouseArea.selectedLocation ?? string.Empty)}";
+            await Shell.Current.GoToAsync(successRoute);
         }
         catch (Exception ex)
         {

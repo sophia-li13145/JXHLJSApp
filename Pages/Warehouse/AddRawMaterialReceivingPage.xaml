@@ -61,7 +61,7 @@
                                 SelectedIndexChanged="OnWarehouseSelectedIndexChanged" />
 
                         <Label Grid.Row="2"
-                               Text="入库库位 *"
+                               Text="库区 *"
                                TextColor="#38557C"
                                FontSize="14"
                                VerticalOptions="Center" />
