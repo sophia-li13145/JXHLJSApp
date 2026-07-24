@@ -523,6 +523,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private static void ApplyWorkOrderDetailDictNames(WorkOrderDetailDto detail, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> dictNames)
     {
         detail.workOrderStatus = MapWorkOrderDictName(detail.workOrderStatus, dictNames, "workOrderStatus");
+        detail.drawMode = MapWorkOrderDictName(detail.drawMode, dictNames, "drawMode");
         detail.wireTakeUpMode = MapWorkOrderDictName(detail.wireTakeUpMode, dictNames, "wireTakeUpMode");
         detail.wireTakeUpSpeed = MapWorkOrderDictName(detail.wireTakeUpSpeed, dictNames, "wireTakeUpSpeed");
         detail.packageMethod = MapWorkOrderDictName(detail.packageMethod, dictNames, "packageMethod");
