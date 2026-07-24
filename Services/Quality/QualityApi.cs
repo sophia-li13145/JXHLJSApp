@@ -54,6 +54,7 @@ public sealed class QualityApi : IQualityApi
     private readonly string _productionQualitySamplingOrFullCommitEndpoint;
     private readonly string _productionQualitySamplingOrFullCompleteEndpoint;
     private readonly string _workOrderDictListEndpoint;
+    private readonly string _workProcessTaskDictListEndpoint;
     private readonly string _manualInspectionCreateEndpoint;
     private readonly string _manualInspectionDetailEndpoint;
     private readonly string _manualInspectionAddMaterialEndpoint;
@@ -97,6 +98,8 @@ public sealed class QualityApi : IQualityApi
             configLoader.GetApiPath("productionQualityOrder.samplingOrFullComplete", "/pda/qsOrderQuality/samplingOrFullComplete"), servicePath);
         _workOrderDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.dictList", "/pda/pmsWorkOrder/getWorkOrderDictList"), servicePath);
+        _workProcessTaskDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrder.dictProcessList", "/pda/pmsWorkOrder/getWorkProcessTaskDictList"), servicePath);
         _manualInspectionCreateEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("manualInspection.create", "/pda/manualInspection/create"), servicePath);
         _manualInspectionDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -389,9 +392,11 @@ public sealed class QualityApi : IQualityApi
     {
         var dictNames = await LoadWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
         detail.originPlace = MapDictName(detail.originPlace, dictNames, "originPlace");
+        detail.shiftName = MapDictName(FirstNonEmpty(detail.shiftCode, detail.shiftName), dictNames, "shiftCode");
         foreach (var material in detail.materialList ?? new List<ProductionQualityMaterialDto>())
         {
             material.originPlace = MapDictName(material.originPlace, dictNames, "originPlace");
+            material.shiftName = MapDictName(FirstNonEmpty(material.shiftCode, material.shiftName), dictNames, "shiftCode");
         }
     }
 
@@ -399,15 +404,14 @@ public sealed class QualityApi : IQualityApi
     {
         var dictNames = await LoadWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
         material.originPlace = MapDictName(material.originPlace, dictNames, "originPlace");
+        material.shiftName = MapDictName(FirstNonEmpty(material.shiftCode, material.shiftName), dictNames, "shiftCode");
     }
 
     private async Task<IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>> LoadWorkOrderDictNamesAsync(CancellationToken ct)
     {
-        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _workOrderDictListEndpoint);
-        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
-        resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<List<WorkOrderDictDto>>(resp, ct).ConfigureAwait(false);
-        return data.result?
+        var workOrderGroups = await LoadDictGroupsAsync(_workOrderDictListEndpoint, ct).ConfigureAwait(false);
+        var processGroups = await LoadDictGroupsAsync(_workProcessTaskDictListEndpoint, ct).ConfigureAwait(false);
+        return workOrderGroups.Concat(processGroups)
             .Where(group => !string.IsNullOrWhiteSpace(group.field))
             .GroupBy(group => group.field!, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
@@ -421,6 +425,15 @@ public sealed class QualityApi : IQualityApi
             ?? new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
     }
 
+    private async Task<List<WorkOrderDictDto>> LoadDictGroupsAsync(string endpoint, CancellationToken ct)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, endpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<List<WorkOrderDictDto>>(resp, ct).ConfigureAwait(false);
+        return data.result ?? new List<WorkOrderDictDto>();
+    }
+
     private static string? MapDictName(string? value, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> dictNames, string field)
     {
         if (string.IsNullOrWhiteSpace(value) || !dictNames.TryGetValue(field, out var itemNames))
@@ -430,6 +443,8 @@ public sealed class QualityApi : IQualityApi
 
         return itemNames.TryGetValue(value, out var name) ? name : value;
     }
+
+    private static string? FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
 
     private static bool SuccessfulResponse<T>(ApiResp<T> data)
     {

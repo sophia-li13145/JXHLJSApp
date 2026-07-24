@@ -185,6 +185,8 @@ public sealed class ProductionQualityScanMaterialDto
 {
     public string? acidRatio { get; set; }
     public string? actualDiameterMm { get; set; }
+    public string? productionBatchNo { get; set; }
+    public string? productionBatch { get; set; }
     public string? batchNo { get; set; }
     public string? businessType { get; set; }
     public long? childSeq { get; set; }
@@ -228,6 +230,8 @@ public sealed class ProductionQualityScanMaterialDto
     public string? saponificationPhValue { get; set; }
     public string? saponificationTemperature { get; set; }
     public string? shiftNo { get; set; }
+    public string? shiftCode { get; set; }
+    public string? shiftName { get; set; }
     public string? spec { get; set; }
     public string? spoolWeightRequirement { get; set; }
     public string? steelGrade { get; set; }
@@ -431,6 +435,8 @@ public sealed class ProductionQualityDetailDto
     public string? sectionShrinkageRate { get; set; }
     public string? tensileStrengthMpa { get; set; }
     public string? twistCount { get; set; }
+    public string? productionBatchNo { get; set; }
+    public string? productionBatch { get; set; }
     public string? batchNo { get; set; }
     public string? shiftNo { get; set; }
     public string? plateNo { get; set; }
@@ -466,6 +472,8 @@ public sealed class ProductionQualityDetailDto
     public string? totalAcid { get; set; }
     public string? totalAcidSampling { get; set; }
     public string? upperToleranceValue { get; set; }
+    public string? shiftCode { get; set; }
+    public string? shiftName { get; set; }
     public string? workOrderStatus { get; set; }
     public string? workOrderNo { get; set; }
     public string? qualityNo { get; set; }
@@ -494,6 +502,9 @@ public sealed class ProductionQualityMaterialDto
 {
     public string? acidRatio { get; set; }
     public string? actualDiameterMm { get; set; }
+    public string? productionBatchNo { get; set; }
+    public string? productionBatch { get; set; }
+    public string? batchNo { get; set; }
     public string? businessType { get; set; }
     public long? childSeq { get; set; }
     public string? coilDiameterControl { get; set; }
@@ -533,6 +544,8 @@ public sealed class ProductionQualityMaterialDto
     public bool resultSaved { get; set; }
     public string? saponificationPhValue { get; set; }
     public string? saponificationTemperature { get; set; }
+    public string? shiftCode { get; set; }
+    public string? shiftName { get; set; }
     public string? spec { get; set; }
     public string? spoolWeightRequirement { get; set; }
     public string? steelGrade { get; set; }
