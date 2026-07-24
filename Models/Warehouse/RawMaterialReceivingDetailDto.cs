@@ -51,6 +51,7 @@ public sealed class RawMaterialReceivingDetailItemDto
     public string? location { get; set; }
     public string? manufactureName { get; set; }
     public string? materialClass { get; set; }
+    public string? materialClassName { get; set; }
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
     public string? memo { get; set; }
@@ -79,10 +80,13 @@ public sealed class RawMaterialReceivingDetailItemDto
     public string coilDiameterDisplay => FirstNonEmpty(coilDiameter?.ToString("0.##"), "--");
     public string pieceWeightDisplay => JoinNonEmpty(FirstNonEmpty(instockQty?.ToString("0.##"), pieceWeight?.ToString("0.##"), weight), unit);
     public string countSeqDisplay => FirstNonEmpty(countSeq?.ToString(), "--");
-    public string materialTypeDisplay => isSemiFinished ? "半成品" : "原料";
-    public bool isSemiFinished => ContainsAny(materialClass, "半成品", "SEMIFINISHED", "SEMI_FINISHED") ||
+    public string materialTypeDisplay => FirstNonEmpty(materialClassName, InferMaterialTypeDisplay());
+    public bool isSemiFinished => ContainsAny(materialClassName, "半成品", "SEMIFINISHED", "SEMI_FINISHED") ||
+        ContainsAny(materialClass, "半成品", "SEMIFINISHED", "SEMI_FINISHED") ||
         ContainsAny(manufactureName, "半成品", "SEMIFINISHED", "SEMI_FINISHED");
     public bool isRawMaterial => !isSemiFinished;
+
+    private string InferMaterialTypeDisplay() => isSemiFinished ? "半成品" : "原料";
 
     private static string JoinNonEmpty(params string?[] values)
     {
