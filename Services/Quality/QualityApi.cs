@@ -1,6 +1,7 @@
 using JXHLJSApp.Models;
 using JXHLJSApp.Models.Quality;
 using JXHLJSApp.Models.Warehouse;
+using JXHLJSApp.Models.WorkOrders;
 using JXHLJSApp.Services.Common;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -52,6 +53,7 @@ public sealed class QualityApi : IQualityApi
     private readonly string _productionQualityPicklingCommitEndpoint;
     private readonly string _productionQualitySamplingOrFullCommitEndpoint;
     private readonly string _productionQualitySamplingOrFullCompleteEndpoint;
+    private readonly string _workOrderDictListEndpoint;
     private readonly string _manualInspectionCreateEndpoint;
     private readonly string _manualInspectionDetailEndpoint;
     private readonly string _manualInspectionAddMaterialEndpoint;
@@ -93,6 +95,8 @@ public sealed class QualityApi : IQualityApi
             configLoader.GetApiPath("productionQualityOrder.samplingOrFullCommit", "/pda/qsOrderQuality/samplingOrFullCommit"), servicePath);
         _productionQualitySamplingOrFullCompleteEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("productionQualityOrder.samplingOrFullComplete", "/pda/qsOrderQuality/samplingOrFullComplete"), servicePath);
+        _workOrderDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrder.dictList", "/pda/pmsWorkOrder/getWorkOrderDictList"), servicePath);
         _manualInspectionCreateEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("manualInspection.create", "/pda/manualInspection/create"), servicePath);
         _manualInspectionDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -261,6 +265,7 @@ public sealed class QualityApi : IQualityApi
     {
         var detail = await PostManualInspectionDetailAsync(qualityNo, ct).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(detail.workOrderNo)) detail.workOrderNo = workOrderNo;
+        await ApplyProductionQualityDictNamesAsync(detail, ct).ConfigureAwait(false);
         return detail;
     }
 
@@ -270,12 +275,16 @@ public sealed class QualityApi : IQualityApi
         using var resp = await _http.PostAsJsonAsync(url, new { qrCode }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<ProductionQualityDetailDto>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new ProductionQualityDetailDto { qrCode = qrCode };
+        var detail = data.result ?? new ProductionQualityDetailDto { qrCode = qrCode };
+        await ApplyProductionQualityDictNamesAsync(detail, ct).ConfigureAwait(false);
+        return detail;
     }
 
-    public Task<ProductionQualityDetailDto> GetManualInspectionDetailAsync(string qualityNo, CancellationToken ct = default)
+    public async Task<ProductionQualityDetailDto> GetManualInspectionDetailAsync(string qualityNo, CancellationToken ct = default)
     {
-        return PostManualInspectionDetailAsync(qualityNo, ct);
+        var detail = await PostManualInspectionDetailAsync(qualityNo, ct).ConfigureAwait(false);
+        await ApplyProductionQualityDictNamesAsync(detail, ct).ConfigureAwait(false);
+        return detail;
     }
 
     private async Task<ProductionQualityDetailDto> PostManualInspectionDetailAsync(string qualityNo, CancellationToken ct)
@@ -297,7 +306,9 @@ public sealed class QualityApi : IQualityApi
         }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<ProductionQualityScanMaterialDto>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new ProductionQualityScanMaterialDto { qrCode = request.qrCode };
+        var material = data.result ?? new ProductionQualityScanMaterialDto { qrCode = request.qrCode };
+        await ApplyProductionQualityMaterialDictNamesAsync(material, ct).ConfigureAwait(false);
+        return material;
     }
 
     public async Task<bool> SaveManualInspectionResultAsync(ProductionManualInspectionSaveResultRequestDto request, CancellationToken ct = default)
@@ -324,7 +335,9 @@ public sealed class QualityApi : IQualityApi
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<ProductionQualityScanMaterialDto>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new ProductionQualityScanMaterialDto { qrCode = request.qrCode };
+        var material = data.result ?? new ProductionQualityScanMaterialDto { qrCode = request.qrCode };
+        await ApplyProductionQualityMaterialDictNamesAsync(material, ct).ConfigureAwait(false);
+        return material;
     }
 
     public async Task<bool> CommitProductionQualityAsync(ProductionQualityCommitRequestDto request, CancellationToken ct = default)
@@ -370,6 +383,52 @@ public sealed class QualityApi : IQualityApi
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<JsonElement?>(resp, ct).ConfigureAwait(false);
         return SuccessfulResponse(data);
+    }
+
+    private async Task ApplyProductionQualityDictNamesAsync(ProductionQualityDetailDto detail, CancellationToken ct)
+    {
+        var dictNames = await LoadWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
+        detail.originPlace = MapDictName(detail.originPlace, dictNames, "originPlace");
+        foreach (var material in detail.materialList ?? new List<ProductionQualityMaterialDto>())
+        {
+            material.originPlace = MapDictName(material.originPlace, dictNames, "originPlace");
+        }
+    }
+
+    private async Task ApplyProductionQualityMaterialDictNamesAsync(ProductionQualityScanMaterialDto material, CancellationToken ct)
+    {
+        var dictNames = await LoadWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
+        material.originPlace = MapDictName(material.originPlace, dictNames, "originPlace");
+    }
+
+    private async Task<IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>> LoadWorkOrderDictNamesAsync(CancellationToken ct)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _workOrderDictListEndpoint);
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<List<WorkOrderDictDto>>(resp, ct).ConfigureAwait(false);
+        return data.result?
+            .Where(group => !string.IsNullOrWhiteSpace(group.field))
+            .GroupBy(group => group.field!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyDictionary<string, string>)group
+                    .SelectMany(item => item.dictItems ?? new List<WorkOrderDictItemDto>())
+                    .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue))
+                    .GroupBy(item => item.dictItemValue!, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(itemGroup => itemGroup.Key, itemGroup => itemGroup.First().dictItemName ?? itemGroup.Key, StringComparer.OrdinalIgnoreCase),
+                StringComparer.OrdinalIgnoreCase)
+            ?? new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string? MapDictName(string? value, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> dictNames, string field)
+    {
+        if (string.IsNullOrWhiteSpace(value) || !dictNames.TryGetValue(field, out var itemNames))
+        {
+            return value;
+        }
+
+        return itemNames.TryGetValue(value, out var name) ? name : value;
     }
 
     private static bool SuccessfulResponse<T>(ApiResp<T> data)
