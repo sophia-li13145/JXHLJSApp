@@ -59,7 +59,7 @@ public partial class DeliveryOrderDetailPage : ContentPage
         DeliveryNoLabel.Text = detail.deliveryNoDisplay;
         CustomerLabel.Text = detail.customerDisplay;
         AddressLabel.Text = detail.consAddressDisplay;
-        ContactLabel.Text = "--";
+        ContactLabel.Text = detail.logisticsContacterDisplay;
         DeliveryDateLabel.Text = detail.expectedDeliveryDateDisplay;
         CarrierLabel.Text = detail.carrierNameDisplay;
         CarrierLicenseLabel.Text = detail.carrierLicenseDisplay;

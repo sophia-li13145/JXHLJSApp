@@ -17,6 +17,7 @@ public sealed class DeliveryOrderDetailDto
     public string? expectedDeliveryTime { get; set; }
     public string? id { get; set; }
     public string? logisticsNumber { get; set; }
+    public string? logisticsContacter { get; set; }
 
     public string deliveryNoDisplay => ValueOrDash(deliveryNo);
     public string customerDisplay => ValueOrDash(customer);
@@ -24,6 +25,7 @@ public sealed class DeliveryOrderDetailDto
     public string carrierNameDisplay => ValueOrDash(carrierName);
     public string carrierLicenseDisplay => ValueOrDash(carrierLicense);
     public string logisticsNumberDisplay => ValueOrDash(logisticsNumber);
+    public string logisticsContacterDisplay => ValueOrDash(logisticsContacter);
     public string expectedDeliveryDateDisplay => FormatDate(expectedDeliveryTime);
     public string auditStatusDisplay
     {
