@@ -13,6 +13,8 @@ public sealed class RawMaterialReceivingDetailDto
     public string? instockNo { get; set; }
     public string? instockStatus { get; set; }
     public string? instockStatusName { get; set; }
+    public string? instockWarehouse { get; set; }
+    public string? instockWarehouseCode { get; set; }
     public string? memo { get; set; }
     public List<RawMaterialReceivingOcrDto>? ocrList { get; set; }
     public string? @operator { get; set; }
@@ -22,13 +24,14 @@ public sealed class RawMaterialReceivingDetailDto
     public string? returnMaterialNo { get; set; }
     public string? supplierCode { get; set; }
     public string? supplierName { get; set; }
+    public string? warehouseAreaNo { get; set; }
     public string? workOrderNo { get; set; }
 
     public string instockNoDisplay => FirstNonEmpty(instockNo, arrivalNo, "--");
     public string statusDisplay => FirstNonEmpty(instockStatusName, instockStatus, "--");
     public string instockDateDisplay => FirstNonEmpty(instockDate, "--");
-    public string warehouseDisplay => FirstNonEmpty(detailList?.FirstOrDefault(item => !string.IsNullOrWhiteSpace(item.instockWarehouse))?.instockWarehouse, "--");
-    public string locationDisplay => FirstNonEmpty(detailList?.FirstOrDefault(item => !string.IsNullOrWhiteSpace(item.location))?.location, "--");
+    public string warehouseDisplay => FirstNonEmpty(instockWarehouse, detailList?.FirstOrDefault(item => !string.IsNullOrWhiteSpace(item.instockWarehouse))?.instockWarehouse, "--");
+    public string locationDisplay => FirstNonEmpty(warehouseAreaNo, detailList?.FirstOrDefault(item => !string.IsNullOrWhiteSpace(item.location))?.location, "--");
     public IReadOnlyList<RawMaterialReceivingDetailItemDto> detailItems => detailList ?? new List<RawMaterialReceivingDetailItemDto>();
     public IReadOnlyList<AttachmentDto> mainAttachments => ocrList?
         .SelectMany(ocr => ocr.attachmentList ?? new List<AttachmentDto>())
