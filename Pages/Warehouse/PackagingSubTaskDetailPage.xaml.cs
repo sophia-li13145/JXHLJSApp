@@ -105,7 +105,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         ScannedSteelGradeLabel.Text = Display(material.steelGrade ?? material.materialName);
         ScannedSpecLabel.Text = Display(material.specification ?? material.spec);
         ScannedOriginLabel.Text = Display(material.originPlace);
-        ScannedLengthLabel.Text = FormatQuantity(material.length, material.lengthUnit);
+        ScannedLengthLabel.Text = FormatQuantity(material.length, FirstNonEmpty(material.lengthUnit, "m"));
         var pieceWeight = material.pieceWeight ?? material.weight;
         ScannedWeightLabel.Text = FormatQuantityWithoutUnitSpace(pieceWeight, "KG");
         ActualWeightEntry.Text = string.Empty;
