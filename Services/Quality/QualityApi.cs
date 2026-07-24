@@ -389,9 +389,11 @@ public sealed class QualityApi : IQualityApi
     {
         var dictNames = await LoadWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
         detail.originPlace = MapDictName(detail.originPlace, dictNames, "originPlace");
+        detail.shiftName = MapDictName(FirstNonEmpty(detail.shiftCode, detail.shiftName), dictNames, "shiftCode");
         foreach (var material in detail.materialList ?? new List<ProductionQualityMaterialDto>())
         {
             material.originPlace = MapDictName(material.originPlace, dictNames, "originPlace");
+            material.shiftName = MapDictName(FirstNonEmpty(material.shiftCode, material.shiftName), dictNames, "shiftCode");
         }
     }
 
@@ -399,6 +401,7 @@ public sealed class QualityApi : IQualityApi
     {
         var dictNames = await LoadWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
         material.originPlace = MapDictName(material.originPlace, dictNames, "originPlace");
+        material.shiftName = MapDictName(FirstNonEmpty(material.shiftCode, material.shiftName), dictNames, "shiftCode");
     }
 
     private async Task<IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>> LoadWorkOrderDictNamesAsync(CancellationToken ct)
@@ -430,6 +433,8 @@ public sealed class QualityApi : IQualityApi
 
         return itemNames.TryGetValue(value, out var name) ? name : value;
     }
+
+    private static string? FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
 
     private static bool SuccessfulResponse<T>(ApiResp<T> data)
     {
