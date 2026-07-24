@@ -899,6 +899,7 @@ public partial class MachineQualityDetailPage : ContentPage
             materialCode = material.materialCode,
             materialName = material.materialName,
             memo = material.memo,
+            originPlace = material.originPlace,
             phosphatingTemperature = material.phosphatingTemperature,
             pieceNo = material.pieceNo,
             productDiameter = FirstNonEmpty(material.productDiameter, material.prodcutDiameter),
