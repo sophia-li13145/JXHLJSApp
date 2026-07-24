@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Maui.Controls.Shapes;
 
 namespace JXHLJSApp.Services;
@@ -33,6 +34,14 @@ public static class ErrorDialogService
             BackgroundColor = Colors.Transparent;
             NavigationPage.SetHasNavigationBar(this, false);
 
+            const int shortMessageCharacterThreshold = 10;
+            const double shortMessageMinimumDialogWidth = 220;
+
+            var messageLength = new StringInfo(message).LengthInTextElements;
+            var minimumDialogWidth = messageLength < shortMessageCharacterThreshold
+                ? shortMessageMinimumDialogWidth
+                : -1;
+
             var closeButton = new Button
             {
                 Text = buttonText,
@@ -61,6 +70,7 @@ public static class ErrorDialogService
                         HorizontalOptions = LayoutOptions.Center,
                         VerticalOptions = LayoutOptions.Center,
                         MaximumWidthRequest = 340,
+                        MinimumWidthRequest = minimumDialogWidth,
                         StrokeShape = new RoundRectangle { CornerRadius = 16 },
                         Shadow = new Shadow
                         {
