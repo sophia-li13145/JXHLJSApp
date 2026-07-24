@@ -286,7 +286,9 @@ public sealed class WorkOrderApi : IWorkOrderApi
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<MaterialQrCodeInfoDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
-        return data?.result ?? new MaterialQrCodeInfoDto();
+        var material = data?.result ?? new MaterialQrCodeInfoDto();
+        await ApplyMaterialQrCodeDictNamesAsync(material, ct).ConfigureAwait(false);
+        return material;
     }
 
 
@@ -518,6 +520,12 @@ public sealed class WorkOrderApi : IWorkOrderApi
             ApplyWorkOrderDetailDictNames(detail, dictNames);
             detail.machineType = MapDeviceTypeName(detail.machineType, deviceTypeNames);
         }
+    }
+
+    private async Task ApplyMaterialQrCodeDictNamesAsync(MaterialQrCodeInfoDto material, CancellationToken ct)
+    {
+        var dictNames = await GetWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
+        material.originPlace = MapWorkOrderDictName(material.originPlace, dictNames, "originPlace");
     }
 
     private static void ApplyWorkOrderDetailDictNames(WorkOrderDetailDto detail, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> dictNames)
