@@ -12,12 +12,13 @@ public sealed class WorkOrderTaskDto
     public string? operationName { get; set; }
     public decimal? plannedQuantity { get; set; }
     public decimal? plannedWeight { get; set; }
+    public string? steelGrade { get; set; }
     public string? targetSpecification { get; set; }
     public string? workOrderNo { get; set; }
     public string? workOrderStatus { get; set; }
 
-    public string inputMaterialDisplay => JoinNonEmpty(materialName, inputSpecification);
-    public string targetMaterialDisplay => JoinNonEmpty(materialName, targetSpecification);
+    public string inputMaterialDisplay => JoinNonEmpty(steelGrade, inputSpecification);
+    public string targetMaterialDisplay => JoinNonEmpty(steelGrade, targetSpecification);
     public string machineDisplay => FirstNonEmpty(machineNo, deviceName, deviceCode);
     public string operationDisplay => FirstNonEmpty(operationName, operationCode);
     public bool hasProductionInstructionCard => operationName?.Contains("酸洗", StringComparison.OrdinalIgnoreCase) != true;
