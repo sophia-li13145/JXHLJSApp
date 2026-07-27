@@ -16,6 +16,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
     private MaterialQrCodeInfoDto? _scannedMaterial;
     private string? _scannedQrCode;
     private PackagingSubTaskDto? _nextTask;
+    private string? _loadedTaskId;
 
     public string? TaskId
     {
@@ -33,6 +34,11 @@ public partial class PackagingSubTaskDetailPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        if (_detail is not null && string.Equals(_loadedTaskId, _id, StringComparison.Ordinal))
+        {
+            return;
+        }
+
         await LoadDetailAsync();
     }
 
@@ -65,6 +71,8 @@ public partial class PackagingSubTaskDetailPage : ContentPage
             {
                 ApplyPackagedDetail(detail);
             }
+
+            _loadedTaskId = _id;
         }
         catch (Exception ex)
         {
