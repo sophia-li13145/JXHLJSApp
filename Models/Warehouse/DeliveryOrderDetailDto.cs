@@ -18,8 +18,10 @@ public sealed class DeliveryOrderDetailDto
     public string? id { get; set; }
     public string? logisticsNumber { get; set; }
     public string? logisticsContacter { get; set; }
-    public int? scannedQty { get; set; }
-    public int? totalCount { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? scannedQty { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? totalCount { get; set; }
 
     public string deliveryNoDisplay => ValueOrDash(deliveryNo);
     public string customerDisplay => ValueOrDash(customer);
@@ -41,11 +43,14 @@ public sealed class DeliveryOrderDetailDto
             return string.IsNullOrWhiteSpace(auditStatus) ? "待发货复核" : auditStatus!;
         }
     }
-    public int? needScanCount => totalCount;
-    public int? scannedCount => scannedQty;
-    public string scanProgressDisplay => $"{scannedCount} / {needScanCount} 件";
+    public decimal? needScanCount => totalCount;
+    public decimal? scannedCount => scannedQty;
+    public string scanProgressDisplay => $"{FormatQuantity(scannedCount)} / {FormatQuantity(needScanCount)} 件";
 
     private static string ValueOrDash(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
+
+    private static string FormatQuantity(decimal? value) =>
+        value.HasValue ? value.Value.ToString("0.##") : "--";
 
     private static string FormatDate(string? value)
     {
@@ -100,6 +105,8 @@ public sealed class DeliveryOrderScanDetailDto
     public decimal? actualQty { get; set; }
     public string? barcode { get; set; }
     public string? barcodeType { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? count { get; set; }
     public string? deliveryDetailId { get; set; }
     public string? deliveryNo { get; set; }
     public string? id { get; set; }
@@ -108,12 +115,50 @@ public sealed class DeliveryOrderScanDetailDto
     public string? memo { get; set; }
     public string? model { get; set; }
     public string? outstockNo { get; set; }
+    public string? orderTime { get; set; }
     public string? scanTime { get; set; }
     public string? scanUserId { get; set; }
     public string? scanUserName { get; set; }
     public string? spec { get; set; }
     public string? stockBatch { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? totalAmount { get; set; }
     public string? unit { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? unitPrice { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? weight { get; set; }
+
+    public string materialCodeDisplay => ValueOrDash(materialCode);
+    public string materialNameDisplay => ValueOrDash(materialName);
+    public string specDisplay => ValueOrDash(spec);
+    public string countDisplay => FormatNumber(count);
+    public string weightDisplay => FormatNumberWithUnit(weight, unit);
+    public string unitPriceDisplay => FormatMoney(unitPrice);
+    public string totalAmountDisplay => FormatMoney(totalAmount);
+    public string orderDateDisplay => FormatDate(orderTime);
+
+    private static string ValueOrDash(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
+
+    private static string FormatNumber(decimal? value) =>
+        value.HasValue ? value.Value.ToString("0.##") : "--";
+
+    private static string FormatNumberWithUnit(decimal? value, string? unit)
+    {
+        if (!value.HasValue) return "--";
+        return string.IsNullOrWhiteSpace(unit)
+            ? FormatNumber(value)
+            : $"{FormatNumber(value)} {unit}";
+    }
+
+    private static string FormatMoney(decimal? value) =>
+        value.HasValue ? $"¥{value.Value:0.##}" : "--";
+
+    private static string FormatDate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "--";
+        return DateTime.TryParse(value, out var date) ? date.ToString("yyyy-MM-dd") : value;
+    }
 }
 
 
