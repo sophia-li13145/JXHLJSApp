@@ -202,7 +202,9 @@ public sealed class WarehouseApi : IWarehouseApi
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<string?>(resp, ct).ConfigureAwait(false);
-        return data.result;
+        return string.IsNullOrWhiteSpace(data.result)
+            ? null
+            : ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, data.result);
     }
 
 
