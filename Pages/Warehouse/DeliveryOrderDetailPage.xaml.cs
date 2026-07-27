@@ -11,6 +11,7 @@ public partial class DeliveryOrderDetailPage : ContentPage
     private readonly IWarehouseApi _warehouseApi;
     private readonly IScanService _scanService;
     private readonly ObservableCollection<DeliveryOrderMaterialDetailDto> _materials = new();
+    private readonly ObservableCollection<DeliveryOrderScanDetailDto> _scanDetails = new();
     private string? _deliveryNo;
     private DeliveryOrderDetailDto? _detail;
 
@@ -25,7 +26,7 @@ public partial class DeliveryOrderDetailPage : ContentPage
         InitializeComponent();
         _warehouseApi = warehouseApi;
         _scanService = scanService;
-        MaterialList.ItemsSource = _materials;
+        ScanDetailList.ItemsSource = _scanDetails;
     }
 
     protected override async void OnAppearing()
@@ -69,6 +70,12 @@ public partial class DeliveryOrderDetailPage : ContentPage
         foreach (var item in detail.detailList ?? new List<DeliveryOrderMaterialDetailDto>())
         {
             _materials.Add(item);
+        }
+
+        _scanDetails.Clear();
+        foreach (var item in detail.actualScanDetailList ?? new List<DeliveryOrderScanDetailDto>())
+        {
+            _scanDetails.Add(item);
         }
 
         RefreshScanProgress();
@@ -120,16 +127,12 @@ public partial class DeliveryOrderDetailPage : ContentPage
         }
 
         item.scannedQty = result.scannedQty ?? result.actualQty ?? item.scannedQty;
-        MaterialList.ItemsSource = null;
-        MaterialList.ItemsSource = _materials;
         RefreshScanProgress();
     }
 
     private void RefreshScanProgress()
     {
-        var total = _detail?.totalCount ?? 0;
-        var scanned = _detail?.scannedQty ?? 0;
-        ScanProgressLabel.Text = $"{scanned} / {total} 件";
+        ScanProgressLabel.Text = _detail?.scanProgressDisplay ?? "-- / -- 件";
     }
 
     private async void OnConfirmDeliveryClicked(object sender, EventArgs e)
