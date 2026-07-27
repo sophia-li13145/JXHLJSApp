@@ -54,7 +54,7 @@
                             <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                             <VerticalStackLayout Spacing="8">
                                 <Label Text="质检结果" TextColor="#0042AD" FontSize="14" FontAttributes="Bold" />
-                                <Grid>
+                                <Grid RowDefinitions="Auto,Auto">
                                     <Border x:Name="InspectResultSelector" BackgroundColor="#FFFFFF" Stroke="#1E427C" StrokeThickness="1.5" Padding="20,0" HeightRequest="52">
                                         <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnInspectResultTapped" /></Border.GestureRecognizers>
                                         <Border.StrokeShape><RoundRectangle CornerRadius="9" /></Border.StrokeShape>
@@ -66,7 +66,7 @@
                                             <Label Grid.Column="1" Text="⌄" TextColor="#FF3B4E" FontSize="20" FontAttributes="Bold" VerticalTextAlignment="Center" />
                                         </Grid>
                                     </Border>
-                                    <Border x:Name="InspectResultDropdown" IsVisible="False" Margin="0,52,0,0" BackgroundColor="#FFFFFF" Stroke="#DDE5EF" StrokeThickness="1" Padding="0" ZIndex="10">
+                                    <Border x:Name="InspectResultDropdown" Grid.Row="1" IsVisible="False" BackgroundColor="#FFFFFF" Stroke="#DDE5EF" StrokeThickness="1" Padding="0">
                                         <Border.StrokeShape><RoundRectangle CornerRadius="0" /></Border.StrokeShape>
                                         <VerticalStackLayout x:Name="InspectResultOptionsLayout" Spacing="0" />
                                     </Border>
