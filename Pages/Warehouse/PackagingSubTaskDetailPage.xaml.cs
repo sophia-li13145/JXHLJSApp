@@ -134,19 +134,27 @@ public partial class PackagingSubTaskDetailPage : ContentPage
 
     private void ApplyPackagedDetail(PackagingSubTaskDetailDto detail)
     {
+        var packagedMaterial = detail.packagedMaterialList?.FirstOrDefault();
+        var packagedWeights = detail.packagedMaterialList?
+            .Where(item => item.pieceWeight.HasValue)
+            .Select(item => item.pieceWeight!.Value)
+            .ToList();
+        var actualWeight = detail.actualWeight
+            ?? (packagedWeights?.Count > 0 ? packagedWeights.Sum() : null);
+
         PackagedTaskNoLabel.Text = detail.taskNoDisplay;
         PackagedStatusLabel.Text = Display(detail.workOrderStatus);
         PackagedWorkOrderLabel.Text = detail.workOrderNoDisplay;
         PackagedCompleteTimeLabel.Text = detail.completeTimeDisplay;
 
-        ScannedMaterialCodeLabel.Text = $"物料编号：{Display(detail.materialCode)}";
-        ScannedSteelGradeLabel.Text = Display(detail.steelGrade ?? detail.materialName);
-        ScannedSpecLabel.Text = Display(detail.specification);
-        ScannedOriginLabel.Text = Display(detail.originPlace);
-        ScannedLengthLabel.Text = FormatQuantity(detail.length, FirstNonEmpty(detail.lengthUnit, "m"));
-        var pieceWeight = detail.pieceWeight ?? detail.actualWeight;
+        ScannedMaterialCodeLabel.Text = $"物料编号：{Display(FirstNonEmpty(packagedMaterial?.materialCode, detail.materialCode))}";
+        ScannedSteelGradeLabel.Text = Display(FirstNonEmpty(packagedMaterial?.steelGrade, detail.steelGrade, detail.materialName));
+        ScannedSpecLabel.Text = Display(FirstNonEmpty(packagedMaterial?.specification, detail.specification));
+        ScannedOriginLabel.Text = Display(FirstNonEmpty(packagedMaterial?.originPlace, detail.originPlace));
+        ScannedLengthLabel.Text = FormatQuantity(packagedMaterial?.length ?? detail.length, FirstNonEmpty(packagedMaterial?.lengthUnit, detail.lengthUnit, "m"));
+        var pieceWeight = packagedMaterial?.pieceWeight ?? detail.pieceWeight ?? detail.actualWeight;
         ScannedWeightLabel.Text = FormatQuantityWithoutUnitSpace(pieceWeight, "KG");
-        DetailActualWeightLabel.Text = FormatQuantity(detail.actualWeight, "KG");
+        DetailActualWeightLabel.Text = FormatQuantity(actualWeight, "KG");
     }
 
     private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;

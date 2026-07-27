@@ -26,6 +26,7 @@ public sealed class PackagingSubTaskDetailDto
     public string? packageMethod { get; set; }
     public string? packageWeight { get; set; }
     public string? packagingClothColor { get; set; }
+    public List<PackagedMaterialDto>? packagedMaterialList { get; set; }
     [System.Text.Json.Serialization.JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? pieceWeight { get; set; }
     public string? originPlace { get; set; }
@@ -58,4 +59,17 @@ public sealed class PackagingSubTaskDetailDto
     private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "无" : value!;
 
     private static string? FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+}
+
+public sealed class PackagedMaterialDto
+{
+    [System.Text.Json.Serialization.JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? length { get; set; }
+    public string? lengthUnit { get; set; }
+    public string? materialCode { get; set; }
+    public string? originPlace { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? pieceWeight { get; set; }
+    public string? specification { get; set; }
+    public string? steelGrade { get; set; }
 }
