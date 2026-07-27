@@ -107,6 +107,7 @@ public partial class WorkStartOrdersPage : ContentPage
             {
                 WorkOrderId = order.id,
                 WorkOrderNo = order.workOrderNo,
+                OperationName = order.operationName,
                 MachineCode = order.deviceCode,
                 Status = "Running",
                 StartedAt = DateTime.Now

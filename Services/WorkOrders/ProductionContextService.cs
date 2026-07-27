@@ -5,6 +5,7 @@ public sealed class ProductionContext
     public string WorkOrderId { get; init; } = string.Empty;
 
     public string WorkOrderNo { get; init; } = string.Empty;
+    public string? OperationName { get; init; }
 
     public string? ExecutionId { get; init; }
 
