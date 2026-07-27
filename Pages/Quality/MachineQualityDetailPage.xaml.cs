@@ -63,6 +63,7 @@ public partial class MachineQualityDetailPage : ContentPage
         CoilDiameterPicker.SelectedIndex = 0;
         CoilPitchPicker.SelectedIndex = 0;
         InspectResultPicker.SelectedIndex = 0;
+        UpdateUnqualifiedDescriptionVisibility();
     }
 
     protected override async void OnAppearing()
@@ -163,6 +164,19 @@ public partial class MachineQualityDetailPage : ContentPage
         Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
         ScanMaterialButton.IsVisible = false;
         InfoScanMaterialButton.IsVisible = !IsInspectionCompleted(_inspectStatus) && !isAcid && (!isDrawing || isManualPatrol) && (IsSamplingOrFullScheme(processName) || IsProcessCardScheme(processName));
+        UpdateUnqualifiedDescriptionVisibility();
+    }
+
+    private void OnInspectResultChanged(object sender, EventArgs e) => UpdateUnqualifiedDescriptionVisibility();
+
+    private void UpdateUnqualifiedDescriptionVisibility()
+    {
+        var isBlankOpeningOrDrawing = IsBlankOpeningScheme(CurrentProcessName) ||
+            IsBlankOpeningScheme(_inspectionSchemeName) ||
+            IsDrawingScheme(CurrentProcessName) ||
+            IsDrawingScheme(_inspectionSchemeName);
+        var isUnqualified = InspectResultPicker.SelectedItem?.ToString()?.Contains("不合格", StringComparison.Ordinal) == true;
+        UnqualifiedDescriptionPanel.IsVisible = isBlankOpeningOrDrawing && isUnqualified;
     }
 
     private void FillAcidInputs(ProductionQualityDetailDto detail)
@@ -744,6 +758,7 @@ public partial class MachineQualityDetailPage : ContentPage
             TensileStrengthEntry.Text,
             HeatElongationEntry.Text,
             TwistCountEntry.Text,
+            UnqualifiedDescriptionEditor.Text,
             MemoEditor.Text,
             CoilDiameterPicker.SelectedIndex,
             CoilPitchPicker.SelectedIndex,
@@ -763,6 +778,7 @@ public partial class MachineQualityDetailPage : ContentPage
         RestoreText(TensileStrengthEntry, state.TensileStrength);
         RestoreText(HeatElongationEntry, state.HeatElongation);
         RestoreText(TwistCountEntry, state.TwistCount);
+        RestoreText(UnqualifiedDescriptionEditor, state.UnqualifiedDescription);
         RestoreText(MemoEditor, state.Memo);
         RestorePicker(CoilDiameterPicker, state.CoilDiameterIndex);
         RestorePicker(CoilPitchPicker, state.CoilPitchIndex);
@@ -789,6 +805,7 @@ public partial class MachineQualityDetailPage : ContentPage
         string? TensileStrength,
         string? HeatElongation,
         string? TwistCount,
+        string? UnqualifiedDescription,
         string? Memo,
         int CoilDiameterIndex,
         int CoilPitchIndex,
@@ -946,6 +963,14 @@ public partial class MachineQualityDetailPage : ContentPage
 
         try
         {
+            var unqualifiedDescription = UnqualifiedDescriptionEditor.Text?.Trim();
+            if (UnqualifiedDescriptionPanel.IsVisible && string.IsNullOrWhiteSpace(unqualifiedDescription))
+            {
+                await DisplayAlert("提示", "质检结果为不合格时，请填写不合格说明。", "确定");
+                UnqualifiedDescriptionEditor.Focus();
+                return;
+            }
+
             var request = new ProductionQualityCommitRequestDto
             {
                 acidRatio = AcidRatioEntry.Text?.Trim(),
@@ -1011,6 +1036,7 @@ public partial class MachineQualityDetailPage : ContentPage
                     qualityNo = _qualityNo,
                     strengthMpa = HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text?.Trim() : StrengthEntry.Text?.Trim(),
                     surfaceCondition = SurfaceEntry.Text?.Trim(),
+                    unqualifiedDescription = unqualifiedDescription,
                     workOrderNo = _workOrderNo
                 })
                 : isAcid
@@ -1050,6 +1076,7 @@ public partial class MachineQualityDetailPage : ContentPage
                         strengthMpa = HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text?.Trim() : StrengthEntry.Text?.Trim(),
                         surfaceCondition = SurfaceEntry.Text?.Trim(),
                         torsion = isHeatTreatmentSamplingOrFull ? TwistCountEntry.Text?.Trim() : null,
+                        unqualifiedDescription = unqualifiedDescription,
                         workOrderNo = _workOrderNo
                     })
                     : useFirstInspectionCommit
@@ -1064,6 +1091,7 @@ public partial class MachineQualityDetailPage : ContentPage
                         qualityNo = _qualityNo,
                         strengthMpa = StrengthEntry.Text?.Trim(),
                         surfaceCondition = SurfaceEntry.Text?.Trim(),
+                        unqualifiedDescription = unqualifiedDescription,
                         workOrderNo = _workOrderNo
                     })
                     : await _qualityApi.CommitProductionQualityAsync(request);
