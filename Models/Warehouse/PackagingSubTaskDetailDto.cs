@@ -72,4 +72,29 @@ public sealed class PackagedMaterialDto
     public decimal? pieceWeight { get; set; }
     public string? specification { get; set; }
     public string? steelGrade { get; set; }
+
+    public string materialCodeDisplay => Display(materialCode);
+    public string steelGradeDisplay => Display(steelGrade);
+    public string specificationDisplay => Display(specification);
+    public string originPlaceDisplay => Display(originPlace);
+    public string lengthDisplay => FormatQuantity(length, string.IsNullOrWhiteSpace(lengthUnit) ? "m" : lengthUnit, true);
+    public string pieceWeightDisplay => FormatQuantity(pieceWeight, "KG", false);
+
+    private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
+
+    private static string FormatQuantity(decimal? value, string? unit, bool includeSpace)
+    {
+        if (!value.HasValue)
+        {
+            return "--";
+        }
+
+        var text = value.Value % 1 == 0 ? value.Value.ToString("0") : value.Value.ToString("0.##");
+        if (string.IsNullOrWhiteSpace(unit))
+        {
+            return text;
+        }
+
+        return includeSpace ? $"{text} {unit}" : $"{text}{unit}";
+    }
 }
