@@ -61,6 +61,7 @@ public sealed class WorkOrderDetailDto
     public string? wireTakeUpLength { get; set; }
     public string? wireTakeUpMode { get; set; }
     public string? wireTakeUpSpeed { get; set; }
+    public string? wireTakeUpSpeedUnit { get; set; }
     public string? wireShape { get; set; }
     public string? workOrderNo { get; set; }
     public string? workOrderStatus { get; set; }
