@@ -20,7 +20,7 @@
             <ScrollView>
                 <VerticalStackLayout Padding="17,14,17,24" Spacing="16">
                     <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
-                        <Border BackgroundColor="White" StrokeThickness="0" Padding="12" HeightRequest="103">
+                        <Border x:Name="InstructionCardButton" BackgroundColor="White" StrokeThickness="0" Padding="12" HeightRequest="103">
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnInstructionTapped" />
                             </Border.GestureRecognizers>
