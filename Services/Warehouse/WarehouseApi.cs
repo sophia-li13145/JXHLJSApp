@@ -406,6 +406,13 @@ public sealed class WarehouseApi : IWarehouseApi
         detail.packageWeight = MapDictName(detail.packageWeight, dictNames, "packageWeight");
         detail.packagingClothColor = MapDictName(detail.packagingClothColor, dictNames, "packagingClothColor");
         detail.originPlace = MapDictName(detail.originPlace, dictNames, "originPlace");
+        if (detail.packagedMaterialList is not null)
+        {
+            foreach (var material in detail.packagedMaterialList)
+            {
+                material.originPlace = MapDictName(material.originPlace, dictNames, "originPlace");
+            }
+        }
     }
 
     private static void ApplyMaterialQrCodeDictNames(MaterialQrCodeInfoDto material, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> dictNames)
