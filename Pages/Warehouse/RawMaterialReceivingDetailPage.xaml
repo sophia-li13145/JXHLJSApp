@@ -64,10 +64,10 @@
                                             <Label Grid.Row="1" Text="{Binding furnaceNoDisplay, StringFormat='炉号： {0}'}" TextColor="#38557C" FontSize="14" />
                                             <Label Grid.Row="1" Grid.Column="1" Text="{Binding originDisplay, StringFormat='产地： {0}'}" TextColor="#38557C" FontSize="14" />
                                             <Label Grid.Row="2" IsVisible="{Binding isSemiFinished}" Text="{Binding strengthDisplay, StringFormat='强度： {0}'}" TextColor="#38557C" FontSize="14" />
-                                            <Label Grid.Row="2" Grid.Column="1" IsVisible="{Binding isSemiFinished}" Text="{Binding coilCountDisplay, StringFormat='圈数： {0}'}" TextColor="#38557C" FontSize="14" />
+                                            <Label Grid.Row="2" Grid.Column="1" IsVisible="{Binding isSemiFinished}" Text="{Binding coilQtyDisplay, StringFormat='圈数： {0}'}" TextColor="#38557C" FontSize="14" />
                                             <Label Grid.Row="3" IsVisible="{Binding isSemiFinished}" Text="{Binding coilDiameterDisplay, StringFormat='圈径： {0}'}" TextColor="#38557C" FontSize="14" />
                                             <Label Grid.Row="4" Text="{Binding pieceWeightDisplay, StringFormat='件重： {0}'}" TextColor="#00A85A" FontSize="14" FontAttributes="Bold" />
-                                            <Label Grid.Row="5" IsVisible="{Binding isSemiFinished}" Text="{Binding countSeqDisplay, StringFormat='件数序号： {0}'}" TextColor="#38557C" FontSize="14" />
+                                            <Label Grid.Row="5" IsVisible="{Binding isSemiFinished}" Text="{Binding pieceSeqDisplay, StringFormat='件数序号： {0}'}" TextColor="#38557C" FontSize="14" />
                                         </Grid>
                                     </VerticalStackLayout>
                                 </Border>

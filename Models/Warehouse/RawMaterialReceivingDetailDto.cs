@@ -59,9 +59,11 @@ public sealed class RawMaterialReceivingDetailItemDto
     public string? materialName { get; set; }
     public string? memo { get; set; }
     public decimal? coilCount { get; set; }
+    public decimal? coilQty { get; set; }
     public decimal? coilDiameter { get; set; }
     public string? strength { get; set; }
     public int? countSeq { get; set; }
+    public int? pieceSeq { get; set; }
     public string? model { get; set; }
     public string? origin { get; set; }
     public decimal? pieceWeight { get; set; }
@@ -79,10 +81,10 @@ public sealed class RawMaterialReceivingDetailItemDto
     public string furnaceNoDisplay => FirstNonEmpty(furnaceNo, "--");
     public string originDisplay => FirstNonEmpty(origin, "--");
     public string strengthDisplay => FirstNonEmpty(strength, "--");
-    public string coilCountDisplay => FirstNonEmpty(coilCount?.ToString("0.##"), count?.ToString("0.##"), "--");
+    public string coilQtyDisplay => FirstNonEmpty(coilQty?.ToString("0.##"), "--");
     public string coilDiameterDisplay => FirstNonEmpty(coilDiameter?.ToString("0.##"), "--");
     public string pieceWeightDisplay => JoinNonEmpty(FirstNonEmpty(instockQty?.ToString("0.##"), pieceWeight?.ToString("0.##"), weight), unit);
-    public string countSeqDisplay => FirstNonEmpty(countSeq?.ToString(), "--");
+    public string pieceSeqDisplay => FirstNonEmpty(pieceSeq?.ToString(), "--");
     public string materialTypeDisplay => FirstNonEmpty(materialClassName, InferMaterialTypeDisplay());
     public bool isSemiFinished => ContainsAny(materialClassName, "半成品", "SEMIFINISHED", "SEMI_FINISHED") ||
         ContainsAny(materialClass, "半成品", "SEMIFINISHED", "SEMI_FINISHED") ||
