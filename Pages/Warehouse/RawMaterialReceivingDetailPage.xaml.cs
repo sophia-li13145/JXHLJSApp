@@ -1,3 +1,4 @@
+using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.Warehouse;
 
@@ -8,6 +9,7 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
 {
     private readonly IWarehouseApi _warehouseApi;
     private string? _instockNo;
+    private bool _isOpeningAttachment;
 
     public string? InstockNo
     {
@@ -61,4 +63,43 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
     }
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
+
+    private async void OnAttachmentTapped(object sender, TappedEventArgs e)
+    {
+        if (_isOpeningAttachment || e.Parameter is not AttachmentDto attachment)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(attachment.attachmentUrl))
+        {
+            await DisplayAlert("提示", "该附件没有可用的预览地址。", "确定");
+            return;
+        }
+
+        try
+        {
+            _isOpeningAttachment = true;
+            var previewUrl = await _warehouseApi.PreviewAttachmentAsync(attachment.attachmentUrl);
+            if (string.IsNullOrWhiteSpace(previewUrl) ||
+                !Uri.TryCreate(previewUrl, UriKind.Absolute, out var previewUri))
+            {
+                await DisplayAlert("预览失败", "文件预览接口未返回有效地址。", "确定");
+                return;
+            }
+
+            if (!await Launcher.Default.TryOpenAsync(previewUri))
+            {
+                await DisplayAlert("预览失败", "当前设备无法打开该附件。", "确定");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorDialogService.ShowAsync(this, "预览失败", ex.Message, "确定");
+        }
+        finally
+        {
+            _isOpeningAttachment = false;
+        }
+    }
 }
