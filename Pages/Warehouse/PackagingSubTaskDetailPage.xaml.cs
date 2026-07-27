@@ -16,6 +16,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
     private MaterialQrCodeInfoDto? _scannedMaterial;
     private string? _scannedQrCode;
     private PackagingSubTaskDto? _nextTask;
+    private string? _loadedTaskId;
 
     public string? TaskId
     {
@@ -33,6 +34,11 @@ public partial class PackagingSubTaskDetailPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        if (_detail is not null && string.Equals(_loadedTaskId, _id, StringComparison.Ordinal))
+        {
+            return;
+        }
+
         await LoadDetailAsync();
     }
 
@@ -65,6 +71,8 @@ public partial class PackagingSubTaskDetailPage : ContentPage
             {
                 ApplyPackagedDetail(detail);
             }
+
+            _loadedTaskId = _id;
         }
         catch (Exception ex)
         {
@@ -122,10 +130,10 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         MaterialTitleLabel.IsVisible = !isPackaged;
         MaterialLabel.IsVisible = !isPackaged;
         PackagedSummaryPanel.IsVisible = isPackaged;
-        PackagedMaterialTitleLabel.IsVisible = isPackaged;
+        PackagedMaterialsPanel.IsVisible = isPackaged;
         ScanButton.IsVisible = !isPackaged;
         ScanSuccessPanel.IsVisible = false;
-        ScannedMaterialPanel.IsVisible = isPackaged;
+        ScannedMaterialPanel.IsVisible = false;
         ActualWeightPanel.IsVisible = !isPackaged;
         ActionBar.IsVisible = !isPackaged;
         DetailActualWeightTitleLabel.IsVisible = isPackaged;
@@ -134,8 +142,22 @@ public partial class PackagingSubTaskDetailPage : ContentPage
 
     private void ApplyPackagedDetail(PackagingSubTaskDetailDto detail)
     {
-        var packagedMaterial = detail.packagedMaterialList?.FirstOrDefault();
-        var packagedWeights = detail.packagedMaterialList?
+        var packagedMaterials = detail.packagedMaterialList?.ToList() ?? new List<PackagedMaterialDto>();
+        if (packagedMaterials.Count == 0)
+        {
+            packagedMaterials.Add(new PackagedMaterialDto
+            {
+                materialCode = detail.materialCode,
+                steelGrade = FirstNonEmpty(detail.steelGrade, detail.materialName),
+                specification = detail.specification,
+                originPlace = detail.originPlace,
+                length = detail.length,
+                lengthUnit = detail.lengthUnit,
+                pieceWeight = detail.pieceWeight ?? detail.actualWeight
+            });
+        }
+
+        var packagedWeights = packagedMaterials
             .Where(item => item.pieceWeight.HasValue)
             .Select(item => item.pieceWeight!.Value)
             .ToList();
@@ -147,13 +169,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         PackagedWorkOrderLabel.Text = detail.workOrderNoDisplay;
         PackagedCompleteTimeLabel.Text = detail.completeTimeDisplay;
 
-        ScannedMaterialCodeLabel.Text = $"物料编号：{Display(FirstNonEmpty(packagedMaterial?.materialCode, detail.materialCode))}";
-        ScannedSteelGradeLabel.Text = Display(FirstNonEmpty(packagedMaterial?.steelGrade, detail.steelGrade, detail.materialName));
-        ScannedSpecLabel.Text = Display(FirstNonEmpty(packagedMaterial?.specification, detail.specification));
-        ScannedOriginLabel.Text = Display(FirstNonEmpty(packagedMaterial?.originPlace, detail.originPlace));
-        ScannedLengthLabel.Text = FormatQuantity(packagedMaterial?.length ?? detail.length, FirstNonEmpty(packagedMaterial?.lengthUnit, detail.lengthUnit, "m"));
-        var pieceWeight = packagedMaterial?.pieceWeight ?? detail.pieceWeight ?? detail.actualWeight;
-        ScannedWeightLabel.Text = FormatQuantityWithoutUnitSpace(pieceWeight, "KG");
+        BindableLayout.SetItemsSource(PackagedMaterialsLayout, packagedMaterials);
         DetailActualWeightLabel.Text = FormatQuantity(actualWeight, "KG");
     }
 
@@ -292,7 +308,8 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         ScanSuccessPanel.IsVisible = false;
         ScannedMaterialPanel.IsVisible = false;
         PackagedSummaryPanel.IsVisible = false;
-        PackagedMaterialTitleLabel.IsVisible = false;
+        PackagedMaterialsPanel.IsVisible = false;
+        BindableLayout.SetItemsSource(PackagedMaterialsLayout, null);
         ScanButton.IsVisible = true;
         ActualWeightPanel.IsVisible = true;
         ActionBar.IsVisible = true;
