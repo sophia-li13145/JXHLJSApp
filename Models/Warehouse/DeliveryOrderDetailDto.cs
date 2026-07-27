@@ -18,6 +18,8 @@ public sealed class DeliveryOrderDetailDto
     public string? id { get; set; }
     public string? logisticsNumber { get; set; }
     public string? logisticsContacter { get; set; }
+    public int? scannedQty { get; set; }
+    public int? totalCount { get; set; }
 
     public string deliveryNoDisplay => ValueOrDash(deliveryNo);
     public string customerDisplay => ValueOrDash(customer);
@@ -39,8 +41,8 @@ public sealed class DeliveryOrderDetailDto
             return string.IsNullOrWhiteSpace(auditStatus) ? "待发货复核" : auditStatus!;
         }
     }
-    public int? needScanCount => detailList?.Count ?? 0;
-    public int? scannedCount => detailList?.Count(item => item.isScanned) ?? 0;
+    public int? needScanCount => totalCount;
+    public int? scannedCount => scannedQty;
     public string scanProgressDisplay => $"{scannedCount} / {needScanCount} 件";
 
     private static string ValueOrDash(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;

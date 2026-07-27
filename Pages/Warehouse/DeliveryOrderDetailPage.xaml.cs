@@ -127,8 +127,8 @@ public partial class DeliveryOrderDetailPage : ContentPage
 
     private void RefreshScanProgress()
     {
-        var total = _materials.Count;
-        var scanned = _materials.Count(item => item.isScanned);
+        var total = _detail?.totalCount ?? 0;
+        var scanned = _detail?.scannedQty ?? 0;
         ScanProgressLabel.Text = $"{scanned} / {total} 件";
     }
 
