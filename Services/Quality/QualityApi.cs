@@ -99,7 +99,7 @@ public sealed class QualityApi : IQualityApi
         _workOrderDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.dictList", "/pda/pmsWorkOrder/getWorkOrderDictList"), servicePath);
         _workProcessTaskDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
-            configLoader.GetApiPath("workOrder.dictProcessList", "/pda/pmsWorkOrder/getWorkProcessTaskDictList"), servicePath);
+            configLoader.GetApiPath("workOrder.wdictList", "/pda/qsOrderQuality/getDictList"), servicePath);
         _manualInspectionCreateEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("manualInspection.create", "/pda/manualInspection/create"), servicePath);
         _manualInspectionDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
