@@ -300,7 +300,8 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         ScanSuccessPanel.IsVisible = false;
         ScannedMaterialPanel.IsVisible = false;
         PackagedSummaryPanel.IsVisible = false;
-        PackagedMaterialTitleLabel.IsVisible = false;
+        PackagedMaterialsPanel.IsVisible = false;
+        BindableLayout.SetItemsSource(PackagedMaterialsLayout, null);
         ScanButton.IsVisible = true;
         ActualWeightPanel.IsVisible = true;
         ActionBar.IsVisible = true;
