@@ -212,7 +212,7 @@ public partial class WorkOrderInstructionPage : ContentPage
         AddProductInfoCell(1, 0, "机台类型", ValueOrDash(detail.machineType));
         AddProductInfoCell(1, 2, "机台号", ValueOrDash(FirstNonEmpty(detail.machineNo, detail.deviceName, detail.deviceCode)));
         AddProductInfoCell(2, 0, "挂牌", ValueOrDash(FirstNonEmpty(detail.hangCard, detail.steelGrade)));
-        AddProductInfoCell(2, 2, "下料规格", ValueOrDash(detail.inputSpecification));
+        AddProductInfoCell(2, 2, "下料规格", ValueOrDash(detail.productSpecification));
         AddProductInfoCell(3, 0, "生/淬", ValueOrDash(detail.rawOrQuench));
         AddProductInfoCell(3, 2, "拉拔方式", ValueOrDash(detail.drawMode));
         AddProductInfoCell(4, 0, "圈径", ValueOrDash(detail.coilDiameterControl));
@@ -545,7 +545,7 @@ public partial class WorkOrderInstructionPage : ContentPage
         ProcessParamsGrid.RowSpacing = 16;
 
         var row = 0;
-        AddDrawingFullWidthParamRow(row++, "收线速度", FormatWireTakeUpSpeed(detail.wireTakeUpSpeed));
+        AddDrawingFullWidthParamRow(row++, "收线速度", FormatWireTakeUpSpeed(detail.wireTakeUpSpeed, detail.wireTakeUpSpeedUnit));
         AddDrawingTwoParamRow(row++, "收线方式", detail.wireTakeUpMode, "钢丝形状", detail.wireShape);
         AddDrawingFullWidthParamRow(row++, "收线长度", FormatLengthWithUnit(detail.wireTakeUpLength));
         AddDrawingFullWidthParamRow(row++, "盘重要求", FormatCoilWeightRequirement(detail.coilWeightRequirement));
@@ -564,12 +564,12 @@ public partial class WorkOrderInstructionPage : ContentPage
         ProcessParamsGrid.RowSpacing = 16;
 
         var row = 0;
-        AddDrawingTwoParamRow(row++, "收线速度", FormatWireTakeUpSpeed(detail.wireTakeUpSpeed), "收线方式", detail.wireTakeUpMode);
+        AddDrawingTwoParamRow(row++, "收线速度", FormatWireTakeUpSpeed(detail.wireTakeUpSpeed, detail.wireTakeUpSpeedUnit), "收线方式", detail.wireTakeUpMode);
         AddDrawingFullWidthParamRow(row++, "炉号", detail.furnaceNo);
         AddDrawingFullWidthParamRow(row++, "收线长度", FormatLengthWithUnit(detail.wireTakeUpLength));
         AddDrawingFullWidthParamRow(row++, "盘重要求", FormatCoilWeightRequirement(detail.coilWeightRequirement));
         AddDrawingTwoParamRow(row++, "投料钢号", detail.inputSteelGrade, "上料规格", detail.inputSpecification);
-        AddDrawingTwoParamRow(row++, "钢号", detail.steelGrade, "下料规格", detail.blankSpecification);
+        AddDrawingTwoParamRow(row++, "钢号", detail.steelGrade, "下料规格", detail.productSpecification);
         AddDrawingTwoParamRow(row++, "开胚下公差(mm)", FormatNegativeTolerance(detail.billetLowerTolerance), "开胚上公差(mm)", detail.billetUpperTolerance);
         AddDrawingTwoParamRow(row++, "圈距控制", FormatLessThanOrEqualMillimeter(detail.pitchControl), "圈径控制", FormatMillimeter(detail.coilDiameterControl));
         AddDrawingTwoParamRow(row++, "椭圆度控制", FormatLessThanOrEqualMillimeter(detail.ovalityControl), "质检方式", detail.inspectionSchemeName);
@@ -637,7 +637,7 @@ public partial class WorkOrderInstructionPage : ContentPage
     {
         return new (string Label, string? Value)[]
         {
-            ("收线速度", FormatWireTakeUpSpeed(detail.wireTakeUpSpeed)),
+            ("收线速度", FormatWireTakeUpSpeed(detail.wireTakeUpSpeed, detail.wireTakeUpSpeedUnit)),
             ("收线方式", detail.wireTakeUpMode),
             ("炉号", detail.furnaceNo),
             ("收线长度", FormatLengthWithUnit(detail.wireTakeUpLength)),
@@ -688,7 +688,7 @@ public partial class WorkOrderInstructionPage : ContentPage
             ("钢丝形状", detail.wireShape),
             ("收线长度(m)", FormatLengthWithUnit(detail.wireTakeUpLength)),
             ("收线方式", detail.wireTakeUpMode),
-            ("收线速度", FormatWireTakeUpSpeed(detail.wireTakeUpSpeed)),
+            ("收线速度", FormatWireTakeUpSpeed(detail.wireTakeUpSpeed, detail.wireTakeUpSpeedUnit)),
             ("盘重要求", FormatCoilWeightRequirement(detail.coilWeightRequirement)),
             ("圈径控制", FormatMillimeter(detail.coilDiameterControl)),
             ("拉拔方式", detail.drawMode),
@@ -752,7 +752,7 @@ public partial class WorkOrderInstructionPage : ContentPage
             : $"{text}m";
     }
 
-    private static string FormatWireTakeUpSpeed(string? value)
+    private static string FormatWireTakeUpSpeed(string? value, string? unit)
     {
         var text = ProcessParamValueOrEmpty(value).Trim();
         if (string.IsNullOrWhiteSpace(text))
@@ -760,13 +760,10 @@ public partial class WorkOrderInstructionPage : ContentPage
             return text;
         }
 
-        var withUnit = text.Contains("m/s", StringComparison.OrdinalIgnoreCase)
+        var unitText = unit?.Trim();
+        return string.IsNullOrWhiteSpace(unitText) || text.EndsWith(unitText, StringComparison.OrdinalIgnoreCase)
             ? text
-            : $"{text}m/s";
-
-        return withUnit.Contains("MAX", StringComparison.OrdinalIgnoreCase)
-            ? withUnit
-            : $"{withUnit}, MAX (默认)";
+            : $"{text}{unitText}";
     }
 
     private static string FormatNegativeTolerance(string? value)

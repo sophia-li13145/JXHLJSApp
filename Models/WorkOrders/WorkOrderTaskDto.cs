@@ -20,6 +20,7 @@ public sealed class WorkOrderTaskDto
     public string targetMaterialDisplay => JoinNonEmpty(materialName, targetSpecification);
     public string machineDisplay => FirstNonEmpty(machineNo, deviceName, deviceCode);
     public string operationDisplay => FirstNonEmpty(operationName, operationCode);
+    public bool hasProductionInstructionCard => operationName?.Contains("酸洗", StringComparison.OrdinalIgnoreCase) != true;
     public string plannedWeightDisplay => FormatDecimal(plannedWeight, "吨");
     public string productionWeightDisplay => plannedWeight.HasValue ? plannedWeightDisplay : FormatDecimal(plannedQuantity, "");
     public string statusBackgroundColor => IsCompletedStatus ? "#EAFBF1" : IsRunningStatus ? "#EAF3FF" : "#F4F6FA";
