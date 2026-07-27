@@ -121,6 +121,7 @@ public partial class WorkCompletionPage : ContentPage
         {
             WorkOrderId = current.WorkOrderId,
             WorkOrderNo = current.WorkOrderNo,
+            OperationName = current.OperationName,
             ExecutionId = current.ExecutionId,
             MachineCode = machineCode,
             Status = current.Status,

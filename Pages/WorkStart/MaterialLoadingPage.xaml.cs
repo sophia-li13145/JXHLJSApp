@@ -114,6 +114,7 @@ public partial class MaterialLoadingPage : ContentPage
             {
                 WorkOrderId = current.WorkOrderId,
                 WorkOrderNo = current.WorkOrderNo,
+                OperationName = current.OperationName,
                 ExecutionId = current.ExecutionId,
                 MachineCode = machineCode,
                 Status = current.Status,
