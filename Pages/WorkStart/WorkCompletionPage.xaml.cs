@@ -104,7 +104,9 @@ public partial class WorkCompletionPage : ContentPage
         SystemStatusValueLabel.Text = status?.systemStatusDisplay ?? "--";
         TargetStatusValueLabel.Text = status?.targetStatusDisplay ?? "--";
         WeightProgressValueLabel.Text = status?.weightProgressDisplay ?? "--";
-        ConfirmButton.IsEnabled = status?.isCompleted == true;
+        // Keep the action clickable so completion requirements and error details are
+        // validated by the completion API instead of silently swallowing the tap.
+        ConfirmButton.IsEnabled = true;
     }
 
     private void UpdateProductionContextMachine(string machineCode)
