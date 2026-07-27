@@ -180,9 +180,13 @@
                             <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                             <VerticalStackLayout Spacing="8">
                                 <Label Text="质检结果" TextColor="#0042AD" FontSize="14" FontAttributes="Bold" />
-                                <Picker x:Name="InspectResultPicker" BackgroundColor="#F8FAFD" TextColor="#051B3D" HeightRequest="52" />
+                                <Picker x:Name="InspectResultPicker" BackgroundColor="#F8FAFD" TextColor="#051B3D" HeightRequest="52" SelectedIndexChanged="OnInspectResultChanged" />
                             </VerticalStackLayout>
                         </Border>
+                        <VerticalStackLayout x:Name="UnqualifiedDescriptionPanel" Spacing="8" IsVisible="False">
+                            <Label Text="不合格说明 *" TextColor="#051B3D" FontAttributes="Bold" />
+                            <Editor x:Name="UnqualifiedDescriptionEditor" Placeholder="选为不合格时必填原因" AutoSize="TextChanges" HeightRequest="90" BackgroundColor="#F8FAFD" />
+                        </VerticalStackLayout>
                         <Label x:Name="MemoLabel" Text="质检备注" TextColor="#051B3D" FontAttributes="Bold" />
                         <Editor x:Name="MemoEditor" Placeholder="填写其他备注信息..." AutoSize="TextChanges" HeightRequest="90" BackgroundColor="#F8FAFD" />
                     </VerticalStackLayout>

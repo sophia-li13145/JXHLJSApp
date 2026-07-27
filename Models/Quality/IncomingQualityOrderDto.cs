@@ -291,6 +291,7 @@ public sealed class ProductionManualInspectionSaveResultRequestDto
     public string? qualityNo { get; set; }
     public string? strengthMpa { get; set; }
     public string? surfaceCondition { get; set; }
+    public string? unqualifiedDescription { get; set; }
     public string? workOrderNo { get; set; }
 }
 
@@ -310,6 +311,7 @@ public sealed class ProductionSamplingOrFullCommitRequestDto
     public string? strengthMpa { get; set; }
     public string? surfaceCondition { get; set; }
     public string? torsion { get; set; }
+    public string? unqualifiedDescription { get; set; }
     public string? workOrderNo { get; set; }
 }
 
@@ -350,6 +352,7 @@ public sealed class ProductionFirstInspectionCommitRequestDto
     public string? qualityNo { get; set; }
     public string? strengthMpa { get; set; }
     public string? surfaceCondition { get; set; }
+    public string? unqualifiedDescription { get; set; }
     public string? workOrderNo { get; set; }
 }
 
