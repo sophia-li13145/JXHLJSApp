@@ -354,7 +354,9 @@ public sealed class WorkOrderApi : IWorkOrderApi
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<MaterialQrCodeInfoDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
-        return data?.result ?? new MaterialQrCodeInfoDto();
+        var material = data?.result ?? new MaterialQrCodeInfoDto();
+        await ApplyMaterialQrCodeDictNamesAsync(material, ct).ConfigureAwait(false);
+        return material;
     }
 
     public Task<AttachmentDto> UploadAbnormalAttachmentAsync(FileResult photo, CancellationToken ct = default) =>
