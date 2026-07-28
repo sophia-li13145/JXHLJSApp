@@ -149,7 +149,7 @@ public partial class MachineQualityDetailPage : ContentPage
         var isDrawing = IsDrawingScheme(processName);
         var isFirstInspection = isDrawing && HasSchemeToken(qualityFlowName, "首检", "首件检");
 
-        TitleLabel.Text = isAcid ? "执行酸洗质检" : isHeat ? "执行热处理质检" : isFirstInspection ? "执行拉拔工序质检" : "执行工序质检";
+        TitleLabel.Text = isAcid ? "酸洗质检池" : isHeat ? "执行热处理质检" : isFirstInspection ? "执行拉拔工序质检" : "执行工序质检";
         InfoTitleLabel.Text = isAcid ? "酸洗任务信息" : isHeat ? "热处理卡片信息" : "生产卡片信息";
         InputTitleLabel.Text = isAcid ? "酸洗检验录入" : isHeat ? "理化检验录入" : "检验项目录入";
         AcidInputPanel.IsVisible = isAcid;
