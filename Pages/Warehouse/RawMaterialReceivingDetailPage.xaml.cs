@@ -50,8 +50,11 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
             LocationLabel.Text = detail.locationDisplay;
             DetailTitleLabel.Text = $"入库明细 (共 {detail.detailItems.Count} 件)";
             DetailList.ItemsSource = detail.detailItems;
-            await LoadAttachmentPreviewsAsync(detail.attachments);
-            AttachmentList.ItemsSource = detail.attachments;
+            var attachments = detail.attachments;
+            AttachmentEmptyLabel.IsVisible = attachments.Count == 0;
+            AttachmentLayout.IsVisible = attachments.Count > 0;
+            await LoadAttachmentPreviewsAsync(attachments);
+            AttachmentLayout.ItemsSource = attachments;
         }
         catch (Exception ex)
         {
@@ -69,12 +72,16 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
         {
             try
             {
-                attachment.previewUrl = await _warehouseApi.PreviewAttachmentAsync(attachment.attachmentUrl!);
+                var bytes = await _warehouseApi.DownloadAttachmentPreviewAsync(attachment.attachmentUrl!);
+                if (bytes is { Length: > 0 })
+                {
+                    attachment.previewImage = ImageSource.FromStream(() => new MemoryStream(bytes));
+                }
             }
             catch
             {
                 // 单个附件预览失败不应阻止入库详情及其他附件展示，点击时仍可重试。
-                attachment.previewUrl = null;
+                attachment.previewImage = null;
             }
         }));
     }
