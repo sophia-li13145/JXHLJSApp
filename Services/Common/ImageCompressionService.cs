@@ -53,6 +53,7 @@ public sealed class ImageCompressionService : IImageCompressionService
         cancellationToken.ThrowIfCancellationRequested();
 
         using var input = OpenSourceReadStream(source);
+        var hasJpegSignature = HasJpegSignature(input);
         using var codec = SKCodec.Create(input)
             ?? throw new InvalidOperationException("无法读取票签图片。 ");
 
@@ -60,7 +61,7 @@ public sealed class ImageCompressionService : IImageCompressionService
         var originalHeight = codec.Info.Height;
         var orientedSize = GetOrientedSize(originalWidth, originalHeight, codec.EncodedOrigin);
         var originalBytes = GetFileSize(source);
-        var shouldNormalizeToJpeg = !IsJpeg(source.FileName);
+        var shouldNormalizeToJpeg = !IsJpeg(source.FileName) || !hasJpegSignature;
 
         if (!shouldNormalizeToJpeg &&
             originalBytes > 0 &&
@@ -94,8 +95,7 @@ public sealed class ImageCompressionService : IImageCompressionService
         using var decoded = new SKBitmap(decodeInfo);
         var result = codec.GetPixels(
             decodeInfo,
-            decoded.GetPixels(),
-            new SKCodecOptions(decodeSampleSize));
+            decoded.GetPixels());
 
         if (result is not SKCodecResult.Success and not SKCodecResult.IncompleteInput)
         {
@@ -118,6 +118,20 @@ public sealed class ImageCompressionService : IImageCompressionService
         using (var output = File.OpenWrite(tempPath))
         {
             data.SaveTo(output);
+        }
+
+        try
+        {
+            using var verifyBitmap = SKBitmap.Decode(tempPath);
+            if (verifyBitmap is null || verifyBitmap.Width <= 0 || verifyBitmap.Height <= 0)
+            {
+                throw new InvalidOperationException("压缩后的图片无法重新解码，禁止上传。");
+            }
+        }
+        catch
+        {
+            TryDeleteFile(tempPath);
+            throw;
         }
 
         var compressedBytes = new FileInfo(tempPath).Length;
@@ -267,38 +281,20 @@ public sealed class ImageCompressionService : IImageCompressionService
             source.AlphaType);
 
         using var canvas = new SKCanvas(destination);
-        switch (origin)
+        canvas.Clear(SKColors.White);
+        var orientationMatrix = origin switch
         {
-            case SKEncodedOrigin.TopRight:
-                canvas.Scale(-1, 1);
-                canvas.Translate(-source.Width, 0);
-                break;
-            case SKEncodedOrigin.BottomRight:
-                canvas.RotateDegrees(180, source.Width / 2f, source.Height / 2f);
-                break;
-            case SKEncodedOrigin.BottomLeft:
-                canvas.Scale(1, -1);
-                canvas.Translate(0, -source.Height);
-                break;
-            case SKEncodedOrigin.LeftTop:
-                canvas.RotateDegrees(90);
-                canvas.Scale(1, -1);
-                break;
-            case SKEncodedOrigin.RightTop:
-                canvas.Translate(destination.Width, 0);
-                canvas.RotateDegrees(90);
-                break;
-            case SKEncodedOrigin.RightBottom:
-                canvas.Scale(-1, 1);
-                canvas.Translate(-destination.Width, 0);
-                canvas.RotateDegrees(90);
-                break;
-            case SKEncodedOrigin.LeftBottom:
-                canvas.Translate(0, destination.Height);
-                canvas.RotateDegrees(270);
-                break;
-        }
+            SKEncodedOrigin.TopRight => CreateMatrix(-1, 0, source.Width, 0, 1, 0),
+            SKEncodedOrigin.BottomRight => CreateMatrix(-1, 0, source.Width, 0, -1, source.Height),
+            SKEncodedOrigin.BottomLeft => CreateMatrix(1, 0, 0, 0, -1, source.Height),
+            SKEncodedOrigin.LeftTop => CreateMatrix(0, 1, 0, 1, 0, 0),
+            SKEncodedOrigin.RightTop => CreateMatrix(0, -1, source.Height, 1, 0, 0),
+            SKEncodedOrigin.RightBottom => CreateMatrix(0, -1, source.Height, -1, 0, source.Width),
+            SKEncodedOrigin.LeftBottom => CreateMatrix(0, 1, 0, -1, 0, source.Width),
+            _ => SKMatrix.Identity
+        };
 
+        canvas.SetMatrix(orientationMatrix);
         canvas.DrawBitmap(source, 0, 0);
         canvas.Flush();
         return destination;
@@ -318,6 +314,46 @@ public sealed class ImageCompressionService : IImageCompressionService
     private static bool IsJpeg(string? fileName) =>
         Path.GetExtension(fileName ?? string.Empty).Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
         Path.GetExtension(fileName ?? string.Empty).Equals(".jpeg", StringComparison.OrdinalIgnoreCase);
+
+    private static bool HasJpegSignature(Stream stream)
+    {
+        if (!stream.CanSeek)
+        {
+            return false;
+        }
+
+        var position = stream.Position;
+        try
+        {
+            Span<byte> header = stackalloc byte[3];
+            return stream.Read(header) == header.Length &&
+                   header[0] == 0xFF &&
+                   header[1] == 0xD8 &&
+                   header[2] == 0xFF;
+        }
+        finally
+        {
+            stream.Position = position;
+        }
+    }
+
+    private static SKMatrix CreateMatrix(
+        float scaleX,
+        float skewX,
+        float transX,
+        float skewY,
+        float scaleY,
+        float transY) =>
+        new()
+        {
+            ScaleX = scaleX,
+            SkewX = skewX,
+            TransX = transX,
+            SkewY = skewY,
+            ScaleY = scaleY,
+            TransY = transY,
+            Persp2 = 1
+        };
 
     private static void TryDeleteFile(string path)
     {

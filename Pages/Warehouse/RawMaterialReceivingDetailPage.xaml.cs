@@ -53,8 +53,9 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
             var attachments = detail.attachments;
             AttachmentEmptyLabel.IsVisible = attachments.Count == 0;
             AttachmentLayout.IsVisible = attachments.Count > 0;
-            await LoadAttachmentPreviewsAsync(attachments);
             BindableLayout.SetItemsSource(AttachmentLayout, attachments);
+            await Task.Yield();
+            await LoadAttachmentPreviewsAsync(attachments);
         }
         catch (Exception ex)
         {
@@ -70,13 +71,20 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
     {
         await Task.WhenAll(attachments.Select(async attachment =>
         {
+            attachment.previewImage = null;
+            attachment.previewLoadFailed = false;
+            attachment.isPreviewLoading = true;
+
             try
             {
                 var bytes = await _warehouseApi.GetAttachmentPreviewBytesAsync(attachment.attachmentUrl!);
-                if (bytes is { Length: > 0 })
+                if (bytes is not { Length: > 0 })
                 {
-                    attachment.previewImage = ImageSource.FromStream(() => new MemoryStream(bytes));
+                    throw new InvalidOperationException("图片内容为空。");
                 }
+
+                attachment.previewImage = ImageSource.FromStream(
+                    () => new MemoryStream(bytes, writable: false));
             }
             catch (Exception ex)
             {
@@ -86,6 +94,11 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
                     "采购入库附件预览加载失败，attachmentUrl={AttachmentUrl}",
                     attachment.attachmentUrl);
                 attachment.previewImage = null;
+                attachment.previewLoadFailed = true;
+            }
+            finally
+            {
+                attachment.isPreviewLoading = false;
             }
         }));
     }
