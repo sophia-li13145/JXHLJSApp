@@ -2,6 +2,7 @@ using JXHLJSApp.Models;
 using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Models.WorkOrders;
 using JXHLJSApp.Services.Common;
+using System.Globalization;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -435,8 +436,36 @@ public sealed class WarehouseApi : IWarehouseApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _ocrIncomingEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new { fileInfo, instockNo }, JsonOptions, ct).ConfigureAwait(false);
         await EnsureSuccessStatusCodeWithBodyAsync(resp, ct).ConfigureAwait(false);
-        var data = await ReadApiResponseAsync<RawMaterialOcrDto>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new RawMaterialOcrDto();
+        var data = await ReadApiResponseAsync<OcrIncomingResultDto>(resp, ct).ConfigureAwait(false);
+        var result = data.result;
+        if (result is null)
+        {
+            return new RawMaterialOcrDto();
+        }
+
+        return new RawMaterialOcrDto
+        {
+            qrCode = FirstNonEmpty(result.qrCode, result.barcode),
+            coilCount = FormatNumber(result.coilCount),
+            coilDiameter = FormatNumber(result.coilDiameter),
+            coilNo = result.coilNo,
+            companyName = result.companyName,
+            confidence = result.confidence,
+            furnaceNo = result.furnaceNo,
+            materialClass = result.materialClass,
+            materialCode = result.brandNo,
+            materialName = FirstNonEmpty(result.materialName, result.brandNo, result.productName),
+            ocrRawText = result.ocrRawText,
+            originPlace = result.originPlace,
+            pieceWeight = FormatNumber(result.pieceWeight),
+            pieceWeightUnit = result.pieceWeightUnit,
+            productName = result.productName,
+            productionDate = result.productionDate,
+            spec = result.spec,
+            standard = result.standard,
+            strength = result.strength,
+            workshop = result.workshop
+        };
     }
 
     public async Task<bool?> SaveOcrIncomingImageAsync(SaveOcrIncomingImageRequestDto request, CancellationToken ct = default)
@@ -667,6 +696,12 @@ public sealed class WarehouseApi : IWarehouseApi
         var trimmed = body.Trim();
         return trimmed.Length <= maxLength ? trimmed : $"{trimmed[..maxLength]}...";
     }
+
+    private static string? FormatNumber(decimal? value) =>
+        value?.ToString("0.############################", CultureInfo.InvariantCulture);
+
+    private static string? FirstNonEmpty(params string?[] values) =>
+        values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
     private static string BuildUrlWithQuery(string endpoint, IReadOnlyDictionary<string, string?> query)
     {
