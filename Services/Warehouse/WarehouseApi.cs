@@ -260,17 +260,9 @@ public sealed class WarehouseApi : IWarehouseApi
             throw new InvalidOperationException($"附件预览地址无效：{previewUrl}");
         }
 
-        var baseAddress = _http.BaseAddress;
-        var isSameApiServer =
-            baseAddress is not null &&
-            string.Equals(previewUri.Scheme, baseAddress.Scheme, StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(previewUri.Host, baseAddress.Host, StringComparison.OrdinalIgnoreCase) &&
-            previewUri.Port == baseAddress.Port;
-
-        // 业务服务器仍需认证；外部对象存储或文件服务器必须避免附加业务 Token。
-        var downloadClient = isSameApiServer
-            ? _http
-            : _httpClientFactory.CreateClient("AttachmentPreview");
+        // 预览接口需要业务认证，但它返回的文件地址不属于业务 API。
+        // 即使文件服务与 API 共用域名和端口，也不能附加业务 Token 或经过 Token 拦截器。
+        var downloadClient = _httpClientFactory.CreateClient("AttachmentPreview");
 
         using var response = await downloadClient.GetAsync(
             previewUri,

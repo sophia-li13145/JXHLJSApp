@@ -90,8 +90,26 @@
                                                 <TapGestureRecognizer Tapped="OnAttachmentTapped" CommandParameter="{Binding .}" />
                                             </Border.GestureRecognizers>
                                             <Grid>
-                                                <Label Text="图片加载失败" TextColor="#9AA8BA" FontSize="11" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                                <Image Source="{Binding previewImage}" Aspect="AspectFill" />
+                                                <Image Source="{Binding previewImage}" Aspect="AspectFill" IsVisible="{Binding hasPreviewImage}" />
+                                                <VerticalStackLayout IsVisible="{Binding isPreviewLoading}"
+                                                                     HorizontalOptions="Center"
+                                                                     VerticalOptions="Center"
+                                                                     Spacing="5">
+                                                    <ActivityIndicator IsRunning="{Binding isPreviewLoading}"
+                                                                       WidthRequest="24"
+                                                                       HeightRequest="24"
+                                                                       Color="#244B88" />
+                                                    <Label Text="加载中..."
+                                                           FontSize="10"
+                                                           TextColor="#7A8799"
+                                                           HorizontalTextAlignment="Center" />
+                                                </VerticalStackLayout>
+                                                <Label Text="图片加载失败"
+                                                       IsVisible="{Binding previewLoadFailed}"
+                                                       TextColor="#9AA8BA"
+                                                       FontSize="11"
+                                                       HorizontalTextAlignment="Center"
+                                                       VerticalTextAlignment="Center" />
                                             </Grid>
                                         </Border>
                                     </Grid>
