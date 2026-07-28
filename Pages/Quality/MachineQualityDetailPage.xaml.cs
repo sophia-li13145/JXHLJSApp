@@ -846,7 +846,9 @@ public partial class MachineQualityDetailPage : ContentPage
         _detail.phosphatingTemperature = FirstNonEmpty(material.phosphatingTemperature, _detail.phosphatingTemperature);
         _detail.pieceNo = FirstNonEmpty(material.pieceNo, _detail.pieceNo);
         _detail.originPlace = FirstNonEmpty(material.originPlace, _detail.originPlace);
-        _detail.productDiameter = FirstNonEmpty(material.productDiameter, material.prodcutDiameter, _detail.productDiameter);
+        // 每次扫码都使用接口返回的成品直径刷新热处理质检的标准直径。
+        _detail.standardDiameterMm = material.productDiameter;
+        _detail.productDiameter = material.productDiameter;
         _detail.prodcutDiameter = FirstNonEmpty(material.prodcutDiameter, material.productDiameter, _detail.prodcutDiameter);
         _detail.productionDate = FirstNonEmpty(material.productionDate, _detail.productionDate);
         _detail.qrCode = _qrCode;
