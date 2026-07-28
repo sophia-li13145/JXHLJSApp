@@ -247,6 +247,24 @@ public sealed class WarehouseApi : IWarehouseApi
         return await _http.GetByteArrayAsync(previewUrl, ct).ConfigureAwait(false);
     }
 
+    public async Task<byte[]?> DownloadAttachmentPreviewAsync(string attachmentUrl, CancellationToken ct = default)
+    {
+        var previewUrl = await PreviewAttachmentAsync(attachmentUrl, ct: ct).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(previewUrl))
+        {
+            return null;
+        }
+
+        const string base64Marker = ";base64,";
+        var markerIndex = previewUrl.IndexOf(base64Marker, StringComparison.OrdinalIgnoreCase);
+        if (previewUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase) && markerIndex >= 0)
+        {
+            return Convert.FromBase64String(previewUrl[(markerIndex + base64Marker.Length)..]);
+        }
+
+        return await _http.GetByteArrayAsync(previewUrl, ct).ConfigureAwait(false);
+    }
+
 
     public async Task<MaterialQrCodeInfoDto> ScanFinishedPackageQrCodeAsync(string qrCode, CancellationToken ct = default)
     {
