@@ -54,7 +54,7 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
             AttachmentEmptyLabel.IsVisible = attachments.Count == 0;
             AttachmentLayout.IsVisible = attachments.Count > 0;
             await LoadAttachmentPreviewsAsync(attachments);
-            AttachmentLayout.ItemsSource = attachments;
+            BindableLayout.SetItemsSource(AttachmentLayout, attachments);
         }
         catch (Exception ex)
         {
