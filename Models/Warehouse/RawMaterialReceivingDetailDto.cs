@@ -33,9 +33,9 @@ public sealed class RawMaterialReceivingDetailDto
     public string warehouseDisplay => FirstNonEmpty(instockWarehouse, detailList?.FirstOrDefault(item => !string.IsNullOrWhiteSpace(item.instockWarehouse))?.instockWarehouse, "--");
     public string locationDisplay => FirstNonEmpty(warehouseAreaNo, detailList?.FirstOrDefault(item => !string.IsNullOrWhiteSpace(item.location))?.location, "--");
     public IReadOnlyList<RawMaterialReceivingDetailItemDto> detailItems => detailList ?? new List<RawMaterialReceivingDetailItemDto>();
-    public IReadOnlyList<AttachmentDto> mainAttachments => ocrList?
+    public IReadOnlyList<AttachmentDto> attachments => ocrList?
         .SelectMany(ocr => ocr.attachmentList ?? new List<AttachmentDto>())
-        .Where(file => string.Equals(file.attachmentLocation, "main", StringComparison.OrdinalIgnoreCase))
+        .Where(file => !string.IsNullOrWhiteSpace(file.attachmentUrl))
         .ToList() ?? new List<AttachmentDto>();
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "--";
