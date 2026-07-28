@@ -21,6 +21,17 @@
                 <VerticalStackLayout Padding="17,14,17,24" Spacing="16">
                     <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
                         <Border x:Name="InstructionCardButton" BackgroundColor="White" StrokeThickness="0" Padding="12" HeightRequest="103">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup Name="CommonStates">
+                                    <VisualState Name="Normal" />
+                                    <VisualState Name="Disabled">
+                                        <VisualState.Setters>
+                                            <Setter Property="BackgroundColor" Value="#E5E7EB" />
+                                            <Setter Property="Opacity" Value="0.55" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnInstructionTapped" />
                             </Border.GestureRecognizers>

@@ -38,7 +38,7 @@ public partial class WorkExecutionPage : ContentPage
         {
             var current = _productionContext.Current;
             var workOrderNo = current?.WorkOrderNo;
-            InstructionCardButton.IsVisible = current?.OperationName?.Contains("酸洗", StringComparison.OrdinalIgnoreCase) != true;
+            InstructionCardButton.IsEnabled = current?.OperationName?.Contains("酸洗", StringComparison.OrdinalIgnoreCase) != true;
             if (string.IsNullOrWhiteSpace(workOrderNo))
             {
                 await DisplayAlert("提示", "当前生产工单为空，无法查询当前关联任务池。", "确定");
