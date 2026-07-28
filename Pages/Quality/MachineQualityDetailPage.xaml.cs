@@ -269,7 +269,7 @@ public partial class MachineQualityDetailPage : ContentPage
                 ("批号", FirstNonEmpty(detail.productionBatchNo, detail.productionBatch, detail.businessType)), ("炉号", detail.furnaceNo),
                 ("产地", FirstNonEmpty(detail.originPlace, detail.freeAcid)), ("钢号", detail.steelGrade),
                 ("工号", detail.workOrderNo), ("班次", FirstNonEmpty(detail.shiftName, detail.shiftCode, detail.shiftNo, detail.targetSpecification)),
-                ("盘号", FirstNonEmpty(detail.batchNo, detail.plateNo, detail.inputSpecification))
+                ("盘号", detail.batchNo)
             };
         }
 
@@ -821,7 +821,8 @@ public partial class MachineQualityDetailPage : ContentPage
         _detail.actualDiameterMm = FirstNonEmpty(material.actualDiameterMm, _detail.actualDiameterMm);
         _detail.productionBatchNo = FirstNonEmpty(material.productionBatchNo, _detail.productionBatchNo);
         _detail.productionBatch = FirstNonEmpty(material.productionBatch, _detail.productionBatch);
-        _detail.batchNo = FirstNonEmpty(material.batchNo, _detail.batchNo);
+        // 每次扫码都以本次接口返回的 batchNo 更新盘号，避免保留上一次扫码结果。
+        _detail.batchNo = material.batchNo;
         _detail.businessType = FirstNonEmpty(material.businessType, _detail.businessType);
         _detail.coilDiameterControl = FirstNonEmpty(material.coilDiameterControl, _detail.coilDiameterControl);
         _detail.coilPitchControl = FirstNonEmpty(material.coilPitchControl, _detail.coilPitchControl);
@@ -845,8 +846,9 @@ public partial class MachineQualityDetailPage : ContentPage
         _detail.phosphatingTemperature = FirstNonEmpty(material.phosphatingTemperature, _detail.phosphatingTemperature);
         _detail.pieceNo = FirstNonEmpty(material.pieceNo, _detail.pieceNo);
         _detail.originPlace = FirstNonEmpty(material.originPlace, _detail.originPlace);
-        _detail.plateNo = FirstNonEmpty(material.plateNo, _detail.plateNo);
-        _detail.productDiameter = FirstNonEmpty(material.productDiameter, material.prodcutDiameter, _detail.productDiameter);
+        // 每次扫码都使用接口返回的成品直径刷新热处理质检的标准直径。
+        _detail.standardDiameterMm = material.productDiameter;
+        _detail.productDiameter = material.productDiameter;
         _detail.prodcutDiameter = FirstNonEmpty(material.prodcutDiameter, material.productDiameter, _detail.prodcutDiameter);
         _detail.productionDate = FirstNonEmpty(material.productionDate, _detail.productionDate);
         _detail.qrCode = _qrCode;
@@ -890,8 +892,6 @@ public partial class MachineQualityDetailPage : ContentPage
         SelectQualifiedOption(CoilPitchPicker, _detail.coilPitchControl);
         SelectQualifiedOption(InspectResultPicker, _detail.inspectResult);
     }
-
-
 
     private static ProductionQualityMaterialDto CreateScannedMaterialInfo(ProductionQualityScanMaterialDto material, string fallbackQrCode)
     {
