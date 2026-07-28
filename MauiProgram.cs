@@ -90,6 +90,10 @@ namespace JXHLJSApp
 
             // Core framework and configuration services.
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();
+            builder.Services.AddHttpClient("AttachmentPreview", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
             builder.Services.AddHttpClient<IAuthApi, AuthApi>(ConfigureBaseAddress)
                 .AddHttpMessageHandler<AuthHeaderHandler>()
                 .AddHttpMessageHandler<TokenExpiredHandler>();

@@ -3,6 +3,7 @@ using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Models.WorkOrders;
 using JXHLJSApp.Services.Common;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 
 namespace JXHLJSApp.Services.Warehouse;
@@ -36,6 +37,7 @@ public interface IWarehouseApi
 public sealed class WarehouseApi : IWarehouseApi
 {
     private readonly HttpClient _http;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly string _rawMaterialReceivingListEndpoint;
     private readonly string _addBlankInstockEndpoint;
     private readonly string _rawMaterialReceivingDetailEndpoint;
@@ -61,9 +63,13 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _workOrderDictListEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public WarehouseApi(HttpClient http, IConfigLoader configLoader)
+    public WarehouseApi(
+        HttpClient http,
+        IConfigLoader configLoader,
+        IHttpClientFactory httpClientFactory)
     {
         _http = http;
+        _httpClientFactory = httpClientFactory;
         var servicePath = _http.BaseAddress?.AbsolutePath?.TrimEnd('/') ?? "/jxhljszpService";
         _rawMaterialReceivingListEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.listInStock", "/pda/rawMaterialReceiving/listInStock"), servicePath);
@@ -234,18 +240,73 @@ public sealed class WarehouseApi : IWarehouseApi
         var previewUrl = await PreviewAttachmentAsync(attachmentUrl, ct: ct).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(previewUrl))
         {
-            return null;
+            throw new InvalidOperationException("附件预览接口未返回图片地址。");
         }
 
         const string base64Marker = ";base64,";
-        var markerIndex = previewUrl.IndexOf(base64Marker, StringComparison.OrdinalIgnoreCase);
-        if (previewUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase) && markerIndex >= 0)
+        if (previewUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
         {
+            var markerIndex = previewUrl.IndexOf(base64Marker, StringComparison.OrdinalIgnoreCase);
+            if (markerIndex < 0)
+            {
+                throw new InvalidOperationException("附件 Base64 格式不正确。");
+            }
+
             return Convert.FromBase64String(previewUrl[(markerIndex + base64Marker.Length)..]);
         }
 
-        return await _http.GetByteArrayAsync(previewUrl, ct).ConfigureAwait(false);
+        if (!Uri.TryCreate(previewUrl, UriKind.Absolute, out var previewUri))
+        {
+            throw new InvalidOperationException($"附件预览地址无效：{previewUrl}");
+        }
+
+        var baseAddress = _http.BaseAddress;
+        var isSameApiServer =
+            baseAddress is not null &&
+            string.Equals(previewUri.Scheme, baseAddress.Scheme, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(previewUri.Host, baseAddress.Host, StringComparison.OrdinalIgnoreCase) &&
+            previewUri.Port == baseAddress.Port;
+
+        // 业务服务器仍需认证；外部对象存储或文件服务器必须避免附加业务 Token。
+        var downloadClient = isSameApiServer
+            ? _http
+            : _httpClientFactory.CreateClient("AttachmentPreview");
+
+        using var response = await downloadClient.GetAsync(
+            previewUri,
+            HttpCompletionOption.ResponseHeadersRead,
+            ct).ConfigureAwait(false);
+        var bytes = await response.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
+        var contentType = response.Content.Headers.ContentType?.MediaType;
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = GetResponseExcerpt(bytes);
+            throw new HttpRequestException(
+                $"附件下载失败，HTTP {(int)response.StatusCode}，" +
+                $"Content-Type={contentType ?? "<空>"}，URL={previewUrl}，响应={errorBody}");
+        }
+
+        if (bytes.Length == 0)
+        {
+            throw new InvalidOperationException("附件下载成功，但文件内容为空。");
+        }
+
+        if (!string.IsNullOrWhiteSpace(contentType) &&
+            !contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(contentType, "application/octet-stream", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"附件返回内容不是图片，Content-Type={contentType}，" +
+                $"URL={previewUrl}，响应={GetResponseExcerpt(bytes)}");
+        }
+
+        return bytes;
     }
+
+    private static string GetResponseExcerpt(byte[] bytes) => bytes.Length == 0
+        ? "<空>"
+        : Encoding.UTF8.GetString(bytes, 0, Math.Min(bytes.Length, 500));
 
 
     public async Task<MaterialQrCodeInfoDto> ScanFinishedPackageQrCodeAsync(string qrCode, CancellationToken ct = default)
