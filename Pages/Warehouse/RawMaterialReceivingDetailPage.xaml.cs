@@ -78,9 +78,13 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
                     attachment.previewImage = ImageSource.FromStream(() => new MemoryStream(bytes));
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 // 单个附件预览失败不应阻止入库详情及其他附件展示，点击时仍可重试。
+                Serilog.Log.Error(
+                    ex,
+                    "采购入库附件预览加载失败，attachmentUrl={AttachmentUrl}",
+                    attachment.attachmentUrl);
                 attachment.previewImage = null;
             }
         }));
