@@ -15,6 +15,7 @@ public interface IWarehouseApi
     Task<List<PackagingSubTaskDto>> GetPackagingSubTaskListAsync(CancellationToken ct = default);
     Task<PackagingSubTaskDetailDto> GetPackagingSubTaskDetailAsync(string id, CancellationToken ct = default);
     Task<string?> PreviewAttachmentAsync(string attachmentUrl, long? expires = null, CancellationToken ct = default);
+    Task<byte[]?> GetAttachmentPreviewBytesAsync(string attachmentUrl, CancellationToken ct = default);
     Task<bool?> SavePackagingAsync(PackagingSaveRequestDto request, CancellationToken ct = default);
     Task<MaterialQrCodeInfoDto> ScanFinishedPackageQrCodeAsync(string qrCode, CancellationToken ct = default);
     Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default);
@@ -204,7 +205,46 @@ public sealed class WarehouseApi : IWarehouseApi
         var data = await ReadApiResponseAsync<string?>(resp, ct).ConfigureAwait(false);
         return string.IsNullOrWhiteSpace(data.result)
             ? null
-            : ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, data.result);
+            : ResolvePreviewUrl(data.result);
+    }
+
+    private string ResolvePreviewUrl(string previewUrl)
+    {
+        var value = previewUrl.Trim();
+        if (value.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ||
+            Uri.TryCreate(value, UriKind.Absolute, out _))
+        {
+            return value;
+        }
+
+        if (_http.BaseAddress is null)
+        {
+            throw new InvalidOperationException("HttpClient.BaseAddress 未配置");
+        }
+
+        // 以 / 开头的地址相对于服务器根路径；普通相对地址则相对于当前服务路径。
+        var baseAddress = value.StartsWith('/')
+            ? _http.BaseAddress
+            : new Uri(_http.BaseAddress.AbsoluteUri.TrimEnd('/') + "/", UriKind.Absolute);
+        return new Uri(baseAddress, value).AbsoluteUri;
+    }
+
+    public async Task<byte[]?> GetAttachmentPreviewBytesAsync(string attachmentUrl, CancellationToken ct = default)
+    {
+        var previewUrl = await PreviewAttachmentAsync(attachmentUrl, ct: ct).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(previewUrl))
+        {
+            return null;
+        }
+
+        const string base64Marker = ";base64,";
+        var markerIndex = previewUrl.IndexOf(base64Marker, StringComparison.OrdinalIgnoreCase);
+        if (previewUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase) && markerIndex >= 0)
+        {
+            return Convert.FromBase64String(previewUrl[(markerIndex + base64Marker.Length)..]);
+        }
+
+        return await _http.GetByteArrayAsync(previewUrl, ct).ConfigureAwait(false);
     }
 
 
