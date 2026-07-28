@@ -78,17 +78,20 @@
                     <Label Text="附件信息" TextColor="#051B3D" FontSize="16" FontAttributes="Bold" />
                     <Border BackgroundColor="White" StrokeThickness="0" Padding="20">
                         <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
-                        <CollectionView x:Name="AttachmentList" EmptyView="暂无附件" ItemsLayout="HorizontalList">
+                        <CollectionView x:Name="AttachmentList" EmptyView="暂无附件" ItemsLayout="HorizontalList" HeightRequest="126">
                             <CollectionView.ItemTemplate>
                                 <DataTemplate>
-                                    <Border BackgroundColor="#F8FAFD" Stroke="#BFD1E8" Padding="12" Margin="0,0,12,0" WidthRequest="82" HeightRequest="82">
+                                    <Border BackgroundColor="#F8FAFD" Stroke="#BFD1E8" Padding="6" Margin="0,0,12,0" WidthRequest="112" HeightRequest="118">
                                         <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
                                         <Border.GestureRecognizers>
                                             <TapGestureRecognizer Tapped="OnAttachmentTapped" CommandParameter="{Binding .}" />
                                         </Border.GestureRecognizers>
-                                        <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="6">
-                                            <Label Text="📄" FontSize="20" HorizontalTextAlignment="Center" />
-                                            <Label Text="{Binding attachmentName}" TextColor="#38557C" FontSize="12" LineBreakMode="TailTruncation" HorizontalTextAlignment="Center" />
+                                        <VerticalStackLayout HorizontalOptions="Fill" VerticalOptions="Fill" Spacing="6">
+                                            <Grid HeightRequest="82">
+                                                <Label Text="🖼️" FontSize="28" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                                <Image Source="{Binding previewUrl}" Aspect="AspectFill" IsVisible="{Binding hasPreview}" />
+                                            </Grid>
+                                            <Label Text="{Binding displayName}" TextColor="#38557C" FontSize="12" LineBreakMode="TailTruncation" HorizontalTextAlignment="Center" />
                                         </VerticalStackLayout>
                                     </Border>
                                 </DataTemplate>

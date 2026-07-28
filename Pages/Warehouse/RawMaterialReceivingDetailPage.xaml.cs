@@ -50,7 +50,8 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
             LocationLabel.Text = detail.locationDisplay;
             DetailTitleLabel.Text = $"入库明细 (共 {detail.detailItems.Count} 件)";
             DetailList.ItemsSource = detail.detailItems;
-            AttachmentList.ItemsSource = detail.mainAttachments;
+            await LoadAttachmentPreviewsAsync(detail.attachments);
+            AttachmentList.ItemsSource = detail.attachments;
         }
         catch (Exception ex)
         {
@@ -60,6 +61,22 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
         {
             RefreshContainer.IsRefreshing = false;
         }
+    }
+
+    private async Task LoadAttachmentPreviewsAsync(IEnumerable<AttachmentDto> attachments)
+    {
+        await Task.WhenAll(attachments.Select(async attachment =>
+        {
+            try
+            {
+                attachment.previewUrl = await _warehouseApi.PreviewAttachmentAsync(attachment.attachmentUrl!);
+            }
+            catch
+            {
+                // 单个附件预览失败不应阻止入库详情及其他附件展示，点击时仍可重试。
+                attachment.previewUrl = null;
+            }
+        }));
     }
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
@@ -80,7 +97,8 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
         try
         {
             _isOpeningAttachment = true;
-            var previewUrl = await _warehouseApi.PreviewAttachmentAsync(attachment.attachmentUrl);
+            var previewUrl = attachment.previewUrl ??
+                await _warehouseApi.PreviewAttachmentAsync(attachment.attachmentUrl);
             if (string.IsNullOrWhiteSpace(previewUrl) ||
                 !Uri.TryCreate(previewUrl, UriKind.Absolute, out var previewUri))
             {
