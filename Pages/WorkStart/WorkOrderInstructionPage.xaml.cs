@@ -321,7 +321,7 @@ public partial class WorkOrderInstructionPage : ContentPage
         return new (string Label, string? Value)[]
         {
             ("钢号", detail.steelGrade),
-            ("规格", detail.productSpecification),
+            ("规格", detail.intermediateSpecification),
             ("DV", FormatDvWithUnit(detail.dvSpeed)),
             ("生产批号", FirstNonEmpty(detail.productionBatchNo, detail.productionBatch, detail.batchNo, detail.qualityNo)),
             ("销售方式", detail.saleMode),
