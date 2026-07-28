@@ -83,16 +83,18 @@
                             <FlexLayout x:Name="AttachmentLayout" Direction="Row" Wrap="Wrap" JustifyContent="Start" AlignItems="Start">
                                 <BindableLayout.ItemTemplate>
                                 <DataTemplate>
-                                    <Border BackgroundColor="#F8FAFD" Stroke="#BFD1E8" Padding="4" Margin="0,0,10,10" WidthRequest="136" HeightRequest="136">
-                                        <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
-                                        <Border.GestureRecognizers>
-                                            <TapGestureRecognizer Tapped="OnAttachmentTapped" CommandParameter="{Binding .}" />
-                                        </Border.GestureRecognizers>
-                                        <Grid>
-                                            <Label Text="🖼️" FontSize="28" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
-                                            <Image Source="{Binding previewImage}" Aspect="AspectFill" />
-                                        </Grid>
-                                    </Border>
+                                    <Grid FlexLayout.Basis="33.333%" Padding="4" HeightRequest="108">
+                                        <Border BackgroundColor="#F8FAFD" Stroke="#BFD1E8" Padding="3">
+                                            <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Tapped="OnAttachmentTapped" CommandParameter="{Binding .}" />
+                                            </Border.GestureRecognizers>
+                                            <Grid>
+                                                <Label Text="图片加载失败" TextColor="#9AA8BA" FontSize="11" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                                <Image Source="{Binding previewImage}" Aspect="AspectFill" />
+                                            </Grid>
+                                        </Border>
+                                    </Grid>
                                 </DataTemplate>
                                 </BindableLayout.ItemTemplate>
                             </FlexLayout>
