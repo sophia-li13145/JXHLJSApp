@@ -104,7 +104,8 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
         try
         {
             _isOpeningAttachment = true;
-            var previewUrl = await _warehouseApi.PreviewAttachmentAsync(attachment.attachmentUrl);
+            var previewUrl = attachment.previewUrl ??
+                await _warehouseApi.PreviewAttachmentAsync(attachment.attachmentUrl);
             if (string.IsNullOrWhiteSpace(previewUrl) ||
                 !Uri.TryCreate(previewUrl, UriKind.Absolute, out var previewUri))
             {
