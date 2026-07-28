@@ -72,7 +72,7 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
         {
             try
             {
-                var bytes = await _warehouseApi.DownloadAttachmentPreviewAsync(attachment.attachmentUrl!);
+                var bytes = await _warehouseApi.GetAttachmentPreviewBytesAsync(attachment.attachmentUrl!);
                 if (bytes is { Length: > 0 })
                 {
                     attachment.previewImage = ImageSource.FromStream(() => new MemoryStream(bytes));

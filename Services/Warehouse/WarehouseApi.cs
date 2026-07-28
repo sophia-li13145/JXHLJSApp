@@ -15,7 +15,7 @@ public interface IWarehouseApi
     Task<List<PackagingSubTaskDto>> GetPackagingSubTaskListAsync(CancellationToken ct = default);
     Task<PackagingSubTaskDetailDto> GetPackagingSubTaskDetailAsync(string id, CancellationToken ct = default);
     Task<string?> PreviewAttachmentAsync(string attachmentUrl, long? expires = null, CancellationToken ct = default);
-    Task<byte[]?> DownloadAttachmentPreviewAsync(string attachmentUrl, CancellationToken ct = default);
+    Task<byte[]?> GetAttachmentPreviewBytesAsync(string attachmentUrl, CancellationToken ct = default);
     Task<bool?> SavePackagingAsync(PackagingSaveRequestDto request, CancellationToken ct = default);
     Task<MaterialQrCodeInfoDto> ScanFinishedPackageQrCodeAsync(string qrCode, CancellationToken ct = default);
     Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default);
@@ -229,25 +229,7 @@ public sealed class WarehouseApi : IWarehouseApi
         return new Uri(baseAddress, value).AbsoluteUri;
     }
 
-    public async Task<byte[]?> DownloadAttachmentPreviewAsync(string attachmentUrl, CancellationToken ct = default)
-    {
-        var previewUrl = await PreviewAttachmentAsync(attachmentUrl, ct: ct).ConfigureAwait(false);
-        if (string.IsNullOrWhiteSpace(previewUrl))
-        {
-            return null;
-        }
-
-        const string base64Marker = ";base64,";
-        var markerIndex = previewUrl.IndexOf(base64Marker, StringComparison.OrdinalIgnoreCase);
-        if (previewUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase) && markerIndex >= 0)
-        {
-            return Convert.FromBase64String(previewUrl[(markerIndex + base64Marker.Length)..]);
-        }
-
-        return await _http.GetByteArrayAsync(previewUrl, ct).ConfigureAwait(false);
-    }
-
-    public async Task<byte[]?> DownloadAttachmentPreviewAsync(string attachmentUrl, CancellationToken ct = default)
+    public async Task<byte[]?> GetAttachmentPreviewBytesAsync(string attachmentUrl, CancellationToken ct = default)
     {
         var previewUrl = await PreviewAttachmentAsync(attachmentUrl, ct: ct).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(previewUrl))
