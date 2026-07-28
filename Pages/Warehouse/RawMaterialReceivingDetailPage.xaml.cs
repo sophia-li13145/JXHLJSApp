@@ -50,7 +50,11 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
             LocationLabel.Text = detail.locationDisplay;
             DetailTitleLabel.Text = $"入库明细 (共 {detail.detailItems.Count} 件)";
             DetailList.ItemsSource = detail.detailItems;
-            AttachmentList.ItemsSource = detail.mainAttachments;
+            var attachments = detail.attachments;
+            AttachmentEmptyLabel.IsVisible = attachments.Count == 0;
+            AttachmentLayout.IsVisible = attachments.Count > 0;
+            await LoadAttachmentPreviewsAsync(attachments);
+            AttachmentLayout.ItemsSource = attachments;
         }
         catch (Exception ex)
         {
@@ -60,6 +64,26 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
         {
             RefreshContainer.IsRefreshing = false;
         }
+    }
+
+    private async Task LoadAttachmentPreviewsAsync(IEnumerable<AttachmentDto> attachments)
+    {
+        await Task.WhenAll(attachments.Select(async attachment =>
+        {
+            try
+            {
+                var bytes = await _warehouseApi.DownloadAttachmentPreviewAsync(attachment.attachmentUrl!);
+                if (bytes is { Length: > 0 })
+                {
+                    attachment.previewImage = ImageSource.FromStream(() => new MemoryStream(bytes));
+                }
+            }
+            catch
+            {
+                // 单个附件预览失败不应阻止入库详情及其他附件展示，点击时仍可重试。
+                attachment.previewImage = null;
+            }
+        }));
     }
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
