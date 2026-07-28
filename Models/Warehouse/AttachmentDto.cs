@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace JXHLJSApp.Models.Warehouse;
 
 public sealed class AttachmentDto
@@ -12,4 +14,10 @@ public sealed class AttachmentDto
     public string? createdTime { get; set; }
     public string? id { get; set; }
     public string? memo { get; set; }
+
+    // 页面加载详情后通过附件预览接口填充，不参与后端 JSON 数据传输。
+    [JsonIgnore]
+    public string? previewUrl { get; set; }
+    [JsonIgnore]
+    public ImageSource? previewImage { get; set; }
 }
