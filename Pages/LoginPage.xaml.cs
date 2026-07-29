@@ -1,24 +1,36 @@
-﻿using JXHLJSApp.Services;
+﻿using JXHLJSApp.Models;
+using JXHLJSApp.Services;
 
 namespace JXHLJSApp.Pages;
 
 public partial class LoginPage : ContentPage
 {
     private readonly IAuthApi _authApi;
+    private readonly IScanService _scanService;
     private bool _isBusy;
     private bool _credentialsLoaded;
     private bool _isPasswordVisible;
+    private bool _isQrLoginTab;
 
-    public LoginPage(IAuthApi authApi)
+    public LoginPage(IAuthApi authApi, IScanService scanService)
     {
         InitializeComponent();
         _authApi = authApi;
+        _scanService = scanService;
+
+        // 默认展示账号登录。
+        SetLoginTab(isQrLogin: false);
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
         await LoadRememberedCredentialsAsync();
+
+        if (_isQrLoginTab)
+        {
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(UsernameEntry.Text))
         {
@@ -38,6 +50,40 @@ public partial class LoginPage : ContentPage
     private async void OnLoginClicked(object sender, EventArgs e)
     {
         await LoginAsync();
+    }
+
+    private void OnAccountLoginTabTapped(object sender, TappedEventArgs e)
+    {
+        if (_isBusy) return;
+
+        SetLoginTab(isQrLogin: false);
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            if (string.IsNullOrWhiteSpace(UsernameEntry.Text))
+            {
+                UsernameEntry.Focus();
+            }
+            else
+            {
+                PasswordEntry.Focus();
+            }
+        });
+    }
+
+    private void OnQrLoginTabTapped(object sender, TappedEventArgs e)
+    {
+        if (_isBusy) return;
+        SetLoginTab(isQrLogin: true);
+    }
+
+    private async void OnQrScanTapped(object sender, TappedEventArgs e)
+    {
+        await ScanQrAndLoginAsync();
+    }
+
+    private async void OnQrScanClicked(object sender, EventArgs e)
+    {
+        await ScanQrAndLoginAsync();
     }
 
     private async void OnRememberCheckedChanged(object sender, CheckedChangedEventArgs e)
@@ -91,25 +137,16 @@ public partial class LoginPage : ContentPage
         {
             SetBusy(true);
             var result = await _authApi.LoginAsync(username, password);
+            var loginSucceeded = await CompleteLoginAsync(
+                result,
+                fallbackUsername: username,
+                fallbackWorkNumber: null,
+                afterLoginAsync: () => SaveRememberedCredentialsAsync(username, password));
 
-            if (!result.Success || string.IsNullOrWhiteSpace(result.Token))
+            if (!loginSucceeded)
             {
-                ShowMessage(string.IsNullOrWhiteSpace(result.Message) ? "登录失败，请检查账号或密码" : result.Message);
                 return;
             }
-
-            if (result.UserInfo is not null && string.IsNullOrWhiteSpace(result.UserInfo.username))
-            {
-                result.UserInfo.username = username;
-            }
-
-            await TokenStorage.SaveAsync(result.Token);
-            ApiClient.SetBearer(result.Token);
-            UserSessionStore.Save(result.UserInfo);
-            Preferences.Set(UserSessionKeys.UserName, username);
-            await SaveRememberedCredentialsAsync(username, password);
-            ShowMessage("登录成功", isError: false);
-            App.SwitchToLoggedInShell();
         }
         catch (Exception ex)
         {
@@ -119,6 +156,103 @@ public partial class LoginPage : ContentPage
         {
             SetBusy(false);
         }
+    }
+
+    private async Task ScanQrAndLoginAsync()
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            ClearMessage();
+            SetBusy(true);
+            QrStatusLabel.Text = "请将员工二维码对准扫码框";
+
+            var rawValue = await _scanService.ScanAsync("扫描员工二维码");
+            if (string.IsNullOrWhiteSpace(rawValue))
+            {
+                QrStatusLabel.Text = "已取消扫码，请重新扫描";
+                return;
+            }
+
+            if (!QrLoginPayload.TryParse(rawValue, out var qrPayload, out var parseError) || qrPayload is null)
+            {
+                QrStatusLabel.Text = "二维码识别失败";
+                ShowMessage(parseError);
+                return;
+            }
+
+            QrStatusLabel.Text = "二维码已识别，正在登录...";
+            var result = await _authApi.QrLoginAsync(qrPayload.Username!, qrPayload.WorkNumber!);
+            var loginSucceeded = await CompleteLoginAsync(
+                result,
+                fallbackUsername: qrPayload.Username!,
+                fallbackWorkNumber: qrPayload.WorkNumber,
+                afterLoginAsync: null);
+
+            if (!loginSucceeded)
+            {
+                QrStatusLabel.Text = "扫码登录失败，请重新扫描";
+            }
+        }
+        catch (Exception ex)
+        {
+            QrStatusLabel.Text = "扫码登录失败，请重新扫描";
+            ShowMessage($"扫码登录失败：{ex.Message}");
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    /// <summary>
+    /// 账号密码登录和二维码登录共用的登录成功处理，保证后续逻辑完全一致。
+    /// </summary>
+    private async Task<bool> CompleteLoginAsync(
+        LoginResult result,
+        string fallbackUsername,
+        string? fallbackWorkNumber,
+        Func<Task>? afterLoginAsync)
+    {
+        if (!result.Success || string.IsNullOrWhiteSpace(result.Token))
+        {
+            ShowMessage(string.IsNullOrWhiteSpace(result.Message)
+                ? "登录失败，请检查登录信息"
+                : result.Message);
+            return false;
+        }
+
+        if (result.UserInfo is not null)
+        {
+            if (string.IsNullOrWhiteSpace(result.UserInfo.username))
+            {
+                result.UserInfo.username = fallbackUsername;
+            }
+
+            if (string.IsNullOrWhiteSpace(result.UserInfo.workNumber)
+                && !string.IsNullOrWhiteSpace(fallbackWorkNumber))
+            {
+                result.UserInfo.workNumber = fallbackWorkNumber;
+            }
+        }
+
+        await TokenStorage.SaveAsync(result.Token);
+        ApiClient.SetBearer(result.Token);
+        UserSessionStore.Save(result.UserInfo);
+        Preferences.Set(UserSessionKeys.UserName, fallbackUsername);
+
+        if (afterLoginAsync is not null)
+        {
+            await afterLoginAsync();
+        }
+
+        ShowMessage("登录成功", isError: false);
+        App.SwitchToLoggedInShell();
+        return true;
     }
 
     private async Task LoadRememberedCredentialsAsync()
@@ -157,6 +291,30 @@ public partial class LoginPage : ContentPage
         RememberedLoginStore.SaveUsername(username);
     }
 
+    private void SetLoginTab(bool isQrLogin)
+    {
+        _isQrLoginTab = isQrLogin;
+        AccountLoginPanel.IsVisible = !isQrLogin;
+        QrLoginPanel.IsVisible = isQrLogin;
+
+        AccountLoginTabBorder.BackgroundColor = isQrLogin ? Colors.Transparent : Colors.White;
+        QrLoginTabBorder.BackgroundColor = isQrLogin ? Colors.White : Colors.Transparent;
+
+        AccountLoginTabLabel.TextColor = Color.FromArgb(isQrLogin ? "#5D718D" : "#082D63");
+        QrLoginTabLabel.TextColor = Color.FromArgb(isQrLogin ? "#082D63" : "#5D718D");
+        AccountLoginTabLabel.FontAttributes = isQrLogin ? FontAttributes.None : FontAttributes.Bold;
+        QrLoginTabLabel.FontAttributes = isQrLogin ? FontAttributes.Bold : FontAttributes.None;
+
+        AccountLoginTabBorder.Shadow = isQrLogin
+            ? null
+            : new Shadow { Brush = new SolidColorBrush(Color.FromArgb("#22000000")), Offset = new Point(0, 2), Radius = 4 };
+        QrLoginTabBorder.Shadow = isQrLogin
+            ? new Shadow { Brush = new SolidColorBrush(Color.FromArgb("#22000000")), Offset = new Point(0, 2), Radius = 4 }
+            : null;
+
+        ClearMessage();
+    }
+
     private void SetPasswordVisibility(bool isVisible)
     {
         _isPasswordVisible = isVisible;
@@ -168,8 +326,24 @@ public partial class LoginPage : ContentPage
     private void SetBusy(bool isBusy)
     {
         _isBusy = isBusy;
+
         LoginButton.IsEnabled = !isBusy;
         LoginButton.Text = isBusy ? "登 录 中..." : "登 录 系 统";
+
+        QrScanButton.IsEnabled = !isBusy;
+        QrScanButton.Text = isBusy ? "处 理 中..." : "开 始 扫 码";
+        QrScanCard.InputTransparent = isBusy;
+        QrLoginIndicator.IsVisible = isBusy && _isQrLoginTab;
+        QrLoginIndicator.IsRunning = isBusy && _isQrLoginTab;
+
+        AccountLoginTabBorder.InputTransparent = isBusy;
+        QrLoginTabBorder.InputTransparent = isBusy;
+    }
+
+    private void ClearMessage()
+    {
+        MessageLabel.Text = string.Empty;
+        MessageLabel.IsVisible = false;
     }
 
     private void ShowMessage(string message, bool isError = true)

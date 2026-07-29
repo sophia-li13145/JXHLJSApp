@@ -9,6 +9,7 @@ namespace JXHLJSApp.Services;
 public interface IAuthApi
 {
     Task<LoginResult> LoginAsync(string username, string password, CancellationToken ct = default);
+    Task<LoginResult> QrLoginAsync(string username, string workNumber, CancellationToken ct = default);
     Task<UserInfoDto?> GetUserInfoAsync(CancellationToken ct = default);
     Task<List<UserInfoDto>> GetAllUsersAsync(CancellationToken ct = default);
 }
@@ -20,6 +21,7 @@ public sealed class AuthApi : IAuthApi
     private Uri? _baseAddress;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private string _loginEndpoint = string.Empty;
+    private string _qrLoginEndpoint = string.Empty;
     private string _allUserEndpoint = string.Empty;
     private string _userInfoEndpoint = string.Empty;
 
@@ -38,29 +40,16 @@ public sealed class AuthApi : IAuthApi
         ApplyLatestConfig();
     }
 
-    public async Task<LoginResult> LoginAsync(string username, string password, CancellationToken ct = default)
+    public Task<LoginResult> LoginAsync(string username, string password, CancellationToken ct = default)
     {
         ApplyLatestConfig();
-        var full = ServiceUrlHelper.BuildFullUrl(_baseAddress, _loginEndpoint);
-        using var req = new HttpRequestMessage(HttpMethod.Post, full)
-        {
-            Content = JsonContent.Create(new LoginRequest(username, password), options: JsonOptions)
-        };
+        return PostLoginAsync(_loginEndpoint, new LoginRequest(username, password), ct);
+    }
 
-        using var resp = await _http.SendAsync(req, ct).ConfigureAwait(false);
-        var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-
-        if (!resp.IsSuccessStatusCode)
-        {
-            return new LoginResult(false, null, $"登录接口异常（HTTP {(int)resp.StatusCode}）", null);
-        }
-
-        var data = JsonSerializer.Deserialize<ApiResp<LoginResponseResult>>(body, JsonOptions);
-        EnsureApiSuccess(data);
-        var token = data?.result?.token;
-        var success = data?.success == true;
-
-        return new LoginResult(success, token, data?.message, data?.result?.userInfo);
+    public Task<LoginResult> QrLoginAsync(string username, string workNumber, CancellationToken ct = default)
+    {
+        ApplyLatestConfig();
+        return PostLoginAsync(_qrLoginEndpoint, new QrLoginRequest(username, workNumber), ct);
     }
 
     public async Task<UserInfoDto?> GetUserInfoAsync(CancellationToken ct = default)
@@ -99,6 +88,33 @@ public sealed class AuthApi : IAuthApi
             .ToList();
     }
 
+    private async Task<LoginResult> PostLoginAsync<TRequest>(
+        string endpoint,
+        TRequest request,
+        CancellationToken ct)
+    {
+        var full = ServiceUrlHelper.BuildFullUrl(_baseAddress, endpoint);
+        using var req = new HttpRequestMessage(HttpMethod.Post, full)
+        {
+            Content = JsonContent.Create(request, options: JsonOptions)
+        };
+
+        using var resp = await _http.SendAsync(req, ct).ConfigureAwait(false);
+        var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            return new LoginResult(false, null, $"登录接口异常（HTTP {(int)resp.StatusCode}）", null);
+        }
+
+        var data = JsonSerializer.Deserialize<ApiResp<LoginResponseResult>>(body, JsonOptions);
+        EnsureApiSuccess(data);
+
+        var token = data?.result?.token;
+        var success = data?.success == true;
+        return new LoginResult(success, token, data?.message, data?.result?.userInfo);
+    }
+
     private static void EnsureApiSuccess<T>(ApiResp<T>? response)
     {
         if (response?.success == true) return;
@@ -123,6 +139,8 @@ public sealed class AuthApi : IAuthApi
         var servicePath = _baseAddress.AbsolutePath?.TrimEnd('/') ?? "/normalService";
         _loginEndpoint = ServiceUrlHelper.NormalizeRelative(
             _configLoader.GetApiPath("login", "/pda/auth/login"), servicePath);
+        _qrLoginEndpoint = ServiceUrlHelper.NormalizeRelative(
+            _configLoader.GetApiPath("auth.qrLogin", "/pda/auth/qrLogin"), servicePath);
         _allUserEndpoint = ServiceUrlHelper.NormalizeRelative(
             _configLoader.GetApiPath("auth.alluser", "/pda/auth/allUsers"), servicePath);
         _userInfoEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -131,6 +149,8 @@ public sealed class AuthApi : IAuthApi
 }
 
 public sealed record LoginRequest(string username, string password);
+
+public sealed record QrLoginRequest(string username, string workNumber);
 
 public sealed record LoginResult(bool Success, string? Token, string? Message, UserInfoDto? UserInfo);
 

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 13,
   "server": {
     "scheme": "http",
     "ipAddress": "221.216.53.191:9128"
@@ -12,6 +12,7 @@
   "apiEndpoints": {
     "login": "/pda/auth/login",
     "auth": {
+      "qrLogin": "/pda/auth/qrLogin",
       "alluser": "/pda/auth/allUsers",
       "userinfo": "/pda/auth/getUserInfo"
     },
