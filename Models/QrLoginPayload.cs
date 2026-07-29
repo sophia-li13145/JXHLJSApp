@@ -9,6 +9,16 @@ namespace JXHLJSApp.Models;
 /// </summary>
 public sealed class QrLoginPayload
 {
+    private static readonly char[] ScannerPaddingCharacters =
+    {
+        '\uFEFF', // UTF-8 BOM decoded as a character by some scanner SDKs.
+        '\u200B', // Zero-width space.
+        '\u200C',
+        '\u200D',
+        '\u2060',
+        '\0'
+    };
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -27,7 +37,7 @@ public sealed class QrLoginPayload
         payload = null;
         errorMessage = string.Empty;
 
-        var json = rawValue?.Trim();
+        var json = NormalizeScannerValue(rawValue);
         if (string.IsNullOrWhiteSpace(json))
         {
             errorMessage = "二维码内容为空。";
@@ -77,5 +87,19 @@ public sealed class QrLoginPayload
             WorkNumber = workNumber
         };
         return true;
+    }
+
+    private static string? NormalizeScannerValue(string? rawValue)
+    {
+        var value = rawValue?.Trim();
+        if (string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+
+        // Camera/scanner implementations may retain a BOM or other invisible
+        // transport padding around the QR payload. JsonSerializer does not
+        // regard these characters as JSON whitespace.
+        return value.Trim(ScannerPaddingCharacters).Trim();
     }
 }
