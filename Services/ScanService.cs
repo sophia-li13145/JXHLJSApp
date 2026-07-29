@@ -166,7 +166,16 @@ public sealed class ScanService : IScanService
 
         public Task<string?> WaitForResultAsync() => _resultSource.Task;
 
-        public void Cancel() => Complete(null);
+        public void Cancel()
+        {
+            if (MainThread.IsMainThread)
+            {
+                Complete(null);
+                return;
+            }
+
+            MainThread.BeginInvokeOnMainThread(() => Complete(null));
+        }
 
         private View CreateHeader(string title)
         {
@@ -311,7 +320,6 @@ public sealed class ScanService : IScanService
         {
             _cameraView.IsDetecting = false;
             _cameraView.IsEnabled = false;
-            _cameraView.Handler?.DisconnectHandler();
         }
     }
 }
