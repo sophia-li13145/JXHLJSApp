@@ -37,8 +37,8 @@ public partial class MachineQualityDetailPage : ContentPage
     private string? _listInspectionSchemeName;
     private string? _qrCode;
     private string? _qualityMaterialId;
-    private string? _scannedMaterialCode;
-    private string? _scannedMaterialName;
+    private string? _materialCode;
+    private string? _materialName;
     private bool _isManualInspection;
     private bool _manualInspectionFromQuery;
     private bool _hasLoadedDetail;
@@ -118,6 +118,11 @@ public partial class MachineQualityDetailPage : ContentPage
             var firstMaterial = detail.materialList?.FirstOrDefault();
             _qrCode = FirstNonEmpty(detail.qrCode, firstMaterial?.qrCode);
             _qualityMaterialId = FirstNonEmpty(detail.qualityMaterialId, firstMaterial?.qualityMaterialId);
+            if (_isManualInspection)
+            {
+                _materialCode = firstMaterial?.materialCode;
+                _materialName = firstMaterial?.materialName;
+            }
             ApplySchemeLayout(detail);
             RenderInfo(detail);
             RenderMaterialInfo(detail);
@@ -817,8 +822,8 @@ public partial class MachineQualityDetailPage : ContentPage
     {
         _qrCode = FirstNonEmpty(material.qrCode, fallbackQrCode);
         _qualityMaterialId = FirstNonEmpty(material.qualityMaterialId, _qualityMaterialId);
-        _scannedMaterialCode = material.materialCode;
-        _scannedMaterialName = material.materialName;
+        _materialCode = material.materialCode;
+        _materialName = material.materialName;
         if (_detail is null) _detail = new ProductionQualityDetailDto { workOrderNo = _workOrderNo };
 
         _detail.acidRatio = FirstNonEmpty(material.acidRatio, _detail.acidRatio);
@@ -1034,8 +1039,8 @@ public partial class MachineQualityDetailPage : ContentPage
                     coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
                     elongationRate = HeatTreatmentInputPanel.IsVisible ? HeatElongationEntry.Text?.Trim() : ElongationEntry.Text?.Trim(),
                     inspectResult = InspectResultPicker.SelectedItem?.ToString(),
-                    materialCode = _scannedMaterialCode,
-                    materialName = _scannedMaterialName,
+                    materialCode = _materialCode,
+                    materialName = _materialName,
                     memo = MemoEditor.Text?.Trim(),
                     qrCode = _qrCode,
                     qualityMaterialId = _qualityMaterialId,
@@ -1074,8 +1079,8 @@ public partial class MachineQualityDetailPage : ContentPage
                         coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
                         elongationRate = HeatTreatmentInputPanel.IsVisible ? HeatElongationEntry.Text?.Trim() : ElongationEntry.Text?.Trim(),
                         inspectResult = InspectResultPicker.SelectedItem?.ToString(),
-                        materialCode = _scannedMaterialCode,
-                        materialName = _scannedMaterialName,
+                        materialCode = _materialCode,
+                        materialName = _materialName,
                         memo = MemoEditor.Text?.Trim(),
                         qrCode = _qrCode,
                         qualityMaterialId = _qualityMaterialId,
