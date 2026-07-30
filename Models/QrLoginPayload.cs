@@ -16,7 +16,10 @@ public sealed class QrLoginPayload
         '\u200C',
         '\u200D',
         '\u2060',
-        '\0'
+        '\0',
+        '\u0002', // STX, commonly configured as an industrial scanner prefix.
+        '\u0003', // ETX, commonly configured as an industrial scanner suffix.
+        '\u001D'  // GS, used as a group separator by some scanners.
     };
 
     private static readonly JsonSerializerOptions JsonOptions = new()

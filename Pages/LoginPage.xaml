@@ -27,7 +27,7 @@
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="14" />
                     </Border.StrokeShape>
-                    <Label Text="V2.7 (Max)"
+                    <Label x:Name="VersionLabel"
                            TextColor="White"
                            FontSize="13"
                            FontAttributes="Bold" />
