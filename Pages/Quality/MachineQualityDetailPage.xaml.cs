@@ -37,6 +37,8 @@ public partial class MachineQualityDetailPage : ContentPage
     private string? _listInspectionSchemeName;
     private string? _qrCode;
     private string? _qualityMaterialId;
+    private string? _scannedMaterialCode;
+    private string? _scannedMaterialName;
     private bool _isManualInspection;
     private bool _manualInspectionFromQuery;
     private bool _hasLoadedDetail;
@@ -815,6 +817,8 @@ public partial class MachineQualityDetailPage : ContentPage
     {
         _qrCode = FirstNonEmpty(material.qrCode, fallbackQrCode);
         _qualityMaterialId = FirstNonEmpty(material.qualityMaterialId, _qualityMaterialId);
+        _scannedMaterialCode = material.materialCode;
+        _scannedMaterialName = material.materialName;
         if (_detail is null) _detail = new ProductionQualityDetailDto { workOrderNo = _workOrderNo };
 
         _detail.acidRatio = FirstNonEmpty(material.acidRatio, _detail.acidRatio);
@@ -1030,6 +1034,8 @@ public partial class MachineQualityDetailPage : ContentPage
                     coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
                     elongationRate = HeatTreatmentInputPanel.IsVisible ? HeatElongationEntry.Text?.Trim() : ElongationEntry.Text?.Trim(),
                     inspectResult = InspectResultPicker.SelectedItem?.ToString(),
+                    materialCode = _scannedMaterialCode,
+                    materialName = _scannedMaterialName,
                     memo = MemoEditor.Text?.Trim(),
                     qrCode = _qrCode,
                     qualityMaterialId = _qualityMaterialId,
@@ -1068,6 +1074,8 @@ public partial class MachineQualityDetailPage : ContentPage
                         coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
                         elongationRate = HeatTreatmentInputPanel.IsVisible ? HeatElongationEntry.Text?.Trim() : ElongationEntry.Text?.Trim(),
                         inspectResult = InspectResultPicker.SelectedItem?.ToString(),
+                        materialCode = _scannedMaterialCode,
+                        materialName = _scannedMaterialName,
                         memo = MemoEditor.Text?.Trim(),
                         qrCode = _qrCode,
                         qualityMaterialId = _qualityMaterialId,
