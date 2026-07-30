@@ -92,7 +92,7 @@ public partial class ProductionQualityOrderListPage : ContentPage
             }
 
             await DisplayAlert("创建成功", "巡检任务已创建。", "确定");
-            await Shell.Current.GoToAsync($"{AppShell.RouteMachineQualityDetail}?qualityNo={Uri.EscapeDataString(qualityNo)}&workOrderNo={Uri.EscapeDataString(detail.workOrderNo ?? string.Empty)}&inspectStatus={Uri.EscapeDataString(detail.inspectStatus ?? string.Empty)}&manualInspection=true&processName={Uri.EscapeDataString(detail.processName ?? string.Empty)}");
+            await Shell.Current.GoToAsync($"{AppShell.RouteMachineQualityDetail}?qualityNo={Uri.EscapeDataString(qualityNo)}&workOrderNo={Uri.EscapeDataString(detail.workOrderNo ?? string.Empty)}&inspectStatus={Uri.EscapeDataString(detail.inspectStatus ?? string.Empty)}&manualInspection=true&processName={Uri.EscapeDataString(detail.processName ?? string.Empty)}&materialCode={Uri.EscapeDataString(detail.materialCode ?? string.Empty)}&materialName={Uri.EscapeDataString(detail.materialName ?? string.Empty)}");
         }
         catch (Exception ex)
         {
