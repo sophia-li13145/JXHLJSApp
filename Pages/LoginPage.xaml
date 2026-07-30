@@ -238,17 +238,6 @@
                         </VerticalStackLayout>
                     </Border>
 
-                    <Button x:Name="QrScanButton"
-                            Text="开 始 扫 码"
-                            BackgroundColor="#214779"
-                            TextColor="White"
-                            FontSize="17"
-                            FontAttributes="Bold"
-                            HeightRequest="52"
-                            CornerRadius="9"
-                            Margin="20,0"
-                            Clicked="OnQrScanClicked" />
-
                     <Label x:Name="QrStatusLabel"
                            Text="支持摄像头、相册二维码和手持机扫码枪"
                            TextColor="#6C7E98"

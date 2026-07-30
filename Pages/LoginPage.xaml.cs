@@ -81,11 +81,6 @@ public partial class LoginPage : ContentPage
         await ScanQrAndLoginAsync();
     }
 
-    private async void OnQrScanClicked(object sender, EventArgs e)
-    {
-        await ScanQrAndLoginAsync();
-    }
-
     private async void OnRememberCheckedChanged(object sender, CheckedChangedEventArgs e)
     {
         if (!e.Value)
@@ -330,8 +325,6 @@ public partial class LoginPage : ContentPage
         LoginButton.IsEnabled = !isBusy;
         LoginButton.Text = isBusy ? "登 录 中..." : "登 录 系 统";
 
-        QrScanButton.IsEnabled = !isBusy;
-        QrScanButton.Text = isBusy ? "处 理 中..." : "开 始 扫 码";
         QrScanCard.InputTransparent = isBusy;
         QrLoginIndicator.IsVisible = isBusy && _isQrLoginTab;
         QrLoginIndicator.IsRunning = isBusy && _isQrLoginTab;
