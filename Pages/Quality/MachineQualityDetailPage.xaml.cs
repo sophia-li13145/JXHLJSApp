@@ -16,6 +16,8 @@ namespace JXHLJSApp.Pages.Quality;
 [QueryProperty(nameof(QualityType), "qualityType")]
 [QueryProperty(nameof(QualityTypeName), "qualityTypeName")]
 [QueryProperty(nameof(ListInspectionSchemeName), "inspectionSchemeName")]
+[QueryProperty(nameof(MaterialCode), "materialCode")]
+[QueryProperty(nameof(MaterialName), "materialName")]
 public partial class MachineQualityDetailPage : ContentPage
 {
     private const string SchemeAcidPickling = "酸洗";
@@ -53,6 +55,8 @@ public partial class MachineQualityDetailPage : ContentPage
     public string? QualityType { get => _qualityTypeFromQuery; set => _qualityTypeFromQuery = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? QualityTypeName { get => _qualityTypeNameFromQuery; set => _qualityTypeNameFromQuery = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? ListInspectionSchemeName { get => _listInspectionSchemeName; set => _listInspectionSchemeName = Uri.UnescapeDataString(value ?? string.Empty); }
+    public string? MaterialCode { get => _materialCode; set => _materialCode = Uri.UnescapeDataString(value ?? string.Empty); }
+    public string? MaterialName { get => _materialName; set => _materialName = Uri.UnescapeDataString(value ?? string.Empty); }
 
     public MachineQualityDetailPage(IQualityApi qualityApi, IScanService scanService)
     {
@@ -120,8 +124,12 @@ public partial class MachineQualityDetailPage : ContentPage
             _qualityMaterialId = FirstNonEmpty(detail.qualityMaterialId, firstMaterial?.qualityMaterialId);
             if (_isManualInspection)
             {
-                _materialCode = firstMaterial?.materialCode;
-                _materialName = firstMaterial?.materialName;
+                // 新增巡检的初始物料名称、编码来自 create 接口，不再使用详情接口中的值。
+                if (firstMaterial is not null)
+                {
+                    firstMaterial.materialCode = _materialCode;
+                    firstMaterial.materialName = _materialName;
+                }
             }
             ApplySchemeLayout(detail);
             RenderInfo(detail);

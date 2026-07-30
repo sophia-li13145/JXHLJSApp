@@ -463,6 +463,8 @@ public sealed class ProductionQualityDetailDto
     public string? inspectDate { get; set; }
     public string? inspectStatus { get; set; }
     public string? lowerToleranceValue { get; set; }
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
     public string? memo { get; set; }
     public string? phosphatingTemperature { get; set; }
     public string? pieceNo { get; set; }
