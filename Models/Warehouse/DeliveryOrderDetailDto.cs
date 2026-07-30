@@ -103,6 +103,8 @@ public sealed class DeliveryOrderScanDetailDto
 {
     [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? actualQty { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? actualWeight { get; set; }
     public string? barcode { get; set; }
     public string? barcodeType { get; set; }
     [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
@@ -133,7 +135,7 @@ public sealed class DeliveryOrderScanDetailDto
     public string materialNameDisplay => ValueOrDash(materialName);
     public string specDisplay => ValueOrDash(spec);
     public string countDisplay => FormatNumber(count);
-    public string weightDisplay => FormatNumberWithUnit(weight, unit);
+    public string weightDisplay => FormatNumberWithUnit(actualWeight, unit);
     public string unitPriceDisplay => FormatMoney(unitPrice);
     public string totalAmountDisplay => FormatMoney(totalAmount);
     public string orderDateDisplay => FormatDate(orderTime);
