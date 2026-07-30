@@ -16,6 +16,9 @@ namespace JXHLJSApp.Pages.Quality;
 [QueryProperty(nameof(QualityType), "qualityType")]
 [QueryProperty(nameof(QualityTypeName), "qualityTypeName")]
 [QueryProperty(nameof(ListInspectionSchemeName), "inspectionSchemeName")]
+[QueryProperty(nameof(MaterialCode), "materialCode")]
+[QueryProperty(nameof(MaterialName), "materialName")]
+[QueryProperty(nameof(QrCode), "qrCode")]
 public partial class MachineQualityDetailPage : ContentPage
 {
     private const string SchemeAcidPickling = "酸洗";
@@ -53,6 +56,9 @@ public partial class MachineQualityDetailPage : ContentPage
     public string? QualityType { get => _qualityTypeFromQuery; set => _qualityTypeFromQuery = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? QualityTypeName { get => _qualityTypeNameFromQuery; set => _qualityTypeNameFromQuery = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? ListInspectionSchemeName { get => _listInspectionSchemeName; set => _listInspectionSchemeName = Uri.UnescapeDataString(value ?? string.Empty); }
+    public string? MaterialCode { get => _materialCode; set => _materialCode = Uri.UnescapeDataString(value ?? string.Empty); }
+    public string? MaterialName { get => _materialName; set => _materialName = Uri.UnescapeDataString(value ?? string.Empty); }
+    public string? QrCode { get => _qrCode; set => _qrCode = Uri.UnescapeDataString(value ?? string.Empty); }
 
     public MachineQualityDetailPage(IQualityApi qualityApi, IScanService scanService)
     {
@@ -116,12 +122,17 @@ public partial class MachineQualityDetailPage : ContentPage
             if (string.IsNullOrWhiteSpace(detail.qualityTypeName)) detail.qualityTypeName = _qualityTypeNameFromQuery;
             if (!string.IsNullOrWhiteSpace(detail.workOrderNo)) _workOrderNo = detail.workOrderNo;
             var firstMaterial = detail.materialList?.FirstOrDefault();
-            _qrCode = FirstNonEmpty(detail.qrCode, firstMaterial?.qrCode);
+            // 新增巡检时默认使用 create 前扫描的二维码；详情页后续扫码会在 ApplyScannedMaterial 中更新。
+            _qrCode = FirstNonEmpty(_qrCode, detail.qrCode, firstMaterial?.qrCode);
             _qualityMaterialId = FirstNonEmpty(detail.qualityMaterialId, firstMaterial?.qualityMaterialId);
             if (_isManualInspection)
             {
-                _materialCode = firstMaterial?.materialCode;
-                _materialName = firstMaterial?.materialName;
+                // 新增巡检的初始物料名称、编码来自 create 接口，不再使用详情接口中的值。
+                if (firstMaterial is not null)
+                {
+                    firstMaterial.materialCode = _materialCode;
+                    firstMaterial.materialName = _materialName;
+                }
             }
             ApplySchemeLayout(detail);
             RenderInfo(detail);
