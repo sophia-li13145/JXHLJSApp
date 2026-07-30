@@ -8,19 +8,29 @@ namespace JXHLJSApp.Services;
 
 public interface IScanService
 {
-    Task<string?> ScanAsync(string title = "扫码", CancellationToken ct = default);
+    Task<string?> ScanAsync(
+        string title = "扫码",
+        CancellationToken ct = default,
+        BarcodeFormat? formats = null);
     Task<string?> ScanFromPhotoAsync(string title = "选择二维码图片", CancellationToken ct = default);
 }
 
 public sealed class ScanService : IScanService
 {
-    public async Task<string?> ScanAsync(string title = "扫码", CancellationToken ct = default)
+    public async Task<string?> ScanAsync(
+        string title = "扫码",
+        CancellationToken ct = default,
+        BarcodeFormat? formats = null)
     {
         var navigation = Shell.Current?.Navigation ?? Application.Current?.MainPage?.Navigation;
         if (navigation is null) return null;
 
         var permission = await Permissions.RequestAsync<Permissions.Camera>();
-        var scannerPage = new ScannerModalPage(title, permission == PermissionStatus.Granted, () => ScanFromPhotoAsync("选择二维码图片", ct));
+        var scannerPage = new ScannerModalPage(
+            title,
+            permission == PermissionStatus.Granted,
+            formats ?? BarcodeFormats.All,
+            () => ScanFromPhotoAsync("选择二维码图片", ct));
         await navigation.PushModalAsync(scannerPage);
 
         using var registration = ct.Register(() => scannerPage.Cancel());
@@ -69,7 +79,11 @@ public sealed class ScanService : IScanService
         private readonly bool _enableCamera;
         private bool _completed;
 
-        public ScannerModalPage(string title, bool enableCamera, Func<Task<string?>> pickPhotoAsync)
+        public ScannerModalPage(
+            string title,
+            bool enableCamera,
+            BarcodeFormat formats,
+            Func<Task<string?>> pickPhotoAsync)
         {
             Title = title;
             BackgroundColor = Color.FromArgb("#0B1220");
@@ -82,7 +96,7 @@ public sealed class ScanService : IScanService
                 IsDetecting = false,
                 Options = new BarcodeReaderOptions
                 {
-                    Formats = BarcodeFormats.All,
+                    Formats = formats,
                     AutoRotate = true,
                     Multiple = false,
                     TryHarder = true
@@ -166,7 +180,16 @@ public sealed class ScanService : IScanService
 
         public Task<string?> WaitForResultAsync() => _resultSource.Task;
 
-        public void Cancel() => Complete(null);
+        public void Cancel()
+        {
+            if (MainThread.IsMainThread)
+            {
+                Complete(null);
+                return;
+            }
+
+            MainThread.BeginInvokeOnMainThread(() => Complete(null));
+        }
 
         private View CreateHeader(string title)
         {
@@ -311,7 +334,6 @@ public sealed class ScanService : IScanService
         {
             _cameraView.IsDetecting = false;
             _cameraView.IsEnabled = false;
-            _cameraView.Handler?.DisconnectHandler();
         }
     }
 }
