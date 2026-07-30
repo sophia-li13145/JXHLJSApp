@@ -11,7 +11,7 @@ public interface IScanService
     Task<string?> ScanAsync(
         string title = "扫码",
         CancellationToken ct = default,
-        BarcodeFormat formats = BarcodeFormats.All);
+        BarcodeFormat? formats = null);
     Task<string?> ScanFromPhotoAsync(string title = "选择二维码图片", CancellationToken ct = default);
 }
 
@@ -20,7 +20,7 @@ public sealed class ScanService : IScanService
     public async Task<string?> ScanAsync(
         string title = "扫码",
         CancellationToken ct = default,
-        BarcodeFormat formats = BarcodeFormats.All)
+        BarcodeFormat? formats = null)
     {
         var navigation = Shell.Current?.Navigation ?? Application.Current?.MainPage?.Navigation;
         if (navigation is null) return null;
@@ -29,7 +29,7 @@ public sealed class ScanService : IScanService
         var scannerPage = new ScannerModalPage(
             title,
             permission == PermissionStatus.Granted,
-            formats,
+            formats ?? BarcodeFormats.All,
             () => ScanFromPhotoAsync("选择二维码图片", ct));
         await navigation.PushModalAsync(scannerPage);
 
