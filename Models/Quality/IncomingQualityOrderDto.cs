@@ -284,6 +284,8 @@ public sealed class ProductionManualInspectionSaveResultRequestDto
     public string? coilPitchControl { get; set; }
     public string? elongationRate { get; set; }
     public string? inspectResult { get; set; }
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
     public string? memo { get; set; }
     public string? qrCode { get; set; }
     public string? qualityMaterialId { get; set; }
@@ -302,6 +304,8 @@ public sealed class ProductionSamplingOrFullCommitRequestDto
     public string? coilPitchControl { get; set; }
     public string? elongationRate { get; set; }
     public string? inspectResult { get; set; }
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
     public string? memo { get; set; }
     public string? qrCode { get; set; }
     public string? qualityMaterialId { get; set; }
