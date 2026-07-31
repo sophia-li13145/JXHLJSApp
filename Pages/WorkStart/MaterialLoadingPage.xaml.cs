@@ -50,20 +50,6 @@ public partial class MaterialLoadingPage : ContentPage
         await ConfirmMachineAsync(code);
     }
 
-    private async void OnManualMachineConfirmClicked(object sender, EventArgs e)
-    {
-        if (_isBusy) return;
-
-        await ConfirmMachineAsync(MachineCodeEntry.Text);
-    }
-
-    private async void OnManualMachineCompleted(object sender, EventArgs e)
-    {
-        if (_isBusy) return;
-
-        await ConfirmMachineAsync(MachineCodeEntry.Text);
-    }
-
     private async Task ConfirmMachineAsync(string? machineCode)
     {
         var devCode = machineCode?.Trim();
@@ -91,7 +77,6 @@ public partial class MaterialLoadingPage : ContentPage
             }
 
             _machineConfirmed = true;
-            MachineCodeEntry.Text = devCode;
             UpdateProductionContextMachine(devCode);
             ShowMaterialScanStep();
         }
@@ -155,7 +140,6 @@ public partial class MaterialLoadingPage : ContentPage
         ScanIconLabel.Text = "📦";
         ScanTitleLabel.Text = "2. 机台识别确认";
         ScanHintLabel.Text = "点击扫描上料物料二维码";
-        ManualMachinePanel.IsVisible = false;
     }
 
     private void ShowResultStep()

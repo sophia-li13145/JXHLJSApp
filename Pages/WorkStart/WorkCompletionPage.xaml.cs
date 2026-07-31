@@ -37,16 +37,6 @@ public partial class WorkCompletionPage : ContentPage
         }
     }
 
-    private async void OnManualMachineCompleted(object sender, EventArgs e)
-    {
-        await VerifyMachineAsync(MachineCodeEntry.Text);
-    }
-
-    private async void OnManualMachineConfirmClicked(object sender, EventArgs e)
-    {
-        await VerifyMachineAsync(MachineCodeEntry.Text);
-    }
-
     private async Task VerifyMachineAsync(string? machineCode)
     {
         if (_isBusy)
@@ -74,7 +64,6 @@ public partial class WorkCompletionPage : ContentPage
             UpdateProductionContextMachine(devCode);
             await LoadCompletionStatusAsync();
             ScanPanel.IsVisible = false;
-            ManualMachinePanel.IsVisible = false;
             SuccessBanner.IsVisible = true;
             ConfirmCard.IsVisible = true;
         }
