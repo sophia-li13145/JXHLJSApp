@@ -42,6 +42,7 @@ public partial class MachineQualityDetailPage : ContentPage
     private string? _qualityMaterialId;
     private string? _materialCode;
     private string? _materialName;
+    private bool? _previousUnqualified;
     private bool _isManualInspection;
     private bool _manualInspectionFromQuery;
     private bool _hasLoadedDetail;
@@ -68,9 +69,19 @@ public partial class MachineQualityDetailPage : ContentPage
         CoilDiameterPicker.ItemsSource = new[] { "合格", "不合格" };
         CoilPitchPicker.ItemsSource = new[] { "合格", "不合格" };
         InspectResultPicker.ItemsSource = new[] { "合格", "不合格" };
+        DiameterJudgmentPicker.ItemsSource = new[] { "合格", "不合格" };
+        StrengthJudgmentPicker.ItemsSource = new[] { "合格", "不合格" };
+        SurfaceJudgmentPicker.ItemsSource = new[] { "合格", "不合格" };
+        ContinuousUnqualifiedPicker.ItemsSource = new[] { "否", "是" };
+        EmployeeInterventionPicker.ItemsSource = new[] { "是", "否" };
         CoilDiameterPicker.SelectedIndex = 0;
         CoilPitchPicker.SelectedIndex = 0;
         InspectResultPicker.SelectedIndex = 0;
+        DiameterJudgmentPicker.SelectedIndex = 0;
+        StrengthJudgmentPicker.SelectedIndex = 0;
+        SurfaceJudgmentPicker.SelectedIndex = 0;
+        ContinuousUnqualifiedPicker.SelectedIndex = 0;
+        EmployeeInterventionPicker.SelectedIndex = 0;
         UpdateUnqualifiedDescriptionVisibility();
     }
 
@@ -145,9 +156,12 @@ public partial class MachineQualityDetailPage : ContentPage
             ElongationEntry.Text = detail.elongationRate;
             SurfaceEntry.Text = detail.surfaceCondition;
             MemoEditor.Text = detail.memo;
+            _previousUnqualified = detail.previousUnqualified;
             SelectQualifiedOption(CoilDiameterPicker, detail.coilDiameterControl);
             SelectQualifiedOption(CoilPitchPicker, detail.coilPitchControl);
             SelectQualifiedOption(InspectResultPicker, detail.inspectResult);
+            ApplyProcessJudgmentValues(detail);
+            UpdateContinuousUnqualifiedSelection();
             ApplyReadOnlyStateIfCompleted();
             _hasLoadedDetail = true;
             _loadedQualityNo = _qualityNo;
@@ -173,8 +187,10 @@ public partial class MachineQualityDetailPage : ContentPage
         AcidInputPanel.IsVisible = isAcid;
         HeatTreatmentInputPanel.IsVisible = isHeat;
         ProcessInputPanel.IsVisible = !isAcid && !isHeat;
-        MemoLabel.IsVisible = !isHeat;
-        MemoEditor.IsVisible = !isHeat;
+        ContinuousUnqualifiedPicker.IsEnabled = !isFirstInspection;
+        MemoLabel.Text = "备注";
+        MemoLabel.IsVisible = true;
+        MemoEditor.IsVisible = true;
         var isManualPatrol = ShouldUseManualInspectionResultApi();
         var isSubmitOnlyProcess = isAcid || (isDrawing && !isManualPatrol);
         SubmitButton.Text = "提交质检";
@@ -185,7 +201,11 @@ public partial class MachineQualityDetailPage : ContentPage
         UpdateUnqualifiedDescriptionVisibility();
     }
 
-    private void OnInspectResultChanged(object sender, EventArgs e) => UpdateUnqualifiedDescriptionVisibility();
+    private void OnInspectResultChanged(object sender, EventArgs e)
+    {
+        UpdateUnqualifiedDescriptionVisibility();
+        UpdateContinuousUnqualifiedSelection();
+    }
 
     private void UpdateUnqualifiedDescriptionVisibility()
     {
@@ -563,6 +583,45 @@ public partial class MachineQualityDetailPage : ContentPage
         picker.SelectedItem = string.Equals(value, "不合格", StringComparison.Ordinal) ? "不合格" : "合格";
     }
 
+    private static void SelectYesNoOption(Picker picker, bool? value, bool defaultValue)
+    {
+        picker.SelectedItem = (value ?? defaultValue) ? "是" : "否";
+    }
+
+    private static bool IsYesSelected(Picker picker) => picker.SelectedItem?.ToString() == "是";
+
+    private void ApplyProcessJudgmentValues(ProductionQualityDetailDto detail)
+    {
+        CoilDiameterDescriptionEntry.Text = detail.coilDiameterDescription;
+        CoilPitchDescriptionEntry.Text = detail.coilPitchDescription;
+        SelectQualifiedOption(DiameterJudgmentPicker, detail.diameterJudgment);
+        SelectQualifiedOption(StrengthJudgmentPicker, detail.strengthJudgment);
+        SelectQualifiedOption(SurfaceJudgmentPicker, detail.surfaceJudgment);
+        SelectYesNoOption(ContinuousUnqualifiedPicker, detail.continuousUnqualified, false);
+        SelectYesNoOption(EmployeeInterventionPicker, detail.employeeIntervention, true);
+        if (IsDrawingScheme(CurrentProcessName) && HasSchemeToken(_inspectionSchemeName, "首检", "首件检"))
+        {
+            ContinuousUnqualifiedPicker.SelectedItem = "否";
+            ContinuousUnqualifiedPicker.IsEnabled = false;
+        }
+    }
+
+    private void UpdateContinuousUnqualifiedSelection()
+    {
+        var isDrawingFirstInspection = IsDrawingScheme(CurrentProcessName) &&
+            HasSchemeToken(_inspectionSchemeName, "首检", "首件检");
+        if (isDrawingFirstInspection)
+        {
+            ContinuousUnqualifiedPicker.SelectedItem = "否";
+            ContinuousUnqualifiedPicker.IsEnabled = false;
+            return;
+        }
+
+        ContinuousUnqualifiedPicker.IsEnabled = true;
+        var currentUnqualified = InspectResultPicker.SelectedItem?.ToString() == "不合格";
+        ContinuousUnqualifiedPicker.SelectedItem = currentUnqualified && _previousUnqualified == false ? "是" : "否";
+    }
+
     private static bool IsPicklingScheme(string? schemeName)
     {
         return HasSchemeToken(schemeName, SchemeAcidPickling);
@@ -724,6 +783,7 @@ public partial class MachineQualityDetailPage : ContentPage
             }
             ApplyScannedMaterial(material, code);
             RestoreManualInputState(manualInputState);
+            ApplyPreviousUnqualifiedState(material);
             await DisplayAlert("扫码成功", "物料信息已更新到当前质检页面。", "确定");
         }
         catch (Exception ex)
@@ -776,10 +836,17 @@ public partial class MachineQualityDetailPage : ContentPage
             TensileStrengthEntry.Text,
             HeatElongationEntry.Text,
             TwistCountEntry.Text,
+            CoilDiameterDescriptionEntry.Text,
+            CoilPitchDescriptionEntry.Text,
             UnqualifiedDescriptionEditor.Text,
             MemoEditor.Text,
             CoilDiameterPicker.SelectedIndex,
             CoilPitchPicker.SelectedIndex,
+            DiameterJudgmentPicker.SelectedIndex,
+            StrengthJudgmentPicker.SelectedIndex,
+            SurfaceJudgmentPicker.SelectedIndex,
+            ContinuousUnqualifiedPicker.SelectedIndex,
+            EmployeeInterventionPicker.SelectedIndex,
             InspectResultPicker.SelectedIndex);
     }
 
@@ -796,11 +863,18 @@ public partial class MachineQualityDetailPage : ContentPage
         RestoreText(TensileStrengthEntry, state.TensileStrength);
         RestoreText(HeatElongationEntry, state.HeatElongation);
         RestoreText(TwistCountEntry, state.TwistCount);
+        RestoreText(CoilDiameterDescriptionEntry, state.CoilDiameterDescription);
+        RestoreText(CoilPitchDescriptionEntry, state.CoilPitchDescription);
         RestoreText(UnqualifiedDescriptionEditor, state.UnqualifiedDescription);
         RestoreText(MemoEditor, state.Memo);
         RestorePicker(CoilDiameterPicker, state.CoilDiameterIndex);
         RestorePicker(CoilPitchPicker, state.CoilPitchIndex);
+        RestorePicker(DiameterJudgmentPicker, state.DiameterJudgmentIndex);
+        RestorePicker(StrengthJudgmentPicker, state.StrengthJudgmentIndex);
+        RestorePicker(SurfaceJudgmentPicker, state.SurfaceJudgmentIndex);
         RestorePicker(InspectResultPicker, state.InspectResultIndex);
+        RestorePicker(ContinuousUnqualifiedPicker, state.ContinuousUnqualifiedIndex);
+        RestorePicker(EmployeeInterventionPicker, state.EmployeeInterventionIndex);
     }
 
     private static void RestoreText(InputView input, string? text)
@@ -813,6 +887,16 @@ public partial class MachineQualityDetailPage : ContentPage
         if (selectedIndex >= 0 && selectedIndex < picker.Items.Count) picker.SelectedIndex = selectedIndex;
     }
 
+    private void ApplyPreviousUnqualifiedState(ProductionQualityScanMaterialDto material)
+    {
+        // 首次进入使用详情值；扫码明确返回新值时才覆盖，未返回时继续沿用详情值。
+        if (material.previousUnqualified.HasValue)
+        {
+            _previousUnqualified = material.previousUnqualified;
+        }
+        UpdateContinuousUnqualifiedSelection();
+    }
+
     private sealed record ManualInputState(
         string? ActualDiameter,
         string? Strength,
@@ -823,10 +907,17 @@ public partial class MachineQualityDetailPage : ContentPage
         string? TensileStrength,
         string? HeatElongation,
         string? TwistCount,
+        string? CoilDiameterDescription,
+        string? CoilPitchDescription,
         string? UnqualifiedDescription,
         string? Memo,
         int CoilDiameterIndex,
         int CoilPitchIndex,
+        int DiameterJudgmentIndex,
+        int StrengthJudgmentIndex,
+        int SurfaceJudgmentIndex,
+        int ContinuousUnqualifiedIndex,
+        int EmployeeInterventionIndex,
         int InspectResultIndex);
 
     private void ApplyScannedMaterial(ProductionQualityScanMaterialDto material, string fallbackQrCode)
@@ -998,6 +1089,11 @@ public partial class MachineQualityDetailPage : ContentPage
                 brokenDiameterMm = BrokenDiameterEntry.Text?.Trim(),
                 coilDiameterControl = CoilDiameterPicker.SelectedItem?.ToString(),
                 coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
+                coilDiameterDescription = CoilDiameterDescriptionEntry.Text?.Trim(),
+                coilPitchDescription = CoilPitchDescriptionEntry.Text?.Trim(),
+                continuousUnqualified = IsYesSelected(ContinuousUnqualifiedPicker),
+                diameterJudgment = DiameterJudgmentPicker.SelectedItem?.ToString(),
+                employeeIntervention = IsYesSelected(EmployeeInterventionPicker),
                 elongationRate = HeatTreatmentInputPanel.IsVisible ? HeatElongationEntry.Text?.Trim() : ElongationEntry.Text?.Trim(),
                 inspectResult = InspectResultPicker.SelectedItem?.ToString(),
                 sectionShrinkageRate = SectionShrinkageLabel.Text == "-" ? null : SectionShrinkageLabel.Text,
@@ -1013,8 +1109,10 @@ public partial class MachineQualityDetailPage : ContentPage
                 saponificationTemperature = SaponificationTemperatureEntry.Text?.Trim(),
                 standardDiameterMm = StandardDiameterEntry.Text?.Trim(),
                 strengthMpa = HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text?.Trim() : StrengthEntry.Text?.Trim(),
+                strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
                 tensileStrengthMpa = TensileStrengthEntry.Text?.Trim(),
                 surfaceCondition = SurfaceEntry.Text?.Trim(),
+                surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
                 totalAcid = TotalAcidEntry.Text?.Trim(),
                 twistCount = TwistCountEntry.Text?.Trim(),
                 totalAcidSampling = TotalAcidSamplingEntry.Text?.Trim(),
@@ -1048,6 +1146,11 @@ public partial class MachineQualityDetailPage : ContentPage
                     actualDiameterMm = HeatTreatmentInputPanel.IsVisible ? HeatActualDiameterEntry.Text?.Trim() : ActualDiameterEntry.Text?.Trim(),
                     coilDiameterControl = CoilDiameterPicker.SelectedItem?.ToString(),
                     coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
+                    coilDiameterDescription = CoilDiameterDescriptionEntry.Text?.Trim(),
+                    coilPitchDescription = CoilPitchDescriptionEntry.Text?.Trim(),
+                    continuousUnqualified = IsYesSelected(ContinuousUnqualifiedPicker),
+                    diameterJudgment = DiameterJudgmentPicker.SelectedItem?.ToString(),
+                    employeeIntervention = IsYesSelected(EmployeeInterventionPicker),
                     elongationRate = HeatTreatmentInputPanel.IsVisible ? HeatElongationEntry.Text?.Trim() : ElongationEntry.Text?.Trim(),
                     inspectResult = InspectResultPicker.SelectedItem?.ToString(),
                     materialCode = _materialCode,
@@ -1057,7 +1160,9 @@ public partial class MachineQualityDetailPage : ContentPage
                     qualityMaterialId = _qualityMaterialId,
                     qualityNo = _qualityNo,
                     strengthMpa = HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text?.Trim() : StrengthEntry.Text?.Trim(),
+                    strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
                     surfaceCondition = SurfaceEntry.Text?.Trim(),
+                    surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
                     unqualifiedDescription = unqualifiedDescription,
                     workOrderNo = _workOrderNo
                 })
@@ -1088,6 +1193,11 @@ public partial class MachineQualityDetailPage : ContentPage
                         brokenDiameter = isHeatTreatmentSamplingOrFull ? BrokenDiameterEntry.Text?.Trim() : null,
                         coilDiameterControl = CoilDiameterPicker.SelectedItem?.ToString(),
                         coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
+                        coilDiameterDescription = CoilDiameterDescriptionEntry.Text?.Trim(),
+                        coilPitchDescription = CoilPitchDescriptionEntry.Text?.Trim(),
+                        continuousUnqualified = IsYesSelected(ContinuousUnqualifiedPicker),
+                        diameterJudgment = DiameterJudgmentPicker.SelectedItem?.ToString(),
+                        employeeIntervention = IsYesSelected(EmployeeInterventionPicker),
                         elongationRate = HeatTreatmentInputPanel.IsVisible ? HeatElongationEntry.Text?.Trim() : ElongationEntry.Text?.Trim(),
                         inspectResult = InspectResultPicker.SelectedItem?.ToString(),
                         materialCode = _materialCode,
@@ -1098,7 +1208,9 @@ public partial class MachineQualityDetailPage : ContentPage
                         qualityNo = _qualityNo,
                         reductionOfAreaRate = isHeatTreatmentSamplingOrFull ? heatReductionOfAreaRate : null,
                         strengthMpa = HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text?.Trim() : StrengthEntry.Text?.Trim(),
+                        strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
                         surfaceCondition = SurfaceEntry.Text?.Trim(),
+                        surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
                         torsion = isHeatTreatmentSamplingOrFull ? TwistCountEntry.Text?.Trim() : null,
                         unqualifiedDescription = unqualifiedDescription,
                         workOrderNo = _workOrderNo
@@ -1109,12 +1221,19 @@ public partial class MachineQualityDetailPage : ContentPage
                         actualDiameterMm = ActualDiameterEntry.Text?.Trim(),
                         coilDiameterControl = CoilDiameterPicker.SelectedItem?.ToString(),
                         coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
+                        coilDiameterDescription = CoilDiameterDescriptionEntry.Text?.Trim(),
+                        coilPitchDescription = CoilPitchDescriptionEntry.Text?.Trim(),
+                        continuousUnqualified = IsYesSelected(ContinuousUnqualifiedPicker),
+                        diameterJudgment = DiameterJudgmentPicker.SelectedItem?.ToString(),
+                        employeeIntervention = IsYesSelected(EmployeeInterventionPicker),
                         elongationRate = ElongationEntry.Text?.Trim(),
                         inspectResult = InspectResultPicker.SelectedItem?.ToString(),
                         memo = MemoEditor.Text?.Trim(),
                         qualityNo = _qualityNo,
                         strengthMpa = StrengthEntry.Text?.Trim(),
+                        strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
                         surfaceCondition = SurfaceEntry.Text?.Trim(),
+                        surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
                         unqualifiedDescription = unqualifiedDescription,
                         workOrderNo = _workOrderNo
                     })
