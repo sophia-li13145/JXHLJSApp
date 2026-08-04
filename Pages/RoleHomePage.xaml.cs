@@ -279,7 +279,8 @@ public partial class RoleHomePage : ContentPage
             PlaceholderColor = Color.FromArgb("#7A8797"),
             FontSize = 14,
             BackgroundColor = Color.FromArgb("#F8FAFD"),
-            HeightRequest = 46
+            HeightRequest = 46,
+            ReturnType = ReturnType.Done
         };
 
         var scanButton = new Button
@@ -312,12 +313,15 @@ public partial class RoleHomePage : ContentPage
             CornerRadius = 10,
             HeightRequest = 46
         };
-        confirmButton.Clicked += async (_, _) =>
+        async Task ConfirmMachineAsync()
         {
             entry.Unfocus();
             await entry.HideKeyboardAsync(CancellationToken.None);
             await BindMachineAndOpenOrdersAsync(entry.Text);
-        };
+        }
+
+        entry.Completed += async (_, _) => await ConfirmMachineAsync();
+        confirmButton.Clicked += async (_, _) => await ConfirmMachineAsync();
 
         var inputGrid = new Grid
         {
