@@ -1,3 +1,4 @@
+using CommunityToolkit.Maui.Core.Platform;
 using JXHLJSApp.Models;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.WorkOrders;
@@ -311,7 +312,12 @@ public partial class RoleHomePage : ContentPage
             CornerRadius = 10,
             HeightRequest = 46
         };
-        confirmButton.Clicked += async (_, _) => await BindMachineAndOpenOrdersAsync(entry.Text);
+        confirmButton.Clicked += async (_, _) =>
+        {
+            entry.Unfocus();
+            await entry.HideKeyboardAsync(CancellationToken.None);
+            await BindMachineAndOpenOrdersAsync(entry.Text);
+        };
 
         var inputGrid = new Grid
         {
