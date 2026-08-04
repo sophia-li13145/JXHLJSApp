@@ -143,6 +143,7 @@ public sealed class IncomingQualitySaveResultRequestDto
     public string? instockNo { get; set; }
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
+    public string? memo { get; set; }
     public string? otherExceptionDesc { get; set; }
     public string? otherProblemItem { get; set; }
     public string? problemPoint { get; set; }
