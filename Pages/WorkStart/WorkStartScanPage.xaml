@@ -45,7 +45,7 @@
                     <RoundRectangle CornerRadius="16" />
                 </Border.StrokeShape>
                 <Grid ColumnDefinitions="*,66" ColumnSpacing="10" VerticalOptions="Center">
-                    <Entry x:Name="MachineNoEntry" Placeholder="手动输入机台编号" PlaceholderColor="#7A8797" FontSize="15" BackgroundColor="#F8FAFD" />
+                    <Entry x:Name="MachineNoEntry" Placeholder="手动输入机台编号" PlaceholderColor="#7A8797" FontSize="15" BackgroundColor="#F8FAFD" ReturnType="Done" Completed="OnConfirmClicked" />
                     <Button Grid.Column="1" Text="确认" FontSize="16" FontAttributes="Bold" BackgroundColor="#0B3D8B" TextColor="White" CornerRadius="14" Padding="0" Clicked="OnConfirmClicked" />
                 </Grid>
             </Border>

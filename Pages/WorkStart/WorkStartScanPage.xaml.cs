@@ -1,3 +1,4 @@
+using CommunityToolkit.Maui.Core.Platform;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.WorkOrders;
 
@@ -31,6 +32,8 @@ public partial class WorkStartScanPage : ContentPage
 
     private async void OnConfirmClicked(object sender, EventArgs e)
     {
+        MachineNoEntry.Unfocus();
+        await MachineNoEntry.HideKeyboardAsync(CancellationToken.None);
         await BindMachineAndOpenOrdersAsync(MachineNoEntry.Text);
     }
 
