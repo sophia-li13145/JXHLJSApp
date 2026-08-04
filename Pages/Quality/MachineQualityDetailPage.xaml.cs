@@ -132,19 +132,9 @@ public partial class MachineQualityDetailPage : ContentPage
             if (string.IsNullOrWhiteSpace(detail.qualityType)) detail.qualityType = _qualityTypeFromQuery;
             if (string.IsNullOrWhiteSpace(detail.qualityTypeName)) detail.qualityTypeName = _qualityTypeNameFromQuery;
             if (!string.IsNullOrWhiteSpace(detail.workOrderNo)) _workOrderNo = detail.workOrderNo;
-            var firstMaterial = detail.materialList?.FirstOrDefault();
             // 新增巡检时默认使用 create 前扫描的二维码；详情页后续扫码会在 ApplyScannedMaterial 中更新。
-            _qrCode = FirstNonEmpty(_qrCode, detail.qrCode, firstMaterial?.qrCode);
-            _qualityMaterialId = FirstNonEmpty(detail.qualityMaterialId, firstMaterial?.qualityMaterialId);
-            if (_isManualInspection)
-            {
-                // 新增巡检的初始物料名称、编码来自 create 接口，不再使用详情接口中的值。
-                if (firstMaterial is not null)
-                {
-                    firstMaterial.materialCode = _materialCode;
-                    firstMaterial.materialName = _materialName;
-                }
-            }
+            _qrCode = FirstNonEmpty(_qrCode, detail.qrCode);
+            _qualityMaterialId = detail.qualityMaterialId;
             ApplySchemeLayout(detail);
             RenderInfo(detail);
             RenderMaterialInfo(detail);
@@ -342,23 +332,21 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private void RenderMaterialInfo(ProductionQualityDetailDto detail)
     {
-        var material = detail.materialList?.FirstOrDefault();
-        MaterialInfoCard.IsVisible = _isManualInspection && material is not null;
+        MaterialInfoCard.IsVisible = _isManualInspection;
         MaterialGrid.Children.Clear();
         MaterialGrid.RowDefinitions.Clear();
-        if (material is null) return;
 
         var rows = new[]
         {
-            ("物料编码", material.materialCode), ("物料名称", material.materialName),
-            ("二维码", material.qrCode), ("扫码次数", material.qrTimes?.ToString()),
-            ("质检物料ID", material.qualityMaterialId), ("工单号", material.workOrderNo),
-            ("炉号", material.furnaceNo), ("钢号", material.steelGrade),
-            ("件号", FirstNonEmpty(material.pieceNo, "1")), ("规格", FirstNonEmpty(material.spec, material.inputSpecification, material.targetSpecification)),
-            ("设备", FirstNonEmpty(material.deviceName, material.deviceCode)),
-            ("实测直径", material.actualDiameterMm), ("成品直径", material.productDiameter),
-            ("强度", material.strengthMpa), ("表面状态", material.surfaceCondition),
-            ("结果已保存", material.resultSaved ? "是" : "否"), ("备注", material.memo)
+            ("物料编码", detail.materialCode), ("物料名称", detail.materialName),
+            ("二维码", detail.qrCode), ("扫码次数", detail.qrTimes?.ToString()),
+            ("质检物料ID", detail.qualityMaterialId), ("工单号", detail.workOrderNo),
+            ("炉号", detail.furnaceNo), ("钢号", detail.steelGrade),
+            ("件号", FirstNonEmpty(detail.pieceNo, "1")), ("规格", FirstNonEmpty(detail.spec, detail.inputSpecification, detail.targetSpecification)),
+            ("设备", FirstNonEmpty(detail.deviceName, detail.deviceCode)),
+            ("实测直径", detail.actualDiameterMm), ("成品直径", detail.productDiameter),
+            ("强度", detail.strengthMpa), ("表面状态", detail.surfaceCondition),
+            ("结果已保存", detail.resultSaved.HasValue ? detail.resultSaved.Value ? "是" : "否" : null), ("备注", detail.memo)
         };
 
         for (var i = 0; i < rows.Length; i++)
@@ -420,7 +408,7 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static string ResolvePieceNo(ProductionQualityDetailDto detail)
     {
-        return FirstNonEmpty(detail.pieceNo, detail.materialList?.FirstOrDefault()?.pieceNo, "1");
+        return FirstNonEmpty(detail.pieceNo, "1");
     }
 
     private static string ResolveHeatTreatmentCardDate(ProductionQualityDetailDto detail)
@@ -953,6 +941,8 @@ public partial class MachineQualityDetailPage : ContentPage
         _detail.inspectionSchemeCode = FirstNonEmpty(material.inspectionSchemeCode, _detail.inspectionSchemeCode);
         _detail.inspectionSchemeName = FirstNonEmpty(material.inspectionSchemeName, _detail.inspectionSchemeName);
         _detail.lowerToleranceValue = FirstNonEmpty(material.lowerToleranceValue, _detail.lowerToleranceValue);
+        _detail.materialCode = material.materialCode;
+        _detail.materialName = material.materialName;
         _detail.memo = FirstNonEmpty(material.memo, _detail.memo);
         _detail.phosphatingTemperature = FirstNonEmpty(material.phosphatingTemperature, _detail.phosphatingTemperature);
         _detail.pieceNo = FirstNonEmpty(material.pieceNo, _detail.pieceNo);
@@ -963,13 +953,16 @@ public partial class MachineQualityDetailPage : ContentPage
         _detail.prodcutDiameter = FirstNonEmpty(material.prodcutDiameter, material.productDiameter, _detail.prodcutDiameter);
         _detail.productionDate = FirstNonEmpty(material.productionDate, _detail.productionDate);
         _detail.qrCode = _qrCode;
+        _detail.qrTimes = material.qrTimes;
         _detail.qualityMaterialId = _qualityMaterialId;
+        _detail.resultSaved = material.resultSaved;
         _detail.saponificationPhValue = FirstNonEmpty(material.saponificationPhValue, _detail.saponificationPhValue);
         _detail.saponificationTemperature = FirstNonEmpty(material.saponificationTemperature, _detail.saponificationTemperature);
         _detail.shiftNo = FirstNonEmpty(material.shiftNo, _detail.shiftNo);
         _detail.shiftCode = FirstNonEmpty(material.shiftCode, _detail.shiftCode);
         _detail.shiftName = FirstNonEmpty(material.shiftName, _detail.shiftName);
         _detail.spoolWeightRequirement = FirstNonEmpty(material.spoolWeightRequirement, _detail.spoolWeightRequirement);
+        _detail.spec = FirstNonEmpty(material.spec, _detail.spec);
         _detail.steelGrade = FirstNonEmpty(material.steelGrade, _detail.steelGrade);
         _detail.strengthMpa = FirstNonEmpty(material.strengthMpa, _detail.strengthMpa);
         _detail.surfaceCondition = FirstNonEmpty(material.surfaceCondition, _detail.surfaceCondition);
@@ -985,11 +978,6 @@ public partial class MachineQualityDetailPage : ContentPage
         _workOrderNo = FirstNonEmpty(_detail.workOrderNo, _workOrderNo);
         _inspectionSchemeName = ResolveQualityFlowName(_detail);
 
-        if (!string.IsNullOrWhiteSpace(material.materialCode) || !string.IsNullOrWhiteSpace(material.materialName) || !string.IsNullOrWhiteSpace(material.qrCode))
-        {
-            _detail.materialList = new List<ProductionQualityMaterialDto> { CreateScannedMaterialInfo(material, fallbackQrCode) };
-        }
-
         RenderInfo(_detail);
         RenderMaterialInfo(_detail);
         RenderInspectionItems(_detail);
@@ -1002,64 +990,7 @@ public partial class MachineQualityDetailPage : ContentPage
         SelectQualifiedOption(CoilDiameterPicker, _detail.coilDiameterControl);
         SelectQualifiedOption(CoilPitchPicker, _detail.coilPitchControl);
         SelectQualifiedOption(InspectResultPicker, _detail.inspectResult);
-    }
-
-    private static ProductionQualityMaterialDto CreateScannedMaterialInfo(ProductionQualityScanMaterialDto material, string fallbackQrCode)
-    {
-        return new ProductionQualityMaterialDto
-        {
-            acidRatio = material.acidRatio,
-            actualDiameterMm = material.actualDiameterMm,
-            productionBatchNo = material.productionBatchNo,
-            productionBatch = material.productionBatch,
-            batchNo = material.batchNo,
-            businessType = material.businessType,
-            coilDiameterControl = material.coilDiameterControl,
-            coilPitchControl = material.coilPitchControl,
-            deviceCode = material.deviceCode,
-            deviceName = FirstNonEmpty(material.deviceName, material.machineNo, material.machine),
-            machine = FirstNonEmpty(material.machine, material.machineNo, material.deviceName),
-            elongationRate = material.elongationRate,
-            freeAcid = material.freeAcid,
-            freeAcidSampling = material.freeAcidSampling,
-            furnaceNo = material.furnaceNo,
-            hydrochloricAcidConcentration1 = material.hydrochloricAcidConcentration1,
-            hydrochloricAcidConcentration2 = material.hydrochloricAcidConcentration2,
-            inputDiameterMm = material.inputDiameterMm,
-            inputSpecification = FirstNonEmpty(material.inputSpecification, material.listing),
-            inspectResult = material.inspectResult,
-            inspectionSchemeCode = material.inspectionSchemeCode,
-            inspectionSchemeName = material.inspectionSchemeName,
-            lowerToleranceValue = material.lowerToleranceValue,
-            materialCode = material.materialCode,
-            materialName = material.materialName,
-            memo = material.memo,
-            originPlace = material.originPlace,
-            phosphatingTemperature = material.phosphatingTemperature,
-            pieceNo = material.pieceNo,
-            productDiameter = FirstNonEmpty(material.productDiameter, material.prodcutDiameter),
-            prodcutDiameter = FirstNonEmpty(material.prodcutDiameter, material.productDiameter),
-            productionDate = material.productionDate,
-            qrCode = FirstNonEmpty(material.qrCode, fallbackQrCode),
-            qrTimes = material.qrTimes,
-            qualityMaterialId = material.qualityMaterialId,
-            resultSaved = material.resultSaved,
-            saponificationPhValue = material.saponificationPhValue,
-            saponificationTemperature = material.saponificationTemperature,
-            spec = material.spec,
-            spoolWeightRequirement = material.spoolWeightRequirement,
-            steelGrade = material.steelGrade,
-            strengthMpa = material.strengthMpa,
-            surfaceCondition = material.surfaceCondition,
-            targetSpecification = material.targetSpecification,
-            totalAcid = material.totalAcid,
-            totalAcidSampling = material.totalAcidSampling,
-            upperToleranceValue = material.upperToleranceValue,
-            workOrderRingDiameter = material.workOrderRingDiameter,
-            workOrderCoilDiameterControl = material.workOrderCoilDiameterControl,
-            workOrderCoilPitchControl = material.workOrderCoilPitchControl,
-            workOrderNo = material.workOrderNo
-        };
+        ApplyProcessJudgmentValues(_detail);
     }
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
