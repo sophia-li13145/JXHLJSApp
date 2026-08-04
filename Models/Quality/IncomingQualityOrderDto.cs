@@ -219,6 +219,7 @@ public sealed class ProductionQualityScanMaterialDto
     public string? materialName { get; set; }
     public string? memo { get; set; }
     public string? originPlace { get; set; }
+    public bool? previousUnqualified { get; set; }
     public string? phosphatingTemperature { get; set; }
     public string? pieceNo { get; set; }
     public string? productDiameter { get; set; }
@@ -249,6 +250,11 @@ public sealed class ProductionQualityCommitRequestDto
     public string? actualDiameterMm { get; set; }
     public string? coilDiameterControl { get; set; }
     public string? coilPitchControl { get; set; }
+    public string? coilDiameterDescription { get; set; }
+    public string? coilPitchDescription { get; set; }
+    public bool? continuousUnqualified { get; set; }
+    public string? diameterJudgment { get; set; }
+    public bool? employeeIntervention { get; set; }
     public string? elongationRate { get; set; }
     public string? freeAcid { get; set; }
     public string? freeAcidSampling { get; set; }
@@ -267,7 +273,9 @@ public sealed class ProductionQualityCommitRequestDto
     public string? saponificationPhValue { get; set; }
     public string? saponificationTemperature { get; set; }
     public string? strengthMpa { get; set; }
+    public string? strengthJudgment { get; set; }
     public string? surfaceCondition { get; set; }
+    public string? surfaceJudgment { get; set; }
     public string? totalAcid { get; set; }
     public string? totalAcidSampling { get; set; }
     public string? workOrderNo { get; set; }
@@ -282,6 +290,11 @@ public sealed class ProductionManualInspectionSaveResultRequestDto
     public string? actualDiameterMm { get; set; }
     public string? coilDiameterControl { get; set; }
     public string? coilPitchControl { get; set; }
+    public string? coilDiameterDescription { get; set; }
+    public string? coilPitchDescription { get; set; }
+    public bool? continuousUnqualified { get; set; }
+    public string? diameterJudgment { get; set; }
+    public bool? employeeIntervention { get; set; }
     public string? elongationRate { get; set; }
     public string? inspectResult { get; set; }
     public string? materialCode { get; set; }
@@ -291,7 +304,9 @@ public sealed class ProductionManualInspectionSaveResultRequestDto
     public string? qualityMaterialId { get; set; }
     public string? qualityNo { get; set; }
     public string? strengthMpa { get; set; }
+    public string? strengthJudgment { get; set; }
     public string? surfaceCondition { get; set; }
+    public string? surfaceJudgment { get; set; }
     public string? unqualifiedDescription { get; set; }
     public string? workOrderNo { get; set; }
 }
@@ -302,6 +317,11 @@ public sealed class ProductionSamplingOrFullCommitRequestDto
     public string? brokenDiameter { get; set; }
     public string? coilDiameterControl { get; set; }
     public string? coilPitchControl { get; set; }
+    public string? coilDiameterDescription { get; set; }
+    public string? coilPitchDescription { get; set; }
+    public bool? continuousUnqualified { get; set; }
+    public string? diameterJudgment { get; set; }
+    public bool? employeeIntervention { get; set; }
     public string? elongationRate { get; set; }
     public string? inspectResult { get; set; }
     public string? materialCode { get; set; }
@@ -312,7 +332,9 @@ public sealed class ProductionSamplingOrFullCommitRequestDto
     public string? qualityNo { get; set; }
     public string? reductionOfAreaRate { get; set; }
     public string? strengthMpa { get; set; }
+    public string? strengthJudgment { get; set; }
     public string? surfaceCondition { get; set; }
+    public string? surfaceJudgment { get; set; }
     public string? torsion { get; set; }
     public string? unqualifiedDescription { get; set; }
     public string? workOrderNo { get; set; }
@@ -349,12 +371,19 @@ public sealed class ProductionFirstInspectionCommitRequestDto
     public string? actualDiameterMm { get; set; }
     public string? coilDiameterControl { get; set; }
     public string? coilPitchControl { get; set; }
+    public string? coilDiameterDescription { get; set; }
+    public string? coilPitchDescription { get; set; }
+    public bool? continuousUnqualified { get; set; }
+    public string? diameterJudgment { get; set; }
+    public bool? employeeIntervention { get; set; }
     public string? elongationRate { get; set; }
     public string? inspectResult { get; set; }
     public string? memo { get; set; }
     public string? qualityNo { get; set; }
     public string? strengthMpa { get; set; }
+    public string? strengthJudgment { get; set; }
     public string? surfaceCondition { get; set; }
+    public string? surfaceJudgment { get; set; }
     public string? unqualifiedDescription { get; set; }
     public string? workOrderNo { get; set; }
 }
@@ -427,10 +456,15 @@ public sealed class ProductionQualityDetailDto
     public string? businessType { get; set; }
     public long? childSeq { get; set; }
     public string? coilDiameterControl { get; set; }
+    public string? coilDiameterDescription { get; set; }
     public string? coilPitchControl { get; set; }
+    public string? coilPitchDescription { get; set; }
+    public bool? continuousUnqualified { get; set; }
+    public string? diameterJudgment { get; set; }
     public string? deviceCode { get; set; }
     public string? deviceName { get; set; }
     public string? elongationRate { get; set; }
+    public bool? employeeIntervention { get; set; }
     public string? freeAcid { get; set; }
     public string? freeAcidSampling { get; set; }
     public string? furnaceNo { get; set; }
@@ -466,6 +500,7 @@ public sealed class ProductionQualityDetailDto
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
     public string? memo { get; set; }
+    public bool? previousUnqualified { get; set; }
     public string? phosphatingTemperature { get; set; }
     public string? pieceNo { get; set; }
     public string? productDiameter { get; set; }
@@ -474,7 +509,9 @@ public sealed class ProductionQualityDetailDto
     public string? spoolWeightRequirement { get; set; }
     public string? steelGrade { get; set; }
     public string? strengthMpa { get; set; }
+    public string? strengthJudgment { get; set; }
     public string? surfaceCondition { get; set; }
+    public string? surfaceJudgment { get; set; }
     public string? targetSpecification { get; set; }
     public string? totalAcid { get; set; }
     public string? totalAcidSampling { get; set; }
