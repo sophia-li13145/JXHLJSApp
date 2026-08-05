@@ -198,6 +198,10 @@ public partial class MachineQualityDetailPage : ContentPage
         UpdateContinuousUnqualifiedSelection();
     }
 
+    private VisualElement? UnqualifiedDescriptionPanelControl => FindByName<VisualElement>("UnqualifiedDescriptionPanel");
+
+    private Editor? UnqualifiedDescriptionEditorControl => FindByName<Editor>("UnqualifiedDescriptionEditor");
+
     private void UpdateUnqualifiedDescriptionVisibility()
     {
         var isBlankOpeningOrDrawing = IsBlankOpeningScheme(CurrentProcessName) ||
@@ -205,8 +209,7 @@ public partial class MachineQualityDetailPage : ContentPage
             IsDrawingScheme(CurrentProcessName) ||
             IsDrawingScheme(_inspectionSchemeName);
         var isUnqualified = InspectResultPicker.SelectedItem?.ToString()?.Contains("不合格", StringComparison.Ordinal) == true;
-        var hasUnqualifiedDescription = !string.IsNullOrWhiteSpace(UnqualifiedDescriptionEditor.Text);
-        UnqualifiedDescriptionPanel.IsVisible = isBlankOpeningOrDrawing && (isUnqualified || hasUnqualifiedDescription);
+        if (UnqualifiedDescriptionPanelControl is { } panel) panel.IsVisible = isBlankOpeningOrDrawing && isUnqualified;
     }
 
     private void FillAcidInputs(ProductionQualityDetailDto detail)
@@ -831,7 +834,7 @@ public partial class MachineQualityDetailPage : ContentPage
             TwistCountEntry.Text,
             CoilDiameterDescriptionEntry.Text,
             CoilPitchDescriptionEntry.Text,
-            UnqualifiedDescriptionEditor.Text,
+            UnqualifiedDescriptionEditorControl?.Text,
             MemoEditor.Text,
             CoilDiameterPicker.SelectedIndex,
             CoilPitchPicker.SelectedIndex,
@@ -857,7 +860,7 @@ public partial class MachineQualityDetailPage : ContentPage
         RestoreText(TwistCountEntry, state.TwistCount);
         RestoreText(CoilDiameterDescriptionEntry, state.CoilDiameterDescription);
         RestoreText(CoilPitchDescriptionEntry, state.CoilPitchDescription);
-        RestoreText(UnqualifiedDescriptionEditor, state.UnqualifiedDescription);
+        if (UnqualifiedDescriptionEditorControl is { } unqualifiedDescriptionEditor) RestoreText(unqualifiedDescriptionEditor, state.UnqualifiedDescription);
         RestoreText(MemoEditor, state.Memo);
         RestorePicker(CoilDiameterPicker, state.CoilDiameterIndex);
         RestorePicker(CoilPitchPicker, state.CoilPitchIndex);
@@ -1007,11 +1010,11 @@ public partial class MachineQualityDetailPage : ContentPage
 
         try
         {
-            var unqualifiedDescription = UnqualifiedDescriptionEditor.Text?.Trim();
-            if (UnqualifiedDescriptionPanel.IsVisible && string.IsNullOrWhiteSpace(unqualifiedDescription))
+            var unqualifiedDescription = UnqualifiedDescriptionEditorControl?.Text?.Trim();
+            if (UnqualifiedDescriptionPanelControl?.IsVisible == true && string.IsNullOrWhiteSpace(unqualifiedDescription))
             {
                 await DisplayAlert("提示", "质检结果为不合格时，请填写不合格说明。", "确定");
-                UnqualifiedDescriptionEditor.Focus();
+                UnqualifiedDescriptionEditorControl?.Focus();
                 return;
             }
 
