@@ -145,6 +145,7 @@ public partial class MachineQualityDetailPage : ContentPage
             StrengthEntry.Text = detail.strengthMpa;
             ElongationEntry.Text = detail.elongationRate;
             SurfaceEntry.Text = detail.surfaceCondition;
+            UnqualifiedDescriptionEditor.Text = detail.unqualifiedDescription;
             MemoEditor.Text = detail.memo;
             _previousUnqualified = detail.previousUnqualified;
             SelectQualifiedOption(CoilDiameterPicker, detail.coilDiameterControl);
@@ -204,7 +205,8 @@ public partial class MachineQualityDetailPage : ContentPage
             IsDrawingScheme(CurrentProcessName) ||
             IsDrawingScheme(_inspectionSchemeName);
         var isUnqualified = InspectResultPicker.SelectedItem?.ToString()?.Contains("不合格", StringComparison.Ordinal) == true;
-        UnqualifiedDescriptionPanel.IsVisible = isBlankOpeningOrDrawing && isUnqualified;
+        var hasUnqualifiedDescription = !string.IsNullOrWhiteSpace(UnqualifiedDescriptionEditor.Text);
+        UnqualifiedDescriptionPanel.IsVisible = isBlankOpeningOrDrawing && (isUnqualified || hasUnqualifiedDescription);
     }
 
     private void FillAcidInputs(ProductionQualityDetailDto detail)
