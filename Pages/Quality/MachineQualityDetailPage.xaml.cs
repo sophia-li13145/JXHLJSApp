@@ -149,6 +149,7 @@ public partial class MachineQualityDetailPage : ContentPage
             StrengthEntry.Text = detail.strengthMpa;
             ElongationEntry.Text = detail.elongationRate;
             SurfaceEntry.Text = detail.surfaceCondition;
+            UnqualifiedDescriptionEditor.Text = detail.unqualifiedDescription;
             MemoEditor.Text = detail.memo;
             _previousUnqualified = detail.previousUnqualified;
             SelectQualifiedOption(CoilDiameterPicker, detail.coilDiameterControl);

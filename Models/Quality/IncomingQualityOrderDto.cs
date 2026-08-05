@@ -113,6 +113,7 @@ public sealed class IncomingQualityScanDetailDto
 {
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
+    public string? memo { get; set; }
     public string? otherProblemItem { get; set; }
     public string? problemPoint { get; set; }
     public string? problemPointName { get; set; }
@@ -125,6 +126,7 @@ public sealed class IncomingQualityScanDetailDto
     public string problemPointDisplay => FirstNonEmpty(otherProblemItem, problemPointName, problemPoint, "-");
     public string qrCodeDisplay => string.IsNullOrWhiteSpace(qrCode) ? (string.IsNullOrWhiteSpace(qrCodeNo) ? "-" : qrCodeNo!) : qrCode!;
     public string materialSpecDisplay => $"物料 {BuildMaterialName()}  规格 {FirstNonEmpty(spec, "-")}";
+    public string memoDisplay => FirstNonEmpty(memo, "-");
     public string inspectResultDisplay => FirstNonEmpty(inspectResultName, inspectResult, HasProblemDescription ? "不合格" : "-");
     public Color inspectResultColor => inspectResultDisplay.Contains("合格") && !inspectResultDisplay.Contains("不合格") ? Color.FromArgb("#00A86B") : Color.FromArgb("#FF4D5E");
     private string BuildMaterialName()
@@ -143,6 +145,7 @@ public sealed class IncomingQualitySaveResultRequestDto
     public string? instockNo { get; set; }
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
+    public string? memo { get; set; }
     public string? otherExceptionDesc { get; set; }
     public string? otherProblemItem { get; set; }
     public string? problemPoint { get; set; }
