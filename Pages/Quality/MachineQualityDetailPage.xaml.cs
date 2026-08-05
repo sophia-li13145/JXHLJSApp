@@ -198,9 +198,9 @@ public partial class MachineQualityDetailPage : ContentPage
         UpdateContinuousUnqualifiedSelection();
     }
 
-    private VisualElement? UnqualifiedDescriptionPanelControl => FindByName<VisualElement>("UnqualifiedDescriptionPanel");
+    private VisualElement? UnqualifiedDescriptionPanelControl => FindByName("UnqualifiedDescriptionPanel") as VisualElement;
 
-    private Editor? UnqualifiedDescriptionEditorControl => FindByName<Editor>("UnqualifiedDescriptionEditor");
+    private Editor? UnqualifiedDescriptionEditorControl => FindByName("UnqualifiedDescriptionEditor") as Editor;
 
     private void UpdateUnqualifiedDescriptionVisibility()
     {
