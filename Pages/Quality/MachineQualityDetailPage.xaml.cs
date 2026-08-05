@@ -121,21 +121,24 @@ public partial class MachineQualityDetailPage : ContentPage
 
         try
         {
-            _isManualInspection = _manualInspectionFromQuery || string.IsNullOrWhiteSpace(_workOrderNo) || IsPatrolInspectionFromList();
-            var detail = _isManualInspection
-                ? await _qualityApi.GetManualInspectionDetailAsync(_qualityNo)
-                : await _qualityApi.GetProductionQualityDetailAsync(_qualityNo, _workOrderNo);
+            _isManualInspection = _manualInspectionFromQuery || string.IsNullOrWhiteSpace(_workOrderNo);
+            var detail = await _qualityApi.GetInspectionDetailAsync(_qualityNo);
             _detail = detail;
             ApplyScannedProcessNameFallback(detail);
+            ApplyListFallbacks(detail);
             _inspectionSchemeName = ResolveQualityFlowName(detail);
             if (!string.IsNullOrWhiteSpace(detail.inspectStatus)) _inspectStatus = detail.inspectStatus;
             if (!string.IsNullOrWhiteSpace(detail.workOrderStatus)) _workOrderStatus = detail.workOrderStatus;
-            if (string.IsNullOrWhiteSpace(detail.qualityType)) detail.qualityType = _qualityTypeFromQuery;
-            if (string.IsNullOrWhiteSpace(detail.qualityTypeName)) detail.qualityTypeName = _qualityTypeNameFromQuery;
             if (!string.IsNullOrWhiteSpace(detail.workOrderNo)) _workOrderNo = detail.workOrderNo;
             // 新增巡检时默认使用 create 前扫描的二维码；详情页后续扫码会在 ApplyScannedMaterial 中更新。
             _qrCode = FirstNonEmpty(_qrCode, detail.qrCode);
             _qualityMaterialId = detail.qualityMaterialId;
+            if (!HasValidDetail(detail))
+            {
+                _hasLoadedDetail = false;
+                _loadedQualityNo = null;
+                throw new InvalidOperationException($"详情接口返回数据为空或字段未正确映射，qualityNo={_qualityNo}");
+            }
             ApplySchemeLayout(detail);
             RenderInfo(detail);
             RenderMaterialInfo(detail);
@@ -163,14 +166,36 @@ public partial class MachineQualityDetailPage : ContentPage
         }
     }
 
+    private void ApplyListFallbacks(ProductionQualityDetailDto detail)
+    {
+        detail.qualityNo = FirstNonEmpty(detail.qualityNo, _qualityNo);
+        detail.workOrderNo = FirstNonEmpty(detail.workOrderNo, _workOrderNo);
+        detail.inspectionSchemeName = FirstNonEmpty(detail.inspectionSchemeName, _listInspectionSchemeName);
+        detail.qualityType = FirstNonEmpty(detail.qualityType, _qualityTypeFromQuery);
+        detail.qualityTypeName = FirstNonEmpty(detail.qualityTypeName, _qualityTypeNameFromQuery);
+        detail.materialCode = FirstNonEmpty(detail.materialCode, _materialCode);
+        detail.materialName = FirstNonEmpty(detail.materialName, _materialName);
+        detail.qrCode = FirstNonEmpty(detail.qrCode, _qrCode);
+    }
+
+    private static bool HasValidDetail(ProductionQualityDetailDto detail)
+    {
+        return !string.IsNullOrWhiteSpace(detail.processName) ||
+            !string.IsNullOrWhiteSpace(detail.processCode) ||
+            !string.IsNullOrWhiteSpace(detail.inspectionSchemeName) ||
+            !string.IsNullOrWhiteSpace(detail.workOrderNo) ||
+            !string.IsNullOrWhiteSpace(detail.deviceName) ||
+            !string.IsNullOrWhiteSpace(detail.materialCode) ||
+            detail.inspectionItemList?.Count > 0;
+    }
+
     private void ApplySchemeLayout(ProductionQualityDetailDto detail)
     {
-        var processName = ResolveProcessName(detail);
-        var qualityFlowName = ResolveQualityFlowName(detail);
-        var isAcid = IsPicklingScheme(processName);
-        var isHeat = IsHeatTreatmentScheme(processName);
-        var isDrawing = IsDrawingScheme(processName);
-        var isFirstInspection = isDrawing && HasSchemeToken(qualityFlowName, "首检", "首件检");
+        var flowName = ResolveCurrentFlowName(detail);
+        var isAcid = IsPicklingScheme(flowName);
+        var isHeat = IsHeatTreatmentScheme(flowName);
+        var isDrawing = IsDrawingScheme(flowName);
+        var isFirstInspection = isDrawing && HasSchemeToken(flowName, "首检", "首件检");
 
         TitleLabel.Text = isAcid ? "酸洗质检池" : isHeat ? "执行热处理质检" : isFirstInspection ? "执行拉拔工序质检" : "执行工序质检";
         InfoTitleLabel.Text = isAcid ? "酸洗任务信息" : isHeat ? "热处理卡片信息" : "生产卡片信息";
@@ -188,7 +213,7 @@ public partial class MachineQualityDetailPage : ContentPage
         CompleteButton.IsVisible = !isSubmitOnlyProcess;
         Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
         ScanMaterialButton.IsVisible = false;
-        InfoScanMaterialButton.IsVisible = !IsInspectionCompleted(_inspectStatus) && !isAcid && (!isDrawing || isManualPatrol) && (IsSamplingOrFullScheme(processName) || IsProcessCardScheme(processName));
+        InfoScanMaterialButton.IsVisible = !IsInspectionCompleted(_inspectStatus) && !isAcid && (!isDrawing || isManualPatrol) && (IsSamplingOrFullScheme(flowName) || IsProcessCardScheme(flowName));
         UpdateUnqualifiedDescriptionVisibility();
     }
 
@@ -278,14 +303,26 @@ public partial class MachineQualityDetailPage : ContentPage
         return FirstNonEmpty(detail.processName, detail.processCode).Trim();
     }
 
+    private string? ResolveCurrentFlowName(ProductionQualityDetailDto detail)
+    {
+        return FirstNonEmpty(
+            detail.processName,
+            detail.processCode,
+            detail.inspectionSchemeName,
+            detail.qualityTypeName,
+            detail.inspectionSchemeTypeName,
+            _listInspectionSchemeName,
+            _processNameFromScan).Trim();
+    }
+
     private static string? ResolveQualityFlowName(ProductionQualityDetailDto detail)
     {
         return FirstNonEmpty(detail.inspectionSchemeName, detail.qualityTypeName, detail.inspectionSchemeTypeName, detail.processName, detail.processCode).Trim();
     }
 
-    private static (string Label, string? Value)[] BuildInfoRows(ProductionQualityDetailDto detail)
+    private (string Label, string? Value)[] BuildInfoRows(ProductionQualityDetailDto detail)
     {
-        var schemeName = ResolveProcessName(detail);
+        var schemeName = ResolveCurrentFlowName(detail);
         if (IsPicklingScheme(schemeName))
         {
             return new[]
@@ -653,7 +690,7 @@ public partial class MachineQualityDetailPage : ContentPage
         return HasSchemeToken(schemeName, SchemeDrawing) && HasSchemeToken(schemeName, "首检", "首件检");
     }
 
-    private string? CurrentProcessName => _detail is null ? _inspectionSchemeName : ResolveProcessName(_detail);
+    private string? CurrentProcessName => _detail is null ? _inspectionSchemeName : ResolveCurrentFlowName(_detail);
 
     private bool ShouldUsePicklingCommit()
     {
@@ -733,19 +770,14 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private bool ShouldUseManualInspectionResultApi()
     {
-        return _isManualInspection || IsPatrolInspectionFromList();
-    }
-
-    private bool IsPatrolInspectionFromList()
-    {
-        return HasSchemeToken(_listInspectionSchemeName, "巡检");
+        return _isManualInspection;
     }
 
     private bool ShouldUseSamplingOrFullComplete()
     {
         if (ShouldUseManualInspectionResultApi()) return false;
 
-        var processName = _detail is null ? _inspectionSchemeName : ResolveProcessName(_detail);
+        var processName = _detail is null ? _inspectionSchemeName : ResolveCurrentFlowName(_detail);
         return IsHeatTreatmentScheme(processName) ||
             IsBlankOpeningScheme(processName) ||
             IsHeatTreatmentScheme(_inspectionSchemeName) ||

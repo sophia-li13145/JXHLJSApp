@@ -3,6 +3,7 @@ using JXHLJSApp.Models.Quality;
 using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Models.WorkOrders;
 using JXHLJSApp.Services.Common;
+using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -22,6 +23,7 @@ public interface IQualityApi
     Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersByResourceAsync(string resourceCode, CancellationToken ct = default);
     Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, string? qualityNo = null, CancellationToken ct = default);
     Task<ProductionQualityDetailDto> GetProductionQualityDetailAsync(string qualityNo, string workOrderNo, CancellationToken ct = default);
+    Task<ProductionQualityDetailDto> GetInspectionDetailAsync(string qualityNo, CancellationToken ct = default);
     Task<ProductionQualityDetailDto> CreateManualInspectionAsync(string qrCode, CancellationToken ct = default);
     Task<ProductionQualityDetailDto> GetManualInspectionDetailAsync(string qualityNo, CancellationToken ct = default);
     Task<ProductionQualityScanMaterialDto> AddManualInspectionMaterialAsync(ProductionQualityScanMaterialRequestDto request, CancellationToken ct = default);
@@ -266,8 +268,14 @@ public sealed class QualityApi : IQualityApi
 
     public async Task<ProductionQualityDetailDto> GetProductionQualityDetailAsync(string qualityNo, string workOrderNo, CancellationToken ct = default)
     {
-        var detail = await PostManualInspectionDetailAsync(qualityNo, ct).ConfigureAwait(false);
+        var detail = await GetInspectionDetailAsync(qualityNo, ct).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(detail.workOrderNo)) detail.workOrderNo = workOrderNo;
+        return detail;
+    }
+
+    public async Task<ProductionQualityDetailDto> GetInspectionDetailAsync(string qualityNo, CancellationToken ct = default)
+    {
+        var detail = await PostManualInspectionDetailAsync(qualityNo, ct).ConfigureAwait(false);
         await ApplyProductionQualityDictNamesAsync(detail, ct).ConfigureAwait(false);
         return detail;
     }
@@ -283,11 +291,9 @@ public sealed class QualityApi : IQualityApi
         return detail;
     }
 
-    public async Task<ProductionQualityDetailDto> GetManualInspectionDetailAsync(string qualityNo, CancellationToken ct = default)
+    public Task<ProductionQualityDetailDto> GetManualInspectionDetailAsync(string qualityNo, CancellationToken ct = default)
     {
-        var detail = await PostManualInspectionDetailAsync(qualityNo, ct).ConfigureAwait(false);
-        await ApplyProductionQualityDictNamesAsync(detail, ct).ConfigureAwait(false);
-        return detail;
+        return GetInspectionDetailAsync(qualityNo, ct);
     }
 
     private async Task<ProductionQualityDetailDto> PostManualInspectionDetailAsync(string qualityNo, CancellationToken ct)
@@ -295,8 +301,12 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _manualInspectionDetailEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new { qualityNo }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<ProductionQualityDetailDto>(resp, ct).ConfigureAwait(false);
-        return data.result ?? new ProductionQualityDetailDto { qualityNo = qualityNo };
+        var rawJson = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        Debug.WriteLine($"manualInspection/detail 返回：{rawJson}");
+        var data = JsonSerializer.Deserialize<ApiResp<ProductionQualityDetailDto>>(rawJson, JsonOptions);
+        if (data is null) throw new InvalidOperationException("详情接口返回为空。");
+        if (data.success == false) throw new InvalidOperationException(string.IsNullOrWhiteSpace(data.message) ? "接口返回失败。" : data.message);
+        return data.result ?? throw new InvalidOperationException($"详情接口返回的 result 为空，qualityNo={qualityNo}");
     }
 
     public async Task<ProductionQualityScanMaterialDto> AddManualInspectionMaterialAsync(ProductionQualityScanMaterialRequestDto request, CancellationToken ct = default)
