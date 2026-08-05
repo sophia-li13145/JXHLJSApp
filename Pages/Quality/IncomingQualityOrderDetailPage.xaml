@@ -59,7 +59,7 @@
                                     <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
                                     <Grid ColumnDefinitions="4,*">
                                         <BoxView Color="#FF4D5E" />
-                                        <Grid Grid.Column="1" Padding="14,16" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+                                        <Grid Grid.Column="1" Padding="14,16" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
                                             <Label Text="{Binding qrCodeDisplay, StringFormat='条码：{0}'}" TextColor="#00346F" FontAttributes="Bold" FontSize="15" />
                                             <Label Grid.Column="1" Text="{Binding inspectResultDisplay}" TextColor="{Binding inspectResultColor}" FontAttributes="Bold" FontSize="14" />
                                             <Border Grid.Row="1" Grid.ColumnSpan="2" BackgroundColor="#F8FAFD" StrokeThickness="0" Padding="8,5">
@@ -67,6 +67,7 @@
                                                 <Label Text="{Binding materialSpecDisplay}" TextColor="#38557C" FontSize="13" />
                                             </Border>
                                             <Label Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding problemPointDisplay, StringFormat='检测说明：{0}'}" TextColor="#38557C" FontSize="13" />
+                                            <Label Grid.Row="3" Grid.ColumnSpan="2" Text="{Binding memoDisplay, StringFormat='备注：{0}'}" TextColor="#38557C" FontSize="13" />
                                         </Grid>
                                     </Grid>
                                 </Border>
