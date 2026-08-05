@@ -377,6 +377,7 @@ public partial class IncomingQualityScanPage : ContentPage, IQueryAttributable
                 instockNo = _scanMaterial.instockNo ?? string.Empty,
                 materialCode = _scanMaterial.materialCode ?? string.Empty,
                 materialName = _scanMaterial.materialName ?? string.Empty,
+                memo = MemoEditor.Text?.Trim(),
                 otherExceptionDesc = null,
                 otherProblemItem = OtherProblemEditor.Text?.Trim(),
                 problemPoint = string.Join(",", selectedProblems.Select(item => item.Value)),
