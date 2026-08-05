@@ -504,6 +504,7 @@ public sealed class ProductionQualityDetailDto
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
     public string? memo { get; set; }
+    public string? unqualifiedDescription { get; set; }
     public bool? previousUnqualified { get; set; }
     public string? phosphatingTemperature { get; set; }
     public string? pieceNo { get; set; }
