@@ -11,5 +11,5 @@ public partial class MaterialOperationSuccessPage : ContentPage
 
     private async void OnDoneClicked(object sender, EventArgs e) => await GoBackToExecutionAsync();
 
-    private static Task GoBackToExecutionAsync() => Shell.Current.GoToAsync(AppShell.RouteWorkExecution);
+    private static Task GoBackToExecutionAsync() => Shell.Current.GoToAsync("../..");
 }
