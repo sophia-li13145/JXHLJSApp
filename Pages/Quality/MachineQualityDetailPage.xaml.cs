@@ -81,6 +81,7 @@ public partial class MachineQualityDetailPage : ContentPage
         StrengthJudgmentPicker.SelectedIndex = 0;
         SurfaceJudgmentPicker.SelectedIndex = 0;
         ContinuousUnqualifiedPicker.SelectedIndex = 0;
+        ContinuousUnqualifiedPicker.IsEnabled = false;
         EmployeeInterventionPicker.SelectedIndex = 0;
         UpdateUnqualifiedDescriptionVisibility();
     }
@@ -152,7 +153,6 @@ public partial class MachineQualityDetailPage : ContentPage
             SelectQualifiedOption(CoilPitchPicker, detail.coilPitchControl);
             SelectQualifiedOption(InspectResultPicker, detail.inspectResult);
             ApplyProcessJudgmentValues(detail);
-            UpdateContinuousUnqualifiedSelection();
             ApplyReadOnlyStateIfCompleted();
             _hasLoadedDetail = true;
             _loadedQualityNo = _qualityNo;
@@ -178,7 +178,7 @@ public partial class MachineQualityDetailPage : ContentPage
         AcidInputPanel.IsVisible = isAcid;
         HeatTreatmentInputPanel.IsVisible = isHeat;
         ProcessInputPanel.IsVisible = !isAcid && !isHeat;
-        ContinuousUnqualifiedPicker.IsEnabled = !isFirstInspection;
+        ContinuousUnqualifiedPicker.IsEnabled = false;
         MemoLabel.Text = "备注";
         MemoLabel.IsVisible = true;
         MemoEditor.IsVisible = true;
@@ -587,13 +587,16 @@ public partial class MachineQualityDetailPage : ContentPage
         SelectQualifiedOption(DiameterJudgmentPicker, detail.diameterJudgment);
         SelectQualifiedOption(StrengthJudgmentPicker, detail.strengthJudgment);
         SelectQualifiedOption(SurfaceJudgmentPicker, detail.surfaceJudgment);
-        SelectYesNoOption(ContinuousUnqualifiedPicker, detail.continuousUnqualified, false);
-        SelectYesNoOption(EmployeeInterventionPicker, detail.employeeIntervention, true);
-        if (IsDrawingScheme(CurrentProcessName) && HasSchemeToken(_inspectionSchemeName, "首检", "首件检"))
+        if (detail.continuousUnqualified.HasValue)
         {
-            ContinuousUnqualifiedPicker.SelectedItem = "否";
+            SelectYesNoOption(ContinuousUnqualifiedPicker, detail.continuousUnqualified, false);
             ContinuousUnqualifiedPicker.IsEnabled = false;
         }
+        else
+        {
+            UpdateContinuousUnqualifiedSelection();
+        }
+        SelectYesNoOption(EmployeeInterventionPicker, detail.employeeIntervention, true);
     }
 
     private void UpdateContinuousUnqualifiedSelection()
@@ -607,7 +610,7 @@ public partial class MachineQualityDetailPage : ContentPage
             return;
         }
 
-        ContinuousUnqualifiedPicker.IsEnabled = true;
+        ContinuousUnqualifiedPicker.IsEnabled = false;
         var currentUnqualified = InspectResultPicker.SelectedItem?.ToString() == "不合格";
         ContinuousUnqualifiedPicker.SelectedItem = currentUnqualified && _previousUnqualified == false ? "是" : "否";
     }
@@ -835,7 +838,6 @@ public partial class MachineQualityDetailPage : ContentPage
             DiameterJudgmentPicker.SelectedIndex,
             StrengthJudgmentPicker.SelectedIndex,
             SurfaceJudgmentPicker.SelectedIndex,
-            ContinuousUnqualifiedPicker.SelectedIndex,
             EmployeeInterventionPicker.SelectedIndex,
             InspectResultPicker.SelectedIndex);
     }
@@ -863,7 +865,6 @@ public partial class MachineQualityDetailPage : ContentPage
         RestorePicker(StrengthJudgmentPicker, state.StrengthJudgmentIndex);
         RestorePicker(SurfaceJudgmentPicker, state.SurfaceJudgmentIndex);
         RestorePicker(InspectResultPicker, state.InspectResultIndex);
-        RestorePicker(ContinuousUnqualifiedPicker, state.ContinuousUnqualifiedIndex);
         RestorePicker(EmployeeInterventionPicker, state.EmployeeInterventionIndex);
     }
 
@@ -906,7 +907,6 @@ public partial class MachineQualityDetailPage : ContentPage
         int DiameterJudgmentIndex,
         int StrengthJudgmentIndex,
         int SurfaceJudgmentIndex,
-        int ContinuousUnqualifiedIndex,
         int EmployeeInterventionIndex,
         int InspectResultIndex);
 

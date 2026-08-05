@@ -518,7 +518,6 @@ public sealed class ProductionQualityDetailDto
     public string? strengthJudgment { get; set; }
     public string? surfaceCondition { get; set; }
     public string? surfaceJudgment { get; set; }
-    public string? unqualifiedDescription { get; set; }
     public string? targetSpecification { get; set; }
     public string? totalAcid { get; set; }
     public string? totalAcidSampling { get; set; }
