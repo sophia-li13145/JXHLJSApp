@@ -1092,7 +1092,8 @@ public partial class MachineQualityDetailPage : ContentPage
             var shouldStayAfterSubmit = IsHeatTreatmentScheme(CurrentProcessName) ||
                 IsHeatTreatmentScheme(_inspectionSchemeName) ||
                 IsBlankOpeningScheme(CurrentProcessName) ||
-                IsBlankOpeningScheme(_inspectionSchemeName);
+                IsBlankOpeningScheme(_inspectionSchemeName) ||
+                (useManualInspectionApi && (IsDrawingScheme(CurrentProcessName) || IsDrawingScheme(_inspectionSchemeName)));
             var useFirstInspectionCommit = !useManualInspectionApi && ShouldUseFirstInspectionCommit();
             var useSamplingOrFullCommit = !useManualInspectionApi && ShouldUseSamplingOrFullCommit();
             var isHeatTreatmentSamplingOrFull = useSamplingOrFullCommit &&
