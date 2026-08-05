@@ -84,6 +84,8 @@
                         </Border>
                         <Label Text="其他问题项" TextColor="#051B3D" FontAttributes="Bold" />
                         <Editor x:Name="OtherProblemEditor" Placeholder="可手动录入其他异常问题，如无请留空" AutoSize="TextChanges" HeightRequest="72" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
+                        <Label Text="备注" TextColor="#051B3D" FontAttributes="Bold" />
+                        <Editor x:Name="MemoEditor" Placeholder="填写备注信息..." AutoSize="TextChanges" HeightRequest="72" BackgroundColor="#F8FAFD" TextColor="#051B3D" />
                     </VerticalStackLayout>
                 </Border>
             </VerticalStackLayout>
