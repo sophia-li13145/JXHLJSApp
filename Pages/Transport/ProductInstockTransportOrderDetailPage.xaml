@@ -41,7 +41,7 @@
                         <Border Stroke="#DDE6F2" StrokeThickness="1" BackgroundColor="White" Margin="0,0,0,0">
                             <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                             <VerticalStackLayout Spacing="0">
-                                <Grid BackgroundColor="#F7FAFE" ColumnDefinitions="*,*,*" Padding="14,0" HeightRequest="38">
+                                <Grid BackgroundColor="#F7FAFE" ColumnDefinitions="1.4*,0.7*,0.9*" Padding="14,0" HeightRequest="38">
                                     <Label Text="件号" TextColor="#0A2E69" FontSize="14" FontAttributes="Bold" VerticalOptions="Center" />
                                     <Label Grid.Column="1" Text="重量" TextColor="#0A2E69" FontSize="14" FontAttributes="Bold" VerticalOptions="Center" />
                                     <Label Grid.Column="2" Text="落库位置" TextColor="#0A2E69" FontSize="14" FontAttributes="Bold" VerticalOptions="Center" />
@@ -51,7 +51,7 @@
                                     <CollectionView.ItemTemplate>
                                         <DataTemplate>
                                             <VerticalStackLayout Spacing="0">
-                                                <Grid ColumnDefinitions="*,*,*" Padding="14,12" BackgroundColor="White">
+                                                <Grid ColumnDefinitions="1.4*,0.7*,0.9*" Padding="14,12" BackgroundColor="White">
                                                     <Label Text="{Binding materialCodeDisplay}" TextColor="#0A2E69" FontSize="14" />
                                                     <Label Grid.Column="1" Text="{Binding weightKgDisplay}" TextColor="#0A2E69" FontSize="14" />
                                                     <Label Grid.Column="2" Text="{Binding toLocationDisplay}" TextColor="#0A2E69" FontSize="14" />
