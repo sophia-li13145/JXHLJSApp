@@ -97,13 +97,19 @@ public sealed class TransportOrderApi : ITransportOrderApi
 
     public async Task<List<ProductInstockTransportOrderDto>> GetProductInstockTransportOrdersAsync(CancellationToken ct = default)
     {
+        var taskStatusNames = await LoadTaskStatusNamesAsync(ct).ConfigureAwait(false);
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productInstockListEndpoint);
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<List<ProductInstockTransportOrderDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
-        return data?.result ?? new List<ProductInstockTransportOrderDto>();
+        var list = data?.result ?? new List<ProductInstockTransportOrderDto>();
+        foreach (var item in list)
+        {
+            item.taskStatusName = ResolveTaskStatusName(item.taskStatus, taskStatusNames);
+        }
+        return list;
     }
 
     public async Task<ProductInstockTransportOrderDetailDto> GetProductInstockTransportOrderDetailAsync(string transportOrderNo, CancellationToken ct = default)

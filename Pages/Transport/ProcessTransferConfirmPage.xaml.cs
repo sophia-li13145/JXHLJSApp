@@ -25,8 +25,8 @@ public partial class ProcessTransferConfirmPage : ContentPage
         MaterialNameLabel.Text = $"物料名称：{FirstNonEmpty(_order?.materialName, _order?.materialCode, "--")}";
         SpecLabel.Text = $"规格：{FirstNonEmpty(_order?.spec, "--")}";
         ProductionAddressLabel.Text = $"产地：{FirstNonEmpty(_order?.productionAddress, "--")}";
-        QuantityLabel.Text = $"件数：{FormatQuantity(_order?.totalQuantity ?? _order?.quantity, _order?.unit)}";
-        WeightLabel.Text = $"重量：{FormatWeight(_order?.totalWeight ?? _order?.weight)}";
+        QuantityLabel.Text = $"件数：{FormatQuantity(_order?.totalQuantity)}";
+        WeightLabel.Text = $"重量：{FormatWeight(_order?.totalWeight, _order?.unit)}";
         WorkOrderNoLabel.Text = $"工单：{FirstNonEmpty(_order?.workOrderNo, "--")}";
         CurrentProcessLabel.Text = $"{FirstNonEmpty(_order?.currentProcess, "--")}  |  机台：{FirstNonEmpty(_order?.currentMachineName, _order?.currentMachineNo, "--")}";
         NextProcessLabel.Text = $"{FirstNonEmpty(_order?.nextProcess, "--")}  |  机台：{FirstNonEmpty(_order?.nextMachineName, _order?.nextMachineNo, "--")}";
@@ -96,8 +96,8 @@ public partial class ProcessTransferConfirmPage : ContentPage
         return (Color.FromArgb("#667A96"), "未开始");
     }
 
-    private static string FormatQuantity(decimal? value, string? unit) => value.HasValue ? $"{value.Value.ToString("N0", CultureInfo.InvariantCulture)}{FirstNonEmpty(unit, "件")}" : "--";
-    private static string FormatWeight(decimal? value) => value.HasValue ? $"{value.Value.ToString("N0", CultureInfo.InvariantCulture)}kg" : "--";
+    private static string FormatQuantity(decimal? value) => value.HasValue ? $"{value.Value.ToString("N0", CultureInfo.InvariantCulture)}件" : "--";
+    private static string FormatWeight(decimal? value, string? unit) => value.HasValue ? $"{value.Value.ToString("N0", CultureInfo.InvariantCulture)}{FirstNonEmpty(unit)}" : "--";
     private static string FormatDateTime(string? value) => DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var dt) ? dt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : FirstNonEmpty(value, string.Empty);
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
 }
