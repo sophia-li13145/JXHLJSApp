@@ -61,10 +61,13 @@ public partial class DeliveryOrderDetailPage : ContentPage
         CustomerLabel.Text = detail.customerDisplay;
         AddressLabel.Text = detail.consAddressDisplay;
         ContactLabel.Text = detail.logisticsContacterDisplay;
+        ContactPhoneLabel.Text = detail.logisticsTelDisplay;
         DeliveryDateLabel.Text = detail.expectedDeliveryDateDisplay;
+        ShipperLabel.Text = detail.shipperDisplay;
         CarrierLabel.Text = detail.carrierNameDisplay;
+        CarrierPhoneLabel.Text = detail.logisticsNumberDisplay;
         CarrierLicenseLabel.Text = detail.carrierLicenseDisplay;
-        LogisticsNumberLabel.Text = detail.logisticsNumberDisplay;
+        DeliveryMemoLabel.Text = detail.memoDisplay;
 
         _materials.Clear();
         foreach (var item in detail.detailList ?? new List<DeliveryOrderMaterialDetailDto>())
