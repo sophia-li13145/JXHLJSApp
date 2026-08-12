@@ -18,6 +18,9 @@ public sealed class DeliveryOrderDetailDto
     public string? id { get; set; }
     public string? logisticsNumber { get; set; }
     public string? logisticsContacter { get; set; }
+    public string? logisticsTel { get; set; }
+    public string? memo { get; set; }
+    public string? shipper { get; set; }
     [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? scannedQty { get; set; }
     [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
@@ -30,6 +33,9 @@ public sealed class DeliveryOrderDetailDto
     public string carrierLicenseDisplay => ValueOrDash(carrierLicense);
     public string logisticsNumberDisplay => ValueOrDash(logisticsNumber);
     public string logisticsContacterDisplay => ValueOrDash(logisticsContacter);
+    public string logisticsTelDisplay => ValueOrDash(logisticsTel);
+    public string memoDisplay => ValueOrDash(memo);
+    public string shipperDisplay => ValueOrDash(shipper);
     public string expectedDeliveryDateDisplay => FormatDate(expectedDeliveryTime);
     public string auditStatusDisplay
     {
