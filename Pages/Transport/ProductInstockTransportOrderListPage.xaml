@@ -30,13 +30,9 @@
                                 <Border BackgroundColor="White" StrokeThickness="0" Padding="20,18" Margin="0,0,0,14">
                                     <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnOrderTapped" /></Border.GestureRecognizers>
                                     <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
-                                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="12" ColumnSpacing="12">
+                                    <Grid RowDefinitions="Auto,Auto" RowSpacing="12">
                                         <Label Text="{Binding orderNoDisplay}" TextColor="#051B3D" FontSize="19" FontAttributes="Bold" />
-                                        <Border Grid.Column="1" BackgroundColor="{Binding statusBackgroundColor}" StrokeThickness="0" Padding="10,4" VerticalOptions="Start">
-                                            <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
-                                            <Label Text="{Binding statusDisplay}" TextColor="{Binding statusTextColor}" FontSize="13" FontAttributes="Bold" />
-                                        </Border>
-                                        <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding summaryDisplay}" TextColor="#38557C" FontSize="14" LineBreakMode="TailTruncation" />
+                                        <Label Grid.Row="1" Text="{Binding summaryDisplay}" TextColor="#38557C" FontSize="14" LineBreakMode="TailTruncation" />
                                     </Grid>
                                 </Border>
                             </DataTemplate>

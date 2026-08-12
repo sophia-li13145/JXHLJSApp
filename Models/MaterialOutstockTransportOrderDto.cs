@@ -125,7 +125,6 @@ public sealed class ProductInstockTransportOrderDto
     public string? spec { get; set; }
     public string? steelGrade { get; set; }
     public string? taskStatus { get; set; }
-    public string? taskStatusName { get; set; }
     public string? toWarehouseName { get; set; }
     [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? totalQuantity { get; set; }
@@ -134,7 +133,6 @@ public sealed class ProductInstockTransportOrderDto
     public string? transportOrderNo { get; set; }
 
     public string orderNoDisplay => Display(transportOrderNo);
-    public string statusDisplay => FirstNonEmpty(taskStatusName, taskStatus, "入库完成");
     public string routeDisplay => string.IsNullOrWhiteSpace(fromWarehouseName) && string.IsNullOrWhiteSpace(toWarehouseName)
         ? "--"
         : $"{Display(fromWarehouseName)} → {Display(toWarehouseName)}";
@@ -150,11 +148,7 @@ public sealed class ProductInstockTransportOrderDto
         }
     }
 
-    public Color statusBackgroundColor => Color.FromArgb("#EAFBEF");
-    public Color statusTextColor => Color.FromArgb("#00A86B");
-
     private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
-    private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "--";
 }
 
 public sealed class ProductInstockTransportOrderDetailDto
