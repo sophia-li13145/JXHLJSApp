@@ -186,7 +186,7 @@ public sealed class ProductInstockTransportOrderDetailItemDto
     public decimal? weight { get; set; }
 
     public string materialCodeDisplay => Display(materialCode);
-    public string weightKgDisplay => weight.HasValue ? $"{weight.Value:0,0.##}kg" : "--";
+    public string weightKgDisplay => weight.HasValue ? $"{weight.Value:#,0.##}kg" : "--";
     public string toLocationDisplay => Display(toLocationName);
 
     private static string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "--" : value!;
