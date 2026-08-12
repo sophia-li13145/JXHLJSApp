@@ -5,23 +5,40 @@ namespace JXHLJSApp.Services;
 
 public static class ErrorDialogService
 {
+    private static int _isDialogVisible;
+
     public static Task ShowAsync(Page? owner, string title, string message, string buttonText = "确定")
     {
         return MainThread.InvokeOnMainThreadAsync(async () =>
         {
-            var page = owner ?? Application.Current?.MainPage;
-            if (page is null)
+            // Multiple requests can fail at the same time when the device goes offline.
+            // Do not stack modal pages, otherwise closing one immediately reveals the next.
+            if (Interlocked.CompareExchange(ref _isDialogVisible, 1, 0) != 0)
             {
                 return;
             }
 
-            var dialogPage = new ErrorDialogPage(
-                string.IsNullOrWhiteSpace(title) ? "操作失败" : title,
-                string.IsNullOrWhiteSpace(message) ? "操作未成功，请稍后重试。" : message,
-                string.IsNullOrWhiteSpace(buttonText) ? "确定" : buttonText);
+            var page = owner ?? Application.Current?.MainPage;
+            if (page is null)
+            {
+                Interlocked.Exchange(ref _isDialogVisible, 0);
+                return;
+            }
 
-            await page.Navigation.PushModalAsync(dialogPage, false);
-            await dialogPage.WaitForCloseAsync();
+            try
+            {
+                var dialogPage = new ErrorDialogPage(
+                    string.IsNullOrWhiteSpace(title) ? "操作失败" : title,
+                    string.IsNullOrWhiteSpace(message) ? "操作未成功，请稍后重试。" : message,
+                    string.IsNullOrWhiteSpace(buttonText) ? "确定" : buttonText);
+
+                await page.Navigation.PushModalAsync(dialogPage, false);
+                await dialogPage.WaitForCloseAsync();
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _isDialogVisible, 0);
+            }
         });
     }
 

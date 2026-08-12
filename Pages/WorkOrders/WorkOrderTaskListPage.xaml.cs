@@ -9,6 +9,7 @@ public partial class WorkOrderTaskListPage : ContentPage
     private readonly IWorkOrderApi _workOrderApi;
     private List<DeviceDto> _devices = new();
     private string? _selectedMachineNo;
+    private bool _isLoading;
 
     public WorkOrderTaskListPage(IWorkOrderApi workOrderApi)
     {
@@ -26,9 +27,14 @@ public partial class WorkOrderTaskListPage : ContentPage
 
     private async Task LoadPageAsync()
     {
+        if (_isLoading)
+        {
+            return;
+        }
+
+        _isLoading = true;
         try
         {
-            RefreshContainer.IsRefreshing = true;
             await LoadDevicesAsync();
             await LoadTasksAsync();
         }
@@ -39,6 +45,7 @@ public partial class WorkOrderTaskListPage : ContentPage
         finally
         {
             RefreshContainer.IsRefreshing = false;
+            _isLoading = false;
         }
     }
 
@@ -133,7 +140,6 @@ public partial class WorkOrderTaskListPage : ContentPage
 
         try
         {
-            RefreshContainer.IsRefreshing = true;
             await LoadTasksAsync();
         }
         catch (Exception ex)
