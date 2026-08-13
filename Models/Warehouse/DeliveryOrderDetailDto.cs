@@ -37,7 +37,6 @@ public sealed class DeliveryOrderDetailDto
     public string logisticsContacterDisplay => ValueOrDash(logisticsContacter);
     public string logisticsTelDisplay => ValueOrDash(logisticsTel);
     public string memoDisplay => ValueOrDash(memo);
-    public string shipperDisplay => ValueOrDash(shipper);
     public string expectedDeliveryDateDisplay => FormatDate(expectedDeliveryTime);
     public string auditStatusDisplay
     {
