@@ -10,6 +10,7 @@ namespace JXHLJSApp.Models;
         public string? email { get; set; }
         public string? roleCode { get; set; }
         public string? roleName { get; set; }
+        public List<UserRoleDto>? roleList { get; set; }
         public string? workNumber { get; set; }
         public string? workNo { get; set; }
         public string? employeeNo { get; set; }
@@ -22,3 +23,8 @@ namespace JXHLJSApp.Models;
         public string? loginType { get; set; }
     }
 
+    public class UserRoleDto
+    {
+        public string? roleName { get; set; }
+        public string? roleCode { get; set; }
+    }

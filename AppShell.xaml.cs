@@ -12,6 +12,7 @@ public partial class AppShell : Shell
     private readonly IServiceProvider _services;
     public const string RouteLogin = "//Login";
     public const string RouteHome = "//Home";
+    public const string RouteRoleModule = "RoleModule";
     public const string RouteAdmin = "Admin";
     public const string RouteLog = "Log";
     public const string RouteWorkOrderTasks = "WorkOrderTasks";
@@ -57,6 +58,7 @@ public partial class AppShell : Shell
         InitializeComponent();
         _services = services;
         Routing.RegisterRoute(RouteAdmin, typeof(AdminPage));
+        Routing.RegisterRoute(RouteRoleModule, typeof(RoleHomePage));
         Routing.RegisterRoute(RouteLog, typeof(LogPage));
         Routing.RegisterRoute(RouteWorkOrderTasks, typeof(WorkOrderTaskListPage));
         Routing.RegisterRoute(RouteProductionStatistics, typeof(ProductionStatisticsPage));
@@ -134,9 +136,19 @@ public partial class AppShell : Shell
         tabBar.Items.Add(new ShellContent
         {
             Route = "Home",
-            ContentTemplate = new DataTemplate(() => _services.GetRequiredService<RoleHomePage>())
+            ContentTemplate = new DataTemplate(CreateHomePage)
         });
 
         Items.Add(tabBar);
+    }
+
+    private Page CreateHomePage()
+    {
+        return UserRoleAccess.GetStoredVisibleRoleCodes().Count switch
+        {
+            0 => _services.GetRequiredService<NoPermissionPage>(),
+            1 => _services.GetRequiredService<RoleHomePage>(),
+            _ => _services.GetRequiredService<PdaHomePage>()
+        };
     }
 }
