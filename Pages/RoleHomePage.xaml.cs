@@ -52,7 +52,10 @@ public partial class RoleHomePage : ContentPage
             var userInfo = await _authApi.GetUserInfoAsync();
             if (userInfo is not null)
             {
-                UserSessionStore.Save(userInfo);
+                // 登录接口返回的 roleList 是首页权限的唯一来源。
+                // 用户信息刷新接口可能不返回 roleList，不能在这里覆盖已保存的模块权限，
+                // 否则从角色首页返回 PDA 首页时会因角色列表被清空而显示空白。
+                UserSessionStore.SaveProfile(userInfo);
             }
         }
         catch
@@ -412,6 +415,11 @@ internal static class UserSessionStore
         var roleCodes = UserRoleAccess.GetRoleCodes(userInfo).ToArray();
         Preferences.Set(UserSessionKeys.RoleCode, roleCodes.FirstOrDefault() ?? string.Empty);
         Preferences.Set(UserSessionKeys.RoleCodes, string.Join(',', roleCodes));
+        SaveProfile(userInfo);
+    }
+
+    public static void SaveProfile(UserInfoDto? userInfo)
+    {
         Preferences.Set(UserSessionKeys.RealName, FirstNonEmpty(userInfo?.realname, userInfo?.username, "未命名"));
         Preferences.Set(UserSessionKeys.UserName, FirstNonEmpty(userInfo?.username, userInfo?.realname, userInfo?.workNumber, userInfo?.workNo, userInfo?.employeeNo, userInfo?.empNo, userInfo?.userCode, userInfo?.id, string.Empty));
         Preferences.Set(UserSessionKeys.WorkNumber, FirstNonEmpty(userInfo?.workNumber, userInfo?.workNo, userInfo?.employeeNo, userInfo?.empNo, userInfo?.userCode, userInfo?.id, string.Empty));
