@@ -35,23 +35,35 @@
                             <Label Text="发货单号" TextColor="#4B6688" /><Label x:Name="DeliveryNoLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
                             <Label Grid.Row="1" Text="客户名称" TextColor="#4B6688" /><Label x:Name="CustomerLabel" Grid.Row="1" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
                             <Label Grid.Row="2" Text="收货地址" TextColor="#4B6688" VerticalOptions="Start" /><Label x:Name="AddressLabel" Grid.Row="2" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" LineBreakMode="WordWrap" />
-                            <Grid Grid.Row="3" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
-                                <Label Text="联系人" TextColor="#4B6688" />
-                                <Label x:Name="ContactLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
-                                <Label Grid.Column="2" Text="联系电话" TextColor="#4B6688" />
-                                <Label x:Name="ContactPhoneLabel" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                            <Grid Grid.Row="3" Grid.ColumnSpan="2" ColumnDefinitions="*,*" ColumnSpacing="8">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                    <Label Text="联系人" TextColor="#4B6688" />
+                                    <Label x:Name="ContactLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                                </Grid>
+                                <Grid Grid.Column="1" ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                    <Label Text="联系电话" TextColor="#4B6688" HorizontalOptions="Start" />
+                                    <Label x:Name="ContactPhoneLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" HorizontalOptions="Fill" />
+                                </Grid>
                             </Grid>
-                            <Grid Grid.Row="4" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="8">
-                                <Label Text="发货日期" TextColor="#4B6688" />
-                                <Label x:Name="DeliveryDateLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
-                                <Label Grid.Column="2" Text="发货人" TextColor="#4B6688" />
-                                <Label x:Name="ShipperLabel" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                            <Grid Grid.Row="4" Grid.ColumnSpan="2" ColumnDefinitions="*,*" ColumnSpacing="8">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                    <Label Text="发货日期" TextColor="#4B6688" />
+                                    <Label x:Name="DeliveryDateLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                                </Grid>
+                                <Grid Grid.Column="1" ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                    <Label Text="发货人" TextColor="#4B6688" HorizontalOptions="Start" />
+                                    <Label x:Name="ShipperLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" HorizontalOptions="Fill" />
+                                </Grid>
                             </Grid>
-                            <Grid Grid.Row="5" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
-                                <Label Text="承运人" TextColor="#4B6688" />
-                                <Label x:Name="CarrierLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
-                                <Label Grid.Column="2" Text="承运人电话" TextColor="#4B6688" />
-                                <Label x:Name="CarrierPhoneLabel" Grid.Column="3" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                            <Grid Grid.Row="5" Grid.ColumnSpan="2" ColumnDefinitions="*,*" ColumnSpacing="8">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                    <Label Text="承运人" TextColor="#4B6688" />
+                                    <Label x:Name="CarrierLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                                </Grid>
+                                <Grid Grid.Column="1" ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                    <Label Text="承运人电话" TextColor="#4B6688" HorizontalOptions="Start" />
+                                    <Label x:Name="CarrierPhoneLabel" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" HorizontalOptions="Fill" />
+                                </Grid>
                             </Grid>
                             <Label Grid.Row="6" Text="承运车牌号" TextColor="#4B6688" /><Label x:Name="CarrierLicenseLabel" Grid.Row="6" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" />
                             <Label Grid.Row="7" Text="出货单说明" TextColor="#4B6688" VerticalOptions="Start" /><Label x:Name="DeliveryMemoLabel" Grid.Row="7" Grid.Column="1" TextColor="#001431" FontAttributes="Bold" HorizontalTextAlignment="End" LineBreakMode="WordWrap" />

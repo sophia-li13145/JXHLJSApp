@@ -63,9 +63,9 @@ public partial class DeliveryOrderDetailPage : ContentPage
         ContactLabel.Text = detail.logisticsContacterDisplay;
         ContactPhoneLabel.Text = detail.logisticsTelDisplay;
         DeliveryDateLabel.Text = detail.expectedDeliveryDateDisplay;
-        ShipperLabel.Text = detail.shipperDisplay;
+        ShipperLabel.Text = string.IsNullOrWhiteSpace(detail.shipper) ? "--" : detail.shipper;
         CarrierLabel.Text = detail.carrierNameDisplay;
-        CarrierPhoneLabel.Text = detail.logisticsNumberDisplay;
+        CarrierPhoneLabel.Text = detail.carrierTelDisplay;
         CarrierLicenseLabel.Text = detail.carrierLicenseDisplay;
         DeliveryMemoLabel.Text = detail.memoDisplay;
 
