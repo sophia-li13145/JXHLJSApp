@@ -65,7 +65,7 @@ public partial class DeliveryOrderDetailPage : ContentPage
         DeliveryDateLabel.Text = detail.expectedDeliveryDateDisplay;
         ShipperLabel.Text = detail.shipperDisplay;
         CarrierLabel.Text = detail.carrierNameDisplay;
-        CarrierPhoneLabel.Text = detail.logisticsNumberDisplay;
+        CarrierPhoneLabel.Text = detail.carrierTelDisplay;
         CarrierLicenseLabel.Text = detail.carrierLicenseDisplay;
         DeliveryMemoLabel.Text = detail.memoDisplay;
 
