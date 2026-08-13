@@ -9,6 +9,7 @@ public sealed class DeliveryOrderDetailDto
     public string? auditStatusName { get; set; }
     public string? carrierLicense { get; set; }
     public string? carrierName { get; set; }
+    public string? carrierTel { get; set; }
     public string? consAddress { get; set; }
     public string? customer { get; set; }
     public string? customerNo { get; set; }
@@ -30,6 +31,7 @@ public sealed class DeliveryOrderDetailDto
     public string customerDisplay => ValueOrDash(customer);
     public string consAddressDisplay => ValueOrDash(consAddress);
     public string carrierNameDisplay => ValueOrDash(carrierName);
+    public string carrierTelDisplay => ValueOrDash(carrierTel);
     public string carrierLicenseDisplay => ValueOrDash(carrierLicense);
     public string logisticsNumberDisplay => ValueOrDash(logisticsNumber);
     public string logisticsContacterDisplay => ValueOrDash(logisticsContacter);
