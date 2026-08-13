@@ -7,12 +7,24 @@ using Microsoft.Maui.Layouts;
 
 namespace JXHLJSApp.Pages;
 
+[QueryProperty(nameof(SelectedRoleCode), "roleCode")]
 public partial class RoleHomePage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
     private readonly IAuthApi _authApi;
     private bool _isRefreshingUserInfo;
+    private string? _selectedRoleCode;
+
+    public string? SelectedRoleCode
+    {
+        get => _selectedRoleCode;
+        set
+        {
+            _selectedRoleCode = value;
+            BuildRoleHome();
+        }
+    }
 
     public RoleHomePage(IWorkOrderApi workOrderApi, IScanService scanService, IAuthApi authApi)
     {
@@ -55,7 +67,9 @@ public partial class RoleHomePage : ContentPage
 
     private void BuildRoleHome()
     {
-        var roleCode = Preferences.Get(UserSessionKeys.RoleCode, string.Empty);
+        var roleCode = string.IsNullOrWhiteSpace(SelectedRoleCode)
+            ? Preferences.Get(UserSessionKeys.RoleCode, string.Empty)
+            : SelectedRoleCode;
         var realName = Preferences.Get(UserSessionKeys.RealName, "未命名");
         var workNumber = Preferences.Get(UserSessionKeys.WorkNumber, string.Empty);
         var department = Preferences.Get(UserSessionKeys.DepartmentName, string.Empty);
@@ -388,13 +402,16 @@ internal static class UserSessionKeys
     public const string DepartmentName = "DepartmentName";
     public const string TeamName = "TeamName";
     public const string ShiftName = "ShiftName";
+    public const string RoleCodes = "RoleCodes";
 }
 
 internal static class UserSessionStore
 {
     public static void Save(UserInfoDto? userInfo)
     {
-        Preferences.Set(UserSessionKeys.RoleCode, userInfo?.roleCode ?? string.Empty);
+        var roleCodes = UserRoleAccess.GetRoleCodes(userInfo).ToArray();
+        Preferences.Set(UserSessionKeys.RoleCode, roleCodes.FirstOrDefault() ?? string.Empty);
+        Preferences.Set(UserSessionKeys.RoleCodes, string.Join(',', roleCodes));
         Preferences.Set(UserSessionKeys.RealName, FirstNonEmpty(userInfo?.realname, userInfo?.username, "未命名"));
         Preferences.Set(UserSessionKeys.UserName, FirstNonEmpty(userInfo?.username, userInfo?.realname, userInfo?.workNumber, userInfo?.workNo, userInfo?.employeeNo, userInfo?.empNo, userInfo?.userCode, userInfo?.id, string.Empty));
         Preferences.Set(UserSessionKeys.WorkNumber, FirstNonEmpty(userInfo?.workNumber, userInfo?.workNo, userInfo?.employeeNo, userInfo?.empNo, userInfo?.userCode, userInfo?.id, string.Empty));
@@ -412,9 +429,36 @@ internal static class UserSessionStore
         Preferences.Remove(UserSessionKeys.DepartmentName);
         Preferences.Remove(UserSessionKeys.TeamName);
         Preferences.Remove(UserSessionKeys.ShiftName);
+        Preferences.Remove(UserSessionKeys.RoleCodes);
     }
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
+}
+
+internal static class UserRoleAccess
+{
+    private static readonly string[] ModuleRoleCodes = ["production", "qualityInspector", "warehouseKeeper", "forkliftOperator"];
+
+    public static IReadOnlyList<string> GetRoleCodes(UserInfoDto? userInfo)
+    {
+        var codes = (userInfo?.roleList ?? [])
+            .Select(role => role.roleCode)
+            .Where(code => !string.IsNullOrWhiteSpace(code))
+            .Select(code => code!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return ModuleRoleCodes.Where(moduleCode => codes.Contains(moduleCode, StringComparer.OrdinalIgnoreCase)).ToArray();
+    }
+
+    public static IReadOnlyList<string> GetStoredVisibleRoleCodes()
+    {
+        return Preferences.Get(UserSessionKeys.RoleCodes, string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(code => ModuleRoleCodes.Contains(code, StringComparer.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
 }
 
 internal enum RoleHomeLayout { Grid, List }
