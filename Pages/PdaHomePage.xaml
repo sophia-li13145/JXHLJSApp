@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.PdaHomePage"
+             BackgroundColor="#F4F6F9"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Border BackgroundColor="#24469A" StrokeThickness="0" Padding="12,22,18,14" HeightRequest="78">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,20,20" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Text="华立钢丝 MES" TextColor="White" FontSize="18" FontAttributes="Bold" VerticalOptions="Center" />
+                <Button Grid.Column="1" Text="↪ 退出登录" BackgroundColor="#5875B5" BorderColor="#91A4D1"
+                        BorderWidth="1" TextColor="White" FontSize="12" Padding="10,5" CornerRadius="14"
+                        Clicked="OnLogoutClicked" />
+            </Grid>
+        </Border>
+        <ScrollView Grid.Row="1">
+            <Grid x:Name="ModuleGrid" Padding="12,20,12,24" ColumnDefinitions="*,*" ColumnSpacing="14" RowSpacing="14" />
+        </ScrollView>
+    </Grid>
+</ContentPage>

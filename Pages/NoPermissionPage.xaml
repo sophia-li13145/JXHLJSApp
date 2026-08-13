@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.NoPermissionPage"
+             BackgroundColor="#F4F6F9"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Border BackgroundColor="#24469A" StrokeThickness="0" Padding="12,22,18,14" HeightRequest="78">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,20,20" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Text="华立钢丝 MES" TextColor="White" FontSize="18" FontAttributes="Bold" VerticalOptions="Center" />
+                <Button Grid.Column="1" Text="↪ 退出登录" BackgroundColor="#5875B5" BorderColor="#91A4D1"
+                        BorderWidth="1" TextColor="White" FontSize="12" Padding="10,5" CornerRadius="14"
+                        Clicked="OnLogoutClicked" />
+            </Grid>
+        </Border>
+        <VerticalStackLayout Grid.Row="1" Padding="32" Spacing="16"
+                             HorizontalOptions="Center" VerticalOptions="Center">
+            <Border WidthRequest="72" HeightRequest="72" BackgroundColor="#EAF2FF" StrokeThickness="0">
+                <Border.StrokeShape><RoundRectangle CornerRadius="36" /></Border.StrokeShape>
+                <Label Text="!" TextColor="#24469A" FontSize="38" FontAttributes="Bold"
+                       HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+            </Border>
+            <Label Text="暂无功能权限" TextColor="#071A38" FontSize="21" FontAttributes="Bold"
+                   HorizontalTextAlignment="Center" />
+            <Label Text="请联系管理员添加权限" TextColor="#65758B" FontSize="15"
+                   HorizontalTextAlignment="Center" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>
