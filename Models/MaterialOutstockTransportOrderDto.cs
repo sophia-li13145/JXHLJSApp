@@ -3,6 +3,14 @@ using System.Text.Json.Serialization;
 
 namespace JXHLJSApp.Models;
 
+public sealed class MaterialOutstockTransportOrderPageDto
+{
+    public long? pageNo { get; set; }
+    public long? pageSize { get; set; }
+    public List<MaterialOutstockTransportOrderDto>? records { get; set; }
+    public long? total { get; set; }
+}
+
 public sealed class MaterialOutstockTransportOrderDto
 {
     public string? fromWarehouseName { get; set; }

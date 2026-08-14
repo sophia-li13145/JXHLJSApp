@@ -10,7 +10,7 @@ public interface ITransportOrderApi
 {
     Task<TransportOrderDto> ScanTransportOrderAsync(string qrCode, CancellationToken ct = default);
     Task<bool> CompleteTransportOrderAsync(string transportOrderNo, CancellationToken ct = default);
-    Task<List<MaterialOutstockTransportOrderDto>> GetMaterialOutstockTransportOrdersAsync(CancellationToken ct = default);
+    Task<MaterialOutstockTransportOrderPageDto> GetMaterialOutstockTransportOrdersAsync(long pageNo, long pageSize, bool searchCount = true, CancellationToken ct = default);
     Task<MaterialOutstockTransportOrderDetailDto> GetMaterialOutstockTransportOrderDetailAsync(string transportOrderNo, CancellationToken ct = default);
     Task<List<ProductInstockTransportOrderDto>> GetProductInstockTransportOrdersAsync(CancellationToken ct = default);
     Task<ProductInstockTransportOrderDetailDto> GetProductInstockTransportOrderDetailAsync(string transportOrderNo, CancellationToken ct = default);
@@ -59,21 +59,31 @@ public sealed class TransportOrderApi : ITransportOrderApi
         return data?.result ?? new TransportOrderDto();
     }
 
-    public async Task<List<MaterialOutstockTransportOrderDto>> GetMaterialOutstockTransportOrdersAsync(CancellationToken ct = default)
+    public async Task<MaterialOutstockTransportOrderPageDto> GetMaterialOutstockTransportOrdersAsync(
+        long pageNo,
+        long pageSize,
+        bool searchCount = true,
+        CancellationToken ct = default)
     {
         var taskStatusNames = await LoadTaskStatusNamesAsync(ct).ConfigureAwait(false);
-        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _outstockListEndpoint);
+        var endpoint = BuildUrlWithQuery(_outstockListEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(pageNo)] = pageNo.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            [nameof(pageSize)] = pageSize.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            [nameof(searchCount)] = searchCount.ToString().ToLowerInvariant()
+        });
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, endpoint);
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-        var data = await JsonSerializer.DeserializeAsync<ApiResp<List<MaterialOutstockTransportOrderDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<MaterialOutstockTransportOrderPageDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
         EnsureApiSuccess(data);
-        var list = data?.result ?? new List<MaterialOutstockTransportOrderDto>();
-        foreach (var item in list)
+        var page = data?.result ?? new MaterialOutstockTransportOrderPageDto();
+        foreach (var item in page.records ?? Enumerable.Empty<MaterialOutstockTransportOrderDto>())
         {
             item.taskStatusName = ResolveTaskStatusName(item.taskStatus, taskStatusNames);
         }
-        return list;
+        return page;
     }
 
     public async Task<MaterialOutstockTransportOrderDetailDto> GetMaterialOutstockTransportOrderDetailAsync(string transportOrderNo, CancellationToken ct = default)
