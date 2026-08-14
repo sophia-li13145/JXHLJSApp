@@ -7,10 +7,10 @@ public partial class PdaHomePage : ContentPage
     private static readonly IReadOnlyDictionary<string, ModuleDefinition> Modules =
         new Dictionary<string, ModuleDefinition>(StringComparer.OrdinalIgnoreCase)
         {
-            ["production"] = new("生产管理", "♟", "#EAF2FF", "#1765EF"),
-            ["qualityInspector"] = new("质检管理", "♟", "#F5EDFF", "#8A24DE"),
-            ["warehouseKeeper"] = new("仓库管理", "♜", "#FFF4EA", "#FF6B13"),
-            ["forkliftOperator"] = new("叉车工", "♬", "#E9F8F5", "#009D88")
+            ["production"] = new("生产管理", "wrench_24_filled.svg", "#1765EF", "#DCE9FF"),
+            ["qualityInspector"] = new("质检管理", "beaker_24_filled.svg", "#8A24DE", "#EEDCFF"),
+            ["warehouseKeeper"] = new("仓库管理", "box_24_filled.svg", "#F06A16", "#FFE5D3"),
+            ["forkliftOperator"] = new("叉车工", "vehicle_truck_24_filled.svg", "#009D88", "#D2F3EC")
         };
 
     public PdaHomePage()
@@ -38,12 +38,20 @@ public partial class PdaHomePage : ContentPage
 
             var icon = new Border
             {
-                WidthRequest = 46,
-                HeightRequest = 46,
+                WidthRequest = 52,
+                HeightRequest = 52,
                 BackgroundColor = Color.FromArgb(module.IconBackground),
-                StrokeThickness = 0,
-                StrokeShape = new RoundRectangle { CornerRadius = 23 },
-                Content = new Label { Text = module.Icon, TextColor = Color.FromArgb(module.IconColor), FontSize = 25, FontAttributes = FontAttributes.Bold, HorizontalTextAlignment = TextAlignment.Center, VerticalTextAlignment = TextAlignment.Center }
+                Stroke = Color.FromArgb(module.IconBorderColor),
+                StrokeThickness = 5,
+                StrokeShape = new RoundRectangle { CornerRadius = 26 },
+                Content = new Image
+                {
+                    Source = module.IconSource,
+                    WidthRequest = 25,
+                    HeightRequest = 25,
+                    HorizontalOptions = LayoutOptions.Center,
+                    VerticalOptions = LayoutOptions.Center
+                }
             };
             var card = new Border
             {
@@ -74,5 +82,5 @@ public partial class PdaHomePage : ContentPage
         App.SwitchToLoggedOutShell();
     }
 
-    private sealed record ModuleDefinition(string Title, string Icon, string IconBackground, string IconColor);
+    private sealed record ModuleDefinition(string Title, string IconSource, string IconBackground, string IconBorderColor);
 }
