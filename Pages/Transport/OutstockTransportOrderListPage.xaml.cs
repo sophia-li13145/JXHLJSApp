@@ -1,33 +1,71 @@
 using JXHLJSApp.Services;
 using JXHLJSApp.Models;
 using JXHLJSApp.Services.Transport;
+using System.Collections.ObjectModel;
 
 namespace JXHLJSApp.Pages.Transport;
 
 public partial class OutstockTransportOrderListPage : ContentPage
 {
     private readonly ITransportOrderApi _transportOrderApi;
+    private readonly ObservableCollection<MaterialOutstockTransportOrderDto> _orders = new();
+    private const long PageSize = 10;
+    private long _nextPageNo = 1;
+    private bool _isLoading;
+    private bool _hasMore = true;
 
     public OutstockTransportOrderListPage(ITransportOrderApi transportOrderApi)
     {
         InitializeComponent();
         _transportOrderApi = transportOrderApi;
+        OrderList.ItemsSource = _orders;
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await LoadOrdersAsync();
+        await LoadOrdersAsync(reset: true);
     }
 
-    private async void OnRefreshing(object sender, EventArgs e) => await LoadOrdersAsync();
+    private async void OnRefreshing(object sender, EventArgs e) => await LoadOrdersAsync(reset: true);
 
-    private async Task LoadOrdersAsync()
+    private async void OnRemainingItemsThresholdReached(object sender, EventArgs e) => await LoadOrdersAsync(reset: false);
+
+    private async Task LoadOrdersAsync(bool reset)
     {
+        if (_isLoading || (!reset && !_hasMore))
+        {
+            return;
+        }
+
+        _isLoading = true;
+        LoadingMoreIndicator.IsRunning = !reset;
+        LoadingMoreIndicator.IsVisible = !reset;
+
         try
         {
-            RefreshContainer.IsRefreshing = true;
-            OrderList.ItemsSource = await _transportOrderApi.GetMaterialOutstockTransportOrdersAsync();
+            if (reset)
+            {
+                RefreshContainer.IsRefreshing = true;
+                _nextPageNo = 1;
+                _hasMore = true;
+            }
+
+            var page = await _transportOrderApi.GetMaterialOutstockTransportOrdersAsync(_nextPageNo, PageSize);
+            var records = page.records ?? new List<MaterialOutstockTransportOrderDto>();
+
+            if (reset)
+            {
+                _orders.Clear();
+            }
+
+            foreach (var order in records)
+            {
+                _orders.Add(order);
+            }
+
+            _nextPageNo++;
+            _hasMore = records.Count == PageSize && (!page.total.HasValue || _orders.Count < page.total.Value);
         }
         catch (Exception ex)
         {
@@ -36,6 +74,9 @@ public partial class OutstockTransportOrderListPage : ContentPage
         finally
         {
             RefreshContainer.IsRefreshing = false;
+            LoadingMoreIndicator.IsRunning = false;
+            LoadingMoreIndicator.IsVisible = false;
+            _isLoading = false;
         }
     }
 
