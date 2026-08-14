@@ -113,7 +113,7 @@ public partial class RoleHomePage : ContentPage
         }
     }
 
-    private static View CreateProfileCard(RoleHomeDefinition role, string realName, string workNumber, string department, string shift)
+    private View CreateProfileCard(RoleHomeDefinition role, string realName, string workNumber, string department, string shift)
     {
         var tag1 = role.ProfileLabel(realName, workNumber, department);
         var tag2 = role.SecondaryProfileLabel(shift);
@@ -132,15 +132,48 @@ public partial class RoleHomePage : ContentPage
         AddChip(chips, tag2);
         details.Children.Add(chips);
 
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitionCollection(new ColumnDefinition { Width = GridLength.Star }, new ColumnDefinition { Width = GridLength.Auto }) };
-        grid.Add(details);
-        grid.Add(new Label
+        var roleActions = new VerticalStackLayout
+        {
+            Spacing = 4,
+            VerticalOptions = LayoutOptions.Center,
+            HorizontalOptions = LayoutOptions.End
+        };
+
+        if (UserRoleAccess.GetStoredVisibleRoleCodes().Count > 1)
+        {
+            var switchRoleButton = new Border
+            {
+                BackgroundColor = Color.FromArgb("#26FFFFFF"),
+                Stroke = Color.FromArgb("#80FFFFFF"),
+                StrokeThickness = 1,
+                Padding = new Thickness(10, 5),
+                HorizontalOptions = LayoutOptions.End,
+                StrokeShape = new RoundRectangle { CornerRadius = 14 },
+                Content = new Label
+                {
+                    Text = "⇄  切换角色",
+                    TextColor = Colors.White,
+                    FontSize = 12,
+                    FontAttributes = FontAttributes.Bold
+                }
+            };
+            var switchRoleTap = new TapGestureRecognizer();
+            switchRoleTap.Tapped += async (_, _) => await Shell.Current.GoToAsync("..");
+            switchRoleButton.GestureRecognizers.Add(switchRoleTap);
+            roleActions.Children.Add(switchRoleButton);
+        }
+
+        roleActions.Children.Add(new Label
         {
             Text = role.AvatarIcon,
             FontSize = 42,
             VerticalOptions = LayoutOptions.Center,
             HorizontalOptions = LayoutOptions.End
-        }, 1);
+        });
+
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitionCollection(new ColumnDefinition { Width = GridLength.Star }, new ColumnDefinition { Width = GridLength.Auto }), ColumnSpacing = 10 };
+        grid.Add(details);
+        grid.Add(roleActions, 1);
 
         return new Border
         {
