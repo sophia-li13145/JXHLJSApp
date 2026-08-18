@@ -20,6 +20,14 @@ public partial class WorkOrderTaskListPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+
+        // Closing the modal error dialog makes Android report this page as appearing
+        // again. That is not a user refresh and must not immediately repeat the request.
+        if (ErrorDialogService.IsDialogVisible)
+        {
+            return;
+        }
+
         await LoadPageAsync();
     }
 
