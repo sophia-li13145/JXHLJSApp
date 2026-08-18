@@ -24,6 +24,13 @@ public partial class OutstockTransportOrderListPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+
+        // Closing a modal error dialog reactivates the underlying page on Android.
+        // Do not treat that lifecycle callback as a new backend operation.
+        if (ErrorDialogService.IsDialogVisible)
+        {
+            return;
+        }
         await LoadOrdersAsync(reset: true);
     }
 

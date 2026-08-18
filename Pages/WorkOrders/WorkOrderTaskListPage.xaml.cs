@@ -21,13 +21,12 @@ public partial class WorkOrderTaskListPage : ContentPage
     {
         base.OnAppearing();
 
-        // Closing the modal error dialog makes Android report this page as appearing
-        // again. That is not a user refresh and must not immediately repeat the request.
+        // Closing a modal error dialog reactivates the underlying page on Android.
+        // Do not treat that lifecycle callback as a new backend operation.
         if (ErrorDialogService.IsDialogVisible)
         {
             return;
         }
-
         await LoadPageAsync();
     }
 
