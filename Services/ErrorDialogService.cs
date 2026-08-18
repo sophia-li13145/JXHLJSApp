@@ -6,6 +6,9 @@ namespace JXHLJSApp.Services;
 public static class ErrorDialogService
 {
     private static int _isDialogVisible;
+    private const string NetworkErrorMessage = "网络连接不可用，请检查网络后重试。";
+
+    public static bool IsDialogVisible => Volatile.Read(ref _isDialogVisible) != 0;
 
     public static Task ShowAsync(Page? owner, string title, string message, string buttonText = "确定")
     {
@@ -27,9 +30,11 @@ public static class ErrorDialogService
 
             try
             {
+                var isNetworkError = IsNetworkError(message);
                 var dialogPage = new ErrorDialogPage(
+                    page.Navigation,
                     string.IsNullOrWhiteSpace(title) ? "操作失败" : title,
-                    string.IsNullOrWhiteSpace(message) ? "操作未成功，请稍后重试。" : message,
+                    GetUserFriendlyMessage(message, isNetworkError),
                     string.IsNullOrWhiteSpace(buttonText) ? "确定" : buttonText);
 
                 await page.Navigation.PushModalAsync(dialogPage, false);
@@ -42,12 +47,55 @@ public static class ErrorDialogService
         });
     }
 
+    private static string GetUserFriendlyMessage(string? message, bool isNetworkError)
+    {
+        if (isNetworkError)
+        {
+            return NetworkErrorMessage;
+        }
+
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return "操作未成功，请稍后重试。";
+        }
+
+        return message;
+    }
+
+    private static bool IsNetworkError(string? message)
+    {
+        if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return false;
+        }
+
+        var networkErrorMarkers = new[]
+        {
+            "Connection failure",
+            "Connection refused",
+            "No such host",
+            "Name or service not known",
+            "Network is unreachable",
+            "Unable to connect to the remote server"
+        };
+
+        return networkErrorMarkers.Any(marker => message.Contains(marker, StringComparison.OrdinalIgnoreCase));
+    }
+
     private sealed class ErrorDialogPage : ContentPage
     {
+        private readonly INavigation _navigation;
         private readonly TaskCompletionSource _closed = new();
+        private int _isClosing;
 
-        public ErrorDialogPage(string title, string message, string buttonText)
+        public ErrorDialogPage(INavigation navigation, string title, string message, string buttonText)
         {
+            _navigation = navigation;
             BackgroundColor = Colors.Transparent;
             NavigationPage.SetHasNavigationBar(this, false);
 
@@ -151,19 +199,33 @@ public static class ErrorDialogService
             return true;
         }
 
+        protected override void OnDisappearing()
+        {
+            base.OnDisappearing();
+            _closed.TrySetResult();
+        }
+
         private async Task CloseAsync()
         {
-            if (_closed.Task.IsCompleted)
+            if (Interlocked.Exchange(ref _isClosing, 1) != 0)
             {
                 return;
             }
 
-            if (Navigation.ModalStack.Contains(this))
+            try
             {
-                await Navigation.PopModalAsync(false);
+                // Use the navigation instance that presented this page. On Android the
+                // page's Navigation property can briefly expose a different modal stack,
+                // which used to leave the dialog visible even after tapping “确定”.
+                if (ReferenceEquals(_navigation.ModalStack.LastOrDefault(), this))
+                {
+                    await _navigation.PopModalAsync(false);
+                }
             }
-
-            _closed.TrySetResult();
+            finally
+            {
+                _closed.TrySetResult();
+            }
         }
     }
 }
