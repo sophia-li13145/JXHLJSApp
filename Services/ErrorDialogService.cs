@@ -8,6 +8,8 @@ public static class ErrorDialogService
     private static int _isDialogVisible;
     private const string NetworkErrorMessage = "网络连接不可用，请检查网络后重试。";
 
+    public static bool IsDialogVisible => Volatile.Read(ref _isDialogVisible) != 0;
+
     public static Task ShowAsync(Page? owner, string title, string message, string buttonText = "确定")
     {
         return MainThread.InvokeOnMainThreadAsync(async () =>
@@ -28,10 +30,11 @@ public static class ErrorDialogService
 
             try
             {
+                var isNetworkError = IsNetworkError(message);
                 var dialogPage = new ErrorDialogPage(
                     page.Navigation,
                     string.IsNullOrWhiteSpace(title) ? "操作失败" : title,
-                    GetUserFriendlyMessage(message),
+                    GetUserFriendlyMessage(message, isNetworkError),
                     string.IsNullOrWhiteSpace(buttonText) ? "确定" : buttonText);
 
                 await page.Navigation.PushModalAsync(dialogPage, false);
@@ -44,9 +47,9 @@ public static class ErrorDialogService
         });
     }
 
-    private static string GetUserFriendlyMessage(string? message)
+    private static string GetUserFriendlyMessage(string? message, bool isNetworkError)
     {
-        if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
+        if (isNetworkError)
         {
             return NetworkErrorMessage;
         }
@@ -54,6 +57,21 @@ public static class ErrorDialogService
         if (string.IsNullOrWhiteSpace(message))
         {
             return "操作未成功，请稍后重试。";
+        }
+
+        return message;
+    }
+
+    private static bool IsNetworkError(string? message)
+    {
+        if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return false;
         }
 
         var networkErrorMarkers = new[]
@@ -66,9 +84,7 @@ public static class ErrorDialogService
             "Unable to connect to the remote server"
         };
 
-        return networkErrorMarkers.Any(marker => message.Contains(marker, StringComparison.OrdinalIgnoreCase))
-            ? NetworkErrorMessage
-            : message;
+        return networkErrorMarkers.Any(marker => message.Contains(marker, StringComparison.OrdinalIgnoreCase));
     }
 
     private sealed class ErrorDialogPage : ContentPage
