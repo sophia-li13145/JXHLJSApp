@@ -56,6 +56,14 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+
+        // Closing a modal error dialog reactivates the underlying page on Android.
+        // Do not treat that lifecycle callback as a new backend operation.
+        if (ErrorDialogService.IsDialogVisible)
+        {
+            return;
+        }
+
         if (_isExistingInstock && !string.IsNullOrWhiteSpace(_instockNo))
         {
             if (!_loadedExistingInstock)

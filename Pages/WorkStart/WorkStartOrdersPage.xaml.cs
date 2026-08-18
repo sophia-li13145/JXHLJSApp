@@ -9,6 +9,8 @@ public partial class WorkStartOrdersPage : ContentPage
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IProductionContextService _productionContext;
     private List<WorkOrderTaskDto> _orders = new();
+    private bool _isLoading;
+    private bool _reloadOnAppearing = true;
 
     public WorkStartOrdersPage(
         IWorkOrderApi workOrderApi,
@@ -22,7 +24,26 @@ public partial class WorkStartOrdersPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+
+        if (!_reloadOnAppearing)
+        {
+            return;
+        }
+
+        _reloadOnAppearing = false;
         await LoadOrdersAsync();
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+
+        // The error dialog is modal, so showing it does not mean that the user
+        // actually left this business page.
+        if (!ErrorDialogService.IsDialogVisible)
+        {
+            _reloadOnAppearing = true;
+        }
     }
 
     private async void OnRefreshing(object sender, EventArgs e)
@@ -32,6 +53,13 @@ public partial class WorkStartOrdersPage : ContentPage
 
     private async Task LoadOrdersAsync()
     {
+        if (_isLoading)
+        {
+            return;
+        }
+
+        _isLoading = true;
+
         try
         {
             RefreshContainer.IsRefreshing = true;
@@ -41,11 +69,13 @@ public partial class WorkStartOrdersPage : ContentPage
         }
         catch (Exception ex)
         {
+            HeaderLabel.Text = "工单查询失败，请检查网络后下拉刷新重试。";
             await ErrorDialogService.ShowAsync(this, "查询失败", ex.Message, "确定");
         }
         finally
         {
             RefreshContainer.IsRefreshing = false;
+            _isLoading = false;
         }
     }
 
