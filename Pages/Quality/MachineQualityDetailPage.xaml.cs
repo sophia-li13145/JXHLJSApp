@@ -611,7 +611,7 @@ public partial class MachineQualityDetailPage : ContentPage
             FontAttributes = FontAttributes.Bold,
             HorizontalOptions = LayoutOptions.Fill,
             HorizontalTextAlignment = TextAlignment.End,
-            LineBreakMode = LineBreakMode.NoWrap
+            LineBreakMode = LineBreakMode.CharacterWrap
         }, 1);
         return grid;
     }
