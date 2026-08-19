@@ -678,7 +678,9 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static bool IsSamplingOrFullScheme(string? schemeName)
     {
-        return IsBlankOpeningScheme(schemeName) || IsTorsionInspectionScheme(schemeName) || IsHeatTreatmentScheme(schemeName);
+        // 保持原有页面初始化及卡片展示所使用的方案判断不变；
+        // 拉拔强度方案的提交与扫码场景在各自调用处单独扩展。
+        return IsBlankOpeningScheme(schemeName) || HasSchemeToken(schemeName, "抽检") || IsHeatTreatmentScheme(schemeName);
     }
 
     private static bool IsTorsionInspectionScheme(string? schemeName)
@@ -722,7 +724,8 @@ public partial class MachineQualityDetailPage : ContentPage
     {
         return IsHeatTreatmentScheme(CurrentProcessName) ||
             IsBlankOpeningScheme(CurrentProcessName) ||
-            IsSamplingOrFullScheme(_inspectionSchemeName);
+            IsSamplingOrFullScheme(_inspectionSchemeName) ||
+            (IsDrawingScheme(CurrentProcessName) && IsTorsionInspectionScheme(_inspectionSchemeName));
     }
 
     private static bool HasSchemeToken(string? schemeName, params string[] tokens)
