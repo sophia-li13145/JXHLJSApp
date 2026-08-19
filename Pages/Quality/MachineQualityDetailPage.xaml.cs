@@ -218,11 +218,13 @@ public partial class MachineQualityDetailPage : ContentPage
         MemoEditor.IsVisible = true;
         var isManualPatrol = ShouldUseManualInspectionResultApi();
         var isSubmitOnlyProcess = isAcid || (isDrawing && !isManualPatrol);
+        var canScanDrawingSamplingOrFull = isDrawing && !isManualPatrol && IsTorsionInspectionScheme(detail.inspectionSchemeName);
         SubmitButton.Text = "提交质检";
         CompleteButton.IsVisible = !isSubmitOnlyProcess;
         Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
         ScanMaterialButton.IsVisible = false;
-        InfoScanMaterialButton.IsVisible = !IsInspectionCompleted(_inspectStatus) && !isAcid && (!isDrawing || isManualPatrol) && (IsSamplingOrFullScheme(flowName) || IsProcessCardScheme(flowName));
+        InfoScanMaterialButton.IsVisible = !IsInspectionCompleted(_inspectStatus) && !isAcid &&
+            ((!isDrawing || isManualPatrol) && (IsSamplingOrFullScheme(flowName) || IsProcessCardScheme(flowName)) || canScanDrawingSamplingOrFull);
         UpdateUnqualifiedDescriptionVisibility();
     }
 
