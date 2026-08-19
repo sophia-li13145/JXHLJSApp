@@ -310,6 +310,7 @@ public sealed class ProductionManualInspectionSaveResultRequestDto
     public string? strengthJudgment { get; set; }
     public string? surfaceCondition { get; set; }
     public string? surfaceJudgment { get; set; }
+    public string? torsion { get; set; }
     public string? unqualifiedDescription { get; set; }
     public string? workOrderNo { get; set; }
 }
@@ -477,6 +478,7 @@ public sealed class ProductionQualityDetailDto
     public string? brokenDiameterMm { get; set; }
     public string? sectionShrinkageRate { get; set; }
     public string? tensileStrengthMpa { get; set; }
+    public string? torsion { get; set; }
     public string? twistCount { get; set; }
     public string? productionBatchNo { get; set; }
     public string? productionBatch { get; set; }
