@@ -187,8 +187,10 @@
                                     <Button Text="▼" HeightRequest="24" Padding="0" FontSize="10" BackgroundColor="#F8FAFD" TextColor="#7A8798" BorderColor="#DDE6F1" BorderWidth="0" CommandParameter="{x:Reference HeatElongationEntry}" Clicked="OnDecrementNumericClicked" />
                                 </VerticalStackLayout>
                             </Grid>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout x:Name="TorsionInputPanel" Spacing="8" IsVisible="False">
                             <Label Text="扭转" TextColor="#051B3D" FontAttributes="Bold" />
-                            <Entry x:Name="TwistCountEntry" Placeholder="输入扭转" Keyboard="Numeric" BackgroundColor="#F8FAFD" />
+                            <Entry x:Name="TwistCountEntry" Placeholder="输入扭转" Keyboard="Numeric" BackgroundColor="#F8FAFD" HeightRequest="52" />
                         </VerticalStackLayout>
                         <Border BackgroundColor="#EAF4FF" Stroke="#BBD8FF" StrokeThickness="1" Padding="16">
                             <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
