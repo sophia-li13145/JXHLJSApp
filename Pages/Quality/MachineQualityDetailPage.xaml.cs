@@ -211,6 +211,7 @@ public partial class MachineQualityDetailPage : ContentPage
         AcidInputPanel.IsVisible = isAcid;
         HeatTreatmentInputPanel.IsVisible = isHeat;
         ProcessInputPanel.IsVisible = !isAcid && !isHeat;
+        TorsionInputPanel.IsVisible = isHeat || (isDrawing && IsTorsionInspectionScheme(detail.inspectionSchemeName));
         ContinuousUnqualifiedPicker.IsEnabled = false;
         MemoLabel.Text = "备注";
         MemoLabel.IsVisible = true;
@@ -277,7 +278,7 @@ public partial class MachineQualityDetailPage : ContentPage
         SectionShrinkageLabel.Text = CalculateSectionShrinkageText();
         TensileStrengthEntry.Text = FirstNonEmpty(detail.tensileStrengthMpa, detail.strengthMpa);
         HeatElongationEntry.Text = detail.elongationRate;
-        TwistCountEntry.Text = detail.twistCount;
+        TwistCountEntry.Text = FirstNonEmpty(detail.torsion, detail.twistCount);
     }
 
     private void RenderInfo(ProductionQualityDetailDto detail)
@@ -675,7 +676,12 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private static bool IsSamplingOrFullScheme(string? schemeName)
     {
-        return IsBlankOpeningScheme(schemeName) || HasSchemeToken(schemeName, "抽检") || IsHeatTreatmentScheme(schemeName);
+        return IsBlankOpeningScheme(schemeName) || IsTorsionInspectionScheme(schemeName) || IsHeatTreatmentScheme(schemeName);
+    }
+
+    private static bool IsTorsionInspectionScheme(string? schemeName)
+    {
+        return HasSchemeToken(schemeName, "强度全检", "强度扭转全检", "抽检");
     }
 
     private static bool IsBlankOpeningScheme(string? schemeName)
@@ -1140,6 +1146,7 @@ public partial class MachineQualityDetailPage : ContentPage
                     strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
                     surfaceCondition = SurfaceEntry.Text?.Trim(),
                     surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
+                    torsion = TorsionInputPanel.IsVisible ? TwistCountEntry.Text?.Trim() : null,
                     unqualifiedDescription = unqualifiedDescription,
                     workOrderNo = _workOrderNo
                 })
@@ -1188,7 +1195,7 @@ public partial class MachineQualityDetailPage : ContentPage
                         strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
                         surfaceCondition = SurfaceEntry.Text?.Trim(),
                         surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
-                        torsion = isHeatTreatmentSamplingOrFull ? TwistCountEntry.Text?.Trim() : null,
+                        torsion = TorsionInputPanel.IsVisible ? TwistCountEntry.Text?.Trim() : null,
                         unqualifiedDescription = unqualifiedDescription,
                         workOrderNo = _workOrderNo
                     })
