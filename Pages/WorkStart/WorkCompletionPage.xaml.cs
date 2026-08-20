@@ -149,7 +149,7 @@ public partial class WorkCompletionPage : ContentPage
 
             _productionContext.Clear();
             await DisplayAlert("提示", "机台完工作业记录成功!", "确定");
-            await Shell.Current.GoToAsync(AppShell.RouteHome);
+            await Shell.Current.GoToAsync(AppShell.RouteProductionHome);
         }
         catch (Exception ex)
         {
