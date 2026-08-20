@@ -53,6 +53,8 @@ public partial class AppShell : Shell
     public const string RouteMachineQualityDetail = "MachineQualityDetail";
     public const string RouteProductionQualitySuccess = "ProductionQualitySuccess";
 
+    public static string RouteProductionHome => $"{RouteHome}/{RouteRoleModule}?roleCode=production";
+
     public AppShell(IServiceProvider services)
     {
         InitializeComponent();

@@ -9,5 +9,5 @@ public partial class AbnormalReportSuccessPage : ContentPage
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
 
-    private async void OnDoneClicked(object sender, EventArgs e) => await Shell.Current.GoToAsync(AppShell.RouteHome);
+    private async void OnDoneClicked(object sender, EventArgs e) => await Shell.Current.GoToAsync(AppShell.RouteProductionHome);
 }

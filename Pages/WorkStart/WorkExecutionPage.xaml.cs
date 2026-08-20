@@ -222,7 +222,7 @@ public partial class WorkExecutionPage : ContentPage
             }
 
             UpdateProductionContextMachine(devCode);
-            await Shell.Current.GoToAsync(AppShell.RouteHome);
+            await Shell.Current.GoToAsync(AppShell.RouteProductionHome);
         }
         catch (Exception ex)
         {
