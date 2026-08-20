@@ -238,6 +238,7 @@ public sealed class ProductionQualityScanMaterialDto
     public string? spec { get; set; }
     public string? spoolWeightRequirement { get; set; }
     public string? steelGrade { get; set; }
+    public string? strengthRequirement { get; set; }
     public string? strengthMpa { get; set; }
     public string? surfaceCondition { get; set; }
     public string? targetSpecification { get; set; }
@@ -517,6 +518,7 @@ public sealed class ProductionQualityDetailDto
     public string? spoolWeightRequirement { get; set; }
     public string? spec { get; set; }
     public string? steelGrade { get; set; }
+    public string? strengthRequirement { get; set; }
     public string? strengthMpa { get; set; }
     public string? strengthJudgment { get; set; }
     public string? surfaceCondition { get; set; }

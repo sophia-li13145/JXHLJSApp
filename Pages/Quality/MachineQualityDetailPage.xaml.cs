@@ -365,7 +365,7 @@ public partial class MachineQualityDetailPage : ContentPage
                 ("工号", detail.workOrderNo), ("件号", ResolvePieceNo(detail)),
                 ("产地", FirstNonEmpty(detail.originPlace, detail.freeAcid)), ("投料直径mm", detail.inputDiameterMm),
                 ("成品直径mm", ResolveProductDiameter(detail)), ("上公差", FormatSignedTolerance(detail.upperToleranceValue, '+')),
-                ("下公差", FormatSignedTolerance(detail.lowerToleranceValue, '-')), ("强度要求", detail.spoolWeightRequirement),
+                ("下公差", FormatSignedTolerance(detail.lowerToleranceValue, '-')), ("强度要求", detail.strengthRequirement),
                 ("圈径", FirstNonEmpty(detail.workOrderRingDiameter, detail.coilDiameterControl)), ("圈径控制", FirstNonEmpty(detail.workOrderCoilDiameterControl, detail.coilDiameterControl)),
                 ("圈距控制", FormatCoilPitchControl(FirstNonEmpty(detail.workOrderCoilPitchControl, detail.coilPitchControl)))
             };
@@ -1022,6 +1022,7 @@ public partial class MachineQualityDetailPage : ContentPage
         _detail.spoolWeightRequirement = FirstNonEmpty(material.spoolWeightRequirement, _detail.spoolWeightRequirement);
         _detail.spec = FirstNonEmpty(material.spec, _detail.spec);
         _detail.steelGrade = FirstNonEmpty(material.steelGrade, _detail.steelGrade);
+        _detail.strengthRequirement = FirstNonEmpty(material.strengthRequirement, _detail.strengthRequirement);
         _detail.strengthMpa = FirstNonEmpty(material.strengthMpa, _detail.strengthMpa);
         _detail.surfaceCondition = FirstNonEmpty(material.surfaceCondition, _detail.surfaceCondition);
         _detail.targetSpecification = FirstNonEmpty(material.targetSpecification, _detail.targetSpecification);
