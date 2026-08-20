@@ -127,9 +127,12 @@ public partial class WorkStartOrdersPage : ContentPage
         try
         {
             var result = await _workOrderApi.StartWorkOrderAsync(order.workOrderNo);
-            if (!result)
+            if (!result.success)
             {
-                await ErrorDialogService.ShowAsync(this, "开工失败", "接口返回开工失败，请稍后重试。", "确定");
+                var message = string.IsNullOrWhiteSpace(result.message)
+                    ? "接口返回开工失败，请稍后重试。"
+                    : result.message;
+                await ErrorDialogService.ShowAsync(this, "开工失败", message, "确定");
                 return;
             }
 

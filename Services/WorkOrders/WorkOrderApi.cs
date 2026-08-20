@@ -14,7 +14,7 @@ public interface IWorkOrderApi
     Task<bool> BindWorkerMachineAsync(string devCode, CancellationToken ct = default);
     Task<bool> ScanToWorkAsync(string devCode, string workOrderNo, CancellationToken ct = default);
     Task<List<WorkOrderTaskDto>> GetCurrentUserMachinesWorkOrdersAsync(CancellationToken ct = default);
-    Task<bool> StartWorkOrderAsync(string workOrderNo, CancellationToken ct = default);
+    Task<WorkOrderOperationResult> StartWorkOrderAsync(string workOrderNo, CancellationToken ct = default);
     Task<WorkOrderDetailDto?> GetWorkOrderDetailAsync(string id, CancellationToken ct = default);
     Task<List<WorkOrderDetailDto>> GetCurrentTaskPoolAsync(string workOrderNo, CancellationToken ct = default);
     Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(string workOrderNo, CancellationToken ct = default);
@@ -212,15 +212,20 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private static string? FirstNonEmpty(params string?[] values) =>
         values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
-    public async Task<bool> StartWorkOrderAsync(string workOrderNo, CancellationToken ct = default)
+    public async Task<WorkOrderOperationResult> StartWorkOrderAsync(string workOrderNo, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _orderStartEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new { workOrderNo }, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        if (data?.success == false)
+        {
+            return new WorkOrderOperationResult(false, data.message);
+        }
+
         EnsureApiSuccess(data);
-        return ReadFlexibleBooleanResult(data);
+        return new WorkOrderOperationResult(ReadFlexibleBooleanResult(data), data?.message);
     }
 
 
