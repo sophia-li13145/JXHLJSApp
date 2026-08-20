@@ -664,7 +664,7 @@ public partial class MachineQualityDetailPage : ContentPage
 
         ContinuousUnqualifiedPicker.IsEnabled = false;
         var currentUnqualified = InspectResultPicker.SelectedItem?.ToString() == "不合格";
-        ContinuousUnqualifiedPicker.SelectedItem = currentUnqualified && _previousUnqualified == false ? "是" : "否";
+        ContinuousUnqualifiedPicker.SelectedItem = currentUnqualified && _previousUnqualified == true ? "是" : "否";
     }
 
     private static bool IsPicklingScheme(string? schemeName)
