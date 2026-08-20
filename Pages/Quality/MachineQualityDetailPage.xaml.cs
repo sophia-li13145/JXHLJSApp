@@ -1252,7 +1252,10 @@ public partial class MachineQualityDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await ErrorDialogService.ShowAsync(this, "提交失败", ex.Message, "确定");
+            var message = ex.Message.Contains("物料名称不能为空", StringComparison.Ordinal)
+                ? "请扫描物料"
+                : ex.Message;
+            await ErrorDialogService.ShowAsync(this, "提交失败", message, "确定");
         }
     }
 
