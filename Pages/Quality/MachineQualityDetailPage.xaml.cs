@@ -217,8 +217,9 @@ public partial class MachineQualityDetailPage : ContentPage
         MemoLabel.IsVisible = true;
         MemoEditor.IsVisible = true;
         var isManualPatrol = ShouldUseManualInspectionResultApi();
-        var isSubmitOnlyProcess = isAcid || (isDrawing && !isManualPatrol);
-        var canScanDrawingSamplingOrFull = isDrawing && !isManualPatrol && IsTorsionInspectionScheme(detail.inspectionSchemeName);
+        var isDrawingSamplingOrFull = isDrawing && IsTorsionInspectionScheme(detail.inspectionSchemeName);
+        var isSubmitOnlyProcess = isAcid || (isDrawing && !isManualPatrol && !isDrawingSamplingOrFull);
+        var canScanDrawingSamplingOrFull = isDrawingSamplingOrFull && !isManualPatrol;
         SubmitButton.Text = "提交质检";
         CompleteButton.IsVisible = !isSubmitOnlyProcess;
         Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
@@ -800,7 +801,8 @@ public partial class MachineQualityDetailPage : ContentPage
         return IsHeatTreatmentScheme(processName) ||
             IsBlankOpeningScheme(processName) ||
             IsHeatTreatmentScheme(_inspectionSchemeName) ||
-            IsBlankOpeningScheme(_inspectionSchemeName);
+            IsBlankOpeningScheme(_inspectionSchemeName) ||
+            (IsDrawingScheme(processName) && IsTorsionInspectionScheme(_inspectionSchemeName));
     }
 
     private async void OnScanMaterialClicked(object sender, EventArgs e)
