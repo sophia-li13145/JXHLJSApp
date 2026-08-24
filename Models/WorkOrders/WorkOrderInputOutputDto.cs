@@ -87,6 +87,8 @@ public sealed class PicklingInputRecordDto
         ? $"{inputWeight.Value:0.##} {unit}".TrimEnd()
         : "--";
     public bool canUnload => !string.Equals(outputStatus, "COMPLETED", StringComparison.OrdinalIgnoreCase);
+    public string cardBackgroundColor => canUnload ? "#FFFFFF" : "#E5E7EB";
+    public string unloadButtonBackgroundColor => canUnload ? "#18A5E1" : "#4B5563";
 
     private static string FirstNonEmpty(params string?[] values) =>
         values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "--";
