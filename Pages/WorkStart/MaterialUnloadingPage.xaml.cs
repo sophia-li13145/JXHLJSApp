@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace JXHLJSApp.Pages.WorkStart;
 
-public partial class MaterialUnloadingPage : ContentPage
+public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
 {
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
@@ -17,6 +17,9 @@ public partial class MaterialUnloadingPage : ContentPage
     private MaterialOutputConfirmDto? _confirmOutput;
     private WorkOrderInputOutputDto? _inputOutput;
     private bool _isUpdatingOutputFields;
+    private string? _manualInputRecordId;
+    private string? _manualWorkOrderNo;
+    private bool _manualRecordLoaded;
 
 
     public MaterialUnloadingPage(IWorkOrderApi workOrderApi, IScanService scanService, IProductionContextService productionContext)
@@ -26,6 +29,59 @@ public partial class MaterialUnloadingPage : ContentPage
         _scanService = scanService;
         _productionContext = productionContext;
     }
+
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (!query.TryGetValue("manual", out var manual) ||
+            !string.Equals(Uri.UnescapeDataString(manual?.ToString() ?? string.Empty), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _manualInputRecordId = ReadQueryValue(query, "inputRecordId");
+        _lastMaterialQrCode = ReadQueryValue(query, "qrCode");
+        _manualWorkOrderNo = ReadQueryValue(query, "workOrderNo");
+        _manualRecordLoaded = false;
+    }
+
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        if (!_manualRecordLoaded && !string.IsNullOrWhiteSpace(_manualInputRecordId))
+        {
+            await LoadManualRecordAsync();
+        }
+    }
+
+    private async Task LoadManualRecordAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_manualWorkOrderNo) || string.IsNullOrWhiteSpace(_lastMaterialQrCode))
+        {
+            await DisplayAlert("提示", "手动下料参数不完整，请返回上料作业记录后重试。", "确定");
+            return;
+        }
+
+        try
+        {
+            _isBusy = true;
+            _inputOutput = await _workOrderApi.GetWorkOrderInputOutputAsync(_manualInputRecordId!, _manualWorkOrderNo);
+            if (_inputOutput is null)
+            {
+                await DisplayAlert("提示", "未查询到该上料记录对应的下料详情。", "确定");
+                return;
+            }
+
+            _manualRecordLoaded = true;
+            BindInputOutput(_inputOutput);
+            SuccessBannerLabel.Text = "✅ 已获取上料记录对应的下料信息！";
+            ShowResultStep();
+        }
+        catch (Exception ex) { await ErrorDialogService.ShowAsync(this, "查询失败", ex.Message, "确定"); }
+        finally { _isBusy = false; }
+    }
+
+    private static string? ReadQueryValue(IDictionary<string, object> query, string key) =>
+        query.TryGetValue(key, out var value) ? Uri.UnescapeDataString(value?.ToString() ?? string.Empty) : null;
 
 
     private async void OnBackTapped(object sender, TappedEventArgs e)
@@ -164,7 +220,7 @@ public partial class MaterialUnloadingPage : ContentPage
         {
             outputLength = initialOutputLength,
             qrCode = _lastMaterialQrCode,
-            workOrderNo = _productionContext.Current?.WorkOrderNo
+            workOrderNo = FirstNonEmpty(_manualWorkOrderNo, _productionContext.Current?.WorkOrderNo)
         };
 
         ConfigureProcessSpecificInputs(inputOutput);
