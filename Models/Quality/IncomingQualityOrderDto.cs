@@ -537,7 +537,13 @@ public sealed class ProductionQualityDetailDto
     public string? processCode { get; set; }
     public string? processName { get; set; }
     public string? inspectionSchemeTypeName { get; set; }
+    public List<ProductionQualityInspectionSchemeDto>? inspectionSchemeList { get; set; }
     public List<ProductionQualityInspectionItemDto>? inspectionItemList { get; set; }
+}
+
+public sealed class ProductionQualityInspectionSchemeDto
+{
+    public string? schemeName { get; set; }
 }
 
 public sealed class ProductionQualityInspectionItemDto

@@ -357,7 +357,7 @@ public partial class MachineQualityDetailPage : ContentPage
 
         if (IsProcessCardScheme(schemeName))
         {
-            return new[]
+            var rows = new List<(string Label, string? Value)>
             {
                 ("日期", ResolveProcessCardDate(detail)), ("机台", ResolveMachine(detail)),
                 ("客户代码", FirstNonEmpty(detail.customerCode, detail.businessType)), ("炉号", detail.furnaceNo),
@@ -369,6 +369,14 @@ public partial class MachineQualityDetailPage : ContentPage
                 ("圈径", FirstNonEmpty(detail.workOrderRingDiameter, detail.coilDiameterControl)), ("圈径控制", FirstNonEmpty(detail.workOrderCoilDiameterControl, detail.coilDiameterControl)),
                 ("圈距控制", FormatCoilPitchControl(FirstNonEmpty(detail.workOrderCoilPitchControl, detail.coilPitchControl)))
             };
+
+            if (IsDrawingScheme(ResolveProcessName(detail)))
+            {
+                rows.Add(("固定质检方式", detail.inspectionSchemeName));
+                rows.Add(("补充质检方式", BuildSupplementaryInspectionSchemeNames(detail)));
+            }
+
+            return rows.ToArray();
         }
 
         return new[]
@@ -382,6 +390,16 @@ public partial class MachineQualityDetailPage : ContentPage
             ("钢号", detail.steelGrade), ("件号", ResolvePieceNo(detail)),
             ("规格", FirstNonEmpty(detail.targetSpecification, detail.inputSpecification))
         };
+    }
+
+    private static string? BuildSupplementaryInspectionSchemeNames(ProductionQualityDetailDto detail)
+    {
+        var schemeNames = detail.inspectionSchemeList?
+            .Select(item => item.schemeName?.Trim())
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToArray();
+
+        return schemeNames is { Length: > 0 } ? string.Join(",", schemeNames) : null;
     }
 
     private void RenderMaterialInfo(ProductionQualityDetailDto detail)
