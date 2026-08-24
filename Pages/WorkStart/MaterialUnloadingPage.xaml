@@ -30,7 +30,7 @@
 
                 <Border x:Name="SuccessBanner" IsVisible="False" BackgroundColor="#F0FFF7" Stroke="#9BE7B4" StrokeThickness="1" Padding="18,14">
                     <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-                    <Label Text="✅ 扫码成功，已记录下料信息！" TextColor="#168A3A" FontSize="15" />
+                    <Label x:Name="SuccessBannerLabel" Text="✅ 扫码成功，已记录下料信息！" TextColor="#168A3A" FontSize="15" />
                 </Border>
 
                 <Border x:Name="ResultCard" IsVisible="False" BackgroundColor="White" StrokeThickness="0" Padding="20,18">

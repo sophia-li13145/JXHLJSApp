@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.WorkStart.PicklingInputRecordListPage"
+             BackgroundColor="#F4F6FA" Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="18,18,18,14" HeightRequest="66">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,18,18" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Label Text="‹ 返回" TextColor="White" FontSize="15" VerticalOptions="Center"><Label.GestureRecognizers><TapGestureRecognizer Tapped="OnBackTapped" /></Label.GestureRecognizers></Label>
+                <Label Grid.Column="1" Text="上料作业记录" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                <BoxView Grid.Column="2" WidthRequest="48" Opacity="0" />
+            </Grid>
+        </Border>
+        <RefreshView Grid.Row="1" x:Name="RefreshContainer" Refreshing="OnRefreshing">
+            <CollectionView x:Name="RecordList" Margin="16" SelectionMode="None">
+                <CollectionView.EmptyView><Label Text="暂无上料作业记录" TextColor="#6B7C93" HorizontalTextAlignment="Center" Margin="0,40" /></CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="{Binding cardBackgroundColor}" Stroke="#D9E2EF" Padding="14" Margin="0,0,0,12">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                            <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto" RowSpacing="8" ColumnSpacing="10">
+                                <Label Text="上料序号" TextColor="#64748B" /><Label Grid.Column="1" Text="{Binding sequenceDisplay}" TextColor="#001431" FontAttributes="Bold" />
+                                <Button Grid.Column="2" Grid.RowSpan="3" Text="下料" BackgroundColor="{Binding unloadButtonBackgroundColor}" TextColor="White" Padding="14,6" CornerRadius="8" VerticalOptions="Center" IsEnabled="{Binding canUnload}" Clicked="OnUnloadClicked">
+                                    <VisualStateManager.VisualStateGroups>
+                                        <VisualStateGroup Name="CommonStates">
+                                            <VisualState Name="Normal" />
+                                            <VisualState Name="Disabled">
+                                                <VisualState.Setters>
+                                                    <Setter Property="BackgroundColor" Value="#4B5563" />
+                                                    <Setter Property="TextColor" Value="White" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                        </VisualStateGroup>
+                                    </VisualStateManager.VisualStateGroups>
+                                </Button>
+                                <Label Grid.Row="1" Text="物料编码" TextColor="#64748B" /><Label Grid.Row="1" Grid.Column="1" Text="{Binding materialDisplay}" TextColor="#001431" />
+                                <HorizontalStackLayout Grid.Row="2" Grid.ColumnSpan="2" Spacing="16"><Label Text="{Binding specificationDisplay, StringFormat='规格：{0}'}" TextColor="#334155" /><Label Text="{Binding weightDisplay, StringFormat='件重：{0}'}" TextColor="#334155" /><Label Text="{Binding sourceQrCode, StringFormat='二维码：{0}'}" TextColor="#334155" LineBreakMode="TailTruncation" /></HorizontalStackLayout>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>
