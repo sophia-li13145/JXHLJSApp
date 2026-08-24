@@ -18,6 +18,8 @@ public interface IWorkOrderApi
     Task<WorkOrderDetailDto?> GetWorkOrderDetailAsync(string id, CancellationToken ct = default);
     Task<List<WorkOrderDetailDto>> GetCurrentTaskPoolAsync(string workOrderNo, CancellationToken ct = default);
     Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(string workOrderNo, CancellationToken ct = default);
+    Task<List<PicklingInputRecordDto>> GetPicklingInputRecordListAsync(string workOrderNo, CancellationToken ct = default);
+    Task<WorkOrderInputOutputDto?> GetWorkOrderInputOutputAsync(string inputRecordId, string workOrderNo, CancellationToken ct = default);
     Task<MaterialQrCodeInfoDto> ScanQueryMaterialInfoAsync(string qrCode, CancellationToken ct = default);
     Task<bool> ConfirmMaterialInputAsync(MaterialInputConfirmDto input, CancellationToken ct = default);
     Task<bool> ConfirmMaterialOutputAsync(MaterialOutputConfirmDto output, CancellationToken ct = default);
@@ -49,6 +51,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _detailEndpoint;
     private readonly string _currentTaskPoolEndpoint;
     private readonly string _inputOutputEndpoint;
+    private readonly string _picklingInputRecordListEndpoint;
     private readonly string _dictListEndpoint;
     private readonly string _materialQrCodeEndpoint;
     private readonly string _confirmInputEndpoint;
@@ -90,6 +93,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
             configLoader.GetApiPath("workOrder.currentTaskPool", "/pda/pmsWorkOrder/getCurrentTaskPool"), servicePath);
         _inputOutputEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.inputOutput", "/pda/pmsWorkOrder/getWorkOrderInputOutput"), servicePath);
+        _picklingInputRecordListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrder.picklingInputRecordList", "/pda/pmsWorkOrder/getPicklingInputRecordList"), servicePath);
         _dictListEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.dictList", "/pda/pmsWorkOrder/getWorkOrderDictList"), servicePath);
         _materialQrCodeEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -277,6 +282,35 @@ public sealed class WorkOrderApi : IWorkOrderApi
         var tasks = ReadInputOutputResult(data);
         await ApplyWorkOrderStatusNamesAsync(tasks, ct).ConfigureAwait(false);
         return tasks;
+    }
+
+    public async Task<List<PicklingInputRecordDto>> GetPicklingInputRecordListAsync(string workOrderNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_picklingInputRecordListEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(workOrderNo)] = workOrderNo
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<List<PicklingInputRecordDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return data?.result ?? new List<PicklingInputRecordDto>();
+    }
+
+    public async Task<WorkOrderInputOutputDto?> GetWorkOrderInputOutputAsync(string inputRecordId, string workOrderNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_inputOutputEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(inputRecordId)] = inputRecordId,
+            [nameof(workOrderNo)] = workOrderNo
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<WorkOrderInputOutputDto>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return data?.result;
     }
 
 

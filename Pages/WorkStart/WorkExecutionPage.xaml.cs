@@ -45,7 +45,9 @@ public partial class WorkExecutionPage : ContentPage
         {
             var current = _productionContext.Current;
             var workOrderNo = current?.WorkOrderNo;
-            InstructionCardButton.IsEnabled = current?.OperationName?.Contains("酸洗", StringComparison.OrdinalIgnoreCase) != true;
+            var isPickling = current?.OperationName?.Contains("酸洗", StringComparison.OrdinalIgnoreCase) == true;
+            InstructionCardButton.IsEnabled = !isPickling;
+            ManualUnloadingCardButton.IsVisible = isPickling;
             if (string.IsNullOrWhiteSpace(workOrderNo))
             {
                 await DisplayAlert("提示", "当前生产工单为空，无法查询当前关联任务池。", "确定");
@@ -136,6 +138,11 @@ public partial class WorkExecutionPage : ContentPage
         {
             await ErrorDialogService.ShowAsync(this, "跳转失败", ex.Message, "确定");
         }
+    }
+
+    private async void OnManualUnloadingTapped(object sender, TappedEventArgs e)
+    {
+        await Shell.Current.GoToAsync(AppShell.RoutePicklingInputRecords);
     }
 
     private async void OnAbnormalReportTapped(object sender, TappedEventArgs e)
