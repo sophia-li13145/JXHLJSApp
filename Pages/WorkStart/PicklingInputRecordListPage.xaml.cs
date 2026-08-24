@@ -69,7 +69,7 @@ public partial class PicklingInputRecordListPage : ContentPage
         try
         {
             _isNavigating = true;
-            await Shell.Current.GoToAsync($"{AppShell.RouteMaterialUnloading}?manual=true&inputRecordId={Uri.EscapeDataString(record.inputRecordId)}&qrCode={Uri.EscapeDataString(record.sourceQrCode)}&workOrderNo={Uri.EscapeDataString(workOrderNo)}");
+            await Shell.Current.GoToAsync($"{AppShell.RouteMaterialUnloadingDetail}?inputRecordId={Uri.EscapeDataString(record.inputRecordId)}&qrCode={Uri.EscapeDataString(record.sourceQrCode)}&workOrderNo={Uri.EscapeDataString(workOrderNo)}");
         }
         catch (Exception ex)
         {

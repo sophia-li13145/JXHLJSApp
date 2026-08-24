@@ -19,7 +19,7 @@
                     <DataTemplate>
                         <Border BackgroundColor="{Binding cardBackgroundColor}" Stroke="#D9E2EF" Padding="14" Margin="0,0,0,12">
                             <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
-                            <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto" RowSpacing="8" ColumnSpacing="10">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto" RowSpacing="8" ColumnSpacing="10">
                                 <Label Text="上料序号" TextColor="#64748B" /><Label Grid.Column="1" Text="{Binding sequenceDisplay}" TextColor="#001431" FontAttributes="Bold" />
                                 <Button Grid.Column="2" Grid.RowSpan="3" Text="下料" BackgroundColor="{Binding unloadButtonBackgroundColor}" TextColor="White" Padding="14,6" CornerRadius="8" VerticalOptions="Center" IsEnabled="{Binding canUnload}" Clicked="OnUnloadClicked">
                                     <VisualStateManager.VisualStateGroups>
@@ -35,7 +35,8 @@
                                     </VisualStateManager.VisualStateGroups>
                                 </Button>
                                 <Label Grid.Row="1" Text="物料编码" TextColor="#64748B" /><Label Grid.Row="1" Grid.Column="1" Text="{Binding materialDisplay}" TextColor="#001431" />
-                                <HorizontalStackLayout Grid.Row="2" Grid.ColumnSpan="2" Spacing="16"><Label Text="{Binding specificationDisplay, StringFormat='规格：{0}'}" TextColor="#334155" /><Label Text="{Binding weightDisplay, StringFormat='件重：{0}'}" TextColor="#334155" /><Label Text="{Binding sourceQrCode, StringFormat='二维码：{0}'}" TextColor="#334155" LineBreakMode="TailTruncation" /></HorizontalStackLayout>
+                                <HorizontalStackLayout Grid.Row="2" Grid.ColumnSpan="2" Spacing="16"><Label Text="{Binding specificationDisplay, StringFormat='规格：{0}'}" TextColor="#334155" /><Label Text="{Binding weightDisplay, StringFormat='件重：{0}'}" TextColor="#334155" /></HorizontalStackLayout>
+                                <Label Grid.Row="3" Grid.ColumnSpan="3" Text="{Binding sourceQrCode, StringFormat='二维码：{0}'}" TextColor="#334155" LineBreakMode="WordWrap" />
                             </Grid>
                         </Border>
                     </DataTemplate>
