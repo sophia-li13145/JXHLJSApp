@@ -10,6 +10,7 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
     private readonly IProductionContextService _productionContext;
     private bool _machineConfirmed;
     private bool _isBusy;
+    private bool _isRedirectingToDetail;
 
     public MaterialUnloadingPage(IWorkOrderApi workOrderApi, IScanService scanService, IProductionContextService productionContext)
     {
@@ -18,6 +19,51 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
         _scanService = scanService;
         _productionContext = productionContext;
     }
+
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        // 兼容旧的手动下料链接：扫码路由收到手动下料参数时直接转到详情路由。
+        // 不带 inputRecordId 的正常扫码下料仍完整保留原有机台、物料扫码流程。
+        if (_isRedirectingToDetail || !TryReadQueryValue(query, "inputRecordId", out var inputRecordId))
+        {
+            return;
+        }
+
+        _isRedirectingToDetail = true;
+        var detailParameters = new Dictionary<string, object>
+        {
+            ["inputRecordId"] = inputRecordId,
+            ["qrCode"] = ReadQueryValue(query, "qrCode"),
+            ["workOrderNo"] = ReadQueryValue(query, "workOrderNo")
+        };
+
+        MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            try
+            {
+                await Shell.Current.GoToAsync(AppShell.RouteMaterialUnloadingDetail, detailParameters);
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "跳转失败", ex.Message, "确定");
+            }
+            finally
+            {
+                _isRedirectingToDetail = false;
+            }
+        });
+    }
+
+    private static bool TryReadQueryValue(IDictionary<string, object> query, string key, out string value)
+    {
+        value = ReadQueryValue(query, key);
+        return !string.IsNullOrWhiteSpace(value);
+    }
+
+    private static string ReadQueryValue(IDictionary<string, object> query, string key) =>
+        query.TryGetValue(key, out var value)
+            ? Uri.UnescapeDataString(value?.ToString() ?? string.Empty)
+            : string.Empty;
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
 
