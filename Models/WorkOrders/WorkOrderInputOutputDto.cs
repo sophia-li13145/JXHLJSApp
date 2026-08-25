@@ -62,3 +62,34 @@ public sealed class WorkOrderInputOutputDto
         return value.HasValue ? value.Value.ToString("0.##") : "--";
     }
 }
+
+public sealed class PicklingInputRecordDto
+{
+    public int? inputSequence { get; set; }
+    public string? inputRecordId { get; set; }
+    public string? inputRecordNo { get; set; }
+    public string? sourceQrCode { get; set; }
+    public string? materialCode { get; set; }
+    public string? materialName { get; set; }
+    public string? specification { get; set; }
+    public string? steelGrade { get; set; }
+    public decimal? inputWeight { get; set; }
+    public string? unit { get; set; }
+    public string? feedTime { get; set; }
+    public string? operatorName { get; set; }
+    public string? outputStatus { get; set; }
+    public string? outputStatusName { get; set; }
+
+    public string sequenceDisplay => inputSequence?.ToString() ?? "--";
+    public string materialDisplay => FirstNonEmpty(materialCode, materialName);
+    public string specificationDisplay => FirstNonEmpty(specification);
+    public string weightDisplay => inputWeight.HasValue
+        ? $"{inputWeight.Value:0.##} {unit}".TrimEnd()
+        : "--";
+    public bool canUnload => !string.Equals(outputStatus, "COMPLETED", StringComparison.OrdinalIgnoreCase);
+    public string cardBackgroundColor => canUnload ? "#FFFFFF" : "#E5E7EB";
+    public string unloadButtonBackgroundColor => canUnload ? "#18A5E1" : "#4B5563";
+
+    private static string FirstNonEmpty(params string?[] values) =>
+        values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "--";
+}
