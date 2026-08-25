@@ -32,6 +32,8 @@ public interface IWarehouseApi
     Task<bool?> SaveOcrIncomingImageAsync(SaveOcrIncomingImageRequestDto request, CancellationToken ct = default);
     Task<QrCodeInfoDto> QueryQrCodeInfoAsync(string? qsCode, CancellationToken ct = default);
     Task<bool?> CancelBlankInstockAsync(string id, CancellationToken ct = default);
+    Task<bool?> EditRawMaterialStashDetailAsync(EditRawMaterialStashDetailRequestDto request, CancellationToken ct = default);
+    Task<bool?> StashRawMaterialInstockAsync(QuickInstockRequestDto request, CancellationToken ct = default);
     Task<bool?> QuickInstockAsync(QuickInstockRequestDto request, CancellationToken ct = default);
 }
 
@@ -51,6 +53,8 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _queryQrCodeInfoEndpoint;
     private readonly string _dictListEndpoint;
     private readonly string _cancelBlankInstockEndpoint;
+    private readonly string _editStashDetailEndpoint;
+    private readonly string _stashInstockEndpoint;
     private readonly string _quickInstockEndpoint;
     private readonly string _needDeliveryOrdersEndpoint;
     private readonly string _deliveryOrderDetailEndpoint;
@@ -96,6 +100,10 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("rawMaterialReceiving.getDictList", "/pda/rawMaterialReceiving/getDictList"), servicePath);
         _cancelBlankInstockEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.cancelBlankInstock", "/pda/rawMaterialReceiving/cancelBlankInstock"), servicePath);
+        _editStashDetailEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("rawMaterialReceiving.editStashDetail", "/pda/rawMaterialReceiving/editStashDetail"), servicePath);
+        _stashInstockEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("rawMaterialReceiving.stashInstock", "/pda/rawMaterialReceiving/stashInstock"), servicePath);
         _quickInstockEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.quickInstock", "/pda/rawMaterialReceiving/quickInstock"), servicePath);
         _needDeliveryOrdersEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -497,6 +505,24 @@ public sealed class WarehouseApi : IWarehouseApi
             [nameof(id)] = id
         }));
         using var resp = await _http.PostAsync(url, new FormUrlEncodedContent(Array.Empty<KeyValuePair<string, string>>()), ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        return data.result;
+    }
+
+    public async Task<bool?> EditRawMaterialStashDetailAsync(EditRawMaterialStashDetailRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _editStashDetailEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        return data.result;
+    }
+
+    public async Task<bool?> StashRawMaterialInstockAsync(QuickInstockRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _stashInstockEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
         return data.result;

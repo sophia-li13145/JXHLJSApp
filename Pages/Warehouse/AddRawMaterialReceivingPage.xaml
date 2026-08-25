@@ -351,17 +351,21 @@
                                         <Border.StrokeShape>
                                             <RoundRectangle CornerRadius="10" />
                                         </Border.StrokeShape>
-                                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto"
                                               ColumnDefinitions="*,*"
                                               RowSpacing="8"
                                               ColumnSpacing="12">
                                             <Grid Grid.ColumnSpan="2"
-                                                  ColumnDefinitions="*,Auto"
+                                                  ColumnDefinitions="*,Auto,Auto"
                                                   ColumnSpacing="8">
                                                 <Label Text="{Binding materialTitle}"
                                                        TextColor="#0A3C7D"
                                                        FontSize="15"
-                                                       FontAttributes="Bold" />
+                                                       FontAttributes="Bold">
+                                                    <Label.GestureRecognizers>
+                                                        <TapGestureRecognizer Tapped="OnEditPendingMaterialTapped" />
+                                                    </Label.GestureRecognizers>
+                                                </Label>
                                                 <Border Grid.Column="1"
                                                         BackgroundColor="#F2F4F8"
                                                         StrokeThickness="0"
@@ -373,14 +377,7 @@
                                                            TextColor="#2D3B4F"
                                                            FontSize="12" />
                                                 </Border>
-                                            </Grid>
-
-                                            <Grid Grid.Row="1"
-                                                  Grid.ColumnSpan="2"
-                                                  ColumnDefinitions="*,Auto">
-                                                <Label Text="{Binding qrCode, StringFormat='追溯码： {0}'}"
-                                                       TextColor="#38557C" />
-                                                <Label Grid.Column="1"
+                                                <Label Grid.Column="2"
                                                        Text="移除"
                                                        TextColor="#F64148"
                                                        FontAttributes="Bold">
@@ -390,40 +387,42 @@
                                                 </Label>
                                             </Grid>
 
-                                            <Label Grid.Row="2"
+                                            <Label Grid.Row="1"
                                                    Text="{Binding materialNameDisplay, StringFormat='物料名称：{0}'}"
                                                    TextColor="#38557C" />
-                                            <Label Grid.Row="2"
+                                            <Label Grid.Row="1"
                                                    Grid.Column="1"
                                                    Text="{Binding specDisplay, StringFormat='规格：{0}'}"
                                                    TextColor="#38557C" />
-                                            <Label Grid.Row="3"
+                                            <Label Grid.Row="2"
                                                    IsVisible="{Binding isRawMaterial}"
                                                    Text="{Binding furnaceNoDisplay, StringFormat='炉号：{0}'}"
                                                    TextColor="#38557C" />
-                                            <Label Grid.Row="3"
+                                            <Label Grid.Row="2"
                                                    Grid.Column="1"
                                                    IsVisible="{Binding isRawMaterial}"
                                                    Text="{Binding originPlaceDisplay, StringFormat='产地：{0}'}"
                                                    TextColor="#38557C" />
-                                            <Label Grid.Row="4"
+                                            <Label Grid.Row="3"
                                                    IsVisible="{Binding isSemiFinished}"
                                                    Text="{Binding strengthDisplay, StringFormat='强度：{0}'}"
                                                    TextColor="#38557C" />
-                                            <Label Grid.Row="4"
+                                            <Label Grid.Row="3"
                                                    Grid.Column="1"
                                                    IsVisible="{Binding isSemiFinished}"
                                                    Text="{Binding coilCountDisplay, StringFormat='圈数：{0}'}"
                                                    TextColor="#38557C" />
-                                            <Label Grid.Row="5"
+                                            <Label Grid.Row="4"
+                                                   Grid.Column="1"
                                                    IsVisible="{Binding isSemiFinished}"
                                                    Text="{Binding coilDiameterDisplay, StringFormat='圈径：{0}'}"
                                                    TextColor="#38557C" />
-                                            <Label Grid.Row="5"
-                                                   Grid.Column="1"
+                                            <Label Grid.Row="4"
+                                                   Grid.Column="0"
                                                    Text="{Binding pieceWeightDisplay, StringFormat='件重：{0}'}"
                                                    TextColor="#00A060"
-                                                   FontAttributes="Bold" />
+                                                   FontAttributes="Bold"
+                                                   HorizontalOptions="Start" />
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -439,14 +438,15 @@
                 StrokeThickness="0"
                 Padding="18,16,18,22">
             <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                <Button Text="取消"
-                        BackgroundColor="#F64148"
+                <Button x:Name="StashInstockButton"
+                        Text="暂存"
+                        BackgroundColor="#E58A00"
                         TextColor="White"
                         FontSize="17"
                         FontAttributes="Bold"
                         CornerRadius="10"
                         HeightRequest="50"
-                        Clicked="OnCancelClicked" />
+                        Clicked="OnStashInstockV2Clicked" />
                 <Button x:Name="SubmitInstockButton"
                         Grid.Column="1"
                         Text="提交入库"
@@ -650,7 +650,8 @@
                 <ScrollView MaximumHeightRequest="640">
                     <VerticalStackLayout Spacing="12">
                         <Grid ColumnDefinitions="*,Auto">
-                            <Label Text="扫码绑定修改"
+                            <Label x:Name="BindDialogTitleLabel"
+                                   Text="扫码绑定修改"
                                    TextColor="#0A2C61"
                                    FontSize="18"
                                    FontAttributes="Bold" />
