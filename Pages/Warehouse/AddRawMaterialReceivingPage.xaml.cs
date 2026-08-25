@@ -25,9 +25,11 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private List<DictItemDto> _materialClassOptions = CreateDefaultMaterialClassOptions();
     private string? _instockNo;
     private string? _pendingQrCode;
+    private RawMaterialOcrDto? _editingPendingMaterial;
     private bool _isExistingInstock;
     private bool _loadedExistingInstock;
     private bool _isSubmittingInstock;
+    private bool _isStashingInstock;
 
     public AddRawMaterialReceivingPage(
         IWarehouseApi warehouseApi,
@@ -561,6 +563,10 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private void ShowBindConfirmDialog(string qrCode, RawMaterialOcrDto source)
     {
+        _editingPendingMaterial = null;
+        BindDialogTitleLabel.Text = "扫码绑定修改";
+        BindMaterialTypePicker.IsEnabled = true;
+        BindMaterialNameEntry.IsReadOnly = false;
         _pendingQrCode = qrCode;
         BindQrCodeEntry.Text = qrCode;
         BindMaterialCodeEntry.Text = source.materialCode;
@@ -613,6 +619,24 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
         _ocrItems.Remove(item);
         MaterialListTitle.Text = $"待入库列表 ({_ocrItems.Count})";
+    }
+
+    private void OnEditPendingMaterialTapped(object sender, TappedEventArgs e)
+    {
+        if (sender is not BindableObject { BindingContext: RawMaterialOcrDto item } ||
+            string.IsNullOrWhiteSpace(item.qrCode))
+        {
+            return;
+        }
+
+        _editingPendingMaterial = item;
+        _pendingQrCode = item.qrCode;
+        _selectedTicket = item;
+        ShowBindConfirmDialog(item.qrCode, item);
+        _editingPendingMaterial = item;
+        BindDialogTitleLabel.Text = "编辑待入库明细";
+        BindMaterialTypePicker.IsEnabled = false;
+        BindMaterialNameEntry.IsReadOnly = true;
     }
 
     private void OnCloseBindConfirmTapped(object sender, TappedEventArgs e) => BindConfirmOverlay.IsVisible = false;
