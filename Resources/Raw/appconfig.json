@@ -27,6 +27,8 @@
       "queryQrCodeInfo": "/pda/rawMaterialReceiving/queryQrCodeInfo",
       "getDictList": "/pda/rawMaterialReceiving/getDictList",
       "cancelBlankInstock": "/pda/rawMaterialReceiving/cancelBlankInstock",
+      "editStashDetail": "/pda/rawMaterialReceiving/editStashDetail",
+      "stashInstock": "/pda/rawMaterialReceiving/stashInstock",
       "quickInstock": "/pda/rawMaterialReceiving/quickInstock"
     },
     "attachment": {
