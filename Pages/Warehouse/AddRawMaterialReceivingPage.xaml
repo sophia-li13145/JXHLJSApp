@@ -379,8 +379,7 @@
                                                   Grid.ColumnSpan="2"
                                                   ColumnDefinitions="*,Auto">
                                                 <Label Text="{Binding qrCode, StringFormat='追溯码： {0}'}"
-                                                       TextColor="#0B4FEA"
-                                                       TextDecorations="Underline">
+                                                       TextColor="#38557C">
                                                     <Label.GestureRecognizers>
                                                         <TapGestureRecognizer Tapped="OnEditPendingMaterialTapped" />
                                                     </Label.GestureRecognizers>
