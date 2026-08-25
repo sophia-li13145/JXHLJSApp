@@ -552,7 +552,8 @@ public partial class WorkOrderInstructionPage : ContentPage
         AddDrawingFullWidthParamRow(row++, "产品直径", detail.productSpecification);
         AddDrawingTwoParamRow(row++, "下公差(mm)", FormatNegativeTolerance(detail.billetLowerTolerance), "上公差(mm)", detail.billetUpperTolerance);
         AddDrawingTwoParamRow(row++, "圈距控制", FormatLessThanOrEqualMillimeter(detail.pitchControl), "圈径控制", FormatMillimeter(detail.coilDiameterControl));
-        AddDrawingTwoParamRow(row, "椭圆度控制", FormatLessThanOrEqualMillimeter(detail.ovalityControl), "质检方式", detail.inspectionSchemeName);
+        AddDrawingTwoParamRow(row++, "椭圆度控制", FormatLessThanOrEqualMillimeter(detail.ovalityControl), "质检方式", detail.inspectionSchemeName);
+        AddDrawingFullWidthParamRow(row, "补充质检方式", FormatSupplementalInspectionSchemes(detail.inspectionSchemeList));
     }
 
     private void BindBlankOpeningProcessParams(WorkOrderDetailDto detail)
@@ -588,6 +589,20 @@ public partial class WorkOrderInstructionPage : ContentPage
         };
         ProcessParamsGrid.Add(separator, 0, row);
         Grid.SetColumnSpan(separator, 4);
+    }
+
+    private static string? FormatSupplementalInspectionSchemes(IEnumerable<WorkOrderInspectionSchemeDto>? schemes)
+    {
+        if (schemes is null)
+        {
+            return null;
+        }
+
+        var schemeNames = schemes
+            .Select(scheme => scheme.schemeName?.Trim())
+            .Where(schemeName => !string.IsNullOrWhiteSpace(schemeName));
+
+        return string.Join("，", schemeNames!);
     }
 
     private void AddDrawingFullWidthParamRow(int row, string label, string? value)

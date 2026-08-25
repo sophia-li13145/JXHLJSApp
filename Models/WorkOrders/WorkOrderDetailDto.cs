@@ -27,6 +27,7 @@ public sealed class WorkOrderDetailDto
     public string? inputSpecification { get; set; }
     public string? inputSteelGrade { get; set; }
     public string? inspectionSchemeCode { get; set; }
+    public List<WorkOrderInspectionSchemeDto>? inspectionSchemeList { get; set; }
     public string? inspectionSchemeName { get; set; }
     public string? intermediateSpecification { get; set; }
     public string? machineNo { get; set; }
@@ -118,4 +119,9 @@ public sealed class WorkOrderMoldSequenceDto
     public decimal? pieceWeight { get; set; }
     public decimal? productionQuantity { get; set; }
     public decimal? productionWeight { get; set; }
+}
+
+public sealed class WorkOrderInspectionSchemeDto
+{
+    public string? schemeName { get; set; }
 }
