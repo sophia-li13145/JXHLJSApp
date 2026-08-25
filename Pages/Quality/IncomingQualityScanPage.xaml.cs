@@ -185,6 +185,7 @@ public partial class IncomingQualityScanPage : ContentPage, IQueryAttributable
         InspectResultIconLabel.TextColor = GetInspectResultColor(option);
         InspectResultLabel.Text = option.Name;
         InspectResultLabel.TextColor = GetInspectResultColor(option);
+        ProblemPointTitleLabel.Text = IsQualifiedResult(option) ? "问题点" : "问题点 *";
 
         foreach (var row in InspectResultOptionsLayout.Children.OfType<Grid>())
         {
@@ -364,7 +365,7 @@ public partial class IncomingQualityScanPage : ContentPage, IQueryAttributable
         }
 
         var selectedProblems = _problemOptions.Where(item => item.IsSelected).ToList();
-        if (selectedProblems.Count == 0)
+        if (!IsQualifiedResult(inspectResult) && selectedProblems.Count == 0)
         {
             await DisplayAlert("提示", "请选择问题点。", "确定");
             return;

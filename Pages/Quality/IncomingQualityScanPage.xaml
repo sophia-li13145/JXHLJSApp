@@ -73,7 +73,7 @@
                                 </Grid>
                             </VerticalStackLayout>
                         </Border>
-                        <Label Text="问题点 *" TextColor="#051B3D" FontAttributes="Bold" />
+                        <Label x:Name="ProblemPointTitleLabel" Text="问题点 *" TextColor="#051B3D" FontAttributes="Bold" />
                         <Border BackgroundColor="#F8FAFD" Stroke="#DDE5EF" StrokeThickness="1" Padding="14,10">
                             <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnProblemPointTapped" /></Border.GestureRecognizers>
                             <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
