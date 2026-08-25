@@ -413,14 +413,16 @@
                                                    Text="{Binding coilCountDisplay, StringFormat='圈数：{0}'}"
                                                    TextColor="#38557C" />
                                             <Label Grid.Row="4"
+                                                   Grid.Column="1"
                                                    IsVisible="{Binding isSemiFinished}"
                                                    Text="{Binding coilDiameterDisplay, StringFormat='圈径：{0}'}"
                                                    TextColor="#38557C" />
                                             <Label Grid.Row="4"
-                                                   Grid.Column="1"
+                                                   Grid.Column="0"
                                                    Text="{Binding pieceWeightDisplay, StringFormat='件重：{0}'}"
                                                    TextColor="#00A060"
-                                                   FontAttributes="Bold" />
+                                                   FontAttributes="Bold"
+                                                   HorizontalOptions="Start" />
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
