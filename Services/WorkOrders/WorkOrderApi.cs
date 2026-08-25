@@ -4,6 +4,7 @@ using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Services.Common;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace JXHLJSApp.Services.WorkOrders;
 
@@ -740,6 +741,8 @@ public sealed class MaterialInputConfirmDto
 
 public sealed class MaterialOutputConfirmDto
 {
+    [JsonPropertyName("inputRecordId")]
+    public string? inputRecordId { get; set; }
     public decimal? outputLength { get; set; }
     public decimal? pieceWeight { get; set; }
     public string? productInspectStatus { get; set; }

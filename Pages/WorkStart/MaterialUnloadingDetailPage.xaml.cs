@@ -30,7 +30,7 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
-        _manualInputRecordId = ReadQueryValue(query, "inputRecordId");
+        _manualInputRecordId = ReadQueryValue(query, "inputRecordId")?.Trim();
         _lastMaterialQrCode = ReadQueryValue(query, "qrCode");
         _manualWorkOrderNo = ReadQueryValue(query, "workOrderNo");
         _manualRecordLoaded = false;
@@ -119,6 +119,7 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
         var initialOutputLength = GetInitialOutputLength(inputOutput);
         _confirmOutput = new MaterialOutputConfirmDto
         {
+            inputRecordId = _manualInputRecordId,
             outputLength = initialOutputLength,
             qrCode = _lastMaterialQrCode,
             workOrderNo = FirstNonEmpty(_manualWorkOrderNo, _productionContext.Current?.WorkOrderNo)
@@ -152,6 +153,9 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
         }
 
         ApplyManualOutputValues();
+
+        // 手动下料必须把上料列表返回的记录 ID 原样提交给 confirmOutput。
+        _confirmOutput.inputRecordId = _manualInputRecordId;
 
         if (string.IsNullOrWhiteSpace(_confirmOutput.qrCode))
         {
