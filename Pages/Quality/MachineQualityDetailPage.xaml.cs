@@ -370,12 +370,6 @@ public partial class MachineQualityDetailPage : ContentPage
                 ("圈距控制", FormatCoilPitchControl(FirstNonEmpty(detail.workOrderCoilPitchControl, detail.coilPitchControl)))
             };
 
-            if (IsDrawingScheme(ResolveProcessName(detail)))
-            {
-                rows.Add(("固定质检方式", detail.inspectionSchemeName));
-                rows.Add(("补充质检方式", BuildSupplementaryInspectionSchemeNames(detail)));
-            }
-
             return rows.ToArray();
         }
 
@@ -390,16 +384,6 @@ public partial class MachineQualityDetailPage : ContentPage
             ("钢号", detail.steelGrade), ("件号", ResolvePieceNo(detail)),
             ("规格", FirstNonEmpty(detail.targetSpecification, detail.inputSpecification))
         };
-    }
-
-    private static string? BuildSupplementaryInspectionSchemeNames(ProductionQualityDetailDto detail)
-    {
-        var schemeNames = detail.inspectionSchemeList?
-            .Select(item => item.schemeName?.Trim())
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .ToArray();
-
-        return schemeNames is { Length: > 0 } ? string.Join(",", schemeNames) : null;
     }
 
     private void RenderMaterialInfo(ProductionQualityDetailDto detail)
