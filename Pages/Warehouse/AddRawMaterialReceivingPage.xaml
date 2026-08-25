@@ -379,7 +379,11 @@
                                                   Grid.ColumnSpan="2"
                                                   ColumnDefinitions="*,Auto">
                                                 <Label Text="{Binding qrCode, StringFormat='追溯码： {0}'}"
-                                                       TextColor="#38557C" />
+                                                       TextColor="#38557C">
+                                                    <Label.GestureRecognizers>
+                                                        <TapGestureRecognizer Tapped="OnEditPendingMaterialTapped" />
+                                                    </Label.GestureRecognizers>
+                                                </Label>
                                                 <Label Grid.Column="1"
                                                        Text="移除"
                                                        TextColor="#F64148"
@@ -439,14 +443,15 @@
                 StrokeThickness="0"
                 Padding="18,16,18,22">
             <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                <Button Text="取消"
-                        BackgroundColor="#F64148"
+                <Button x:Name="StashInstockButton"
+                        Text="暂存"
+                        BackgroundColor="#E58A00"
                         TextColor="White"
                         FontSize="17"
                         FontAttributes="Bold"
                         CornerRadius="10"
                         HeightRequest="50"
-                        Clicked="OnCancelClicked" />
+                        Clicked="OnStashInstockV2Clicked" />
                 <Button x:Name="SubmitInstockButton"
                         Grid.Column="1"
                         Text="提交入库"
@@ -650,7 +655,8 @@
                 <ScrollView MaximumHeightRequest="640">
                     <VerticalStackLayout Spacing="12">
                         <Grid ColumnDefinitions="*,Auto">
-                            <Label Text="扫码绑定修改"
+                            <Label x:Name="BindDialogTitleLabel"
+                                   Text="扫码绑定修改"
                                    TextColor="#0A2C61"
                                    FontSize="18"
                                    FontAttributes="Bold" />

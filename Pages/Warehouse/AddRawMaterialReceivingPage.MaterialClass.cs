@@ -497,7 +497,53 @@ public partial class AddRawMaterialReceivingPage
             ocrRawText = _selectedTicket?.ocrRawText
         };
 
-        _ocrItems.Add(bound);
+        if (_editingPendingMaterial is not null)
+        {
+            if (string.IsNullOrWhiteSpace(_instockNo))
+            {
+                await DisplayAlert("提示", "入库单号为空，无法编辑明细。", "确定");
+                return;
+            }
+
+            try
+            {
+                var success = await _warehouseApi.EditRawMaterialStashDetailAsync(
+                    new EditRawMaterialStashDetailRequestDto
+                    {
+                        coilCount = isSemiFinished ? ParseNullableInt(bound.coilCount) : null,
+                        coilDiameter = isSemiFinished ? ParseNullableDecimal(bound.coilDiameter) : null,
+                        furnaceNo = bound.furnaceNo,
+                        instockNo = _instockNo,
+                        instockQty = pieceWeight,
+                        origin = bound.originPlace,
+                        qrCode = bound.qrCode,
+                        spec = bound.spec,
+                        strength = isSemiFinished ? bound.strength : null
+                    });
+
+                if (success != true)
+                {
+                    await ErrorDialogService.ShowAsync(this, "编辑失败", "接口未返回明确的成功结果。", "确定");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "编辑失败", ex.Message, "确定");
+                return;
+            }
+
+            var index = _ocrItems.IndexOf(_editingPendingMaterial);
+            if (index >= 0)
+            {
+                _ocrItems[index] = bound;
+            }
+            _editingPendingMaterial = null;
+        }
+        else
+        {
+            _ocrItems.Add(bound);
+        }
         MaterialListTitle.Text =
             $"待入库列表 ({_ocrItems.Count})";
         BindConfirmOverlay.IsVisible = false;
@@ -714,4 +760,109 @@ public partial class AddRawMaterialReceivingPage
             }
         }
     }
+
+    private async void OnStashInstockV2Clicked(object sender, EventArgs e)
+    {
+        if (_isStashingInstock)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_instockNo))
+        {
+            await DisplayAlert("提示", "入库单号尚未生成，请稍后重试。", "确定");
+            return;
+        }
+
+        var warehouse = GetSelectedWarehouse();
+        if (warehouse is null ||
+            string.IsNullOrWhiteSpace(warehouse.selectedName) ||
+            string.IsNullOrWhiteSpace(warehouse.selectedCode))
+        {
+            await DisplayAlert("提示", "请选择有效的入库仓库。", "确定");
+            return;
+        }
+
+        var warehouseArea = GetSelectedWarehouseArea();
+        if (warehouseArea is null || string.IsNullOrWhiteSpace(warehouseArea.selectedLocation))
+        {
+            await DisplayAlert("提示", "请选择有效的库区。", "确定");
+            return;
+        }
+
+        if (_ocrItems.Count == 0)
+        {
+            await DisplayAlert("提示", "请先扫码绑定至少一条待入库物料。", "确定");
+            return;
+        }
+
+        var invalidItem = _ocrItems.FirstOrDefault(item =>
+            string.IsNullOrWhiteSpace(item.materialClass) ||
+            ParsePieceWeightValueV2(item.pieceWeight) <= 0m);
+        if (invalidItem is not null)
+        {
+            await DisplayAlert("提示", "请确认每条明细都已填写物料分类和有效件重。", "确定");
+            return;
+        }
+
+        _isStashingInstock = true;
+        StashInstockButton.IsEnabled = false;
+        StashInstockButton.Text = "暂存中...";
+
+        try
+        {
+            var request = CreateInstockRequestV2(warehouse, warehouseArea);
+            var success = await _warehouseApi.StashRawMaterialInstockAsync(request);
+            if (success != true)
+            {
+                await ErrorDialogService.ShowAsync(this, "暂存失败", "接口未返回明确的成功结果。", "确定");
+                return;
+            }
+
+            await DisplayAlert("提示", "暂存成功。", "确定");
+        }
+        catch (Exception ex)
+        {
+            await ErrorDialogService.ShowAsync(this, "暂存失败", ex.Message, "确定");
+        }
+        finally
+        {
+            _isStashingInstock = false;
+            StashInstockButton.IsEnabled = true;
+            StashInstockButton.Text = "暂存";
+        }
+    }
+
+    private QuickInstockRequestDto CreateInstockRequestV2(
+        WarehouseInfoDto warehouse,
+        WarehouseAreaDto warehouseArea) => new()
+        {
+            detailList = _ocrItems
+                .Select((item, index) =>
+                {
+                    var isSemiFinished = IsSemiFinishedV2(item);
+                    return new QuickInstockDetailDto
+                    {
+                        coilCount = isSemiFinished ? ParseNullableInt(item.coilCount) : null,
+                        coilDiameter = isSemiFinished ? ParseNullableDecimal(item.coilDiameter) : null,
+                        count = 1,
+                        countSeq = index + 1,
+                        furnaceNo = item.furnaceNo,
+                        instockNo = _instockNo,
+                        instockQty = ParsePieceWeightValueV2(item.pieceWeight),
+                        instockWarehouse = warehouse.selectedName,
+                        instockWarehouseCode = warehouse.selectedCode,
+                        warehouseAreaNo = warehouseArea.selectedLocation,
+                        materialClass = item.materialClass,
+                        materialCode = item.materialCode,
+                        materialName = item.materialName,
+                        origin = item.originPlace,
+                        qrCode = item.qrCode,
+                        spec = item.spec,
+                        strength = isSemiFinished ? item.strength : null,
+                        unit = ResolvePieceWeightUnitV2(item)
+                    };
+                })
+                .ToList()
+        };
 }
