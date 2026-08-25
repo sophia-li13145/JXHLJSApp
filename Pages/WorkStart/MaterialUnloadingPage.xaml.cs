@@ -3,7 +3,7 @@ using JXHLJSApp.Services.WorkOrders;
 
 namespace JXHLJSApp.Pages.WorkStart;
 
-public partial class MaterialUnloadingPage : ContentPage
+public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
 {
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
