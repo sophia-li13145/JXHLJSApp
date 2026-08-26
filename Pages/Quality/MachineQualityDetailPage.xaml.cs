@@ -348,7 +348,7 @@ public partial class MachineQualityDetailPage : ContentPage
         var schemeName = ResolveCurrentFlowName(detail);
         if (IsPicklingScheme(schemeName))
         {
-            return new[]
+            return new (string Label, string? Value)[]
             {
                 ("检验日期", DateTime.Now.ToString("yyyy-MM-dd"))
             };
@@ -1285,7 +1285,7 @@ public partial class MachineQualityDetailPage : ContentPage
             (ProcessInputPanel.IsVisible, ActualDiameterEntry.Text, "实测直径", ActualDiameterEntry),
             (HeatTreatmentInputPanel.IsVisible, HeatActualDiameterEntry.Text, "实测直径", HeatActualDiameterEntry),
             (HeatTreatmentInputPanel.IsVisible, BrokenDiameterEntry.Text, "断后直径", BrokenDiameterEntry),
-            (UnqualifiedDescriptionPanelControl?.IsVisible == true, UnqualifiedDescriptionEditorControl?.Text, "不合格说明", UnqualifiedDescriptionEditorControl ?? UnqualifiedDescriptionPanel)
+            (UnqualifiedDescriptionPanel.IsVisible, UnqualifiedDescriptionEditor.Text, "不合格说明", UnqualifiedDescriptionEditor)
         };
 
         var missingInput = requiredInputs.FirstOrDefault(input =>
