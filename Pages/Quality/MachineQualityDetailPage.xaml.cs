@@ -134,6 +134,9 @@ public partial class MachineQualityDetailPage : ContentPage
             _detail = detail;
             ApplyScannedProcessNameFallback(detail);
             ApplyListFallbacks(detail);
+            // 从列表重新进入时不会携带 manualInspection 参数，需要根据详情/列表中的
+            // 质检类型恢复巡检标识，否则拉拔巡检会被误判为仅提交工序并隐藏完成按钮。
+            _isManualInspection = _isManualInspection || IsPatrolInspection(detail);
             _inspectionSchemeName = ResolveQualityFlowName(detail);
             if (!string.IsNullOrWhiteSpace(detail.inspectStatus)) _inspectStatus = detail.inspectStatus;
             if (!string.IsNullOrWhiteSpace(detail.workOrderStatus)) _workOrderStatus = detail.workOrderStatus;
@@ -195,6 +198,14 @@ public partial class MachineQualityDetailPage : ContentPage
             !string.IsNullOrWhiteSpace(detail.deviceName) ||
             !string.IsNullOrWhiteSpace(detail.materialCode) ||
             detail.inspectionItemList?.Count > 0;
+    }
+
+    private static bool IsPatrolInspection(ProductionQualityDetailDto detail)
+    {
+        return HasSchemeToken(detail.qualityTypeName, "巡检") ||
+            HasSchemeToken(detail.qualityType, "巡检") ||
+            HasSchemeToken(detail.inspectionSchemeName, "巡检") ||
+            HasSchemeToken(detail.inspectionSchemeTypeName, "巡检");
     }
 
     private void ApplySchemeLayout(ProductionQualityDetailDto detail)
@@ -1064,6 +1075,11 @@ public partial class MachineQualityDetailPage : ContentPage
             return;
         }
 
+        if (!await ValidateRequiredInputsAsync())
+        {
+            return;
+        }
+
         try
         {
             var unqualifiedDescription = UnqualifiedDescriptionEditorControl?.Text?.Trim();
@@ -1259,6 +1275,29 @@ public partial class MachineQualityDetailPage : ContentPage
                 : ex.Message;
             await ErrorDialogService.ShowAsync(this, "提交失败", message, "确定");
         }
+    }
+
+    private async Task<bool> ValidateRequiredInputsAsync()
+    {
+        var requiredInputs = new (bool IsRequired, string? Value, string FieldName, VisualElement Control)[]
+        {
+            (AcidInputPanel.IsVisible, RecorderEntry.Text, "记录人", RecorderEntry),
+            (ProcessInputPanel.IsVisible, ActualDiameterEntry.Text, "实测直径", ActualDiameterEntry),
+            (HeatTreatmentInputPanel.IsVisible, HeatActualDiameterEntry.Text, "实测直径", HeatActualDiameterEntry),
+            (HeatTreatmentInputPanel.IsVisible, BrokenDiameterEntry.Text, "断后直径", BrokenDiameterEntry),
+            (UnqualifiedDescriptionPanelControl?.IsVisible == true, UnqualifiedDescriptionEditorControl?.Text, "不合格说明", UnqualifiedDescriptionEditorControl ?? UnqualifiedDescriptionPanel)
+        };
+
+        var missingInput = requiredInputs.FirstOrDefault(input =>
+            input.IsRequired && string.IsNullOrWhiteSpace(input.Value));
+        if (missingInput.Control is null)
+        {
+            return true;
+        }
+
+        await DisplayAlert("提示", $"请填写必填字段：{missingInput.FieldName}。", "确定");
+        missingInput.Control.Focus();
+        return false;
     }
 
     private async void OnCompleteClicked(object sender, EventArgs e)
