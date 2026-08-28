@@ -130,7 +130,8 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             var options = dictGroups
                 .FirstOrDefault(group => IsMaterialClassField(group.field))?
                 .dictItems?
-                .Where(IsSupportedMaterialClassOption)
+                .Where(item => !string.IsNullOrWhiteSpace(item.dictItemValue) ||
+                    !string.IsNullOrWhiteSpace(item.dictItemName))
                 .ToList();
 
             if (options?.Count > 0)
@@ -157,15 +158,6 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         var normalized = field.Replace("_", string.Empty).Replace("-", string.Empty);
         return string.Equals(normalized, "materialClass", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(normalized, "materialType", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsSupportedMaterialClassOption(DictItemDto item)
-    {
-        var value = FirstNonEmpty(item.dictItemName, item.dictItemValue);
-        return value.Contains("原料", StringComparison.OrdinalIgnoreCase) ||
-            value.Contains("raw", StringComparison.OrdinalIgnoreCase) ||
-            value.Contains("半成品", StringComparison.OrdinalIgnoreCase) ||
-            value.Contains("semi", StringComparison.OrdinalIgnoreCase);
     }
 
     private void ApplyMaterialClassOptions(List<DictItemDto> options)
@@ -270,7 +262,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                 coilDiameter = FormatDecimal(ocr.coilDiameter),
                 furnaceNo = ocr.furnaceNo,
                 materialClass = ocr.materialClass,
-                materialClassName = ResolveMaterialClassName(ocr.materialClass),
+                materialClassName = ResolveMaterialClassName(ocr.materialClass, ocr.materialType),
                 materialName = ocr.materialName,
                 materialType = ocr.materialType,
                 ocrRawText = ocr.ocrRawText,
@@ -302,7 +294,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                 coilCount = FormatDecimal(item.count),
                 furnaceNo = item.furnaceNo,
                 materialClass = item.materialClass,
-                materialClassName = ResolveMaterialClassName(item.materialClass),
+                materialClassName = ResolveMaterialClassName(item.materialClass, item.materialClassName),
                 materialCode = item.materialCode,
                 materialName = item.materialName,
                 materialType = item.materialTypeDisplay,
@@ -847,12 +839,25 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
 
+        var normalizedValue = value.Trim();
         return _materialClassOptions.FirstOrDefault(option =>
-            string.Equals(option.dictItemValue, value, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(option.dictItemName, value, StringComparison.OrdinalIgnoreCase));
+            string.Equals(option.dictItemValue?.Trim(), normalizedValue, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(option.dictItemName?.Trim(), normalizedValue, StringComparison.OrdinalIgnoreCase));
     }
 
-    private string? ResolveMaterialClassName(string? value) => FindMaterialClassOption(value)?.dictItemName ?? value;
+    private string? ResolveMaterialClassName(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            var option = FindMaterialClassOption(value);
+            if (option is not null)
+            {
+                return FirstNonEmpty(option.dictItemName, option.dictItemValue);
+            }
+        }
+
+        return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim();
+    }
 
     private static List<DictItemDto> CreateDefaultMaterialClassOptions() => new()
     {
