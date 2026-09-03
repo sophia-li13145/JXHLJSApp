@@ -112,6 +112,7 @@
       "workflow": "/pda/pmsWorkOrder/getWorkOrderWorkflow",
       "processTasks": "/pda/pmsWorkOrder/pageWorkProcessTasks",
       "dictList": "/pda/pmsWorkOrder/getWorkOrderDictList",
+      "wdictList": "/pda/qsOrderQuality/getDictList",
       "dictProcessList": "/pda/pmsWorkOrder/getWorkProcessTaskDictList",
       "ProcessList": "/pda/pmsWorkOrder/PmsProcessInfoList",
       "ProcessDetail": "/pda/pmsWorkOrder/getWorkProcessTaskDetail",
