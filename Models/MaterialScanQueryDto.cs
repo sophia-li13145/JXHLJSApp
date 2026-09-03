@@ -59,7 +59,8 @@ public sealed class MaterialScanInstructionCardInfoDto
     public string? drawMode { get; set; }
     public string? dvSpeed { get; set; }
     public string? inputSpecification { get; set; }
-    public string? outputLength { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? outputLength { get; set; }
     [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? outputWeight { get; set; }
     public string? ovalityControl { get; set; }
