@@ -86,29 +86,44 @@ public partial class MaterialScanQueryPage : ContentPage
         {
             ("物料名称", x?.materialName), ("规格", x?.spec), ("炉号", x?.furnaceNo),
             ("产地", x?.origin), ("件重", x?.pieceWeight)
-        }.Concat(showState ? [("物料状态", StateName(x?.materialState))] : []).ToArray();
+        }.Concat(showState
+            ? new (string, object?)[] { ("物料状态", StateName(x?.materialState)) }
+            : Array.Empty<(string, object?)>()).ToArray();
 
     private static IReadOnlyList<(string, object?)> RawInspectionFields(MaterialScanInspectionInfoDto? x) =>
-        [("检验结果", x?.inspectResult), ("问题点", x?.problemPoint), ("其他问题", x?.otherProblemItem), ("检验日期", x?.inspectDate)];
+        new (string, object?)[]
+        {
+            ("检验结果", x?.inspectResult), ("问题点", x?.problemPoint),
+            ("其他问题", x?.otherProblemItem), ("检验日期", x?.inspectDate)
+        };
 
     private static IReadOnlyList<(string, object?)> BloomedInstructionFields(MaterialScanInstructionCardInfoDto? x) =>
-        [("上料规格", x?.inputSpecification), ("下料规格", x?.blankSpecification), ("生/淬", x?.rawOrQuench), ("扭转（次）", x?.torsion),
-         ("上公差", x?.billetUpperTolerance), ("下公差", x?.billetLowerTolerance), ("客户代码", x?.customerIdentifier), ("拉拔方式", x?.drawMode),
-         ("收线速度", x?.wireTakeUpSpeed), ("钢丝形状", x?.wireShape), ("收线长度", x?.wireTakeUpLength), ("椭圆度控制", x?.ovalityControl),
-         ("圈径控制", x?.coilDiameterControl), ("圈距控制", x?.coilPitchControl), ("实测收线长度", x?.outputLength), ("实测收线重量", x?.outputWeight),
-         ("强度范围", x?.strengthRange), ("件重", x?.outputWeight)];
+        new (string, object?)[]
+        {
+            ("上料规格", x?.inputSpecification), ("下料规格", x?.blankSpecification), ("生/淬", x?.rawOrQuench), ("扭转（次）", x?.torsion),
+            ("上公差", x?.billetUpperTolerance), ("下公差", x?.billetLowerTolerance), ("客户代码", x?.customerIdentifier), ("拉拔方式", x?.drawMode),
+            ("收线速度", x?.wireTakeUpSpeed), ("钢丝形状", x?.wireShape), ("收线长度", x?.wireTakeUpLength), ("椭圆度控制", x?.ovalityControl),
+            ("圈径控制", x?.coilDiameterControl), ("圈距控制", x?.coilPitchControl), ("实测收线长度", x?.outputLength), ("实测收线重量", x?.outputWeight),
+            ("强度范围", x?.strengthRange), ("件重", x?.outputWeight)
+        };
 
     private static IReadOnlyList<(string, object?)> BloomedInspectionFields(MaterialScanInspectionInfoDto? x) =>
-        [("圈径控制", x?.coilDiameterControl), ("圈距控制", x?.coilPitchControl), ("实测直径mm", x?.actualDiameterMm), ("表面", x?.surfaceCondition),
-         ("是否合格", BoolText(x?.isQualified)), ("不合格说明", x?.unqualifiedDescription), ("是否连续性不合格品", BoolText(x?.continuouslyUnqualified)),
-         ("是否员工干预", BoolText(x?.employeeIntervention)), ("备注", x?.memo), ("检验员", x?.inspector), ("检验日期", x?.inspectDate)];
+        new (string, object?)[]
+        {
+            ("圈径控制", x?.coilDiameterControl), ("圈距控制", x?.coilPitchControl), ("实测直径mm", x?.actualDiameterMm), ("表面", x?.surfaceCondition),
+            ("是否合格", BoolText(x?.isQualified)), ("不合格说明", x?.unqualifiedDescription), ("是否连续性不合格品", BoolText(x?.continuouslyUnqualified)),
+            ("是否员工干预", BoolText(x?.employeeIntervention)), ("备注", x?.memo), ("检验员", x?.inspector), ("检验日期", x?.inspectDate)
+        };
 
     private static IReadOnlyList<(string, object?)> HeatInstructionFields(MaterialScanInstructionCardInfoDto? x) =>
-        [("DV", x?.dvSpeed), ("销售方式", x?.saleMode)];
+        new (string, object?)[] { ("DV", x?.dvSpeed), ("销售方式", x?.saleMode) };
 
     private static IReadOnlyList<(string, object?)> HeatInspectionFields(MaterialScanInspectionInfoDto? x) =>
-        [("实测直径mm", x?.actualDiameterMm), ("实测强度MPa", x?.strengthMpa), ("扭转", x?.torsion), ("断后直径", x?.brokenDiameter),
-         ("断面收缩率", x?.reductionOfAreaRate), ("延伸率（%）", x?.elongationRate), ("备注", x?.memo), ("检验员", x?.inspector), ("检验日期", x?.inspectDate)];
+        new (string, object?)[]
+        {
+            ("实测直径mm", x?.actualDiameterMm), ("实测强度MPa", x?.strengthMpa), ("扭转", x?.torsion), ("断后直径", x?.brokenDiameter),
+            ("断面收缩率", x?.reductionOfAreaRate), ("延伸率（%）", x?.elongationRate), ("备注", x?.memo), ("检验员", x?.inspector), ("检验日期", x?.inspectDate)
+        };
 
     private static View CreateSection(string title, IReadOnlyList<(string Label, object? Value)> fields, int columns = 1)
     {
