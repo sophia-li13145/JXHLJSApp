@@ -5,9 +5,10 @@ namespace JXHLJSApp.Models;
 
 public sealed class MaterialScanQueryDto
 {
-    public MaterialScanBasicInfoDto? basicInfo { get; set; }
-    public MaterialScanInspectionInfoDto? inspectionInfo { get; set; }
-    public MaterialScanInstructionCardInfoDto? instructionCardInfo { get; set; }
+    // 后端会根据物料状态选择性返回以下模块；三个实体彼此独立，均允许为 null。
+    public MaterialScanBasicInfoDto? basicInfo { get; set; } = null;
+    public MaterialScanInspectionInfoDto? inspectionInfo { get; set; } = null;
+    public MaterialScanInstructionCardInfoDto? instructionCardInfo { get; set; } = null;
 }
 
 public sealed class MaterialScanBasicInfoDto
