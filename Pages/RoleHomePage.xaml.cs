@@ -86,6 +86,12 @@ public partial class RoleHomePage : ContentPage
         var shift = Preferences.Get(UserSessionKeys.ShiftName, string.Empty);
 
         var role = RoleHomeDefinition.FromRoleCode(roleCode);
+        role = role with
+        {
+            Modules = role.Modules.Concat([
+                new HomeModule("扫码查询", "▦", Color.FromArgb("#E8F7FF"), "扫描二维码查询物料完整信息", Route: AppShell.RouteMaterialScanQuery)
+            ]).ToArray()
+        };
         TitleLabel.Text = role.Title;
         ContentStack.Children.Clear();
         ContentStack.Children.Add(CreateProfileCard(role, realName, workNumber, department, shift));
