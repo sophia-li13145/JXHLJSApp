@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.MaterialScanQueryPage"
+             BackgroundColor="#F3F4F6"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Grid Padding="16,18,16,12" ColumnDefinitions="Auto,*,Auto" BackgroundColor="White">
+            <Button Text="‹返回" Clicked="OnBackClicked" BackgroundColor="Transparent" TextColor="#008DE5" Padding="0" FontSize="15" />
+            <Label x:Name="TitleLabel" Grid.Column="1" Text="扫码查询结果" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" TextColor="#101828" />
+            <Button Grid.Column="2" Text="重新扫码" Clicked="OnRescanClicked" BackgroundColor="Transparent" TextColor="#008DE5" Padding="4,0" FontSize="14" />
+        </Grid>
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout x:Name="ResultStack" Padding="20,18,20,30" Spacing="22">
+                <Label x:Name="EmptyLabel" Text="请扫描物料二维码" TextColor="#667085" FontSize="16" HorizontalTextAlignment="Center" Margin="0,80,0,0" />
+            </VerticalStackLayout>
+        </ScrollView>
+        <ActivityIndicator x:Name="LoadingIndicator" Grid.RowSpan="2" IsVisible="False" IsRunning="False" Color="#1F5AA6" HorizontalOptions="Center" VerticalOptions="Center" />
+    </Grid>
+</ContentPage>
