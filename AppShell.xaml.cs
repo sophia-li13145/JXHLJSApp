@@ -54,6 +54,7 @@ public partial class AppShell : Shell
     public const string RouteMachineQualityTasks = "MachineQualityTasks";
     public const string RouteMachineQualityDetail = "MachineQualityDetail";
     public const string RouteProductionQualitySuccess = "ProductionQualitySuccess";
+    public const string RouteMaterialScanQuery = "MaterialScanQuery";
 
     public static string RouteProductionHome => $"{RouteHome}/{RouteRoleModule}?roleCode=production";
 
@@ -103,6 +104,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteMachineQualityTasks, typeof(MachineQualityTaskListPage));
         Routing.RegisterRoute(RouteMachineQualityDetail, typeof(MachineQualityDetailPage));
         Routing.RegisterRoute(RouteProductionQualitySuccess, typeof(ProductionQualitySuccessPage));
+        Routing.RegisterRoute(RouteMaterialScanQuery, typeof(MaterialScanQueryPage));
         BuildLoginShell();
     }
 

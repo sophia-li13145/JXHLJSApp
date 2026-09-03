@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 14,
   "server": {
     "scheme": "http",
     "ipAddress": "221.216.53.191:9128"
@@ -142,6 +142,9 @@
     },
     "materialQrCode": {
       "scanQueryMaterialInfo": "/pda/pmsWorkOrder/scanInputQrCode"
+    },
+    "materialScanQuery": {
+      "completeInfo": "/pda/wmsMaterialQrCode/scanQueryCompleteMaterialInfo"
     },
     "machineBind": {
       "scanToWork": "/pda/devUserMachineBindRecord/scanToWork"
