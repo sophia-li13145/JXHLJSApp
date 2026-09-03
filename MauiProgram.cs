@@ -44,6 +44,7 @@ namespace JXHLJSApp
             builder.Services.AddTransient<RoleHomePage>();
             builder.Services.AddTransient<PdaHomePage>();
             builder.Services.AddTransient<NoPermissionPage>();
+            builder.Services.AddTransient<MaterialScanQueryPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkOrders.WorkOrderTaskListPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkOrders.ProductionStatisticsPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.WorkStartScanPage>();
@@ -111,6 +112,9 @@ namespace JXHLJSApp
                 .AddHttpMessageHandler<AuthHeaderHandler>()
                 .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient<IQualityApi, QualityApi>(ConfigureBaseAddress)
+                .AddHttpMessageHandler<AuthHeaderHandler>()
+                .AddHttpMessageHandler<TokenExpiredHandler>();
+            builder.Services.AddHttpClient<IMaterialScanQueryApi, MaterialScanQueryApi>(ConfigureBaseAddress)
                 .AddHttpMessageHandler<AuthHeaderHandler>()
                 .AddHttpMessageHandler<TokenExpiredHandler>();
 
