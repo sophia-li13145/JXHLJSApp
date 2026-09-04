@@ -60,6 +60,8 @@ public sealed class MaterialScanInstructionCardInfoDto
     public string? dvSpeed { get; set; }
     public string? inputSpecification { get; set; }
     [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
+    public decimal? pieceWeight { get; set; }
+    [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? outputLength { get; set; }
     [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? outputWeight { get; set; }
@@ -71,4 +73,5 @@ public sealed class MaterialScanInstructionCardInfoDto
     public string? wireShape { get; set; }
     public string? wireTakeUpLength { get; set; }
     public string? wireTakeUpSpeed { get; set; }
+    public string? wireTakeUpSpeedUnit { get; set; }
 }

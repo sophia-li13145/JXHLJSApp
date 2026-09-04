@@ -1,6 +1,7 @@
 using JXHLJSApp.Models;
 using JXHLJSApp.Services;
 using Microsoft.Maui.Controls.Shapes;
+using System.Globalization;
 
 namespace JXHLJSApp.Pages;
 
@@ -67,12 +68,7 @@ public partial class MaterialScanQueryPage : ContentPage
             showState: state != "raw",
             showPackagePieceWeight: state == "finished")));
 
-        if (state == "raw")
-        {
-            ResultStack.Children.Add(CreateEmptySection("生产指令卡"));
-            ResultStack.Children.Add(CreateSection("质检内容", RawInspectionFields(result.inspectionInfo), 2));
-        }
-        else if (state == "bloomed")
+        if (state == "bloomed")
         {
             ResultStack.Children.Add(CreateSection("生产指令卡", BloomedInstructionFields(result.instructionCardInfo), 2));
             ResultStack.Children.Add(CreateSection("质检内容", BloomedInspectionFields(result.inspectionInfo), 2));
@@ -84,7 +80,10 @@ public partial class MaterialScanQueryPage : ContentPage
         }
         else if (state is "drawn" or "finished")
         {
-            ResultStack.Children.Add(CreateSection("生产指令卡", DrawnInstructionFields(result.instructionCardInfo), 2));
+            var actualPieceWeight = state == "finished"
+                ? result.basicInfo?.pieceWeight
+                : result.instructionCardInfo?.pieceWeight;
+            ResultStack.Children.Add(CreateSection("生产指令卡", DrawnInstructionFields(result.instructionCardInfo, actualPieceWeight), 2));
             ResultStack.Children.Add(CreateSection("质检内容", DrawnInspectionFields(result.inspectionInfo), 2));
         }
     }
@@ -97,64 +96,57 @@ public partial class MaterialScanQueryPage : ContentPage
         var fields = new List<(string, object?)>
         {
             ("物料名称", x?.materialName), ("规格", x?.spec), ("炉号", x?.furnaceNo),
-            ("产地", x?.origin), ("件重", x?.pieceWeight)
+            ("产地", x?.origin), ("件重", FormatUnit(x?.pieceWeight, "KG", "千克", "公斤"))
         };
 
         if (showState) fields.Add(("物料状态", StateName(x?.materialState)));
-        if (showPackagePieceWeight) fields.Add(("包装件重", x?.packagePieceWeight));
+        if (showPackagePieceWeight) fields.Add(("包装件重", FormatUnit(x?.packagePieceWeight, "KG", "千克", "公斤")));
         return fields;
     }
-
-    private static IReadOnlyList<(string, object?)> RawInspectionFields(MaterialScanInspectionInfoDto? x) =>
-        new (string, object?)[]
-        {
-            ("检验结果", x?.inspectResult), ("问题点", x?.problemPoint),
-            ("其他问题", x?.otherProblemItem), ("检验日期", x?.inspectDate)
-        };
 
     private static IReadOnlyList<(string, object?)> BloomedInstructionFields(MaterialScanInstructionCardInfoDto? x) =>
         new (string, object?)[]
         {
-            ("上料规格", x?.inputSpecification), ("下料规格", x?.blankSpecification), ("生/淬", x?.rawOrQuench), ("扭转（次）", x?.torsion),
-            ("上公差", x?.billetUpperTolerance), ("下公差", x?.billetLowerTolerance), ("客户代码", x?.customerIdentifier), ("拉拔方式", x?.drawMode),
-            ("收线速度", x?.wireTakeUpSpeed), ("钢丝形状", x?.wireShape), ("收线长度", x?.wireTakeUpLength), ("椭圆度控制", x?.ovalityControl),
-            ("圈径控制", x?.coilDiameterControl), ("圈距控制", x?.coilPitchControl), ("实测收线长度", x?.outputLength), ("实测收线重量", x?.outputWeight),
-            ("强度范围", x?.strengthRange), ("件重", x?.outputWeight)
+            ("上料规格", x?.inputSpecification), ("下料规格", x?.blankSpecification), ("生/淬", x?.rawOrQuench), ("扭转（次）", FormatTorsion(x?.torsion)),
+            ("上公差", FormatUnit(x?.billetUpperTolerance, "mm")), ("下公差", FormatLowerTolerance(x?.billetLowerTolerance)), ("客户代码", x?.customerIdentifier), ("拉拔方式", x?.drawMode),
+            ("收线速度", FormatUnit(x?.wireTakeUpSpeed, x?.wireTakeUpSpeedUnit)), ("钢丝形状", x?.wireShape), ("收线长度", FormatUnit(x?.wireTakeUpLength, "m")), ("椭圆度控制", FormatUpperLimit(x?.ovalityControl)),
+            ("圈径控制", FormatUnit(x?.coilDiameterControl, "mm")), ("圈距控制", FormatUpperLimit(x?.coilPitchControl)), ("实测收线长度", FormatUnit(x?.outputLength, "m")), ("实测收线重量", FormatUnit(x?.outputWeight, "KG", "千克", "公斤")),
+            ("强度范围", FormatUnit(x?.strengthRange, "MPa")), ("件重", FormatUnit(x?.pieceWeight, "KG", "千克", "公斤"))
         };
 
     private static IReadOnlyList<(string, object?)> BloomedInspectionFields(MaterialScanInspectionInfoDto? x) =>
         new (string, object?)[]
         {
-            ("圈径控制", x?.coilDiameterControl), ("圈距控制", x?.coilPitchControl), ("实测直径mm", x?.actualDiameterMm), ("表面", x?.surfaceCondition),
+            ("圈径控制", FormatUnit(x?.coilDiameterControl, "mm")), ("圈距控制", FormatUpperLimit(x?.coilPitchControl)), ("实测直径", FormatUnit(x?.actualDiameterMm, "mm")), ("表面", x?.surfaceCondition),
             ("是否合格", BoolText(x?.isQualified)), ("不合格说明", x?.unqualifiedDescription), ("是否连续性不合格品", BoolText(x?.continuouslyUnqualified)),
             ("是否员工干预", BoolText(x?.employeeIntervention)), ("备注", x?.memo), ("检验员", x?.inspector), ("检验日期", x?.inspectDate)
         };
 
     private static IReadOnlyList<(string, object?)> HeatInstructionFields(MaterialScanInstructionCardInfoDto? x) =>
-        new (string, object?)[] { ("DV", x?.dvSpeed), ("销售方式", x?.saleMode) };
+        new (string, object?)[] { ("DV", FormatUnit(x?.dvSpeed, "Hz")), ("销售方式", x?.saleMode) };
 
     private static IReadOnlyList<(string, object?)> HeatInspectionFields(MaterialScanInspectionInfoDto? x) =>
         new (string, object?)[]
         {
-            ("实测直径mm", x?.actualDiameterMm), ("实测强度MPa", x?.strengthMpa), ("扭转", x?.torsion), ("断后直径", x?.brokenDiameter),
-            ("断面收缩率", x?.reductionOfAreaRate), ("延伸率（%）", x?.elongationRate), ("备注", x?.memo), ("检验员", x?.inspector), ("检验日期", x?.inspectDate)
+            ("实测直径", FormatUnit(x?.actualDiameterMm, "mm")), ("实测强度", FormatUnit(x?.strengthMpa, "MPa")), ("扭转", FormatTorsion(x?.torsion)), ("断后直径", FormatUnit(x?.brokenDiameter, "mm")),
+            ("断面收缩率", FormatUnit(x?.reductionOfAreaRate, "%")), ("延伸率", FormatUnit(x?.elongationRate, "%")), ("备注", x?.memo), ("检验员", x?.inspector), ("检验日期", x?.inspectDate)
         };
 
-    private static IReadOnlyList<(string, object?)> DrawnInstructionFields(MaterialScanInstructionCardInfoDto? x) =>
+    private static IReadOnlyList<(string, object?)> DrawnInstructionFields(MaterialScanInstructionCardInfoDto? x, decimal? actualPieceWeight) =>
         new (string, object?)[]
         {
-            ("上料规格", x?.inputSpecification), ("下料规格", x?.blankSpecification), ("强度", x?.strengthRange), ("生/淬", x?.rawOrQuench),
-            ("扭转（次）", x?.torsion), ("上公差", x?.billetUpperTolerance), ("下公差", x?.billetLowerTolerance), ("客户代码", x?.customerIdentifier),
-            ("拉拔方式", x?.drawMode), ("收线速度", x?.wireTakeUpSpeed), ("钢丝形状", x?.wireShape), ("收线长度", x?.wireTakeUpLength),
-            ("椭圆度控制", x?.ovalityControl), ("圈径控制", x?.coilDiameterControl), ("圈距控制", x?.coilPitchControl), ("实测收线长度", x?.outputLength),
-            ("实测收线重量", x?.outputWeight), ("件重", x?.outputWeight)
+            ("上料规格", x?.inputSpecification), ("下料规格", x?.blankSpecification), ("强度", FormatUnit(x?.strengthRange, "MPa")), ("生/淬", x?.rawOrQuench),
+            ("扭转（次）", FormatTorsion(x?.torsion)), ("上公差", FormatUnit(x?.billetUpperTolerance, "mm")), ("下公差", FormatLowerTolerance(x?.billetLowerTolerance)), ("客户代码", x?.customerIdentifier),
+            ("拉拔方式", x?.drawMode), ("收线速度", FormatUnit(x?.wireTakeUpSpeed, x?.wireTakeUpSpeedUnit)), ("钢丝形状", x?.wireShape), ("收线长度", FormatUnit(x?.wireTakeUpLength, "m")),
+            ("椭圆度控制", FormatUpperLimit(x?.ovalityControl)), ("圈径控制", FormatUnit(x?.coilDiameterControl, "mm")), ("圈距控制", FormatUpperLimit(x?.coilPitchControl)), ("实测收线长度", FormatUnit(x?.outputLength, "m")),
+            ("实测收线重量", FormatUnit(x?.outputWeight, "KG", "千克", "公斤")), ("件重", FormatUnit(actualPieceWeight, "KG", "千克", "公斤"))
         };
 
     private static IReadOnlyList<(string, object?)> DrawnInspectionFields(MaterialScanInspectionInfoDto? x) =>
         new (string, object?)[]
         {
-            ("圈径控制", x?.coilDiameterControl), ("圈距控制", x?.coilPitchControl), ("实测直径mm", x?.actualDiameterMm), ("强度", x?.strengthMpa),
-            ("扭转", x?.torsion), ("表面", x?.surfaceCondition), ("延伸率（%）", x?.elongationRate), ("是否合格", BoolText(x?.isQualified)),
+            ("圈径控制", FormatUnit(x?.coilDiameterControl, "mm")), ("圈距控制", FormatUpperLimit(x?.coilPitchControl)), ("实测直径", FormatUnit(x?.actualDiameterMm, "mm")), ("强度", FormatUnit(x?.strengthMpa, "MPa")),
+            ("扭转", FormatTorsion(x?.torsion)), ("表面", x?.surfaceCondition), ("延伸率", FormatUnit(x?.elongationRate, "%")), ("是否合格", BoolText(x?.isQualified)),
             ("不合格说明", x?.unqualifiedDescription), ("是否连续性不合格品", BoolText(x?.continuouslyUnqualified)),
             ("是否员工干预", BoolText(x?.employeeIntervention)), ("备注", x?.memo), ("检验员", x?.inspector), ("检验日期", x?.inspectDate)
         };
@@ -198,12 +190,6 @@ public partial class MaterialScanQueryPage : ContentPage
         return WrapSection(title, grid);
     }
 
-    private static View CreateEmptySection(string title) => WrapSection(title, new Label
-    {
-        Text = "暂无", TextColor = Color.FromArgb("#008DE5"), HorizontalTextAlignment = TextAlignment.Center,
-        BackgroundColor = Colors.White, Padding = new Thickness(14)
-    });
-
     private static View WrapSection(string title, View body) => new VerticalStackLayout
     {
         Spacing = 7,
@@ -223,6 +209,44 @@ public partial class MaterialScanQueryPage : ContentPage
     };
 
     private static string BoolText(bool? value) => value switch { true => "是", false => "否", _ => "--" };
+
+    private static string FormatUnit(object? value, string? unit, params string[] aliases)
+    {
+        var text = ValueText(value).Trim();
+        if (text == "--" || string.IsNullOrWhiteSpace(unit)) return text;
+
+        var acceptedUnits = aliases.Append(unit);
+        return acceptedUnits.Any(item => text.EndsWith(item, StringComparison.OrdinalIgnoreCase))
+            ? text
+            : $"{text}{unit}";
+    }
+
+    private static string FormatTorsion(string? value)
+    {
+        var text = ValueText(value).Trim();
+        if (text == "--") return text;
+
+        var numberText = text.EndsWith("次", StringComparison.Ordinal) || text.EndsWith("转", StringComparison.Ordinal)
+            ? text[..^1].Trim()
+            : text;
+        return decimal.TryParse(numberText, NumberStyles.Number, CultureInfo.InvariantCulture, out var number)
+            ? $"{number:0.##}次"
+            : FormatUnit(text, "次", "转");
+    }
+
+    private static string FormatLowerTolerance(string? value)
+    {
+        var text = FormatUnit(value, "mm");
+        return text == "--" || text.StartsWith('-') ? text : $"-{text}";
+    }
+
+    private static string FormatUpperLimit(string? value)
+    {
+        var text = FormatUnit(value, "mm");
+        return text == "--" || text.StartsWith('≤') || text.StartsWith("<=", StringComparison.Ordinal)
+            ? text
+            : $"≤{text}";
+    }
     private static string StateName(string? state) => state?.Trim().ToLowerInvariant() switch
     {
         "raw" => "原料", "pickled" => "酸洗后", "heat_treated" => "热处理后", "drawn" => "拉拔后",
