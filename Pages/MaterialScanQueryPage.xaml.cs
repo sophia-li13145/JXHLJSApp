@@ -62,7 +62,10 @@ public partial class MaterialScanQueryPage : ContentPage
         };
 
         ResultStack.Children.Clear();
-        ResultStack.Children.Add(CreateSection("基本信息", BasicFields(result.basicInfo, state != "raw")));
+        ResultStack.Children.Add(CreateSection("基本信息", BasicFields(
+            result.basicInfo,
+            showState: state != "raw",
+            showPackagePieceWeight: state == "finished")));
 
         if (state == "raw")
         {
@@ -79,16 +82,28 @@ public partial class MaterialScanQueryPage : ContentPage
             ResultStack.Children.Add(CreateSection("生产指令卡", HeatInstructionFields(result.instructionCardInfo), 2));
             ResultStack.Children.Add(CreateSection("质检内容", HeatInspectionFields(result.inspectionInfo), 2));
         }
+        else if (state is "drawn" or "finished")
+        {
+            ResultStack.Children.Add(CreateSection("生产指令卡", DrawnInstructionFields(result.instructionCardInfo), 2));
+            ResultStack.Children.Add(CreateSection("质检内容", DrawnInspectionFields(result.inspectionInfo), 2));
+        }
     }
 
-    private static IReadOnlyList<(string Label, object? Value)> BasicFields(MaterialScanBasicInfoDto? x, bool showState) =>
-        new List<(string, object?)>
+    private static IReadOnlyList<(string Label, object? Value)> BasicFields(
+        MaterialScanBasicInfoDto? x,
+        bool showState,
+        bool showPackagePieceWeight)
+    {
+        var fields = new List<(string, object?)>
         {
             ("物料名称", x?.materialName), ("规格", x?.spec), ("炉号", x?.furnaceNo),
             ("产地", x?.origin), ("件重", x?.pieceWeight)
-        }.Concat(showState
-            ? new (string, object?)[] { ("物料状态", StateName(x?.materialState)) }
-            : Array.Empty<(string, object?)>()).ToArray();
+        };
+
+        if (showState) fields.Add(("物料状态", StateName(x?.materialState)));
+        if (showPackagePieceWeight) fields.Add(("包装件重", x?.packagePieceWeight));
+        return fields;
+    }
 
     private static IReadOnlyList<(string, object?)> RawInspectionFields(MaterialScanInspectionInfoDto? x) =>
         new (string, object?)[]
@@ -123,6 +138,25 @@ public partial class MaterialScanQueryPage : ContentPage
         {
             ("实测直径mm", x?.actualDiameterMm), ("实测强度MPa", x?.strengthMpa), ("扭转", x?.torsion), ("断后直径", x?.brokenDiameter),
             ("断面收缩率", x?.reductionOfAreaRate), ("延伸率（%）", x?.elongationRate), ("备注", x?.memo), ("检验员", x?.inspector), ("检验日期", x?.inspectDate)
+        };
+
+    private static IReadOnlyList<(string, object?)> DrawnInstructionFields(MaterialScanInstructionCardInfoDto? x) =>
+        new (string, object?)[]
+        {
+            ("上料规格", x?.inputSpecification), ("下料规格", x?.blankSpecification), ("强度", x?.strengthRange), ("生/淬", x?.rawOrQuench),
+            ("扭转（次）", x?.torsion), ("上公差", x?.billetUpperTolerance), ("下公差", x?.billetLowerTolerance), ("客户代码", x?.customerIdentifier),
+            ("拉拔方式", x?.drawMode), ("收线速度", x?.wireTakeUpSpeed), ("钢丝形状", x?.wireShape), ("收线长度", x?.wireTakeUpLength),
+            ("椭圆度控制", x?.ovalityControl), ("圈径控制", x?.coilDiameterControl), ("圈距控制", x?.coilPitchControl), ("实测收线长度", x?.outputLength),
+            ("实测收线重量", x?.outputWeight), ("件重", x?.outputWeight)
+        };
+
+    private static IReadOnlyList<(string, object?)> DrawnInspectionFields(MaterialScanInspectionInfoDto? x) =>
+        new (string, object?)[]
+        {
+            ("圈径控制", x?.coilDiameterControl), ("圈距控制", x?.coilPitchControl), ("实测直径mm", x?.actualDiameterMm), ("强度", x?.strengthMpa),
+            ("扭转", x?.torsion), ("表面", x?.surfaceCondition), ("延伸率（%）", x?.elongationRate), ("是否合格", BoolText(x?.isQualified)),
+            ("不合格说明", x?.unqualifiedDescription), ("是否连续性不合格品", BoolText(x?.continuouslyUnqualified)),
+            ("是否员工干预", BoolText(x?.employeeIntervention)), ("备注", x?.memo), ("检验员", x?.inspector), ("检验日期", x?.inspectDate)
         };
 
     private static View CreateSection(string title, IReadOnlyList<(string Label, object? Value)> fields, int columns = 1)
