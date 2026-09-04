@@ -198,7 +198,9 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
                 return;
             }
 
-            await Shell.Current.GoToAsync(AppShell.RouteMaterialOperationSuccess);
+            await Shell.Current.GoToAsync(
+                AppShell.RouteMaterialOperationSuccess,
+                new Dictionary<string, object> { ["operation"] = "unloading" });
         }
         catch (Exception ex)
         {
