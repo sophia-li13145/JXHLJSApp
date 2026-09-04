@@ -129,10 +129,37 @@ public partial class MaterialScanQueryPage : ContentPage
     {
         var grid = new Grid { Padding = 14, ColumnSpacing = 14, RowSpacing = 13, BackgroundColor = Colors.White };
         for (var i = 0; i < columns; i++) grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Star });
-        for (var i = 0; i < fields.Count; i++)
+        var column = 0;
+        var row = 0;
+        foreach (var field in fields)
         {
-            var field = fields[i];
-            grid.Add(new Label { Text = $"{field.Label}：{ValueText(field.Value)}", FontSize = 14, TextColor = Colors.Black, LineBreakMode = LineBreakMode.WordWrap }, i % columns, i / columns);
+            var isInspectionDate = field.Label == "检验日期";
+            if (isInspectionDate && column != 0)
+            {
+                row++;
+                column = 0;
+            }
+
+            var label = new Label
+            {
+                Text = $"{field.Label}：{ValueText(field.Value)}",
+                FontSize = 14,
+                TextColor = Colors.Black,
+                LineBreakMode = isInspectionDate ? LineBreakMode.NoWrap : LineBreakMode.WordWrap
+            };
+            grid.Add(label, column, row);
+
+            if (isInspectionDate)
+            {
+                Grid.SetColumnSpan(label, columns);
+                row++;
+                column = 0;
+            }
+            else if (++column >= columns)
+            {
+                row++;
+                column = 0;
+            }
         }
         return WrapSection(title, grid);
     }
