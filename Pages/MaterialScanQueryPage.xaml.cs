@@ -71,6 +71,7 @@ public partial class MaterialScanQueryPage : ContentPage
         if (state == "bloomed")
         {
             ResultStack.Children.Add(CreateSection("生产指令卡", BloomedInstructionFields(result.instructionCardInfo), 2));
+            ResultStack.Children.Add(CreateSection("实测收线长度与重量", BloomedOutputFields(result.instructionCardInfo), 2));
             ResultStack.Children.Add(CreateSection("质检内容", BloomedInspectionFields(result.inspectionInfo), 2));
         }
         else if (state == "heat_treated")
@@ -110,8 +111,15 @@ public partial class MaterialScanQueryPage : ContentPage
             ("上料规格", x?.inputSpecification), ("下料规格", x?.blankSpecification), ("生/淬", x?.rawOrQuench), ("扭转（次）", FormatTorsion(x?.torsion)),
             ("上公差", FormatUnit(x?.billetUpperTolerance, "mm")), ("下公差", FormatLowerTolerance(x?.billetLowerTolerance)), ("客户代码", x?.customerIdentifier), ("拉拔方式", x?.drawMode),
             ("收线速度", FormatUnit(x?.wireTakeUpSpeed, x?.wireTakeUpSpeedUnit)), ("钢丝形状", x?.wireShape), ("收线长度", FormatUnit(x?.wireTakeUpLength, "m")), ("椭圆度控制", FormatUpperLimit(x?.ovalityControl)),
-            ("圈径控制", FormatUnit(x?.coilDiameterControl, "mm")), ("圈距控制", FormatUpperLimit(x?.coilPitchControl)), ("实测收线长度", FormatUnit(x?.outputLength, "m")), ("实测收线重量", FormatUnit(x?.outputWeight, "KG", "千克", "公斤")),
+            ("圈径控制", FormatUnit(x?.coilDiameterControl, "mm")), ("圈距控制", FormatUpperLimit(x?.coilPitchControl)),
             ("强度范围", FormatUnit(x?.strengthRange, "MPa")), ("件重", FormatUnit(x?.pieceWeight, "KG", "千克", "公斤"))
+        };
+
+    private static IReadOnlyList<(string, object?)> BloomedOutputFields(MaterialScanInstructionCardInfoDto? x) =>
+        new (string, object?)[]
+        {
+            ("收线长度", FormatUnit(x?.outputLength, "m")),
+            ("件重", FormatUnit(x?.outputWeight, "KG", "千克", "公斤"))
         };
 
     private static IReadOnlyList<(string, object?)> BloomedInspectionFields(MaterialScanInspectionInfoDto? x) =>
