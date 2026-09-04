@@ -111,8 +111,7 @@ public partial class MaterialScanQueryPage : ContentPage
             ("上料规格", x?.inputSpecification), ("下料规格", x?.blankSpecification), ("生/淬", x?.rawOrQuench), ("扭转（次）", FormatTorsion(x?.torsion)),
             ("上公差", FormatUnit(x?.billetUpperTolerance, "mm")), ("下公差", FormatLowerTolerance(x?.billetLowerTolerance)), ("客户代码", x?.customerIdentifier), ("拉拔方式", x?.drawMode),
             ("收线速度", FormatUnit(x?.wireTakeUpSpeed, x?.wireTakeUpSpeedUnit)), ("钢丝形状", x?.wireShape), ("收线长度", FormatUnit(x?.wireTakeUpLength, "m")), ("椭圆度控制", FormatUpperLimit(x?.ovalityControl)),
-            ("圈径控制", FormatUnit(x?.coilDiameterControl, "mm")), ("圈距控制", FormatUpperLimit(x?.coilPitchControl)),
-            ("强度范围", FormatUnit(x?.strengthRange, "MPa")), ("件重", FormatUnit(x?.pieceWeight, "KG", "千克", "公斤"))
+            ("圈径控制", FormatUnit(x?.coilDiameterControl, "mm")), ("圈距控制", FormatUpperLimit(x?.coilPitchControl))
         };
 
     private static IReadOnlyList<(string, object?)> BloomedOutputFields(MaterialScanInstructionCardInfoDto? x) =>
@@ -126,7 +125,7 @@ public partial class MaterialScanQueryPage : ContentPage
         new (string, object?)[]
         {
             ("圈径控制", FormatUnit(x?.coilDiameterControl, "mm")), ("圈距控制", FormatUpperLimit(x?.coilPitchControl)), ("实测直径", FormatUnit(x?.actualDiameterMm, "mm")), ("表面", x?.surfaceCondition),
-            ("是否合格", BoolText(x?.isQualified)), ("不合格说明", x?.unqualifiedDescription), ("是否连续性不合格品", BoolText(x?.continuouslyUnqualified)),
+            ("检验结果", x?.inspectResult), ("不合格说明", x?.unqualifiedDescription), ("是否连续性不合格品", BoolText(x?.continuousUnqualified)),
             ("是否员工干预", BoolText(x?.employeeIntervention)), ("备注", x?.memo), ("检验员", x?.inspector), ("检验日期", x?.inspectDate)
         };
 
@@ -154,8 +153,8 @@ public partial class MaterialScanQueryPage : ContentPage
         new (string, object?)[]
         {
             ("圈径控制", FormatUnit(x?.coilDiameterControl, "mm")), ("圈距控制", FormatUpperLimit(x?.coilPitchControl)), ("实测直径", FormatUnit(x?.actualDiameterMm, "mm")), ("强度", FormatUnit(x?.strengthMpa, "MPa")),
-            ("扭转", FormatTorsion(x?.torsion)), ("表面", x?.surfaceCondition), ("延伸率", FormatUnit(x?.elongationRate, "%")), ("是否合格", BoolText(x?.isQualified)),
-            ("不合格说明", x?.unqualifiedDescription), ("是否连续性不合格品", BoolText(x?.continuouslyUnqualified)),
+            ("扭转", FormatTorsion(x?.torsion)), ("表面", x?.surfaceCondition), ("延伸率", FormatUnit(x?.elongationRate, "%")), ("检验结果", x?.inspectResult),
+            ("不合格说明", x?.unqualifiedDescription), ("是否连续性不合格品", BoolText(x?.continuousUnqualified)),
             ("是否员工干预", BoolText(x?.employeeIntervention)), ("备注", x?.memo), ("检验员", x?.inspector), ("检验日期", x?.inspectDate)
         };
 
