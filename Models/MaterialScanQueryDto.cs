@@ -31,7 +31,7 @@ public sealed class MaterialScanInspectionInfoDto
     public string? brokenDiameter { get; set; }
     public string? coilDiameterControl { get; set; }
     public string? coilPitchControl { get; set; }
-    public bool? continuouslyUnqualified { get; set; }
+    public bool? continuousUnqualified { get; set; }
     public string? elongationRate { get; set; }
     public bool? employeeIntervention { get; set; }
     public string? inspectDate { get; set; }
@@ -45,7 +45,6 @@ public sealed class MaterialScanInspectionInfoDto
     public string? surfaceCondition { get; set; }
     public string? torsion { get; set; }
     public string? unqualifiedDescription { get; set; }
-    public bool? isQualified { get; set; }
 }
 
 public sealed class MaterialScanInstructionCardInfoDto
