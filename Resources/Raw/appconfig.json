@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 14,
   "server": {
     "scheme": "http",
     "ipAddress": "221.216.53.191:9128"
@@ -112,6 +112,7 @@
       "workflow": "/pda/pmsWorkOrder/getWorkOrderWorkflow",
       "processTasks": "/pda/pmsWorkOrder/pageWorkProcessTasks",
       "dictList": "/pda/pmsWorkOrder/getWorkOrderDictList",
+      "wdictList": "/pda/qsOrderQuality/getDictList",
       "dictProcessList": "/pda/pmsWorkOrder/getWorkProcessTaskDictList",
       "ProcessList": "/pda/pmsWorkOrder/PmsProcessInfoList",
       "ProcessDetail": "/pda/pmsWorkOrder/getWorkProcessTaskDetail",
@@ -142,6 +143,9 @@
     },
     "materialQrCode": {
       "scanQueryMaterialInfo": "/pda/pmsWorkOrder/scanInputQrCode"
+    },
+    "materialScanQuery": {
+      "completeInfo": "/pda/wmsMaterialQrCode/scanQueryCompleteMaterialInfo"
     },
     "machineBind": {
       "scanToWork": "/pda/devUserMachineBindRecord/scanToWork"
