@@ -99,6 +99,10 @@ namespace JXHLJSApp
             {
                 client.Timeout = TimeSpan.FromSeconds(30);
             });
+            builder.Services.AddHttpClient("PrinterService", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(60);
+            });
             builder.Services.AddHttpClient<IAuthApi, AuthApi>(ConfigureBaseAddress)
                 .AddHttpMessageHandler<AuthHeaderHandler>()
                 .AddHttpMessageHandler<TokenExpiredHandler>();

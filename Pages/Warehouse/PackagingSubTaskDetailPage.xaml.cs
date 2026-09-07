@@ -258,7 +258,16 @@ public partial class PackagingSubTaskDetailPage : ContentPage
                 return;
             }
 
-            await DisplayAlert("提示", "包装作业保存成功。", "确定");
+            try
+            {
+                var pdfBytes = await _warehouseApi.DownloadPackagingPrintLabelAsync(_detail.workOrderNo);
+                await _warehouseApi.PrintPackagingLabelAsync(pdfBytes);
+                await DisplayAlert("提示", "包装作业保存并提交打印成功。", "确定");
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "打印失败", $"包装作业已保存，但打印失败：{ex.Message}", "确定");
+            }
             await PrepareSavedStateAsync();
         }
         catch (Exception ex)

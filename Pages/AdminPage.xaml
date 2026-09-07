@@ -10,7 +10,7 @@
                    TextColor="#0D2D59"
                    FontSize="22"
                    FontAttributes="Bold" />
-            <Label Text="维护服务器地址与服务路径，保存后返回登录页重新登录。"
+            <Label Text="维护业务服务器、服务路径与打印服务地址，保存后返回登录页重新登录。"
                    TextColor="#5D718D"
                    FontSize="13" />
 
@@ -30,6 +30,9 @@
 
                     <Label Text="服务路径" FontAttributes="Bold" TextColor="#0D2D59" />
                     <Entry Text="{Binding ServicePath}" Placeholder="例如：/jxhljszpService" />
+
+                    <Label Text="打印服务 IP / 域名（带端口）" FontAttributes="Bold" TextColor="#0D2D59" />
+                    <Entry Text="{Binding PrinterHost}" Placeholder="例如：127.0.0.1:8088" />
                 </VerticalStackLayout>
             </Border>
 
