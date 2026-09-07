@@ -597,7 +597,9 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             strength = BindStrengthEntry.Text
         };
 
-        _ocrItems.Add(bound);
+        // Keep the most recently scanned material at the top so operators can
+        // immediately verify the row they just added.
+        _ocrItems.Insert(0, bound);
         MaterialListTitle.Text = $"待入库列表 ({_ocrItems.Count})";
         BindConfirmOverlay.IsVisible = false;
     }
