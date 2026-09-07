@@ -19,6 +19,8 @@ public interface IWarehouseApi
     Task<string?> PreviewAttachmentAsync(string attachmentUrl, long? expires = null, CancellationToken ct = default);
     Task<byte[]?> GetAttachmentPreviewBytesAsync(string attachmentUrl, CancellationToken ct = default);
     Task<bool?> SavePackagingAsync(PackagingSaveRequestDto request, CancellationToken ct = default);
+    Task<byte[]> DownloadPackagingPrintLabelAsync(string workOrderNo, CancellationToken ct = default);
+    Task PrintPackagingLabelAsync(byte[] pdfBytes, CancellationToken ct = default);
     Task<MaterialQrCodeInfoDto> ScanFinishedPackageQrCodeAsync(string qrCode, CancellationToken ct = default);
     Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default);
     Task<bool?> ConfirmDeliveryCompletionAsync(string deliveryOrderNo, CancellationToken ct = default);
@@ -64,7 +66,11 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _packagingSubTaskListEndpoint;
     private readonly string _packagingSubTaskDetailEndpoint;
     private readonly string _packagingSaveEndpoint;
+    private readonly string _packagingDownloadPrintLabelEndpoint;
     private readonly string _packagingScanFinishedPackageQrCodeEndpoint;
+    private readonly string _printerServerAddress;
+    private readonly string _printerName;
+    private readonly string _printJobsPath;
     private readonly string _workOrderDictListEndpoint;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -122,10 +128,16 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("packagingSubTask.detail", "/pda/pmsWorkOrder/getPackagingSubTaskDetail"), servicePath);
         _packagingSaveEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("packagingSubTask.packingSave", "/pda/pmsWorkOrder/packingSave"), servicePath);
+        _packagingDownloadPrintLabelEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("packagingSubTask.downloadPrintLabel", "/pda/pmsWorkOrder/downloadPackagingPrintLabel"), servicePath);
         _packagingScanFinishedPackageQrCodeEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("packagingSubTask.scanFinishedPackageQrCode", "/pda/pmsWorkOrder/scanFinishedPackageQrCode"), servicePath);
         _workOrderDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.dictList", "/pda/pmsWorkOrder/getWorkOrderDictList"), servicePath);
+        var config = configLoader.Load();
+        _printerServerAddress = config?["printing"]?["serverAddress"]?.GetValue<string>() ?? string.Empty;
+        _printerName = config?["printing"]?["printerName"]?.GetValue<string>() ?? "HP LaserJet";
+        _printJobsPath = config?["printing"]?["printJobsPath"]?.GetValue<string>() ?? "/api/v1/print-jobs";
     }
 
     public async Task<List<RawMaterialReceivingDto>> GetRawMaterialReceivingListAsync(CancellationToken ct = default)
@@ -332,6 +344,48 @@ public sealed class WarehouseApi : IWarehouseApi
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
         return data.result;
+    }
+
+    public async Task<byte[]> DownloadPackagingPrintLabelAsync(string workOrderNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_packagingDownloadPrintLabelEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(workOrderNo)] = workOrderNo
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        await EnsureSuccessStatusCodeWithBodyAsync(resp, ct).ConfigureAwait(false);
+        var bytes = await resp.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
+        if (bytes.Length == 0)
+        {
+            throw new InvalidOperationException("打印模板下载结果为空。");
+        }
+        return bytes;
+    }
+
+    public async Task PrintPackagingLabelAsync(byte[] pdfBytes, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(_printerServerAddress))
+        {
+            throw new InvalidOperationException("未配置打印服务 IP 和端口，请在管理员设置中配置。");
+        }
+
+        var serverAddress = _printerServerAddress.Contains("://", StringComparison.Ordinal)
+            ? _printerServerAddress
+            : $"http://{_printerServerAddress}";
+        if (!Uri.TryCreate($"{serverAddress.TrimEnd('/')}/{_printJobsPath.TrimStart('/')}", UriKind.Absolute, out var printUrl))
+        {
+            throw new InvalidOperationException("打印服务地址格式不正确，请在管理员设置中检查。");
+        }
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent(_printerName), "printerName");
+        var fileContent = new ByteArrayContent(pdfBytes);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/pdf");
+        content.Add(fileContent, "file", "packaging-label.pdf");
+
+        var printerClient = _httpClientFactory.CreateClient("PrinterService");
+        using var resp = await printerClient.PostAsync(printUrl, content, ct).ConfigureAwait(false);
+        await EnsureSuccessStatusCodeWithBodyAsync(resp, ct).ConfigureAwait(false);
     }
 
     public async Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default)

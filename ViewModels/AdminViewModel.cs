@@ -11,6 +11,7 @@ public sealed class AdminViewModel : ObservableObject
     private string _host = string.Empty;
     private string _serviceName = "normalService";
     private string _servicePath = "/normalService";
+    private string _printerHost = string.Empty;
     private string _message = string.Empty;
     private Color _messageColor = Color.FromArgb("#1E7E34");
     private bool _isMessageVisible;
@@ -50,6 +51,12 @@ public sealed class AdminViewModel : ObservableObject
         set => SetProperty(ref _servicePath, value);
     }
 
+    public string PrinterHost
+    {
+        get => _printerHost;
+        set => SetProperty(ref _printerHost, value);
+    }
+
     public string Message
     {
         get => _message;
@@ -80,6 +87,7 @@ public sealed class AdminViewModel : ObservableObject
         ServicePath = services?[current]?.GetValue<string>()
             ?? services?["normalService"]?.GetValue<string>()
             ?? "/normalService";
+        PrinterHost = cfg?["printing"]?["serverAddress"]?.GetValue<string>() ?? string.Empty;
         IsMessageVisible = false;
     }
 
@@ -94,6 +102,12 @@ public sealed class AdminViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(ServiceName))
         {
             ShowMessage("请输入当前服务名。", true);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(PrinterHost))
+        {
+            ShowMessage("请输入打印服务 IP / 域名和端口。", true);
             return;
         }
 
@@ -116,6 +130,16 @@ public sealed class AdminViewModel : ObservableObject
         var serviceName = ServiceName.Trim();
         services["current"] = serviceName;
         services[serviceName] = NormalizePath(ServicePath, "/normalService");
+
+        if (cfg["printing"] is not JsonObject printing)
+        {
+            printing = new JsonObject();
+            cfg["printing"] = printing;
+        }
+
+        printing["serverAddress"] = PrinterHost.Trim().TrimEnd('/');
+        printing["printerName"] ??= "HP LaserJet";
+        printing["printJobsPath"] ??= "/api/v1/print-jobs";
 
         _configLoader.Save(cfg);
         ShowMessage("配置已保存。", false);

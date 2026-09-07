@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 14,
+  "schemaVersion": 15,
   "server": {
     "scheme": "http",
     "ipAddress": "221.216.53.191:9128"
@@ -8,6 +8,11 @@
     "normalService": "/normalService",
     "current": "jxhljszpService",
     "jxhljszpService": "/jxhljszpService"
+  },
+  "printing": {
+    "serverAddress": "127.0.0.1:8088",
+    "printerName": "HP LaserJet",
+    "printJobsPath": "/api/v1/print-jobs"
   },
   "apiEndpoints": {
     "login": "/pda/auth/login",
@@ -45,6 +50,7 @@
       "list": "/pda/pmsWorkOrder/getPackagingSubTaskList",
       "detail": "/pda/pmsWorkOrder/getPackagingSubTaskDetail",
       "packingSave": "/pda/pmsWorkOrder/packingSave",
+      "downloadPrintLabel": "/pda/pmsWorkOrder/downloadPackagingPrintLabel",
       "scanFinishedPackageQrCode": "/pda/pmsWorkOrder/scanFinishedPackageQrCode"
     },
     "incomingQualityOrder": {
