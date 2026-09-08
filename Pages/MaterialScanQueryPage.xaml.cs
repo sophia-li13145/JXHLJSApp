@@ -121,7 +121,7 @@ public partial class MaterialScanQueryPage : ContentPage
         new (string, object?)[]
         {
             ("收线长度", FormatUnit(x?.outputLength, "m")),
-            ("件重", FormatUnit(x?.outputWeight, "KG", "千克", "公斤"))
+            ("件重", FormatUnit(x?.outputWeight, x?.unit, "千克", "公斤"))
         };
 
     private static IReadOnlyList<(string, object?)> RawInspectionFields(MaterialScanInspectionInfoDto? x) =>

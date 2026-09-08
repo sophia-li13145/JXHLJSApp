@@ -64,6 +64,7 @@ public sealed class MaterialScanInstructionCardInfoDto
     public decimal? outputLength { get; set; }
     [JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? outputWeight { get; set; }
+    public string? unit { get; set; }
     public string? ovalityControl { get; set; }
     public string? rawOrQuench { get; set; }
     public string? saleMode { get; set; }
