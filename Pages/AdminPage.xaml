@@ -33,6 +33,9 @@
 
                     <Label Text="打印服务 IP / 域名（带端口）" FontAttributes="Bold" TextColor="#0D2D59" />
                     <Entry Text="{Binding PrinterHost}" Placeholder="例如：127.0.0.1:8088" />
+
+                    <Label Text="打印机名称" FontAttributes="Bold" TextColor="#0D2D59" />
+                    <Entry Text="{Binding PrinterName}" Placeholder="例如：HP LaserJet" />
                 </VerticalStackLayout>
             </Border>
 
