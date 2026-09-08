@@ -12,6 +12,7 @@ public sealed class AdminViewModel : ObservableObject
     private string _serviceName = "normalService";
     private string _servicePath = "/normalService";
     private string _printerHost = string.Empty;
+    private string _printerName = string.Empty;
     private string _message = string.Empty;
     private Color _messageColor = Color.FromArgb("#1E7E34");
     private bool _isMessageVisible;
@@ -57,6 +58,12 @@ public sealed class AdminViewModel : ObservableObject
         set => SetProperty(ref _printerHost, value);
     }
 
+    public string PrinterName
+    {
+        get => _printerName;
+        set => SetProperty(ref _printerName, value);
+    }
+
     public string Message
     {
         get => _message;
@@ -88,6 +95,7 @@ public sealed class AdminViewModel : ObservableObject
             ?? services?["normalService"]?.GetValue<string>()
             ?? "/normalService";
         PrinterHost = cfg?["printing"]?["serverAddress"]?.GetValue<string>() ?? string.Empty;
+        PrinterName = cfg?["printing"]?["printerName"]?.GetValue<string>() ?? string.Empty;
         IsMessageVisible = false;
     }
 
@@ -108,6 +116,12 @@ public sealed class AdminViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(PrinterHost))
         {
             ShowMessage("请输入打印服务 IP / 域名和端口。", true);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(PrinterName))
+        {
+            ShowMessage("请输入打印机名称。", true);
             return;
         }
 
@@ -138,7 +152,7 @@ public sealed class AdminViewModel : ObservableObject
         }
 
         printing["serverAddress"] = PrinterHost.Trim().TrimEnd('/');
-        printing["printerName"] ??= "HP LaserJet";
+        printing["printerName"] = PrinterName.Trim();
         printing["printJobsPath"] ??= "/api/v1/print-jobs";
 
         _configLoader.Save(cfg);
