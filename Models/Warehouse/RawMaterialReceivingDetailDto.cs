@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace JXHLJSApp.Models.Warehouse;
 
 public sealed class RawMaterialReceivingDetailDto
@@ -83,7 +85,7 @@ public sealed class RawMaterialReceivingDetailItemDto
     public string strengthDisplay => FirstNonEmpty(strength, "--");
     public string coilQtyDisplay => FirstNonEmpty(coilQty?.ToString("0.##"), "--");
     public string coilDiameterDisplay => FirstNonEmpty(coilDiameter?.ToString("0.##"), "--");
-    public string pieceWeightDisplay => JoinNonEmpty(FirstNonEmpty(instockQty?.ToString("0.##"), pieceWeight?.ToString("0.##"), weight), unit);
+    public string pieceWeightDisplay => JoinNonEmpty(FirstNonEmpty(FormatPieceWeight(instockQty), FormatPieceWeight(pieceWeight), weight), unit);
     public string pieceSeqDisplay => FirstNonEmpty(pieceSeq?.ToString(), "--");
     public string materialTypeDisplay => FirstNonEmpty(materialClassName, InferMaterialTypeDisplay());
     public bool isSemiFinished => ContainsAny(materialClassName, "半成品", "SEMIFINISHED", "SEMI_FINISHED") ||
@@ -105,6 +107,9 @@ public sealed class RawMaterialReceivingDetailItemDto
         candidates.Any(candidate => value.Contains(candidate, StringComparison.OrdinalIgnoreCase));
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "--";
+
+    private static string? FormatPieceWeight(decimal? value) =>
+        value?.ToString("0.############################", CultureInfo.InvariantCulture);
 }
 
 public sealed class RawMaterialReceivingOcrDto
