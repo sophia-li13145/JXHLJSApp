@@ -71,24 +71,36 @@ public partial class MaterialScanQueryPage : ContentPage
         if (state == "raw")
         {
             ResultStack.Children.Add(CreateEmptySection("生产指令卡"));
-            ResultStack.Children.Add(CreateSection("质检内容", RawInspectionFields(result.inspectionInfo), 2));
+            if (result.inspectionInfo is { } inspection)
+            {
+                ResultStack.Children.Add(CreateSection("质检内容", RawInspectionFields(inspection), 2));
+            }
         }
         else if (state == "bloomed")
         {
             ResultStack.Children.Add(CreateSection("生产指令卡", BloomedInstructionFields(result.instructionCardInfo), 2));
             ResultStack.Children.Add(CreateSection("实测收线长度与重量", OutputFields(result.instructionCardInfo), 2));
-            ResultStack.Children.Add(CreateSection("质检内容", BloomedInspectionFields(result.inspectionInfo), 2));
+            if (result.inspectionInfo is { } inspection)
+            {
+                ResultStack.Children.Add(CreateSection("质检内容", BloomedInspectionFields(inspection), 2));
+            }
         }
         else if (state == "heat_treated")
         {
             ResultStack.Children.Add(CreateSection("生产指令卡", HeatInstructionFields(result.instructionCardInfo), 2));
-            ResultStack.Children.Add(CreateSection("质检内容", HeatInspectionFields(result.inspectionInfo), 2));
+            if (result.inspectionInfo is { } inspection)
+            {
+                ResultStack.Children.Add(CreateSection("质检内容", HeatInspectionFields(inspection), 2));
+            }
         }
         else if (state is "drawn" or "finished")
         {
             ResultStack.Children.Add(CreateSection("生产指令卡", DrawnInstructionFields(result.instructionCardInfo), 2));
             ResultStack.Children.Add(CreateSection("实测收线长度与重量", OutputFields(result.instructionCardInfo), 2));
-            ResultStack.Children.Add(CreateSection("质检内容", DrawnInspectionFields(result.inspectionInfo), 2));
+            if (result.inspectionInfo is { } inspection)
+            {
+                ResultStack.Children.Add(CreateSection("质检内容", DrawnInspectionFields(inspection), 2));
+            }
         }
     }
 
