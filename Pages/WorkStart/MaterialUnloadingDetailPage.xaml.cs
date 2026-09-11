@@ -30,9 +30,21 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
-        _manualInputRecordId = ReadQueryValue(query, "inputRecordId")?.Trim();
-        _lastMaterialQrCode = ReadQueryValue(query, "qrCode");
-        _manualWorkOrderNo = ReadQueryValue(query, "workOrderNo");
+        var inputRecordId = ReadQueryValue(query, "inputRecordId")?.Trim();
+        var qrCode = ReadQueryValue(query, "qrCode");
+        var workOrderNo = ReadQueryValue(query, "workOrderNo");
+
+        // Closing a modal dialog can cause Shell to apply the current query again.
+        // Keep the existing detail state when the navigation context has not changed;
+        // otherwise a failed confirmation would replace the form with a loading banner.
+        if (HasSameNavigationContext(inputRecordId, qrCode, workOrderNo))
+        {
+            return;
+        }
+
+        _manualInputRecordId = inputRecordId;
+        _lastMaterialQrCode = qrCode;
+        _manualWorkOrderNo = workOrderNo;
         _manualRecordLoaded = false;
         ShowManualLoadingStep();
 
@@ -41,6 +53,12 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
             MainThread.BeginInvokeOnMainThread(async () => await LoadManualRecordAsync());
         }
     }
+
+    private bool HasSameNavigationContext(string? inputRecordId, string? qrCode, string? workOrderNo) =>
+        _inputOutput is not null
+        && string.Equals(_manualInputRecordId, inputRecordId, StringComparison.Ordinal)
+        && string.Equals(_lastMaterialQrCode, qrCode, StringComparison.Ordinal)
+        && string.Equals(_manualWorkOrderNo, workOrderNo, StringComparison.Ordinal);
 
     protected override async void OnAppearing()
     {
