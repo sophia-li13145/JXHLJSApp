@@ -267,7 +267,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                 materialType = ocr.materialType,
                 ocrRawText = ocr.ocrRawText,
                 originPlace = ocr.originPlace,
-                pieceWeight = FormatDecimal(ocr.pieceWeight),
+                pieceWeight = FormatPieceWeight(ocr.pieceWeight),
                 pieceWeightUnit = string.IsNullOrWhiteSpace(ocr.pieceWeightUnit) ? "吨" : ocr.pieceWeightUnit,
                 spec = ocr.spec,
                 strength = ocr.strength
@@ -299,7 +299,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                 materialName = item.materialName,
                 materialType = item.materialTypeDisplay,
                 originPlace = item.origin,
-                pieceWeight = FormatDecimal(item.instockQty ?? item.pieceWeight),
+                pieceWeight = FormatPieceWeight(item.instockQty ?? item.pieceWeight),
                 pieceWeightUnit = string.IsNullOrWhiteSpace(item.unit) ? "吨" : item.unit,
                 spec = item.spec,
                 strength = item.weight
@@ -510,6 +510,9 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
 
     private static string? FormatDecimal(decimal? value) => value?.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static string? FormatPieceWeight(decimal? value) =>
+        value?.ToString("0.############################", CultureInfo.InvariantCulture);
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
 
