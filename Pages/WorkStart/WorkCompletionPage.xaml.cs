@@ -113,6 +113,7 @@ public partial class WorkCompletionPage : ContentPage
             OperationName = current.OperationName,
             ExecutionId = current.ExecutionId,
             MachineCode = machineCode,
+            IsPicklingMachineConfirmed = current.IsPicklingMachineConfirmed,
             Status = current.Status,
             StartedAt = current.StartedAt,
             SessionId = current.SessionId

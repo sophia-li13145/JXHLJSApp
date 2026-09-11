@@ -84,6 +84,7 @@ public partial class WorkExecutionPage : ContentPage
             OperationName = current.OperationName,
             ExecutionId = current.ExecutionId,
             MachineCode = machineCode,
+            IsPicklingMachineConfirmed = current.IsPicklingMachineConfirmed,
             Status = current.Status,
             StartedAt = current.StartedAt,
             SessionId = current.SessionId
@@ -105,6 +106,7 @@ public partial class WorkExecutionPage : ContentPage
             OperationName = current.OperationName,
             ExecutionId = current.ExecutionId,
             MachineCode = current.MachineCode,
+            IsPicklingMachineConfirmed = current.IsPicklingMachineConfirmed,
             Status = status,
             StartedAt = current.StartedAt,
             SessionId = current.SessionId

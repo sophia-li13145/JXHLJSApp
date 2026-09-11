@@ -21,8 +21,20 @@ public partial class MaterialLoadingPage : ContentPage
         _workOrderApi = workOrderApi;
         _scanService = scanService;
         _productionContext = productionContext;
+        ReuseConfirmedPicklingMachine();
     }
 
+    private void ReuseConfirmedPicklingMachine()
+    {
+        var current = _productionContext.Current;
+        if (current?.IsPicklingMachineConfirmed == true &&
+            IsPicklingProcess(current.OperationName) &&
+            !string.IsNullOrWhiteSpace(current.MachineCode))
+        {
+            _machineConfirmed = true;
+            ShowMaterialScanStep();
+        }
+    }
 
     private async void OnBackTapped(object sender, TappedEventArgs e)
     {
@@ -102,6 +114,7 @@ public partial class MaterialLoadingPage : ContentPage
                 OperationName = current.OperationName,
                 ExecutionId = current.ExecutionId,
                 MachineCode = machineCode,
+                IsPicklingMachineConfirmed = current.IsPicklingMachineConfirmed || IsPicklingProcess(current.OperationName),
                 Status = current.Status,
                 StartedAt = current.StartedAt,
                 SessionId = current.SessionId
@@ -239,6 +252,9 @@ public partial class MaterialLoadingPage : ContentPage
     private static bool IsTonUnit(string? unit) =>
         string.Equals(unit?.Trim(), "吨", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(unit?.Trim(), "t", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsPicklingProcess(string? operationName) =>
+        operationName?.Contains("酸洗", StringComparison.OrdinalIgnoreCase) == true;
 
     private static string FormatDecimalWithUnit(decimal? value, string? unit)
     {

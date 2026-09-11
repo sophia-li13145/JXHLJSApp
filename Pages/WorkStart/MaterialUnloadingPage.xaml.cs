@@ -18,6 +18,19 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
         _workOrderApi = workOrderApi;
         _scanService = scanService;
         _productionContext = productionContext;
+        ReuseConfirmedPicklingMachine();
+    }
+
+    private void ReuseConfirmedPicklingMachine()
+    {
+        var current = _productionContext.Current;
+        if (current?.IsPicklingMachineConfirmed == true &&
+            IsPicklingProcess(current.OperationName) &&
+            !string.IsNullOrWhiteSpace(current.MachineCode))
+        {
+            _machineConfirmed = true;
+            ShowMaterialScanStep();
+        }
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -90,9 +103,7 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
             }
             _machineConfirmed = true;
             UpdateProductionContextMachine(devCode.Trim());
-            ScanIconLabel.Text = "📦";
-            ScanTitleLabel.Text = "2. 机台识别确认";
-            ScanHintLabel.Text = "点击扫描下料标签二维码";
+            ShowMaterialScanStep();
         }
         catch (Exception ex) { await ErrorDialogService.ShowAsync(this, "识别失败", ex.Message, "确定"); }
         finally { _isBusy = false; }
@@ -110,11 +121,22 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
             OperationName = current.OperationName,
             ExecutionId = current.ExecutionId,
             MachineCode = machineCode,
+            IsPicklingMachineConfirmed = current.IsPicklingMachineConfirmed || IsPicklingProcess(current.OperationName),
             Status = current.Status,
             StartedAt = current.StartedAt,
             SessionId = current.SessionId
         });
     }
+
+    private void ShowMaterialScanStep()
+    {
+        ScanIconLabel.Text = "📦";
+        ScanTitleLabel.Text = "2. 机台识别确认";
+        ScanHintLabel.Text = "点击扫描下料标签二维码";
+    }
+
+    private static bool IsPicklingProcess(string? operationName) =>
+        operationName?.Contains("酸洗", StringComparison.OrdinalIgnoreCase) == true;
 
     private async Task ScanMaterialAsync()
     {

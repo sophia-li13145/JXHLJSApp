@@ -11,6 +11,8 @@ public sealed class ProductionContext
 
     public string? MachineCode { get; init; }
 
+    public bool IsPicklingMachineConfirmed { get; init; }
+
     public string? Status { get; init; }
 
     public DateTime StartedAt { get; init; }
