@@ -19,8 +19,8 @@ public interface IWarehouseApi
     Task<string?> PreviewAttachmentAsync(string attachmentUrl, long? expires = null, CancellationToken ct = default);
     Task<byte[]?> GetAttachmentPreviewBytesAsync(string attachmentUrl, CancellationToken ct = default);
     Task<bool?> SavePackagingAsync(PackagingSaveRequestDto request, CancellationToken ct = default);
-    Task<byte[]> DownloadPackagingPrintLabelAsync(string workOrderNo, CancellationToken ct = default);
-    Task PrintPackagingLabelAsync(byte[] pdfBytes, CancellationToken ct = default);
+    Task<PrintFileResult> DownloadPackagingPrintLabelAsync(string workOrderNo, CancellationToken ct = default);
+    Task PrintPackagingLabelAsync(PrintFileResult printFile, CancellationToken ct = default);
     Task<MaterialQrCodeInfoDto> ScanFinishedPackageQrCodeAsync(string qrCode, CancellationToken ct = default);
     Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default);
     Task<bool?> ConfirmDeliveryCompletionAsync(string deliveryOrderNo, CancellationToken ct = default);
@@ -346,7 +346,7 @@ public sealed class WarehouseApi : IWarehouseApi
         return data.result;
     }
 
-    public async Task<byte[]> DownloadPackagingPrintLabelAsync(string workOrderNo, CancellationToken ct = default)
+    public async Task<PrintFileResult> DownloadPackagingPrintLabelAsync(string workOrderNo, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_packagingDownloadPrintLabelEndpoint, new Dictionary<string, string?>
         {
@@ -359,11 +359,43 @@ public sealed class WarehouseApi : IWarehouseApi
         {
             throw new InvalidOperationException("打印模板下载结果为空。");
         }
-        return bytes;
+
+        var contentType = resp.Content.Headers.ContentType?.MediaType
+            ?? "application/octet-stream";
+        var fileName = resp.Content.Headers.ContentDisposition?.FileNameStar
+            ?? resp.Content.Headers.ContentDisposition?.FileName;
+        fileName = fileName?.Trim('"');
+
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            fileName = contentType.ToLowerInvariant() switch
+            {
+                "application/pdf" => "packaging-label.pdf",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => "packaging-label.xlsx",
+                "application/vnd.ms-excel" => "packaging-label.xls",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => "packaging-label.docx",
+                "application/msword" => "packaging-label.doc",
+                _ => "packaging-label.bin"
+            };
+        }
+
+        return new PrintFileResult
+        {
+            Bytes = bytes,
+            FileName = fileName,
+            ContentType = contentType
+        };
     }
 
-    public async Task PrintPackagingLabelAsync(byte[] pdfBytes, CancellationToken ct = default)
+    public async Task PrintPackagingLabelAsync(PrintFileResult printFile, CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(printFile);
+
+        if (printFile.Bytes.Length == 0)
+        {
+            throw new InvalidOperationException("打印文件内容为空。");
+        }
+
         if (string.IsNullOrWhiteSpace(_printerServerAddress))
         {
             throw new InvalidOperationException("未配置打印服务 IP 和端口，请在管理员设置中配置。");
@@ -379,9 +411,9 @@ public sealed class WarehouseApi : IWarehouseApi
 
         using var content = new MultipartFormDataContent();
         content.Add(new StringContent(_printerName), "printerName");
-        var fileContent = new ByteArrayContent(pdfBytes);
-        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/pdf");
-        content.Add(fileContent, "file", "packaging-label.pdf");
+        var fileContent = new ByteArrayContent(printFile.Bytes);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(printFile.ContentType);
+        content.Add(fileContent, "file", printFile.FileName);
 
         var printerClient = _httpClientFactory.CreateClient("PrinterService");
         using var resp = await printerClient.PostAsync(printUrl, content, ct).ConfigureAwait(false);
