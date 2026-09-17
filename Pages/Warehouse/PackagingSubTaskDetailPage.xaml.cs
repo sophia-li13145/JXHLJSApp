@@ -260,8 +260,8 @@ public partial class PackagingSubTaskDetailPage : ContentPage
 
             try
             {
-                var pdfBytes = await _warehouseApi.DownloadPackagingPrintLabelAsync(_detail.workOrderNo);
-                await _warehouseApi.PrintPackagingLabelAsync(pdfBytes);
+                var printFile = await _warehouseApi.DownloadPackagingPrintLabelAsync(_detail.workOrderNo);
+                await _warehouseApi.PrintPackagingLabelAsync(printFile);
                 await DisplayAlert("提示", "包装作业保存并提交打印成功。", "确定");
             }
             catch (Exception ex)
