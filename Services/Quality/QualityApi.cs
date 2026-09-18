@@ -35,6 +35,7 @@ public interface IQualityApi
     Task<bool> CommitProductionPicklingAsync(ProductionPicklingCommitRequestDto request, CancellationToken ct = default);
     Task<bool> CommitProductionSamplingOrFullAsync(ProductionSamplingOrFullCommitRequestDto request, CancellationToken ct = default);
     Task<bool> CompleteProductionSamplingOrFullAsync(ProductionSamplingOrFullCompleteRequestDto request, CancellationToken ct = default);
+    Task<bool> AuditProductionQualityAsync(ProductionQualityAuditRequestDto request, CancellationToken ct = default);
 }
 
 public sealed class QualityApi : IQualityApi
@@ -55,6 +56,7 @@ public sealed class QualityApi : IQualityApi
     private readonly string _productionQualityPicklingCommitEndpoint;
     private readonly string _productionQualitySamplingOrFullCommitEndpoint;
     private readonly string _productionQualitySamplingOrFullCompleteEndpoint;
+    private readonly string _productionQualityAuditEndpoint;
     private readonly string _workOrderDictListEndpoint;
     private readonly string _workProcessTaskDictListEndpoint;
     private readonly string _manualInspectionCreateEndpoint;
@@ -98,6 +100,8 @@ public sealed class QualityApi : IQualityApi
             configLoader.GetApiPath("productionQualityOrder.samplingOrFullCommit", "/pda/qsOrderQuality/samplingOrFullCommit"), servicePath);
         _productionQualitySamplingOrFullCompleteEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("productionQualityOrder.samplingOrFullComplete", "/pda/qsOrderQuality/samplingOrFullComplete"), servicePath);
+        _productionQualityAuditEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("productionQualityOrder.audit", "/pda/qsOrderQuality/audit"), servicePath);
         _workOrderDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.dictList", "/pda/pmsWorkOrder/getWorkOrderDictList"), servicePath);
         _workProcessTaskDictListEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -403,6 +407,15 @@ public sealed class QualityApi : IQualityApi
         var dictNames = await LoadWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
         detail.originPlace = MapDictName(detail.originPlace, dictNames, "originPlace");
         detail.shiftName = MapDictName(FirstNonEmpty(detail.shiftCode, detail.shiftName), dictNames, "shiftCode");
+    }
+
+    public async Task<bool> AuditProductionQualityAsync(ProductionQualityAuditRequestDto request, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityAuditEndpoint);
+        using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<bool?>(resp, ct).ConfigureAwait(false);
+        return data.result == true;
     }
 
     private async Task ApplyProductionQualityMaterialDictNamesAsync(ProductionQualityScanMaterialDto material, CancellationToken ct)
