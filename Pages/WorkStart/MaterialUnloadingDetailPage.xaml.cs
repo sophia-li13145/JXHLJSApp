@@ -31,8 +31,8 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
         var inputRecordId = ReadQueryValue(query, "inputRecordId")?.Trim();
-        var qrCode = ReadQueryValue(query, "qrCode");
-        var workOrderNo = ReadQueryValue(query, "workOrderNo");
+        var qrCode = ReadQueryValue(query, "qrCode")?.Trim();
+        var workOrderNo = ReadQueryValue(query, "workOrderNo")?.Trim();
 
         // Closing a modal dialog can cause Shell to apply the current query again.
         // Keep the existing detail state when the navigation context has not changed;
@@ -64,7 +64,10 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
     {
         base.OnAppearing();
         _isAppeared = true;
-        if (!_manualRecordLoaded && !string.IsNullOrWhiteSpace(_lastMaterialQrCode))
+        if (!_manualRecordLoaded &&
+            (!string.IsNullOrWhiteSpace(_manualInputRecordId) ||
+             !string.IsNullOrWhiteSpace(_lastMaterialQrCode) ||
+             !string.IsNullOrWhiteSpace(_manualWorkOrderNo)))
         {
             await LoadManualRecordAsync();
         }
@@ -90,9 +93,18 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(_manualWorkOrderNo) || string.IsNullOrWhiteSpace(_lastMaterialQrCode))
+        if (string.IsNullOrWhiteSpace(_manualWorkOrderNo))
         {
-            await DisplayAlert("提示", "手动下料参数不完整，请返回上料作业记录后重试。", "确定");
+            await DisplayAlert("提示", "生产工单为空，无法查询下料详情。", "确定");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_lastMaterialQrCode))
+        {
+            var message = string.IsNullOrWhiteSpace(_manualInputRecordId)
+                ? "未识别到下料二维码，请重新扫码。"
+                : "当前上料记录未获取到二维码，无法手动下料。";
+            await DisplayAlert("提示", message, "确定");
             return;
         }
 
@@ -100,8 +112,8 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
         {
             _isBusy = true;
             _inputOutput = string.IsNullOrWhiteSpace(_manualInputRecordId)
-                ? (await _workOrderApi.GetWorkOrderInputOutputAsync(_manualWorkOrderNo)).FirstOrDefault()
-                : await _workOrderApi.GetWorkOrderInputOutputAsync(_manualInputRecordId, _manualWorkOrderNo);
+                ? (await _workOrderApi.GetWorkOrderInputOutputAsync(_manualWorkOrderNo, _lastMaterialQrCode)).FirstOrDefault()
+                : await _workOrderApi.GetWorkOrderInputOutputAsync(_manualInputRecordId, _manualWorkOrderNo, _lastMaterialQrCode);
             if (_inputOutput is null)
             {
                 await DisplayAlert("提示", "未查询到该上料记录对应的下料详情。", "确定");

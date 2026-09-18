@@ -18,9 +18,9 @@ public interface IWorkOrderApi
     Task<WorkOrderOperationResult> StartWorkOrderAsync(string workOrderNo, CancellationToken ct = default);
     Task<WorkOrderDetailDto?> GetWorkOrderDetailAsync(string id, CancellationToken ct = default);
     Task<List<WorkOrderDetailDto>> GetCurrentTaskPoolAsync(string workOrderNo, CancellationToken ct = default);
-    Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(string workOrderNo, CancellationToken ct = default);
+    Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(string workOrderNo, string qrCode, CancellationToken ct = default);
     Task<List<PicklingInputRecordDto>> GetPicklingInputRecordListAsync(string workOrderNo, CancellationToken ct = default);
-    Task<WorkOrderInputOutputDto?> GetWorkOrderInputOutputAsync(string inputRecordId, string workOrderNo, CancellationToken ct = default);
+    Task<WorkOrderInputOutputDto?> GetWorkOrderInputOutputAsync(string inputRecordId, string workOrderNo, string qrCode, CancellationToken ct = default);
     Task<MaterialQrCodeInfoDto> ScanQueryMaterialInfoAsync(string qrCode, CancellationToken ct = default);
     Task<bool> ConfirmMaterialInputAsync(MaterialInputConfirmDto input, CancellationToken ct = default);
     Task<bool> ConfirmMaterialOutputAsync(MaterialOutputConfirmDto output, CancellationToken ct = default);
@@ -269,11 +269,12 @@ public sealed class WorkOrderApi : IWorkOrderApi
     }
 
 
-    public async Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(string workOrderNo, CancellationToken ct = default)
+    public async Task<List<WorkOrderInputOutputDto>> GetWorkOrderInputOutputAsync(string workOrderNo, string qrCode, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_inputOutputEndpoint, new Dictionary<string, string?>
         {
-            [nameof(workOrderNo)] = workOrderNo
+            [nameof(workOrderNo)] = workOrderNo,
+            [nameof(qrCode)] = qrCode
         }));
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
@@ -299,12 +300,13 @@ public sealed class WorkOrderApi : IWorkOrderApi
         return data?.result ?? new List<PicklingInputRecordDto>();
     }
 
-    public async Task<WorkOrderInputOutputDto?> GetWorkOrderInputOutputAsync(string inputRecordId, string workOrderNo, CancellationToken ct = default)
+    public async Task<WorkOrderInputOutputDto?> GetWorkOrderInputOutputAsync(string inputRecordId, string workOrderNo, string qrCode, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_inputOutputEndpoint, new Dictionary<string, string?>
         {
             [nameof(inputRecordId)] = inputRecordId,
-            [nameof(workOrderNo)] = workOrderNo
+            [nameof(workOrderNo)] = workOrderNo,
+            [nameof(qrCode)] = qrCode
         }));
         using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
