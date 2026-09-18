@@ -52,10 +52,21 @@ public partial class PicklingInputRecordListPage : ContentPage
             return;
         }
 
-        if (sender is not Button { BindingContext: PicklingInputRecordDto record } ||
-            string.IsNullOrWhiteSpace(record.inputRecordId) || string.IsNullOrWhiteSpace(record.sourceQrCode))
+        if (sender is not Button { BindingContext: PicklingInputRecordDto record })
         {
-            await DisplayAlert("提示", "当前记录缺少上料记录 ID 或二维码，无法下料。", "确定");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(record.inputRecordId))
+        {
+            await DisplayAlert("提示", "当前记录缺少上料记录 ID，无法下料。", "确定");
+            return;
+        }
+
+        var qrCode = record.sourceQrCode?.Trim();
+        if (string.IsNullOrWhiteSpace(qrCode))
+        {
+            await DisplayAlert("提示", "当前上料记录未获取到二维码，无法手动下料。", "确定");
             return;
         }
 
@@ -70,7 +81,7 @@ public partial class PicklingInputRecordListPage : ContentPage
         {
             _isNavigating = true;
             var inputRecordId = record.inputRecordId.Trim();
-            await Shell.Current.GoToAsync($"{AppShell.RouteMaterialUnloadingDetail}?inputRecordId={Uri.EscapeDataString(inputRecordId)}&qrCode={Uri.EscapeDataString(record.sourceQrCode)}&workOrderNo={Uri.EscapeDataString(workOrderNo)}");
+            await Shell.Current.GoToAsync($"{AppShell.RouteMaterialUnloadingDetail}?inputRecordId={Uri.EscapeDataString(inputRecordId)}&qrCode={Uri.EscapeDataString(qrCode)}&workOrderNo={Uri.EscapeDataString(workOrderNo)}");
         }
         catch (Exception ex)
         {
