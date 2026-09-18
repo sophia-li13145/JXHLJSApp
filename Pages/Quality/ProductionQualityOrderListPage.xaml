@@ -32,14 +32,15 @@
                 <CollectionView x:Name="OrderList" EmptyView="当前没有生产质检记录" Margin="18,12,18,0">
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
-                            <Border BackgroundColor="White" StrokeThickness="0" Padding="20,18" Margin="0,0,0,12">
+                            <Border Background="{Binding cardBackground}" Stroke="{Binding displayStatusColor}" StrokeThickness="{Binding cardStrokeThickness}" Padding="20,18" Margin="0,0,0,12">
                                 <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnOrderTapped" /></Border.GestureRecognizers>
                                 <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
                                 <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="3">
+                                    <Label Grid.Column="1" Grid.RowSpan="3" Text="审核驳回" TextColor="#F97316" Opacity="0.16" FontSize="30" FontAttributes="Bold" HorizontalOptions="End" VerticalOptions="End" Margin="0,0,4,-4" IsVisible="{Binding showRejectedBackgroundText}" InputTransparent="True" />
                                     <Label Text="{Binding titleDisplay}" TextColor="#051B3D" FontSize="18" FontAttributes="Bold" />
-                                    <Border Grid.Column="1" BackgroundColor="{Binding statusBackground}" StrokeThickness="0" Padding="9,4" VerticalOptions="Start">
+                                    <Border Grid.Column="1" BackgroundColor="#CCFFFFFF" StrokeThickness="0" Padding="9,4" VerticalOptions="Start">
                                         <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
-                                        <Label Text="{Binding statusDisplay}" TextColor="{Binding statusColor}" FontSize="12" FontAttributes="Bold" />
+                                        <Label Text="{Binding displayStatus}" TextColor="{Binding displayStatusColor}" FontSize="12" FontAttributes="Bold" />
                                     </Border>
                                     <Label Grid.Row="1" Text="{Binding qualityNoDisplay, StringFormat='单号: {0}'}" TextColor="#00356E" FontSize="14" FontAttributes="Bold" />
                                     <Label Grid.Row="2" Text="{Binding machineDisplay, StringFormat='机台: {0}'}" TextColor="#051B3D" FontSize="14" FontAttributes="Bold" />

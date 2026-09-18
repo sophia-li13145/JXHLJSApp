@@ -410,6 +410,9 @@ public sealed class IncomingQualityStatusFilter
 
 public sealed class ProductionQualityOrderDto
 {
+    public string? auditStatus { get; set; }
+    public bool? hasAuditPermission { get; set; }
+    public bool? qualityAuditEnabled { get; set; }
     public string? businessType { get; set; }
     public string? id { get; set; }
     public string? inspectStatus { get; set; }
@@ -423,6 +426,33 @@ public sealed class ProductionQualityOrderDto
     public string? qualityTypeName { get; set; }
     public string? resourceCode { get; set; }
     public string? resourceName { get; set; }
+
+    public string auditStatusDisplay => auditStatus?.ToLowerInvariant() switch
+    {
+        "none" => "无需审核",
+        "0" => "未提交",
+        "1" => "待审核",
+        "2" => "审核通过",
+        "3" => "审核驳回",
+        _ => string.IsNullOrWhiteSpace(auditStatus) ? "无需审核" : auditStatus!
+    };
+    public string displayStatus => qualityAuditEnabled == true ? auditStatusDisplay : statusDisplay;
+    public Brush cardBackground => qualityAuditEnabled == true ? auditStatus switch
+    {
+        "1" => CreateGradient("#D9F1FF", "#FFFFFF"),
+        "2" => CreateGradient("#DCFCE7", "#FFFFFF"),
+        "3" => CreateGradient("#FFEDD5", "#FFFFFF"),
+        _ => new SolidColorBrush(Colors.White)
+    } : new SolidColorBrush(Colors.White);
+    public bool showRejectedBackgroundText => qualityAuditEnabled == true && auditStatus == "3";
+    public double cardStrokeThickness => qualityAuditEnabled == true && auditStatus is "1" or "2" or "3" ? 1 : 0;
+    public string displayStatusColor => qualityAuditEnabled == true ? auditStatus switch
+    {
+        "1" => "#0784E3",
+        "2" => "#16A34A",
+        "3" => "#EA580C",
+        _ => "#64748B"
+    } : statusColor;
 
     public string titleDisplay => FirstNonEmpty(inspectionSchemeName, qualityTypeName, inspectionSchemeTypeName, "质检任务");
     public string machineDisplay => FirstNonEmpty(resourceName, machineNo, resourceCode, "-");
@@ -452,6 +482,22 @@ public sealed class ProductionQualityOrderDto
     public string orderNumberDisplay => string.IsNullOrWhiteSpace(orderNumber) ? "-" : orderNumber!;
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
+
+    private static LinearGradientBrush CreateGradient(string startColor, string endColor) => new(
+        new GradientStopCollection
+        {
+            new GradientStop(Color.FromArgb(startColor), 0),
+            new GradientStop(Color.FromArgb(endColor), 1)
+        },
+        new Point(0, 0),
+        new Point(1, 1));
+}
+
+public sealed class ProductionQualityAuditRequestDto
+{
+    public string? auditOpinion { get; set; }
+    public string? auditStatus { get; set; }
+    public string? id { get; set; }
 }
 
 public sealed class ProductionQualityDetailDto

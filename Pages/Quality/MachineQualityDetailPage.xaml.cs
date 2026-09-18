@@ -19,6 +19,10 @@ namespace JXHLJSApp.Pages.Quality;
 [QueryProperty(nameof(MaterialCode), "materialCode")]
 [QueryProperty(nameof(MaterialName), "materialName")]
 [QueryProperty(nameof(QrCode), "qrCode")]
+[QueryProperty(nameof(AuditId), "auditId")]
+[QueryProperty(nameof(AuditStatus), "auditStatus")]
+[QueryProperty(nameof(HasAuditPermission), "hasAuditPermission")]
+[QueryProperty(nameof(QualityAuditEnabled), "qualityAuditEnabled")]
 public partial class MachineQualityDetailPage : ContentPage
 {
     private const string SchemeAcidPickling = "酸洗";
@@ -47,6 +51,10 @@ public partial class MachineQualityDetailPage : ContentPage
     private bool _manualInspectionFromQuery;
     private bool _hasLoadedDetail;
     private string? _loadedQualityNo;
+    private string? _auditId;
+    private string? _auditStatus;
+    private bool _hasAuditPermission;
+    private bool _qualityAuditEnabled;
 
     public string? QualityNo { get => _qualityNo; set => _qualityNo = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? WorkOrderNo { get => _workOrderNo; set => _workOrderNo = Uri.UnescapeDataString(value ?? string.Empty); }
@@ -60,6 +68,10 @@ public partial class MachineQualityDetailPage : ContentPage
     public string? MaterialCode { get => _materialCode; set => _materialCode = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? MaterialName { get => _materialName; set => _materialName = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? QrCode { get => _qrCode; set => _qrCode = Uri.UnescapeDataString(value ?? string.Empty); }
+    public string? AuditId { get => _auditId; set => _auditId = Uri.UnescapeDataString(value ?? string.Empty); }
+    public string? AuditStatus { get => _auditStatus; set => _auditStatus = Uri.UnescapeDataString(value ?? string.Empty); }
+    public string? HasAuditPermission { get => _hasAuditPermission ? "true" : "false"; set => _hasAuditPermission = ParseBooleanQueryValue(value); }
+    public string? QualityAuditEnabled { get => _qualityAuditEnabled ? "true" : "false"; set => _qualityAuditEnabled = ParseBooleanQueryValue(value); }
 
     public MachineQualityDetailPage(IQualityApi qualityApi, IScanService scanService)
     {
@@ -168,6 +180,9 @@ public partial class MachineQualityDetailPage : ContentPage
             SelectQualifiedOption(InspectResultPicker, detail.inspectResult);
             ApplyProcessJudgmentValues(detail);
             ApplyReadOnlyStateIfCompleted();
+            AuditActionBar.IsVisible = _qualityAuditEnabled && _hasAuditPermission && !string.IsNullOrWhiteSpace(_auditId);
+            AuditApproveButton.IsEnabled = AuditActionBar.IsVisible;
+            AuditRejectButton.IsEnabled = AuditActionBar.IsVisible;
             _hasLoadedDetail = true;
             _loadedQualityNo = _qualityNo;
         }
@@ -175,6 +190,47 @@ public partial class MachineQualityDetailPage : ContentPage
         {
             await ErrorDialogService.ShowAsync(this, "加载失败", ex.Message, "确定");
         }
+    }
+
+    private async void OnAuditClicked(object sender, EventArgs e)
+    {
+        if (sender is not Button { CommandParameter: string auditStatus } button || string.IsNullOrWhiteSpace(_auditId)) return;
+
+        var actionName = auditStatus == "2" ? "审批通过" : "驳回";
+        if (!await DisplayAlert("确认审核", $"确定要{actionName}该过程质检单吗？", "确定", "取消")) return;
+
+        try
+        {
+            button.IsEnabled = false;
+            var succeeded = await _qualityApi.AuditProductionQualityAsync(new ProductionQualityAuditRequestDto
+            {
+                auditOpinion = string.Empty,
+                auditStatus = auditStatus,
+                id = _auditId
+            });
+            if (!succeeded)
+            {
+                await ErrorDialogService.ShowAsync(this, "审核失败", "接口未返回审核成功，请稍后重试。", "确定");
+                return;
+            }
+
+            _auditStatus = auditStatus;
+            AuditActionBar.IsVisible = false;
+            await DisplayAlert("审核成功", $"该过程质检单已{actionName}。", "确定");
+        }
+        catch (Exception ex)
+        {
+            await ErrorDialogService.ShowAsync(this, "审核失败", ex.Message, "确定");
+        }
+        finally
+        {
+            button.IsEnabled = true;
+        }
+    }
+
+    private static bool ParseBooleanQueryValue(string? value)
+    {
+        return bool.TryParse(Uri.UnescapeDataString(value ?? string.Empty), out var result) && result;
     }
 
     private void ApplyListFallbacks(ProductionQualityDetailDto detail)
