@@ -251,17 +251,16 @@ public partial class PackagingSubTaskDetailPage : ContentPage
                 workOrderNo = _detail.workOrderNo
             };
 
-            var saved = await _warehouseApi.SavePackagingAsync(request);
-            if (saved != true)
-            {
-                await ErrorDialogService.ShowAsync(this, "保存失败", "包装作业保存失败，请稍后重试。", "确定");
-                return;
-            }
+            //var saved = await _warehouseApi.SavePackagingAsync(request);
+            //if (saved != true)
+            //{
+            //    await ErrorDialogService.ShowAsync(this, "保存失败", "包装作业保存失败，请稍后重试。", "确定");
+            //    return;
+            //}
 
             try
             {
-                var printFile = await _warehouseApi.DownloadPackagingPrintLabelAsync(_detail.workOrderNo);
-                await _warehouseApi.PrintPackagingLabelAsync(printFile);
+                await _warehouseApi.PrintPackagingLabelAsync(_detail.workOrderNo);
                 await DisplayAlert("提示", "包装作业保存并提交打印成功。", "确定");
             }
             catch (Exception ex)

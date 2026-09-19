@@ -50,7 +50,6 @@
       "list": "/pda/pmsWorkOrder/getPackagingSubTaskList",
       "detail": "/pda/pmsWorkOrder/getPackagingSubTaskDetail",
       "packingSave": "/pda/pmsWorkOrder/packingSave",
-      "downloadPrintLabel": "/pda/pmsWorkOrder/downloadPackagingPrintLabel",
       "scanFinishedPackageQrCode": "/pda/pmsWorkOrder/scanFinishedPackageQrCode"
     },
     "incomingQualityOrder": {
