@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 16,
+  "schemaVersion": 15,
   "server": {
     "scheme": "http",
     "ipAddress": "221.216.53.191:9128"
@@ -172,8 +172,7 @@
       "firstInspectionCommit": "/pda/qsOrderQuality/firstInspectionCommit",
       "picklingCommit": "/pda/qsOrderQuality/picklingCommit",
       "samplingOrFullCommit": "/pda/qsOrderQuality/samplingOrFullCommit",
-      "samplingOrFullComplete": "/pda/qsOrderQuality/samplingOrFullComplete",
-      "audit": "/pda/qsOrderQuality/audit"
+      "samplingOrFullComplete": "/pda/qsOrderQuality/samplingOrFullComplete"
     },
     "manualInspection": {
       "create": "/pda/manualInspection/create",

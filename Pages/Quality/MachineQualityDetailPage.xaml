@@ -4,7 +4,7 @@
              x:Class="JXHLJSApp.Pages.Quality.MachineQualityDetailPage"
              BackgroundColor="#F4F6FA"
              Shell.NavBarIsVisible="False">
-    <Grid RowDefinitions="Auto,Auto,*,Auto">
+    <Grid RowDefinitions="Auto,*,Auto">
         <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="16,22,16,14" HeightRequest="80">
             <Border.StrokeShape><RoundRectangle CornerRadius="0,0,18,18" /></Border.StrokeShape>
             <Grid ColumnDefinitions="Auto,*,Auto">
@@ -15,13 +15,7 @@
                 <Button x:Name="ScanMaterialButton" Grid.Column="2" Text="▣  扫物料" BackgroundColor="White" TextColor="#0B3D8B" BorderColor="#0B3D8B" BorderWidth="1" CornerRadius="8" HeightRequest="38" Padding="10,0" FontSize="13" FontAttributes="Bold" Clicked="OnScanMaterialClicked" IsVisible="False" />
             </Grid>
         </Border>
-        <Border x:Name="AuditActionBar" Grid.Row="1" IsVisible="False" BackgroundColor="White" Stroke="#DDE6F1" StrokeThickness="1" Padding="22,12">
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                <Button x:Name="AuditApproveButton" Text="审批通过" BackgroundColor="#16A34A" TextColor="White" CornerRadius="9" HeightRequest="48" FontAttributes="Bold" CommandParameter="2" Clicked="OnAuditClicked" />
-                <Button x:Name="AuditRejectButton" Grid.Column="1" Text="驳回" BackgroundColor="#EF4444" TextColor="White" CornerRadius="9" HeightRequest="48" FontAttributes="Bold" CommandParameter="3" Clicked="OnAuditClicked" />
-            </Grid>
-        </Border>
-        <ScrollView Grid.Row="2">
+        <ScrollView Grid.Row="1">
             <VerticalStackLayout Padding="22,18" Spacing="18">
                 <Border BackgroundColor="White" Stroke="#DDE6F1" StrokeThickness="1" Padding="20">
                     <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
@@ -215,7 +209,7 @@
                 </Border>
             </VerticalStackLayout>
         </ScrollView>
-        <Grid x:Name="ActionBar" Grid.Row="3" Margin="6,16" ColumnDefinitions="*,*" ColumnSpacing="12">
+        <Grid x:Name="ActionBar" Grid.Row="2" Margin="6,16" ColumnDefinitions="*,*" ColumnSpacing="12">
             <Button x:Name="SubmitButton" Text="提交质检" TextColor="#0B3D8B" BackgroundColor="White" BorderColor="#0B3D8B" BorderWidth="1" CornerRadius="10" HeightRequest="54" FontAttributes="Bold" Clicked="OnSubmitClicked" />
             <Button x:Name="CompleteButton" Grid.Column="1" IsVisible="False" Text="完 成" TextColor="White" BackgroundColor="#244B88" CornerRadius="10" HeightRequest="54" FontAttributes="Bold" Clicked="OnCompleteClicked" />
         </Grid>
