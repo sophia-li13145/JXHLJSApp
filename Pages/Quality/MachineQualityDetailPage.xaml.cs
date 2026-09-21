@@ -1313,6 +1313,12 @@ public partial class MachineQualityDetailPage : ContentPage
             return;
         }
 
+        var confirmed = await DisplayAlert("确认完成", "是否已完成此工单质检内容？", "确认", "取消");
+        if (!confirmed)
+        {
+            return;
+        }
+
         try
         {
             if (useSamplingOrFullComplete)
