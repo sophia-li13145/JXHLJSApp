@@ -8,6 +8,8 @@ namespace JXHLJSApp.Pages.WorkStart;
 
 public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributable
 {
+    private const decimal SmallPieceLengthRatio = 0.8m;
+
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IProductionContextService _productionContext;
     private bool _isBusy;
@@ -367,7 +369,12 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
         }
 
         var standardLength = TryParseDecimal(_inputOutput?.wireTakeUpLength);
-        return outputLength.HasValue && standardLength.HasValue && outputLength.Value >= standardLength.Value ? "合格品" : "小件";
+        var minimumQualifiedLength = IsBlankOpeningOrDrawingProcess(_inputOutput)
+            ? standardLength * SmallPieceLengthRatio
+            : standardLength;
+        return outputLength.HasValue && minimumQualifiedLength.HasValue && outputLength.Value >= minimumQualifiedLength.Value
+            ? "合格品"
+            : "小件";
     }
 
     private static decimal? GetInitialOutputLength(WorkOrderInputOutputDto? inputOutput) => IsPicklingProcess(inputOutput)
@@ -394,8 +401,12 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
 
     private static bool IsHeatTreatmentProcess(WorkOrderInputOutputDto? inputOutput) => ContainsProcessName(inputOutput, "热处理");
 
+    private static bool IsBlankOpeningOrDrawingProcess(WorkOrderInputOutputDto? inputOutput) =>
+        ContainsProcessName(inputOutput, "开胚") || ContainsProcessName(inputOutput, "拉拔");
+
     private static bool IsDefaultProcess(WorkOrderInputOutputDto? inputOutput) => !IsPicklingProcess(inputOutput) && !IsHeatTreatmentProcess(inputOutput);
 
     private static bool ContainsProcessName(WorkOrderInputOutputDto? inputOutput, string keyword) =>
-        inputOutput?.processName?.Contains(keyword, StringComparison.OrdinalIgnoreCase) == true;
+        inputOutput?.processName?.Contains(keyword, StringComparison.OrdinalIgnoreCase) == true
+        || inputOutput?.operationName?.Contains(keyword, StringComparison.OrdinalIgnoreCase) == true;
 }
