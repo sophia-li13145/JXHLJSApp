@@ -21,7 +21,7 @@ public interface IQualityApi
     Task<bool> CompleteIncomingQualityOrderAsync(string incomingQualityNo, CancellationToken ct = default);
     Task<bool> DeleteIncomingQualityOrderAsync(string incomingQualityNo, CancellationToken ct = default);
     Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersByResourceAsync(string resourceCode, CancellationToken ct = default);
-    Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, string? qualityNo = null, CancellationToken ct = default);
+    Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, string? qualityNo = null, CancellationToken ct = default, string? qrCode = null);
     Task<ProductionQualityDetailDto> GetProductionQualityDetailAsync(string qualityNo, string workOrderNo, CancellationToken ct = default);
     Task<ProductionQualityDetailDto> GetInspectionDetailAsync(string qualityNo, CancellationToken ct = default);
     Task<ProductionQualityDetailDto> CreateManualInspectionAsync(string qrCode, CancellationToken ct = default);
@@ -240,15 +240,15 @@ public sealed class QualityApi : IQualityApi
 
     public Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersByResourceAsync(string resourceCode, CancellationToken ct = default)
     {
-        return QueryProductionQualityOrdersAsync(resourceName: null, inspectStatus: null, resourceCode: resourceCode, qualityNo: null, ct: ct);
+        return QueryProductionQualityOrdersAsync(resourceName: null, inspectStatus: null, resourceCode: resourceCode, qualityNo: null, qrCode: null, ct: ct);
     }
 
-    public Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, string? qualityNo = null, CancellationToken ct = default)
+    public Task<List<ProductionQualityOrderDto>> GetProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, string? qualityNo = null, CancellationToken ct = default, string? qrCode = null)
     {
-        return QueryProductionQualityOrdersAsync(resourceName: resourceName, inspectStatus: inspectStatus, resourceCode: null, qualityNo: qualityNo, ct: ct);
+        return QueryProductionQualityOrdersAsync(resourceName: resourceName, inspectStatus: inspectStatus, resourceCode: null, qualityNo: qualityNo, qrCode: qrCode, ct: ct);
     }
 
-    private async Task<List<ProductionQualityOrderDto>> QueryProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, string? resourceCode, string? qualityNo, CancellationToken ct)
+    private async Task<List<ProductionQualityOrderDto>> QueryProductionQualityOrdersAsync(string? resourceName, string? inspectStatus, string? resourceCode, string? qualityNo, string? qrCode, CancellationToken ct)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityListEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, new
@@ -258,6 +258,7 @@ public sealed class QualityApi : IQualityApi
             inspectStatus = inspectStatus ?? string.Empty,
             inspectionSchemeCode = string.Empty,
             qualityNo = qualityNo ?? string.Empty,
+            qrCode = qrCode ?? string.Empty,
             resourceCode = resourceCode ?? string.Empty,
             resourceName = resourceName ?? string.Empty
         }, JsonOptions, ct).ConfigureAwait(false);

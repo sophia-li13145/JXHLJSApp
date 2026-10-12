@@ -4,8 +4,10 @@ using JXHLJSApp.Services.Quality;
 
 namespace JXHLJSApp.Pages.Quality;
 
-public partial class ProductionQualityOrderListPage : ContentPage
+public partial class ProductionQualityOrderListPage : ContentPage, IQueryAttributable
 {
+    private string? _qrCode;
+    private bool _isLoading;
     private readonly IQualityApi _qualityApi;
     private readonly IScanService _scanService;
     private readonly List<ProductionQualityStatusOption> _statuses = new()
@@ -26,6 +28,14 @@ public partial class ProductionQualityOrderListPage : ContentPage
         StatusPicker.SelectedIndex = 0;
     }
 
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        _qrCode = query.TryGetValue("qrCode", out var value) ? value?.ToString()?.Trim() : null;
+        var isScanQuery = !string.IsNullOrWhiteSpace(_qrCode);
+        FilterPanel.IsVisible = !isScanQuery;
+        ManualInspectionPanel.IsVisible = !isScanQuery;
+    }
+
     protected override async void OnAppearing()
     {
         base.OnAppearing();
@@ -43,11 +53,13 @@ public partial class ProductionQualityOrderListPage : ContentPage
 
     private async Task LoadOrdersAsync()
     {
+        if (_isLoading) return;
+        _isLoading = true;
         try
         {
             RefreshContainer.IsRefreshing = true;
             var status = StatusPicker.SelectedItem as ProductionQualityStatusOption;
-            OrderList.ItemsSource = await _qualityApi.GetProductionQualityOrdersAsync(ResourceNameEntry.Text?.Trim(), status?.Value, QualityNoEntry.Text?.Trim());
+            OrderList.ItemsSource = await _qualityApi.GetProductionQualityOrdersAsync(ResourceNameEntry.Text?.Trim(), status?.Value, QualityNoEntry.Text?.Trim(), qrCode: _qrCode);
         }
         catch (Exception ex)
         {
@@ -56,6 +68,7 @@ public partial class ProductionQualityOrderListPage : ContentPage
         finally
         {
             RefreshContainer.IsRefreshing = false;
+            _isLoading = false;
         }
     }
 

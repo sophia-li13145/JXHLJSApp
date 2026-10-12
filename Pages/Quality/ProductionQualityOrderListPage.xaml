@@ -16,7 +16,7 @@
                 </Grid>
             </Border>
 
-            <VerticalStackLayout Grid.Row="1" Padding="18,30,18,16" Spacing="12" BackgroundColor="White">
+            <VerticalStackLayout x:Name="FilterPanel" Grid.Row="1" Padding="18,30,18,16" Spacing="12" BackgroundColor="White">
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                     <Entry x:Name="ResourceNameEntry" Placeholder="输入机台名称模糊筛选..." PlaceholderColor="#7A8797" BackgroundColor="#F8FAFD" HeightRequest="40" />
                     <Entry x:Name="QualityNoEntry" Grid.Column="1" Placeholder="输入单号..." PlaceholderColor="#7A8797" BackgroundColor="#F8FAFD" HeightRequest="40" />
@@ -50,7 +50,7 @@
                 </CollectionView>
             </RefreshView>
 
-            <Border Grid.Row="3" BackgroundColor="White" Stroke="#D8DEE8" StrokeThickness="1" Padding="18,16,18,26">
+            <Border x:Name="ManualInspectionPanel" Grid.Row="3" BackgroundColor="White" Stroke="#D8DEE8" StrokeThickness="1" Padding="18,16,18,26">
                 <Button Text="+ 新增巡检任务" TextColor="White" BackgroundColor="#18BD86" CornerRadius="9" HeightRequest="54" FontSize="17" FontAttributes="Bold" Clicked="OnAddManualInspectionClicked" />
             </Border>
         </Grid>
