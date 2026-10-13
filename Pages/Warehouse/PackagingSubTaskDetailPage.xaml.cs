@@ -7,7 +7,7 @@ using JXHLJSApp.Services.Warehouse;
 namespace JXHLJSApp.Pages.Warehouse;
 
 [QueryProperty(nameof(TaskId), "id")]
-public partial class PackagingSubTaskDetailPage : ContentPage
+public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributable
 {
     private readonly IWarehouseApi _warehouseApi;
     private readonly IScanService _scanService;
@@ -17,6 +17,13 @@ public partial class PackagingSubTaskDetailPage : ContentPage
     private string? _scannedQrCode;
     private PackagingSubTaskDto? _nextTask;
     private string? _loadedTaskId;
+    private bool _isQuickPackaging;
+    private string? _quickQrCode;
+    private bool _quickLoadAttempted;
+    private bool _isLoadingQuickDetail;
+    private bool _quickScanRequested;
+    private bool _quickScanStarted;
+    private bool _isStartingQuickScan;
 
     public string? TaskId
     {
@@ -41,10 +48,24 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         {
             return;
         }
+        if (_isStartingQuickScan) return;
+        if (_quickScanRequested)
+        {
+            _quickScanRequested = false;
+            await StartQuickScanAsync();
+            return;
+        }
+        if (!string.IsNullOrWhiteSpace(_quickQrCode))
+        {
+            if (!_quickLoadAttempted)
+                await LoadQuickDetailAsync();
+            return;
+        }
         if (_detail is not null && string.Equals(_loadedTaskId, _id, StringComparison.Ordinal))
         {
             return;
         }
+        if (_isQuickPackaging && _quickScanStarted) return;
 
         await LoadDetailAsync();
     }
@@ -60,25 +81,8 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         try
         {
             var detail = await _warehouseApi.GetPackagingSubTaskDetailAsync(_id);
-            _detail = detail;
-            ResetSaveState();
-            ApplyPageMode(detail);
-            TaskNoLabel.Text = detail.taskNoDisplay;
-            MaterialLabel.Text = $"{detail.materialNameDisplay} {detail.materialCodeDisplay}";
-            TemplateLabel.Text = detail.printTemplateNameDisplay;
-            PropertyLabel.Text = detail.materialPropertyDisplay;
-            MethodLabel.Text = detail.packageMethodDisplay;
-            WeightLabel.Text = detail.packageWeightDisplay;
-            ClothLabel.Text = detail.needPackagingClothDisplay;
-            ColorLabel.Text = detail.packagingClothColorDisplay;
-            PalletLabel.Text = detail.needPalletizingDisplay;
-            RequirementLabel.Text = detail.otherRequirementDisplay;
-            MemoLabel.Text = detail.memoDisplay;
-            if (IsPackagedStatus(detail.workOrderStatus))
-            {
-                ApplyPackagedDetail(detail);
-            }
-
+            _isQuickPackaging = false;
+            ApplyDetail(detail);
             _loadedTaskId = _id;
         }
         catch (Exception ex)
@@ -87,6 +91,166 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         }
     }
 
+
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (query.TryGetValue("startPackagingScan", out var startScan) && startScan is true)
+        {
+            if (!_quickScanStarted)
+            {
+                _isQuickPackaging = true;
+                _quickScanRequested = true;
+                ShowQuickLoading();
+            }
+            return;
+        }
+        if (query.TryGetValue("id", out var id))
+        {
+            _id = id?.ToString();
+        }
+        if (!query.ContainsKey("scannedPackagingDetail")
+            && query.TryGetValue("scannedPackagingQrCode", out var pendingCode)
+            && pendingCode is string pendingQrCode && !string.IsNullOrWhiteSpace(pendingQrCode))
+        {
+            _isQuickPackaging = true;
+            _quickQrCode = pendingQrCode;
+            _quickLoadAttempted = false;
+            ShowQuickLoading();
+            return;
+        }
+        if (!query.TryGetValue("scannedPackagingDetail", out var value)
+            || value is not PackagingSubTaskDetailDto detail
+            || !query.TryGetValue("scannedPackagingQrCode", out var code)
+            || code is not string qrCode || string.IsNullOrWhiteSpace(qrCode))
+        {
+            return;
+        }
+
+        _isQuickPackaging = true;
+        _id = detail.id;
+        ApplyDetail(detail);
+        if (!IsPackagedStatus(detail.workOrderStatus))
+        {
+            ApplyScannedMaterial(new MaterialQrCodeInfoDto
+            {
+                length = detail.length,
+                materialCode = detail.materialCode,
+                materialName = detail.materialName,
+                originPlace = detail.originPlace,
+                pieceWeight = detail.pieceWeight,
+                specification = detail.specification,
+                steelGrade = detail.steelGrade,
+                workOrderNo = detail.workOrderNo
+            }, qrCode);
+        }
+        _loadedTaskId = _id;
+    }
+
+    private void ShowQuickLoading()
+    {
+        DetailScrollView.IsVisible = false;
+        ActionBar.IsVisible = false;
+        LoadingPanel.IsVisible = true;
+        LoadingIndicator.IsRunning = true;
+        LoadingLabel.Text = "正在加载包装详情…";
+        RetryLoadButton.IsVisible = false;
+    }
+
+    private async Task LoadQuickDetailAsync()
+    {
+        if (_isLoadingQuickDetail || string.IsNullOrWhiteSpace(_quickQrCode)) return;
+        _isLoadingQuickDetail = true;
+        _quickLoadAttempted = true;
+        ShowQuickLoading();
+        try
+        {
+            var qrCode = _quickQrCode;
+            var detail = await _warehouseApi.ScanPackagingDetailAsync(qrCode);
+            ApplyQueryAttributes(new Dictionary<string, object>
+            {
+                ["scannedPackagingDetail"] = detail,
+                ["scannedPackagingQrCode"] = qrCode
+            });
+            _quickQrCode = null;
+            LoadingPanel.IsVisible = false;
+            DetailScrollView.IsVisible = true;
+        }
+        catch (Exception ex)
+        {
+            LoadingLabel.Text = "包装详情加载失败，请重试。";
+            RetryLoadButton.IsVisible = true;
+            await ErrorDialogService.ShowAsync(this, "包装详情加载失败", ex.Message, "确定");
+        }
+        finally
+        {
+            LoadingIndicator.IsRunning = false;
+            _isLoadingQuickDetail = false;
+        }
+    }
+
+    private async Task StartQuickScanAsync()
+    {
+        if (_isStartingQuickScan) return;
+        _quickScanStarted = true;
+        _isStartingQuickScan = true;
+        ShowQuickLoading();
+        try
+        {
+            // Let the initial detail-page navigation finish before pushing a modal.
+            await Task.Yield();
+            var code = await _scanService.ScanAsync("扫码包装", formats: ZXing.Net.Maui.BarcodeFormat.QrCode);
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                await Shell.Current.GoToAsync("..", false);
+                return;
+            }
+
+            _quickQrCode = code.Trim();
+            await LoadQuickDetailAsync();
+        }
+        catch (Exception ex)
+        {
+            LoadingLabel.Text = "扫码未完成，请重试。";
+            RetryLoadButton.IsVisible = true;
+            await ErrorDialogService.ShowAsync(this, "包装扫码失败", ex.Message, "确定");
+        }
+        finally
+        {
+            LoadingIndicator.IsRunning = false;
+            _isStartingQuickScan = false;
+        }
+    }
+
+    private async void OnRetryLoadClicked(object sender, EventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_quickQrCode))
+            await StartQuickScanAsync();
+        else
+            await LoadQuickDetailAsync();
+    }
+
+    private void ApplyDetail(PackagingSubTaskDetailDto detail)
+    {
+        _detail = detail;
+        ResetSaveState();
+        ApplyPageMode(detail);
+        TaskNoLabel.Text = detail.taskNoDisplay;
+        MaterialLabel.Text = $"{detail.materialNameDisplay} {detail.materialCodeDisplay}";
+        TemplateLabel.Text = detail.printTemplateNameDisplay;
+        PropertyLabel.Text = detail.materialPropertyDisplay;
+        MethodLabel.Text = detail.packageMethodDisplay;
+        WeightLabel.Text = detail.packageWeightDisplay;
+        ClothLabel.Text = detail.needPackagingClothDisplay;
+        ColorLabel.Text = detail.packagingClothColorDisplay;
+        PalletLabel.Text = detail.needPalletizingDisplay;
+        RequirementLabel.Text = detail.otherRequirementDisplay;
+        MemoLabel.Text = detail.memoDisplay;
+        if (IsPackagedStatus(detail.workOrderStatus))
+        {
+            ApplyPackagedDetail(detail);
+        }
+
+    }
 
     private async void OnScanClicked(object sender, EventArgs e)
     {
@@ -99,6 +263,16 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         try
         {
             var qrCode = code.Trim();
+            if (_isQuickPackaging)
+            {
+                var detail = await _warehouseApi.ScanPackagingDetailAsync(qrCode);
+                ApplyQueryAttributes(new Dictionary<string, object>
+                {
+                    ["scannedPackagingDetail"] = detail,
+                    ["scannedPackagingQrCode"] = qrCode
+                });
+                return;
+            }
             var material = await _warehouseApi.ScanFinishedPackageQrCodeAsync(qrCode);
             ApplyScannedMaterial(material, qrCode);
         }
@@ -138,7 +312,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         MaterialLabel.IsVisible = !isPackaged;
         PackagedSummaryPanel.IsVisible = isPackaged;
         PackagedMaterialsPanel.IsVisible = isPackaged;
-        ScanButton.IsVisible = !isPackaged;
+        ScanButton.IsVisible = !isPackaged && !_isQuickPackaging;
         ScanSuccessPanel.IsVisible = false;
         ScannedMaterialPanel.IsVisible = false;
         ActualWeightPanel.IsVisible = !isPackaged;
@@ -208,9 +382,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage
 
     private static bool IsPackagedStatus(string? status)
     {
-        return !string.IsNullOrWhiteSpace(status)
-            && (status.Contains("已完工", StringComparison.OrdinalIgnoreCase)
-                || status == "3");
+        return PackagingSubTaskDetailDto.IsPackagedStatus(status);
     }
 
 
@@ -286,6 +458,32 @@ public partial class PackagingSubTaskDetailPage : ContentPage
         ActualWeightEntry.Text = string.Empty;
         _scannedMaterial = null;
         _scannedQrCode = null;
+        if (_isQuickPackaging)
+        {
+            // The scanned material has been consumed by the successful save.
+            // Refresh the saved record rather than leaving an unusable input form.
+            ActualWeightPanel.IsVisible = false;
+            ActionBar.IsVisible = false;
+            try
+            {
+                var detail = await _warehouseApi.GetPackagingSubTaskDetailAsync(_id!);
+                ApplyDetail(detail);
+                _loadedTaskId = _id;
+                if (!IsPackagedStatus(detail.workOrderStatus))
+                {
+                    // Do not allow another save using the already consumed scan,
+                    // even if the backend has not yet updated the task status.
+                    ActualWeightPanel.IsVisible = false;
+                    ActionBar.IsVisible = false;
+                    await DisplayAlert("提示", "包装作业已保存，请返回首页重新扫码查看最新状态。", "确定");
+                }
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "详情刷新失败", $"包装作业已保存，但详情刷新失败：{ex.Message}", "确定");
+            }
+            return;
+        }
         _nextTask = await FindNextTaskAsync();
         NextTaskButton.IsVisible = _nextTask is not null;
     }
@@ -339,3 +537,5 @@ public partial class PackagingSubTaskDetailPage : ContentPage
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
 }
+
+

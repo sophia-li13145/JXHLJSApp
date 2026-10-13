@@ -13,6 +13,7 @@ public partial class RoleHomePage : ContentPage
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
     private readonly IAuthApi _authApi;
+    private bool _isPackagingScanBusy;
     private bool _isRefreshingUserInfo;
     private string? _selectedRoleCode;
 
@@ -226,7 +227,7 @@ public partial class RoleHomePage : ContentPage
         chips.Children.Add(chip);
     }
 
-    private static View CreateModuleGrid(IReadOnlyList<HomeModule> modules)
+    private View CreateModuleGrid(IReadOnlyList<HomeModule> modules)
     {
         var grid = new Grid
         {
@@ -248,7 +249,7 @@ public partial class RoleHomePage : ContentPage
         return grid;
     }
 
-    private static View CreateSquareModule(HomeModule module)
+    private View CreateSquareModule(HomeModule module)
     {
         var card = new Border
         {
@@ -275,7 +276,7 @@ public partial class RoleHomePage : ContentPage
         return card;
     }
 
-    private static View CreateWideModule(HomeModule module)
+    private View CreateWideModule(HomeModule module)
     {
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitionCollection(new ColumnDefinition { Width = new GridLength(92) }, new ColumnDefinition { Width = GridLength.Star }), ColumnSpacing = 18 };
         grid.Add(CreateIconBadge(module, 72, 34));
@@ -306,15 +307,43 @@ public partial class RoleHomePage : ContentPage
         return card;
     }
 
-    private static void AttachNavigation(View view, HomeModule module)
+    private void AttachNavigation(View view, HomeModule module)
     {
         if (module.Route is null) return;
 
         var tap = new TapGestureRecognizer();
-        tap.Tapped += async (_, _) => await Shell.Current.GoToAsync(module.Route);
+        tap.Tapped += async (_, _) =>
+        {
+            if (module.Route == AppShell.RoutePackagingScan)
+                await ScanPackagingAsync();
+            else
+                await Shell.Current.GoToAsync(module.Route);
+        };
         view.GestureRecognizers.Add(tap);
     }
 
+    private async Task ScanPackagingAsync()
+    {
+        if (_isPackagingScanBusy) return;
+        try
+        {
+            _isPackagingScanBusy = true;
+            // Host the scanner on the detail page so dismissing it never reveals
+            // or refreshes the home page between recognition and loading.
+            await Shell.Current.GoToAsync(AppShell.RoutePackagingSubTaskDetail, false, new Dictionary<string, object>
+            {
+                ["startPackagingScan"] = true
+            });
+        }
+        catch (Exception ex)
+        {
+            await ErrorDialogService.ShowAsync(this, "包装扫码失败", ex.Message, "确定");
+        }
+        finally
+        {
+            _isPackagingScanBusy = false;
+        }
+    }
     private static View CreateIconBadge(HomeModule module, double size = 58, double iconSize = 28)
     {
         return new Border
@@ -537,7 +566,8 @@ internal sealed record RoleHomeDefinition(
             {
                 new HomeModule("采购入库", "📥", Color.FromArgb("#F3F0FF"), Route: AppShell.RouteRawMaterialReceiving),
                 new HomeModule("发货出库", "🚚", Color.FromArgb("#EFF8F0"), Route: AppShell.RouteDeliveryOrders),
-                new HomeModule("包装作业", "🎁", Color.FromArgb("#FFF5F5"), Route: AppShell.RoutePackagingSubTasks)
+                new HomeModule("包装作业", "🎁", Color.FromArgb("#FFF5F5"), Route: AppShell.RoutePackagingSubTasks),
+                new HomeModule("扫码包装", "📷", Color.FromArgb("#EFF6FF"), Route: AppShell.RoutePackagingScan)
             }),
             "qualityInspector" => new("qualityInspector", "质检管理工作台", "#14295D", "👨‍🔬", RoleHomeLayout.List, new[]
             {
@@ -581,3 +611,4 @@ internal sealed record RoleHomeDefinition(
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
 }
+

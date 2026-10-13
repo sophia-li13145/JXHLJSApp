@@ -20,6 +20,7 @@ public interface IWarehouseApi
     Task<byte[]?> GetAttachmentPreviewBytesAsync(string attachmentUrl, CancellationToken ct = default);
     Task<bool?> SavePackagingAsync(PackagingSaveRequestDto request, CancellationToken ct = default);
     Task PrintPackagingLabelAsync(string workOrderNo, CancellationToken ct = default);
+    Task<PackagingSubTaskDetailDto> ScanPackagingDetailAsync(string qrCode, CancellationToken ct = default);
     Task<MaterialQrCodeInfoDto> ScanFinishedPackageQrCodeAsync(string qrCode, CancellationToken ct = default);
     Task<DeliveryOrderScanActualResultDto> ScanDeliveryActualAsync(DeliveryOrderScanActualRequestDto request, CancellationToken ct = default);
     Task<bool?> ConfirmDeliveryCompletionAsync(string deliveryOrderNo, CancellationToken ct = default);
@@ -318,6 +319,31 @@ public sealed class WarehouseApi : IWarehouseApi
         : Encoding.UTF8.GetString(bytes, 0, Math.Min(bytes.Length, 500));
 
 
+    public async Task<PackagingSubTaskDetailDto> ScanPackagingDetailAsync(string qrCode, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_packagingScanFinishedPackageQrCodeEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(qrCode)] = qrCode
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var data = await ReadApiResponseAsync<PackagingSubTaskDetailDto>(resp, ct).ConfigureAwait(false);
+        var detail = data.result ?? throw new InvalidOperationException("扫码接口未返回包装信息。");
+        var isPackaged = PackagingSubTaskDetailDto.IsPackagedStatus(detail.workOrderStatus);
+        if (string.IsNullOrWhiteSpace(detail.id) || string.IsNullOrWhiteSpace(detail.workOrderNo))
+        {
+            throw new InvalidOperationException("扫码返回的子工序任务ID或生产工单号为空，无法执行包装作业。");
+        }
+        var dictNames = await LoadWorkOrderDictNamesAsync(ct).ConfigureAwait(false);
+        ApplyPackagingDetailDictNames(detail, dictNames);
+        // The scan response contains packaging instructions, but not the complete
+        // saved packaging record (completion time, actual weight and materials).
+        if (isPackaged || PackagingSubTaskDetailDto.IsPackagedStatus(detail.workOrderStatus))
+        {
+            return await GetPackagingSubTaskDetailAsync(detail.id, ct).ConfigureAwait(false);
+        }
+        return detail;
+    }
     public async Task<MaterialQrCodeInfoDto> ScanFinishedPackageQrCodeAsync(string qrCode, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_packagingScanFinishedPackageQrCodeEndpoint, new Dictionary<string, string?>
@@ -773,3 +799,4 @@ public sealed class WarehouseApi : IWarehouseApi
         return pairs.Length == 0 ? endpoint : $"{endpoint}?{string.Join("&", pairs)}";
     }
 }
+

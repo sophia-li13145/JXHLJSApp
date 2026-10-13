@@ -14,7 +14,7 @@
             </Grid>
         </Border>
 
-        <ScrollView Grid.Row="1">
+        <ScrollView x:Name="DetailScrollView" Grid.Row="1">
             <VerticalStackLayout Padding="22,32,22,24" Spacing="16">
                 <Border x:Name="PackagedSummaryPanel" IsVisible="False" BackgroundColor="White" StrokeThickness="0" Padding="20,18">
                     <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
@@ -121,5 +121,12 @@
                 <Button x:Name="NextTaskButton" Grid.Column="1" Text="⏭  下一个任务" IsVisible="False" BackgroundColor="White" TextColor="#00A86B" BorderColor="#00A86B" BorderWidth="1" FontSize="15" FontAttributes="Bold" CornerRadius="10" HeightRequest="50" Padding="14,0" Clicked="OnNextTaskClicked" />
             </Grid>
         </Border>
+        <VerticalStackLayout x:Name="LoadingPanel" Grid.Row="1" IsVisible="False"
+                             Spacing="16" Padding="24" VerticalOptions="Center" HorizontalOptions="Center">
+            <ActivityIndicator x:Name="LoadingIndicator" Color="#244B88" />
+            <Label x:Name="LoadingLabel" Text="正在加载包装详情…" TextColor="#4B6688" HorizontalTextAlignment="Center" />
+            <Button x:Name="RetryLoadButton" Text="重新加载" IsVisible="False"
+                    BackgroundColor="#244B88" TextColor="White" Clicked="OnRetryLoadClicked" />
+        </VerticalStackLayout>
     </Grid>
 </ContentPage>

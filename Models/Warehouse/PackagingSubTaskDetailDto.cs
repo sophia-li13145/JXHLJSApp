@@ -2,6 +2,11 @@ namespace JXHLJSApp.Models.Warehouse;
 
 public sealed class PackagingSubTaskDetailDto
 {
+    public static bool IsPackagedStatus(string? status) =>
+        !string.IsNullOrWhiteSpace(status)
+        && (status.Trim() == "3"
+            || status.Contains("已完工", StringComparison.OrdinalIgnoreCase));
+
     [System.Text.Json.Serialization.JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? actualWeight { get; set; }
     public List<AttachmentDto>? attachmentList { get; set; }

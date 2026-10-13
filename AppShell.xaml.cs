@@ -38,6 +38,7 @@ public partial class AppShell : Shell
     public const string RouteDeliveryOrderDetail = "DeliveryOrderDetail";
     public const string RouteDeliveryCompletionSuccess = "DeliveryCompletionSuccess";
     public const string RoutePackagingSubTasks = "PackagingSubTasks";
+    public const string RoutePackagingScan = "PackagingScan";
     public const string RoutePackagingSubTaskDetail = "PackagingSubTaskDetail";
     public const string RouteProcessTransferScan = "ProcessTransferScan";
     public const string RouteOutstockTransportOrders = "OutstockTransportOrders";
@@ -162,3 +163,4 @@ public partial class AppShell : Shell
         };
     }
 }
+
