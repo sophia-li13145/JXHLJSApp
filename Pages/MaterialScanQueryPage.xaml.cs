@@ -126,7 +126,7 @@ public partial class MaterialScanQueryPage : ContentPage
             ("上料规格", x?.inputSpecification), ("下料规格", x?.blankSpecification), ("生/淬", x?.rawOrQuench), ("扭转（次）", FormatTorsion(x?.torsion)),
             ("上公差", FormatUnit(x?.billetUpperTolerance, "mm")), ("下公差", FormatLowerTolerance(x?.billetLowerTolerance)), ("客户代码", x?.customerIdentifier), ("拉拔方式", x?.drawMode),
             ("收线速度", FormatUnit(x?.wireTakeUpSpeed, x?.wireTakeUpSpeedUnit)), ("钢丝形状", x?.wireShape), ("收线长度", FormatUnit(x?.wireTakeUpLength, "m")), ("椭圆度控制", FormatUpperLimit(x?.ovalityControl)),
-            ("圈径控制", FormatUnit(x?.coilDiameterControl, "mm")), ("圈距控制", FormatUpperLimit(x?.coilPitchControl))
+            ("圈径控制", FormatUnit(x?.coilDiameterControl, "mm")), ("圈距控制", FormatUpperLimit(x?.coilPitchControl)), ("盘号", x?.plateNo)
         };
 
     private static IReadOnlyList<(string, object?)> OutputFields(MaterialScanInstructionCardInfoDto? x) =>
@@ -152,7 +152,7 @@ public partial class MaterialScanQueryPage : ContentPage
         };
 
     private static IReadOnlyList<(string, object?)> HeatInstructionFields(MaterialScanInstructionCardInfoDto? x) =>
-        new (string, object?)[] { ("DV", FormatUnit(x?.dvSpeed, "Hz")), ("销售方式", x?.saleMode) };
+        new (string, object?)[] { ("DV", FormatUnit(x?.dvSpeed, "Hz")), ("销售方式", x?.saleMode), ("盘号", x?.plateNo) };
 
     private static IReadOnlyList<(string, object?)> HeatInspectionFields(MaterialScanInspectionInfoDto? x) =>
         new (string, object?)[]
@@ -167,7 +167,7 @@ public partial class MaterialScanQueryPage : ContentPage
             ("上料规格", x?.inputSpecification), ("下料规格", x?.blankSpecification), ("强度", FormatUnit(x?.strengthRange, "MPa")), ("生/淬", x?.rawOrQuench),
             ("扭转（次）", FormatTorsion(x?.torsion)), ("上公差", FormatUnit(x?.billetUpperTolerance, "mm")), ("下公差", FormatLowerTolerance(x?.billetLowerTolerance)), ("客户代码", x?.customerIdentifier),
             ("拉拔方式", x?.drawMode), ("收线速度", FormatUnit(x?.wireTakeUpSpeed, x?.wireTakeUpSpeedUnit)), ("钢丝形状", x?.wireShape), ("收线长度", FormatUnit(x?.wireTakeUpLength, "m")),
-            ("椭圆度控制", FormatUpperLimit(x?.ovalityControl)), ("圈径控制", FormatUnit(x?.coilDiameterControl, "mm")), ("圈距控制", FormatUpperLimit(x?.coilPitchControl))
+            ("椭圆度控制", FormatUpperLimit(x?.ovalityControl)), ("圈径控制", FormatUnit(x?.coilDiameterControl, "mm")), ("圈距控制", FormatUpperLimit(x?.coilPitchControl)), ("盘号", x?.plateNo)
         };
 
     private static IReadOnlyList<(string, object?)> DrawnInspectionFields(MaterialScanInspectionInfoDto? x) =>
@@ -188,7 +188,9 @@ public partial class MaterialScanQueryPage : ContentPage
         foreach (var field in fields)
         {
             var isInspectionDate = field.Label == "检验日期";
-            if (isInspectionDate && column != 0)
+            // 生产指令卡的圈距控制从左列开始，使紧随其后的盘号显示在右列。
+            var startsInstructionPlateRow = title == "生产指令卡" && field.Label == "圈距控制";
+            if ((isInspectionDate || startsInstructionPlateRow) && column != 0)
             {
                 row++;
                 column = 0;

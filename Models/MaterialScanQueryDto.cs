@@ -49,6 +49,7 @@ public sealed class MaterialScanInspectionInfoDto
 
 public sealed class MaterialScanInstructionCardInfoDto
 {
+    public string? plateNo { get; set; }
     public string? billetLowerTolerance { get; set; }
     public string? billetUpperTolerance { get; set; }
     public string? blankSpecification { get; set; }
