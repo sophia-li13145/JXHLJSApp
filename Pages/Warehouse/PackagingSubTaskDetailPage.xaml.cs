@@ -24,6 +24,16 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
     private bool _quickScanRequested;
     private bool _quickScanStarted;
     private bool _isStartingQuickScan;
+    private bool _isSaving;
+
+    private bool CanEditPackaging => _scannedMaterial?.isEditable == true
+        && _detail is not null && !IsReadOnlyDetail(_detail);
+
+    private void UpdateEditingState()
+    {
+        ActualWeightEntry.IsEnabled = CanEditPackaging && !_isSaving;
+        SaveButton.IsEnabled = CanEditPackaging && !_isSaving;
+    }
 
     public string? TaskId
     {
@@ -129,10 +139,11 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
         _isQuickPackaging = true;
         _id = detail.id;
         ApplyDetail(detail);
-        if (!IsPackagedStatus(detail.workOrderStatus))
+        if (!IsReadOnlyDetail(detail))
         {
             ApplyScannedMaterial(new MaterialQrCodeInfoDto
             {
+                isEditable = detail.isEditable,
                 length = detail.length,
                 materialCode = detail.materialCode,
                 materialName = detail.materialName,
@@ -245,7 +256,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
         PalletLabel.Text = detail.needPalletizingDisplay;
         RequirementLabel.Text = detail.otherRequirementDisplay;
         MemoLabel.Text = detail.memoDisplay;
-        if (IsPackagedStatus(detail.workOrderStatus))
+        if (IsReadOnlyDetail(detail))
         {
             ApplyPackagedDetail(detail);
         }
@@ -274,6 +285,18 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
                 return;
             }
             var material = await _warehouseApi.ScanFinishedPackageQrCodeAsync(qrCode);
+            if (material.isEditable == false && !string.IsNullOrWhiteSpace(_id))
+            {
+                var detail = await _warehouseApi.GetPackagingSubTaskDetailAsync(_id);
+                detail.isEditable = false;
+                ApplyDetail(detail);
+                return;
+            }
+            if (_detail is not null)
+            {
+                _detail.isEditable = material.isEditable;
+                ApplyPageMode(_detail);
+            }
             ApplyScannedMaterial(material, qrCode);
         }
         catch (Exception ex)
@@ -298,11 +321,12 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
         var pieceWeight = material.pieceWeight ?? material.weight;
         ScannedWeightLabel.Text = FormatQuantityWithoutUnitSpace(pieceWeight, "KG");
         ActualWeightEntry.Text = string.Empty;
+        UpdateEditingState();
     }
 
     private void ApplyPageMode(PackagingSubTaskDetailDto detail)
     {
-        var isPackaged = IsPackagedStatus(detail.workOrderStatus);
+        var isPackaged = IsReadOnlyDetail(detail);
         PageTitleLabel.Text = isPackaged ? "包装详情" : "执行包装作业";
         InstructionTitleLabel.Text = isPackaged ? "包装明细" : "包装指令明细";
         Grid.SetColumnSpan(TemplateLabel, isPackaged ? 1 : 3);
@@ -380,14 +404,18 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
         return string.IsNullOrWhiteSpace(unit) ? text : $"{text}{unit}";
     }
 
-    private static bool IsPackagedStatus(string? status)
+    private static bool IsReadOnlyDetail(PackagingSubTaskDetailDto detail)
     {
-        return PackagingSubTaskDetailDto.IsPackagedStatus(status);
+        return detail.isEditable.HasValue
+            ? !detail.isEditable.Value
+            : PackagingSubTaskDetailDto.IsPackagedStatus(detail.workOrderStatus);
     }
 
 
     private async void OnSaveClicked(object sender, EventArgs e)
     {
+        if (!CanEditPackaging || _isSaving) return;
+
         if (!decimal.TryParse(ActualWeightEntry.Text?.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var actualWeight) || actualWeight <= 0)
         {
             await DisplayAlert("提示", "请填写实际重量。", "确定");
@@ -408,7 +436,8 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
 
         try
         {
-            SaveButton.IsEnabled = false;
+            _isSaving = true;
+            UpdateEditingState();
             var request = new PackagingSaveRequestDto
             {
                 actualWeight = actualWeight,
@@ -447,7 +476,8 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
         }
         finally
         {
-            SaveButton.IsEnabled = true;
+            _isSaving = false;
+            UpdateEditingState();
         }
     }
 
@@ -458,6 +488,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
         ActualWeightEntry.Text = string.Empty;
         _scannedMaterial = null;
         _scannedQrCode = null;
+        UpdateEditingState();
         if (_isQuickPackaging)
         {
             // The scanned material has been consumed by the successful save.
@@ -469,7 +500,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
                 var detail = await _warehouseApi.GetPackagingSubTaskDetailAsync(_id!);
                 ApplyDetail(detail);
                 _loadedTaskId = _id;
-                if (!IsPackagedStatus(detail.workOrderStatus))
+                if (!IsReadOnlyDetail(detail))
                 {
                     // Do not allow another save using the already consumed scan,
                     // even if the backend has not yet updated the task status.
@@ -533,6 +564,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
         _scannedMaterial = null;
         _scannedQrCode = null;
         _nextTask = null;
+        UpdateEditingState();
     }
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");

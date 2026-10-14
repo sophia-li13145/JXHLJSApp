@@ -15,6 +15,7 @@ public sealed class PackagingSubTaskDetailDto
     public string? finishTime { get; set; }
     public string? finishedQrCode { get; set; }
     public string? id { get; set; }
+    public bool? isEditable { get; set; }
     [System.Text.Json.Serialization.JsonConverter(typeof(FlexibleNullableDecimalJsonConverter))]
     public decimal? length { get; set; }
     public string? lengthUnit { get; set; }

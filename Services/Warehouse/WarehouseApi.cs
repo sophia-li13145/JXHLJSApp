@@ -329,7 +329,9 @@ public sealed class WarehouseApi : IWarehouseApi
         resp.EnsureSuccessStatusCode();
         var data = await ReadApiResponseAsync<PackagingSubTaskDetailDto>(resp, ct).ConfigureAwait(false);
         var detail = data.result ?? throw new InvalidOperationException("扫码接口未返回包装信息。");
-        var isPackaged = PackagingSubTaskDetailDto.IsPackagedStatus(detail.workOrderStatus);
+        var isReadOnly = detail.isEditable.HasValue
+            ? !detail.isEditable.Value
+            : PackagingSubTaskDetailDto.IsPackagedStatus(detail.workOrderStatus);
         if (string.IsNullOrWhiteSpace(detail.id) || string.IsNullOrWhiteSpace(detail.workOrderNo))
         {
             throw new InvalidOperationException("扫码返回的子工序任务ID或生产工单号为空，无法执行包装作业。");
@@ -338,9 +340,11 @@ public sealed class WarehouseApi : IWarehouseApi
         ApplyPackagingDetailDictNames(detail, dictNames);
         // The scan response contains packaging instructions, but not the complete
         // saved packaging record (completion time, actual weight and materials).
-        if (isPackaged || PackagingSubTaskDetailDto.IsPackagedStatus(detail.workOrderStatus))
+        if (isReadOnly)
         {
-            return await GetPackagingSubTaskDetailAsync(detail.id, ct).ConfigureAwait(false);
+            var savedDetail = await GetPackagingSubTaskDetailAsync(detail.id, ct).ConfigureAwait(false);
+            savedDetail.isEditable = detail.isEditable;
+            return savedDetail;
         }
         return detail;
     }

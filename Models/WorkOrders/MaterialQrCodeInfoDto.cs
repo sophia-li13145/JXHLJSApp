@@ -5,6 +5,7 @@ namespace JXHLJSApp.Models.WorkOrders;
 
 public sealed class MaterialQrCodeInfoDto
 {
+    public bool? isEditable { get; set; }
     public string? bizBatchNo { get; set; }
     public string? stockBatch { get; set; }
     public string? coilWeight { get; set; }
