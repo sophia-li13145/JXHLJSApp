@@ -41,6 +41,8 @@ public interface IWarehouseApi
 
 public sealed class WarehouseApi : IWarehouseApi
 {
+    internal const string OcrHttpClientName = "IncomingOcr";
+
     private readonly HttpClient _http;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly string _rawMaterialReceivingListEndpoint;
@@ -507,7 +509,8 @@ public sealed class WarehouseApi : IWarehouseApi
     public async Task<RawMaterialOcrDto> RecognizeIncomingAsync(AttachmentDto fileInfo, string instockNo, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _ocrIncomingEndpoint);
-        using var resp = await _http.PostAsJsonAsync(url, new { fileInfo, instockNo }, JsonOptions, ct).ConfigureAwait(false);
+        using var ocrClient = _httpClientFactory.CreateClient(OcrHttpClientName);
+        using var resp = await ocrClient.PostAsJsonAsync(url, new { fileInfo, instockNo }, JsonOptions, ct).ConfigureAwait(false);
         await EnsureSuccessStatusCodeWithBodyAsync(resp, ct).ConfigureAwait(false);
         var data = await ReadApiResponseAsync<OcrIncomingResultDto>(resp, ct).ConfigureAwait(false);
         var result = data.result;

@@ -96,6 +96,13 @@ namespace JXHLJSApp
 
             // Core framework and configuration services.
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();
+            // 仅 OCR 识别等待 5 分钟，其他业务客户端保持原有超时。
+            builder.Services.AddHttpClient(WarehouseApi.OcrHttpClientName, client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(5);
+            })
+                .AddHttpMessageHandler<AuthHeaderHandler>()
+                .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient("AttachmentPreview", client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(30);
