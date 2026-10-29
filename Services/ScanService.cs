@@ -1,7 +1,7 @@
+using JXHLJSApp.Controls;
 using SkiaSharp;
 using ZXing.Common;
 using ZXing.Net.Maui;
-using ZXing.Net.Maui.Controls;
 using SkiaBarcodeReader = ZXing.SkiaSharp.BarcodeReader;
 
 namespace JXHLJSApp.Services;
@@ -74,10 +74,13 @@ public sealed class ScanService : IScanService
     private sealed class ScannerModalPage : ContentPage
     {
         private readonly TaskCompletionSource<string?> _resultSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private readonly CameraBarcodeReaderView _cameraView;
+        private readonly FocusedCameraBarcodeReaderView _cameraView;
+        private readonly Label _cameraStatusLabel;
         private readonly Entry _hardwareScanEntry;
         private readonly bool _enableCamera;
         private bool _completed;
+        private bool _visible;
+        private bool _pickingPhoto;
 
         public ScannerModalPage(
             string title,
@@ -90,7 +93,14 @@ public sealed class ScanService : IScanService
             Shell.SetNavBarIsVisible(this, false);
             _enableCamera = enableCamera;
 
-            _cameraView = new CameraBarcodeReaderView
+            _cameraStatusLabel = new Label
+            {
+                Text = "请将二维码对准扫码框，点击画面可重新对焦。",
+                TextColor = Color.FromArgb("#DDE8FF"),
+                FontSize = 13,
+                HorizontalTextAlignment = TextAlignment.Center
+            };
+            _cameraView = new FocusedCameraBarcodeReaderView
             {
                 CameraLocation = CameraLocation.Rear,
                 IsDetecting = false,
@@ -104,7 +114,14 @@ public sealed class ScanService : IScanService
                 HorizontalOptions = LayoutOptions.Fill,
                 VerticalOptions = LayoutOptions.Fill
             };
-            _cameraView.BarcodesDetected += OnBarcodesDetected;
+            var focusTap = new TapGestureRecognizer();
+            focusTap.Tapped += (_, e) =>
+            {
+                if (_completed || !_visible || _pickingPhoto || !_enableCamera) return;
+                if (e.GetPosition(_cameraView) is Point point)
+                    ((ICameraView)_cameraView).Focus(point);
+            };
+            _cameraView.GestureRecognizers.Add(focusTap);
 
             _hardwareScanEntry = new Entry
             {
@@ -139,43 +156,47 @@ public sealed class ScanService : IScanService
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            _ = StartScannerAsync();
+            _visible = true;
+            // A modal dialog or photo picker can reactivate this same scanner instance.
+            _cameraView.BarcodesDetected -= OnBarcodesDetected;
+            _cameraView.BarcodesDetected += OnBarcodesDetected;
+            _cameraView.CameraStatusChanged -= OnCameraStatusChanged;
+            _cameraView.CameraStatusChanged += OnCameraStatusChanged;
+            StartScanner();
         }
 
-        private async Task StartScannerAsync()
+        private void StartScanner()
         {
-            await MainThread.InvokeOnMainThreadAsync(async () =>
+            if (_completed || !_visible || _pickingPhoto) return;
+            if (!_enableCamera)
             {
-                if (_completed)
-                {
-                    return;
-                }
+                _hardwareScanEntry.Focus();
+                return;
+            }
 
-                if (!_enableCamera)
-                {
-                    _hardwareScanEntry.Focus();
-                    return;
-                }
-
-                _cameraView.IsEnabled = true;
-                _cameraView.IsDetecting = false;
-                await Task.Delay(300);
-
-                if (_completed)
-                {
-                    return;
-                }
-
-                _cameraView.CameraLocation = CameraLocation.Rear;
-                _cameraView.IsDetecting = true;
-            });
+            _cameraView.IsEnabled = true;
+            // The Android handler focuses when the preview actually starts streaming.
+            _cameraView.IsDetecting = true;
         }
 
         protected override void OnDisappearing()
         {
+            _visible = false;
             ReleaseCamera();
             _cameraView.BarcodesDetected -= OnBarcodesDetected;
+            _cameraView.CameraStatusChanged -= OnCameraStatusChanged;
             base.OnDisappearing();
+        }
+
+        protected override bool OnBackButtonPressed()
+        {
+            Complete(null);
+            return true;
+        }
+
+        private void OnCameraStatusChanged(object? sender, string message)
+        {
+            if (!_completed && _visible && !_pickingPhoto) _cameraStatusLabel.Text = message;
         }
 
         public Task<string?> WaitForResultAsync() => _resultSource.Task;
@@ -271,7 +292,7 @@ public sealed class ScanService : IScanService
                 RowSpacing = 10
             };
             panel.Add(pickPhotoButton, 0, 0);
-            panel.Add(new Label { Text = "请将二维码对准上方扫码框；手持机也可用扫码枪输入。", TextColor = Color.FromArgb("#DDE8FF"), FontSize = 13, HorizontalTextAlignment = TextAlignment.Center }, 0, 1);
+            panel.Add(_cameraStatusLabel, 0, 1);
             panel.Add(_hardwareScanEntry, 0, 2);
             Grid.SetRow(panel, 2);
             return panel;
@@ -279,14 +300,15 @@ public sealed class ScanService : IScanService
 
         private async Task PickPhotoAsync(Func<Task<string?>> pickPhotoAsync)
         {
-            if (_completed) return;
+            if (_completed || _pickingPhoto) return;
 
-            var shouldResumeDetecting = _cameraView.IsDetecting;
-            _cameraView.IsDetecting = false;
+            _pickingPhoto = true;
+            ReleaseCamera();
 
             try
             {
                 var code = await pickPhotoAsync();
+                if (_completed) return;
                 if (!string.IsNullOrWhiteSpace(code))
                 {
                     Complete(code);
@@ -297,22 +319,27 @@ public sealed class ScanService : IScanService
             }
             catch (Exception ex)
             {
-                await ErrorDialogService.ShowAsync(this, "图片识别失败", ex.Message, "确定");
+                if (!_completed)
+                    await ErrorDialogService.ShowAsync(this, "图片识别失败", ex.Message, "确定");
             }
             finally
             {
+                _pickingPhoto = false;
                 if (!_completed)
                 {
-                    _cameraView.IsDetecting = shouldResumeDetecting;
-                    _hardwareScanEntry.Focus();
+                    StartScanner();
                 }
             }
         }
 
         private void OnBarcodesDetected(object? sender, BarcodeDetectionEventArgs e)
         {
-            var value = e.Results?.FirstOrDefault()?.Value;
-            MainThread.BeginInvokeOnMainThread(() => Complete(value));
+            var value = e.Results?.FirstOrDefault(result => !string.IsNullOrWhiteSpace(result.Value))?.Value;
+            if (string.IsNullOrWhiteSpace(value)) return;
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (_visible && !_pickingPhoto) Complete(value);
+            });
         }
 
         private void Complete(string? value)

@@ -30,6 +30,11 @@ namespace JXHLJSApp
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
+#if ANDROID
+            builder.ConfigureMauiHandlers(handlers => handlers.AddHandler<
+                JXHLJSApp.Controls.FocusedCameraBarcodeReaderView,
+                JXHLJSApp.Platforms.Android.FocusedCameraBarcodeReaderHandler>());
+#endif
 #if DEBUG
             builder.Logging.AddDebug(); // ✅ 放在 Build 之前
 #endif
