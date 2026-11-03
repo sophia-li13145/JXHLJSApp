@@ -8,12 +8,16 @@ public partial class WorkStartScanPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
+    private bool _isHandlingScan;
 
     public WorkStartScanPage(IWorkOrderApi workOrderApi, IScanService scanService)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            code => ScanAndBindMachineAsync(code),
+            () => !_isHandlingScan);
     }
 
     private async void OnBackTapped(object sender, TappedEventArgs e)
@@ -21,12 +25,23 @@ public partial class WorkStartScanPage : ContentPage
         await Shell.Current.GoToAsync("..");
     }
 
-    private async void OnScanTapped(object sender, TappedEventArgs e)
+    private async void OnScanTapped(object sender, TappedEventArgs e) => await ScanAndBindMachineAsync();
+
+    private async Task ScanAndBindMachineAsync(string? hardwareCode = null)
     {
-        var code = await _scanService.ScanAsync("扫码机台二维码上机");
-        if (!string.IsNullOrWhiteSpace(code))
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
+        try
         {
-            await BindMachineAndOpenOrdersAsync(code);
+            var code = hardwareCode ?? await _scanService.ScanAsync("扫码机台二维码上机");
+            if (!string.IsNullOrWhiteSpace(code))
+            {
+                await BindMachineAndOpenOrdersAsync(code);
+            }
+        }
+        finally
+        {
+            _isHandlingScan = false;
         }
     }
 

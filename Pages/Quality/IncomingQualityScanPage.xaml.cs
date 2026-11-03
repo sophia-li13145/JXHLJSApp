@@ -11,6 +11,7 @@ public partial class IncomingQualityScanPage : ContentPage, IQueryAttributable
 {
     private readonly IQualityApi _qualityApi;
     private readonly IScanService _scanService;
+    private bool _isHandlingScan;
     private string? _incomingQualityNo;
     private string? _qrCode;
     private bool _hasLoadedScanForm;
@@ -38,6 +39,9 @@ public partial class IncomingQualityScanPage : ContentPage, IQueryAttributable
         InitializeComponent();
         _qualityApi = qualityApi;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            code => ScanAndLoadMaterialAsync(code),
+            () => !_isHandlingScan && (ScanPanel.IsVisible && _hasLoadedScanForm));
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -104,17 +108,28 @@ public partial class IncomingQualityScanPage : ContentPage, IQueryAttributable
         }
     }
 
-    private async void OnScanPanelTapped(object sender, TappedEventArgs e)
+    private async void OnScanPanelTapped(object sender, TappedEventArgs e) => await ScanAndLoadMaterialAsync();
+
+    private async Task ScanAndLoadMaterialAsync(string? hardwareCode = null)
     {
-        var code = await _scanService.ScanAsync("来料质检扫码");
-        if (string.IsNullOrWhiteSpace(code)) return;
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
         try
         {
-            await LoadScannedMaterialAsync(code.Trim());
+            var code = hardwareCode ?? await _scanService.ScanAsync("来料质检扫码");
+            if (string.IsNullOrWhiteSpace(code)) return;
+            try
+            {
+                await LoadScannedMaterialAsync(code.Trim());
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "扫码失败", ex.Message, "确定");
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            await ErrorDialogService.ShowAsync(this, "扫码失败", ex.Message, "确定");
+            _isHandlingScan = false;
         }
     }
 

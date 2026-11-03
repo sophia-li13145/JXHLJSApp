@@ -7,6 +7,7 @@ public partial class WorkCompletionPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
+    private bool _isHandlingScan;
     private readonly IProductionContextService _productionContext;
     private bool _isBusy;
 
@@ -19,6 +20,9 @@ public partial class WorkCompletionPage : ContentPage
         InitializeComponent();
         _workOrderApi = workOrderApi;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            code => ScanAndVerifyMachineAsync(code),
+            () => !_isHandlingScan && (!_isBusy && ScanPanel.IsVisible));
         _productionContext = productionContext;
     }
 
@@ -28,12 +32,23 @@ public partial class WorkCompletionPage : ContentPage
         await Shell.Current.GoToAsync("..");
     }
 
-    private async void OnScanPanelTapped(object sender, TappedEventArgs e)
+    private async void OnScanPanelTapped(object sender, TappedEventArgs e) => await ScanAndVerifyMachineAsync();
+
+    private async Task ScanAndVerifyMachineAsync(string? hardwareCode = null)
     {
-        var code = await _scanService.ScanAsync("扫码机台二维码验证完工");
-        if (!string.IsNullOrWhiteSpace(code))
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
+        try
         {
-            await VerifyMachineAsync(code);
+            var code = hardwareCode ?? await _scanService.ScanAsync("扫码机台二维码验证完工");
+            if (!string.IsNullOrWhiteSpace(code))
+            {
+                await VerifyMachineAsync(code);
+            }
+        }
+        finally
+        {
+            _isHandlingScan = false;
         }
     }
 

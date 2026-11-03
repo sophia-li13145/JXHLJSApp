@@ -93,6 +93,7 @@ namespace JXHLJSApp
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();
             builder.Services.AddSingleton<IScanService, ScanService>();
+            builder.Services.AddSingleton<HardwareScanService>();
             builder.Services.AddSingleton<IImageCompressionService, ImageCompressionService>();
             builder.Services.AddSingleton<IProductionContextService, ProductionContextService>();
             builder.Services.AddSingleton<AuthState>();

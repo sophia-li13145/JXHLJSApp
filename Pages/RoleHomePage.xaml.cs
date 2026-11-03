@@ -14,6 +14,8 @@ public partial class RoleHomePage : ContentPage
     private readonly IScanService _scanService;
     private readonly IAuthApi _authApi;
     private bool _isPackagingScanBusy;
+    private bool _canHardwareBind;
+    private bool _isBindingMachine;
     private bool _isRefreshingUserInfo;
     private string? _selectedRoleCode;
 
@@ -31,6 +33,9 @@ public partial class RoleHomePage : ContentPage
     {
         _workOrderApi = workOrderApi;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            code => BindMachineAndOpenOrdersAsync(code),
+            () => _canHardwareBind && !_isBindingMachine && !_isRefreshingUserInfo);
         _authApi = authApi;
         InitializeComponent();
         BuildRoleHome();
@@ -87,6 +92,7 @@ public partial class RoleHomePage : ContentPage
         var shift = Preferences.Get(UserSessionKeys.ShiftName, string.Empty);
 
         var role = RoleHomeDefinition.FromRoleCode(roleCode);
+        _canHardwareBind = role.RoleCode == "production";
         role = role with
         {
             Modules = role.Modules.Concat(new[]
@@ -440,27 +446,36 @@ public partial class RoleHomePage : ContentPage
 
     private async Task BindMachineAndOpenOrdersAsync(string? machineCode)
     {
-        var devCode = machineCode?.Trim();
-        if (string.IsNullOrWhiteSpace(devCode))
-        {
-            await DisplayAlert("提示", "请输入机台编号", "确定");
-            return;
-        }
-
+        if (_isBindingMachine) return;
+        _isBindingMachine = true;
         try
         {
-            var result = await _workOrderApi.BindWorkerMachineAsync(devCode);
-            if (!result)
+            var devCode = machineCode?.Trim();
+            if (string.IsNullOrWhiteSpace(devCode))
             {
-                await ErrorDialogService.ShowAsync(this, "绑定失败", "机台绑定未成功，请确认机台编号后重试。", "确定");
+                await DisplayAlert("提示", "请输入机台编号", "确定");
                 return;
             }
 
-            await Shell.Current.GoToAsync(AppShell.RouteWorkStartOrders);
+            try
+            {
+                var result = await _workOrderApi.BindWorkerMachineAsync(devCode);
+                if (!result)
+                {
+                    await ErrorDialogService.ShowAsync(this, "绑定失败", "机台绑定未成功，请确认机台编号后重试。", "确定");
+                    return;
+                }
+
+                await Shell.Current.GoToAsync(AppShell.RouteWorkStartOrders);
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "绑定失败", ex.Message, "确定");
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            await ErrorDialogService.ShowAsync(this, "绑定失败", ex.Message, "确定");
+            _isBindingMachine = false;
         }
     }
 

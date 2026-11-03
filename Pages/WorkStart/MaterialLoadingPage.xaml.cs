@@ -8,6 +8,7 @@ public partial class MaterialLoadingPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
+    private bool _isHandlingScan;
     private readonly IProductionContextService _productionContext;
     private bool _machineConfirmed;
     private bool _isBusy;
@@ -20,6 +21,9 @@ public partial class MaterialLoadingPage : ContentPage
         InitializeComponent();
         _workOrderApi = workOrderApi;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            code => _machineConfirmed ? ScanMaterialAsync(code) : ScanMachineAsync(code),
+            () => !_isHandlingScan && (!_isBusy && ScanPanel.IsVisible));
         _productionContext = productionContext;
         ReuseConfirmedPicklingMachine();
     }
@@ -54,12 +58,21 @@ public partial class MaterialLoadingPage : ContentPage
         await ScanMaterialAsync();
     }
 
-    private async Task ScanMachineAsync()
+    private async Task ScanMachineAsync(string? hardwareCode = null)
     {
-        var code = await _scanService.ScanAsync("扫描机台二维码");
-        if (string.IsNullOrWhiteSpace(code)) return;
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
+        try
+        {
+            var code = hardwareCode ?? await _scanService.ScanAsync("扫描机台二维码");
+            if (string.IsNullOrWhiteSpace(code)) return;
 
-        await ConfirmMachineAsync(code);
+            await ConfirmMachineAsync(code);
+        }
+        finally
+        {
+            _isHandlingScan = false;
+        }
     }
 
     private async Task ConfirmMachineAsync(string? machineCode)
@@ -125,26 +138,35 @@ public partial class MaterialLoadingPage : ContentPage
 
     }
 
-    private async Task ScanMaterialAsync()
+    private async Task ScanMaterialAsync(string? hardwareCode = null)
     {
-        var code = await _scanService.ScanAsync("扫描上料物料二维码");
-        if (string.IsNullOrWhiteSpace(code)) return;
-
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
         try
         {
-            _isBusy = true;
-            _lastMaterialQrCode = code.Trim();
-            var material = await _workOrderApi.ScanQueryMaterialInfoAsync(_lastMaterialQrCode);
-            BindMaterial(material);
-            ShowResultStep();
-        }
-        catch (Exception ex)
-        {
-            await ErrorDialogService.ShowAsync(this, "扫码失败", ex.Message, "确定");
+            var code = hardwareCode ?? await _scanService.ScanAsync("扫描上料物料二维码");
+            if (string.IsNullOrWhiteSpace(code)) return;
+
+            try
+            {
+                _isBusy = true;
+                _lastMaterialQrCode = code.Trim();
+                var material = await _workOrderApi.ScanQueryMaterialInfoAsync(_lastMaterialQrCode);
+                BindMaterial(material);
+                ShowResultStep();
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "扫码失败", ex.Message, "确定");
+            }
+            finally
+            {
+                _isBusy = false;
+            }
         }
         finally
         {
-            _isBusy = false;
+            _isHandlingScan = false;
         }
     }
 

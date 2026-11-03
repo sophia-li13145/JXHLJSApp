@@ -1,5 +1,9 @@
 {
-  "schemaVersion": 15,
+  "schemaVersion": 16,
+  "hardwareScanner": {
+    "broadcastAction": "lc",
+    "dataKey": "data"
+  },
   "server": {
     "scheme": "http",
     "ipAddress": "221.216.53.191:9128"

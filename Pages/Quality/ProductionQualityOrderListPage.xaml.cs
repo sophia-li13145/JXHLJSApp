@@ -10,6 +10,7 @@ public partial class ProductionQualityOrderListPage : ContentPage, IQueryAttribu
     private bool _isLoading;
     private readonly IQualityApi _qualityApi;
     private readonly IScanService _scanService;
+    private bool _isHandlingScan;
     private readonly List<ProductionQualityStatusOption> _statuses = new()
     {
         new("所有状态", null),
@@ -24,6 +25,9 @@ public partial class ProductionQualityOrderListPage : ContentPage, IQueryAttribu
         InitializeComponent();
         _qualityApi = qualityApi;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            code => ScanAndCreateInspectionAsync(code),
+            () => !_isHandlingScan && (ManualInspectionPanel.IsVisible && ScanOverlay.IsVisible && !_isLoading));
         StatusPicker.ItemsSource = _statuses;
         StatusPicker.SelectedIndex = 0;
     }
@@ -94,30 +98,41 @@ public partial class ProductionQualityOrderListPage : ContentPage, IQueryAttribu
         ScanOverlay.IsVisible = false;
     }
 
-    private async void OnScanManualMaterialClicked(object sender, TappedEventArgs e)
-    {
-        ScanOverlay.IsVisible = false;
-        var qrCode = await _scanService.ScanAsync("扫描新增巡检");
-        if (string.IsNullOrWhiteSpace(qrCode)) return;
+    private async void OnScanManualMaterialClicked(object sender, TappedEventArgs e) => await ScanAndCreateInspectionAsync();
 
+    private async Task ScanAndCreateInspectionAsync(string? hardwareCode = null)
+    {
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
         try
         {
-            var initialQrCode = qrCode.Trim();
-            var detail = await _qualityApi.CreateManualInspectionAsync(initialQrCode);
-            var qualityNo = detail.qualityNo;
-            if (string.IsNullOrWhiteSpace(qualityNo))
-            {
-                await DisplayAlert("创建成功", "巡检单已创建，但接口未返回巡检单号。", "确定");
-                await LoadOrdersAsync();
-                return;
-            }
+            ScanOverlay.IsVisible = false;
+            var qrCode = hardwareCode ?? await _scanService.ScanAsync("扫描新增巡检");
+            if (string.IsNullOrWhiteSpace(qrCode)) return;
 
-            await DisplayAlert("创建成功", "巡检任务已创建。", "确定");
-            await Shell.Current.GoToAsync($"{AppShell.RouteMachineQualityDetail}?qualityNo={Uri.EscapeDataString(qualityNo)}&workOrderNo={Uri.EscapeDataString(detail.workOrderNo ?? string.Empty)}&inspectStatus={Uri.EscapeDataString(detail.inspectStatus ?? string.Empty)}&manualInspection=true&processName={Uri.EscapeDataString(detail.processName ?? string.Empty)}&materialCode={Uri.EscapeDataString(detail.materialCode ?? string.Empty)}&materialName={Uri.EscapeDataString(detail.materialName ?? string.Empty)}&qrCode={Uri.EscapeDataString(initialQrCode)}");
+            try
+            {
+                var initialQrCode = qrCode.Trim();
+                var detail = await _qualityApi.CreateManualInspectionAsync(initialQrCode);
+                var qualityNo = detail.qualityNo;
+                if (string.IsNullOrWhiteSpace(qualityNo))
+                {
+                    await DisplayAlert("创建成功", "巡检单已创建，但接口未返回巡检单号。", "确定");
+                    await LoadOrdersAsync();
+                    return;
+                }
+
+                await DisplayAlert("创建成功", "巡检任务已创建。", "确定");
+                await Shell.Current.GoToAsync($"{AppShell.RouteMachineQualityDetail}?qualityNo={Uri.EscapeDataString(qualityNo)}&workOrderNo={Uri.EscapeDataString(detail.workOrderNo ?? string.Empty)}&inspectStatus={Uri.EscapeDataString(detail.inspectStatus ?? string.Empty)}&manualInspection=true&processName={Uri.EscapeDataString(detail.processName ?? string.Empty)}&materialCode={Uri.EscapeDataString(detail.materialCode ?? string.Empty)}&materialName={Uri.EscapeDataString(detail.materialName ?? string.Empty)}&qrCode={Uri.EscapeDataString(initialQrCode)}");
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "创建失败", ex.Message, "确定");
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            await ErrorDialogService.ShowAsync(this, "创建失败", ex.Message, "确定");
+            _isHandlingScan = false;
         }
     }
 

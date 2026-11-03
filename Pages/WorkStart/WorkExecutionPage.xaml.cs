@@ -8,6 +8,7 @@ public partial class WorkExecutionPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
+    private bool _isHandlingScan;
     private readonly IProductionContextService _productionContext;
     private List<WorkOrderDetailDto> _tasks = new();
     public WorkExecutionPage(
@@ -18,6 +19,9 @@ public partial class WorkExecutionPage : ContentPage
         InitializeComponent();
         _workOrderApi = workOrderApi;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            code => ScanAndSwitchMachineAsync(code),
+            () => !_isHandlingScan && (!RefreshContainer.IsRefreshing));
         _productionContext = productionContext;
     }
 
@@ -200,15 +204,26 @@ public partial class WorkExecutionPage : ContentPage
         await Shell.Current.GoToAsync(AppShell.RouteWorkCompletion);
     }
 
-    private async void OnSwitchMachineTapped(object sender, TappedEventArgs e)
-    {
-        var code = await _scanService.ScanAsync("扫码切换机台");
-        if (string.IsNullOrWhiteSpace(code))
-        {
-            return;
-        }
+    private async void OnSwitchMachineTapped(object sender, TappedEventArgs e) => await ScanAndSwitchMachineAsync();
 
-        await BindMachineAndReturnHomeAsync(code);
+    private async Task ScanAndSwitchMachineAsync(string? hardwareCode = null)
+    {
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
+        try
+        {
+            var code = hardwareCode ?? await _scanService.ScanAsync("扫码切换机台");
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                return;
+            }
+
+            await BindMachineAndReturnHomeAsync(code);
+        }
+        finally
+        {
+            _isHandlingScan = false;
+        }
     }
 
     private async Task BindMachineAndReturnHomeAsync(string machineCode)

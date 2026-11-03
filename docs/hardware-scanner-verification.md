@@ -1,0 +1,80 @@
+# 手持机侧键扫码
+
+## 接入流程
+
+侧键由设备扫描服务驱动，应用接收其 Android 广播或原生文本输出，无需先点击页面扫码区域或输入框。应用不模拟侧键，也不要求摄像头权限。
+
+```text
+侧键 → 设备扫描服务 → HardwareScanReceiver → HardwareScanService → 当前页面扫码处理
+                  → 原生 EditText 文本接收 ────────────────┘
+点击扫码 → 摄像头 → ScanAsync 返回二维码 ──────────────────────────┘
+```
+
+`Resources/Raw/appconfig.json` 的 `hardwareScanner` 默认使用参考项目 IndustrialControlMAUI 的参数：
+
+```json
+"hardwareScanner": {
+  "broadcastAction": "lc",
+  "dataKey": "data"
+}
+```
+
+以上参数只代表自定义/旧协议，不再是使用 Newland 手持机的前提。应用同时监听 Newland 标准广播 `nlscan.action.SCANNER_RESULT`，提取 `SCAN_BARCODE1`（为空时尝试 `SCAN_BARCODE2`），并拒绝 `SCAN_STATE=fail` 的失败结果。原有 `lc` / `data` 及配置指定的广播继续可用。如果设备要求指定目标包，使用 `com.jxhljs.app`。
+
+2026-11-02 的现场视频显示设备品牌为 Newland，停留在生产质检扫码业务页。上一版只监听 `lc`，并未接入 Newland 标准 Action 和字段；同时业务页没有原生文本接收目标，不能接收默认“直接填入 EditText”输出。这两个缺口现已补齐；视频不能单独证明现场采用了哪种输出模式，也不能证明扫描引擎已成功解码。
+
+对于 Newland 默认“直接填入 EditText”或“模拟按键”模式，可扫码页面现在自动准备一个不显示、不弹出软键盘的原生输入目标。文本静默 150 毫秒后提交，因此无回车后缀也能处理。文本只在该输入目标聚焦时接收，不监听或读取用户正在编辑的其他输入框。若需要在填写重量、备注等字段时仍独立接收扫码，请使用广播/API 输出模式；不要同时启用广播和键盘输出，以免二维码写入表单。应用不会修改设备的全局扫码模式、扫描键映射或强制触发扫描引擎。
+
+协议依据：[Newland Android PDA API Handbook](https://www.newland-ru.com/lib/sites/default/files/documents/2024-07/newland_android_nquire_api_handbook_v1.0.9.pdf)，第 2–4 页（PDF 第 7–9 页）：物理扫描键由设备底层处理；默认直接填入 EditText；API 模式使用上述标准广播及字段。
+
+接收器随 Activity 前台生命周期注册和注销，兼容 Android 13/14 的动态接收器导出要求。广播仅提取文本，不在接收器中调用业务接口；日志记录 Action、结果长度和处理页面，不记录二维码正文。
+
+## 页面范围
+
+已接入原有 20 个页面、23 处扫码调用。硬件结果直接传入与摄像头共用的异步方法，保留原有接口、错误提示和导航。
+
+- 员工扫码登录：仅在扫码登录标签页接收。
+- 生产角色首页、扫码上机页：机台绑定；执行页：切换机台。
+- 上料、下料：按当前步骤分别处理机台码和物料码，保留酸洗已确认机台的复用。
+- 完工：机台验证步骤。
+- 异常、返工上报：物料识别。
+- 物料查询、工序间转运：查询和原有导航。
+- 来料质检详情及扫码检验页、生产质检扫码页、机台质检扫码页：原有质检流程。
+- 新增巡检：打开新增巡检弹层后，可以直接按侧键，无需再点击“扫描物料二维码”。普通列表状态不自动创建单据。
+- 质检详情：沿用扫描按钮的可用状态和工艺方案限制。
+- 原料收货：已选择票签且未显示录入、确认、汇总或加载弹层时接收。
+- 包装：普通包装及快捷包装共用原有分支，已完成的只读详情不处理。
+- 发货详情：物料扫码复核。
+
+摄像头扫码窗口显示时，它独占硬件结果并通过原来的 `ScanAsync` 返回链路继续处理。页面离开、应用后台、系统窗口失去焦点、错误弹窗、业务扫码处理中均不分发给底层页面。页面切换前已排队的结果会被丢弃。同页面同码 500 毫秒内重复广播会被过滤；不同码及不同页面不共用此去抖限制。
+
+## 自动检查
+
+```powershell
+./Tests/HardwareScanRouting.Tests.ps1
+./Tests/HardwareScanProtocol.Tests.ps1
+git diff --check
+dotnet build JXHLJSApp.csproj -f net8.0-android
+```
+
+路由测试直接使用生产 `HardwareScanService`，用平台替身验证前后台、当前页、模态页独占、页面状态限制、重复输入、处理中互斥、异常恢复、导航切换和文本边界清理。协议/文本测试直接使用生产 `HardwareScanProtocol` 和 `HardwareScanTextBuffer`，验证 Newland 标准 Action、成功/失败字段、旧协议兼容、无回车文本、分段字符、JSON 换行、恰好一次提交及跨页面丢弃。这些测试不替代设备广播协议及真机验收。
+
+本机 SDK 无法自动发现时，可使用现有 Android SDK：
+
+```powershell
+dotnet build JXHLJSApp.csproj -f net8.0-android -r android-arm64 `
+  '-p:AndroidSdkDirectory=D:/Program Files (x86)/Microsoft Visual Studio/Shared/Android/android-sdk'
+```
+
+## 真机验收
+
+1. 使用视频中的 Newland，分别在“直接填入 EditText”和“输出 via API/广播”模式打开生产质检扫码页，完全不点击页面，按侧键扫描，确认进入质检列表。API 模式使用 `nlscan.action.SCANNER_RESULT` / `SCAN_BARCODE1`，不必强制改成 `lc`。直接填入模式同时验证无回车后缀。
+2. 验证上料及下料的机台→物料两步流程，以及复用已确认酸洗机台的情况。
+3. 逐项验证上述业务入口，尤其是收货票签绑定、新增巡检弹层、快捷包装以及只读质检/包装详情。
+4. 先点击摄像头扫码，再按侧键，确认仅处理一次并自动关闭扫码窗口；摄像头与扫码枪同时命中时也只能执行一次。
+5. 在输入重量、备注或质检数据时扫码，确认广播不把二维码写入表单；直接填入模式不得抢夺手动编辑框焦点；不允许扫码的状态不发生业务请求。
+6. 连续按侧键、接口等待时再次扫码、错误后重试，确认无重复请求、无重复跳转且可恢复。
+7. 显示错误弹窗、系统相册或切到后台时扫描，确认不处理；返回后可继续。拒绝相机权限后硬件扫码仍可使用。
+8. 多次进入退出扫码页并切换角色，确认旧页面不接收新结果。
+
+日志排查：先确认 `Hardware scanner listening` 带版本标识 `newland-scan-20261102`，再确认 `Hardware scan broadcast` 或 `Hardware keyboard scan`，最后确认 `Hardware scan dispatched`。直接文本模式可额外检查 `Hardware keyboard input ready`。前者存在但没有输入日志时，优先核对设备输出模式、Action 和目标包；收到广播但长度为零时核对状态及结果字段；`Hardware scan ignored` 会记录页面未注册、业务状态、前后台/焦点等拒绝原因，不记录二维码正文。

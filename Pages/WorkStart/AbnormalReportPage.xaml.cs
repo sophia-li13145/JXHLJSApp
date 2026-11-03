@@ -15,6 +15,7 @@ public partial class AbnormalReportPage : ContentPage
 
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
+    private bool _isHandlingScan;
     private readonly IProductionContextService _productionContext;
     private readonly IImageCompressionService _imageCompressionService;
     private List<WorkOrderAbnormalOptionDto> _options = new();
@@ -33,6 +34,9 @@ public partial class AbnormalReportPage : ContentPage
         InitializeComponent();
         _workOrderApi = workOrderApi;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            code => ScanAndLoadMaterialAsync(code),
+            () => !_isHandlingScan);
         _productionContext = productionContext;
         _imageCompressionService = imageCompressionService;
     }
@@ -120,19 +124,30 @@ public partial class AbnormalReportPage : ContentPage
         }
     }
 
-    private async void OnScanTapped(object sender, TappedEventArgs e)
+    private async void OnScanTapped(object sender, TappedEventArgs e) => await ScanAndLoadMaterialAsync();
+
+    private async Task ScanAndLoadMaterialAsync(string? hardwareCode = null)
     {
-        var code = await _scanService.ScanAsync("扫描异常对象二维码");
-        if (string.IsNullOrWhiteSpace(code)) return;
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
         try
         {
-            _scannedQrCode = code.Trim();
-            _material = await _workOrderApi.ScanAbnormalMaterialAsync(_scannedQrCode);
-            BindMaterial();
+            var code = hardwareCode ?? await _scanService.ScanAsync("扫描异常对象二维码");
+            if (string.IsNullOrWhiteSpace(code)) return;
+            try
+            {
+                _scannedQrCode = code.Trim();
+                _material = await _workOrderApi.ScanAbnormalMaterialAsync(_scannedQrCode);
+                BindMaterial();
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "识别失败", ex.Message, "确定");
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            await ErrorDialogService.ShowAsync(this, "识别失败", ex.Message, "确定");
+            _isHandlingScan = false;
         }
     }
 

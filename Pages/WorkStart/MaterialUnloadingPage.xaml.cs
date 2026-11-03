@@ -7,6 +7,7 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
 {
     private readonly IWorkOrderApi _workOrderApi;
     private readonly IScanService _scanService;
+    private bool _isHandlingScan;
     private readonly IProductionContextService _productionContext;
     private bool _machineConfirmed;
     private bool _isBusy;
@@ -17,6 +18,9 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
         InitializeComponent();
         _workOrderApi = workOrderApi;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            code => _machineConfirmed ? ScanMaterialAsync(code) : ScanMachineAsync(code),
+            () => !_isHandlingScan && (!_isBusy && !_isRedirectingToDetail));
         _productionContext = productionContext;
         ReuseConfirmedPicklingMachine();
     }
@@ -87,26 +91,35 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
         else await ScanMaterialAsync();
     }
 
-    private async Task ScanMachineAsync()
+    private async Task ScanMachineAsync(string? hardwareCode = null)
     {
-        var devCode = await _scanService.ScanAsync("扫描机台二维码");
-        var workOrderNo = _productionContext.Current?.WorkOrderNo;
-        if (string.IsNullOrWhiteSpace(devCode) || string.IsNullOrWhiteSpace(workOrderNo)) return;
-
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
         try
         {
-            _isBusy = true;
-            if (!await _workOrderApi.ScanToWorkAsync(devCode.Trim(), workOrderNo))
+            var devCode = hardwareCode ?? await _scanService.ScanAsync("扫描机台二维码");
+            var workOrderNo = _productionContext.Current?.WorkOrderNo;
+            if (string.IsNullOrWhiteSpace(devCode) || string.IsNullOrWhiteSpace(workOrderNo)) return;
+
+            try
             {
-                await ErrorDialogService.ShowAsync(this, "识别失败", "机台识别未成功，请确认机台码后重试。", "确定");
-                return;
+                _isBusy = true;
+                if (!await _workOrderApi.ScanToWorkAsync(devCode.Trim(), workOrderNo))
+                {
+                    await ErrorDialogService.ShowAsync(this, "识别失败", "机台识别未成功，请确认机台码后重试。", "确定");
+                    return;
+                }
+                _machineConfirmed = true;
+                UpdateProductionContextMachine(devCode.Trim());
+                ShowMaterialScanStep();
             }
-            _machineConfirmed = true;
-            UpdateProductionContextMachine(devCode.Trim());
-            ShowMaterialScanStep();
+            catch (Exception ex) { await ErrorDialogService.ShowAsync(this, "识别失败", ex.Message, "确定"); }
+            finally { _isBusy = false; }
         }
-        catch (Exception ex) { await ErrorDialogService.ShowAsync(this, "识别失败", ex.Message, "确定"); }
-        finally { _isBusy = false; }
+        finally
+        {
+            _isHandlingScan = false;
+        }
     }
 
     private void UpdateProductionContextMachine(string machineCode)
@@ -138,12 +151,21 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
     private static bool IsPicklingProcess(string? operationName) =>
         operationName?.Contains("酸洗", StringComparison.OrdinalIgnoreCase) == true;
 
-    private async Task ScanMaterialAsync()
+    private async Task ScanMaterialAsync(string? hardwareCode = null)
     {
-        var qrCode = await _scanService.ScanAsync("扫描下料标签二维码");
-        var workOrderNo = _productionContext.Current?.WorkOrderNo;
-        if (string.IsNullOrWhiteSpace(qrCode) || string.IsNullOrWhiteSpace(workOrderNo)) return;
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
+        try
+        {
+            var qrCode = hardwareCode ?? await _scanService.ScanAsync("扫描下料标签二维码");
+            var workOrderNo = _productionContext.Current?.WorkOrderNo;
+            if (string.IsNullOrWhiteSpace(qrCode) || string.IsNullOrWhiteSpace(workOrderNo)) return;
 
-        await Shell.Current.GoToAsync($"{AppShell.RouteMaterialUnloadingDetail}?qrCode={Uri.EscapeDataString(qrCode.Trim())}&workOrderNo={Uri.EscapeDataString(workOrderNo)}");
+            await Shell.Current.GoToAsync($"{AppShell.RouteMaterialUnloadingDetail}?qrCode={Uri.EscapeDataString(qrCode.Trim())}&workOrderNo={Uri.EscapeDataString(workOrderNo)}");
+        }
+        finally
+        {
+            _isHandlingScan = false;
+        }
     }
 }

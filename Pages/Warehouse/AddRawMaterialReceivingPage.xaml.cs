@@ -13,6 +13,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 {
     private readonly IWarehouseApi _warehouseApi;
     private readonly IScanService _scanService;
+    private bool _isHandlingScan;
     private readonly IImageCompressionService _imageCompressionService;
     private readonly ObservableCollection<RawMaterialOcrDto> _ocrItems = new();
     private readonly ObservableCollection<RawMaterialOcrDto> _ticketItems = new();
@@ -39,6 +40,12 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         InitializeComponent();
         _warehouseApi = warehouseApi;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            code => ScanAndBindTicketAsync(code),
+            () => !_isHandlingScan && _selectedTicket is not null &&
+                !TicketConfirmOverlay.IsVisible && !BindConfirmOverlay.IsVisible &&
+                !LoadingOverlay.IsVisible && !SummaryOverlay.IsVisible &&
+                !_isSubmittingInstock && !_isStashingInstock);
         _imageCompressionService = imageCompressionService;
         OcrList.ItemsSource = _ocrItems;
         TicketList.ItemsSource = _ticketItems;
@@ -534,25 +541,36 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private void OnCloseSummaryClicked(object sender, EventArgs e) => SummaryOverlay.IsVisible = false;
 
-    private async void OnScanBindClicked(object sender, EventArgs e)
-    {
-        if (_selectedTicket is null)
-        {
-            await DisplayAlert("提示", "请先手动录入并确认票签内容。", "确定");
-            return;
-        }
+    private async void OnScanBindClicked(object sender, EventArgs e) => await ScanAndBindTicketAsync();
 
+    private async Task ScanAndBindTicketAsync(string? hardwareCode = null)
+    {
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
         try
         {
-            var qsCode = await _scanService.ScanAsync("扫码绑定");
-            if (string.IsNullOrWhiteSpace(qsCode)) return;
+            if (_selectedTicket is null)
+            {
+                await DisplayAlert("提示", "请先手动录入并确认票签内容。", "确定");
+                return;
+            }
 
-            var qrInfo = await _warehouseApi.QueryQrCodeInfoAsync(qsCode.Trim());
-            ShowBindConfirmDialog(qrInfo.qrCode ?? qsCode.Trim(), _selectedTicket);
+            try
+            {
+                var qsCode = hardwareCode ?? await _scanService.ScanAsync("扫码绑定");
+                if (string.IsNullOrWhiteSpace(qsCode)) return;
+
+                var qrInfo = await _warehouseApi.QueryQrCodeInfoAsync(qsCode.Trim());
+                ShowBindConfirmDialog(qrInfo.qrCode ?? qsCode.Trim(), _selectedTicket);
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "扫码绑定失败", ex.Message, "确定");
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            await ErrorDialogService.ShowAsync(this, "扫码绑定失败", ex.Message, "确定");
+            _isHandlingScan = false;
         }
     }
 

@@ -11,6 +11,7 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
 {
     private readonly IQualityApi _qualityApi;
     private readonly IScanService _scanService;
+    private bool _isHandlingScan;
     private readonly ObservableCollection<IncomingQualityScanDetailDto> _records = new();
     private string? _incomingQualityNo;
     private IncomingQualityOrderDetailDto? _detail;
@@ -26,6 +27,9 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
         InitializeComponent();
         _qualityApi = qualityApi;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            code => ScanAndOpenInspectionAsync(code),
+            () => !_isHandlingScan && _detail is not null && !_detail.isCompleted && !RefreshContainer.IsRefreshing);
         ScanRecordList.ItemsSource = _records;
     }
 
@@ -224,31 +228,42 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
         return button;
     }
 
-    private async void OnScanClicked(object? sender, EventArgs e)
-    {
-        var code = await _scanService.ScanAsync("来料质检扫码");
-        if (string.IsNullOrWhiteSpace(code)) return;
+    private async void OnScanClicked(object? sender, EventArgs e) => await ScanAndOpenInspectionAsync();
 
+    private async Task ScanAndOpenInspectionAsync(string? hardwareCode = null)
+    {
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
         try
         {
-            var qrCode = code.Trim();
-            var scanMaterial = await _qualityApi.ScanIncomingQualityMaterialAsync(qrCode);
-            var parameters = new Dictionary<string, object>
-            {
-                ["qrCode"] = qrCode,
-                ["scanMaterial"] = scanMaterial
-            };
+            var code = hardwareCode ?? await _scanService.ScanAsync("来料质检扫码");
+            if (string.IsNullOrWhiteSpace(code)) return;
 
-            if (!string.IsNullOrWhiteSpace(_incomingQualityNo))
+            try
             {
-                parameters["incomingQualityNo"] = _incomingQualityNo;
+                var qrCode = code.Trim();
+                var scanMaterial = await _qualityApi.ScanIncomingQualityMaterialAsync(qrCode);
+                var parameters = new Dictionary<string, object>
+                {
+                    ["qrCode"] = qrCode,
+                    ["scanMaterial"] = scanMaterial
+                };
+
+                if (!string.IsNullOrWhiteSpace(_incomingQualityNo))
+                {
+                    parameters["incomingQualityNo"] = _incomingQualityNo;
+                }
+
+                await Shell.Current.GoToAsync(AppShell.RouteIncomingQualityScan, parameters);
             }
-
-            await Shell.Current.GoToAsync(AppShell.RouteIncomingQualityScan, parameters);
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "扫码失败", ex.Message, "确定");
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            await ErrorDialogService.ShowAsync(this, "扫码失败", ex.Message, "确定");
+            _isHandlingScan = false;
         }
     }
 

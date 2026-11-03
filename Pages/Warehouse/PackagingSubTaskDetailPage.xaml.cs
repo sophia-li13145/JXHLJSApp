@@ -11,6 +11,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
 {
     private readonly IWarehouseApi _warehouseApi;
     private readonly IScanService _scanService;
+    private bool _isHandlingScan;
     private string? _id;
     private PackagingSubTaskDetailDto? _detail;
     private MaterialQrCodeInfoDto? _scannedMaterial;
@@ -46,6 +47,9 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
         InitializeComponent();
         _warehouseApi = warehouseApi;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            HandleHardwareScanAsync,
+            () => !_isHandlingScan && !_isSaving && !_isStartingQuickScan && !_isLoadingQuickDetail && (_detail is null ? _isQuickPackaging : !IsReadOnlyDetail(_detail)));
     }
 
     protected override async void OnAppearing()
@@ -199,7 +203,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
         }
     }
 
-    private async Task StartQuickScanAsync()
+    private async Task StartQuickScanAsync(string? hardwareCode = null)
     {
         if (_isStartingQuickScan) return;
         _quickScanStarted = true;
@@ -209,7 +213,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
         {
             // Let the initial detail-page navigation finish before pushing a modal.
             await Task.Yield();
-            var code = await _scanService.ScanAsync("扫码包装", formats: ZXing.Net.Maui.BarcodeFormat.QrCode);
+            var code = hardwareCode ?? await _scanService.ScanAsync("扫码包装", formats: ZXing.Net.Maui.BarcodeFormat.QrCode);
             if (string.IsNullOrWhiteSpace(code))
             {
                 await Shell.Current.GoToAsync("..", false);
@@ -263,45 +267,59 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
 
     }
 
-    private async void OnScanClicked(object sender, EventArgs e)
-    {
-        var code = await _scanService.ScanAsync("包装扫码");
-        if (string.IsNullOrWhiteSpace(code))
-        {
-            return;
-        }
+    private Task HandleHardwareScanAsync(string code) =>
+        _detail is null && _isQuickPackaging ? StartQuickScanAsync(code) : ScanAndApplyMaterialAsync(code);
 
+    private async void OnScanClicked(object sender, EventArgs e) => await ScanAndApplyMaterialAsync();
+
+    private async Task ScanAndApplyMaterialAsync(string? hardwareCode = null)
+    {
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
         try
         {
-            var qrCode = code.Trim();
-            if (_isQuickPackaging)
+            var code = hardwareCode ?? await _scanService.ScanAsync("包装扫码");
+            if (string.IsNullOrWhiteSpace(code))
             {
-                var detail = await _warehouseApi.ScanPackagingDetailAsync(qrCode);
-                ApplyQueryAttributes(new Dictionary<string, object>
+                return;
+            }
+
+            try
+            {
+                var qrCode = code.Trim();
+                if (_isQuickPackaging)
                 {
-                    ["scannedPackagingDetail"] = detail,
-                    ["scannedPackagingQrCode"] = qrCode
-                });
-                return;
+                    var detail = await _warehouseApi.ScanPackagingDetailAsync(qrCode);
+                    ApplyQueryAttributes(new Dictionary<string, object>
+                    {
+                        ["scannedPackagingDetail"] = detail,
+                        ["scannedPackagingQrCode"] = qrCode
+                    });
+                    return;
+                }
+                var material = await _warehouseApi.ScanFinishedPackageQrCodeAsync(qrCode);
+                if (material.isEditable == false && !string.IsNullOrWhiteSpace(_id))
+                {
+                    var detail = await _warehouseApi.GetPackagingSubTaskDetailAsync(_id);
+                    detail.isEditable = false;
+                    ApplyDetail(detail);
+                    return;
+                }
+                if (_detail is not null)
+                {
+                    _detail.isEditable = material.isEditable;
+                    ApplyPageMode(_detail);
+                }
+                ApplyScannedMaterial(material, qrCode);
             }
-            var material = await _warehouseApi.ScanFinishedPackageQrCodeAsync(qrCode);
-            if (material.isEditable == false && !string.IsNullOrWhiteSpace(_id))
+            catch (Exception ex)
             {
-                var detail = await _warehouseApi.GetPackagingSubTaskDetailAsync(_id);
-                detail.isEditable = false;
-                ApplyDetail(detail);
-                return;
+                await ErrorDialogService.ShowAsync(this, "包装扫码失败", ex.Message, "确定");
             }
-            if (_detail is not null)
-            {
-                _detail.isEditable = material.isEditable;
-                ApplyPageMode(_detail);
-            }
-            ApplyScannedMaterial(material, qrCode);
         }
-        catch (Exception ex)
+        finally
         {
-            await ErrorDialogService.ShowAsync(this, "包装扫码失败", ex.Message, "确定");
+            _isHandlingScan = false;
         }
     }
 

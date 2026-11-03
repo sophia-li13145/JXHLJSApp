@@ -9,6 +9,7 @@ public partial class MaterialScanQueryPage : ContentPage
 {
     private readonly IMaterialScanQueryApi _api;
     private readonly IScanService _scanService;
+    private bool _isHandlingScan;
     private bool _scanStarted;
 
     public MaterialScanQueryPage(IMaterialScanQueryApi api, IScanService scanService)
@@ -16,6 +17,9 @@ public partial class MaterialScanQueryPage : ContentPage
         InitializeComponent();
         _api = api;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            code => ScanAndQueryAsync(code),
+            () => !_isHandlingScan);
     }
 
     protected override void OnAppearing()
@@ -28,23 +32,32 @@ public partial class MaterialScanQueryPage : ContentPage
         }
     }
 
-    private async Task ScanAndQueryAsync()
+    private async Task ScanAndQueryAsync(string? hardwareCode = null)
     {
-        var code = await _scanService.ScanAsync("扫描物料二维码");
-        if (string.IsNullOrWhiteSpace(code)) return;
-
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
         try
         {
-            SetLoading(true);
-            Render(await _api.QueryAsync(code));
-        }
-        catch (Exception ex)
-        {
-            await ErrorDialogService.ShowAsync(this, "查询失败", ex.Message, "确定");
+            var code = hardwareCode ?? await _scanService.ScanAsync("扫描物料二维码");
+            if (string.IsNullOrWhiteSpace(code)) return;
+
+            try
+            {
+                SetLoading(true);
+                Render(await _api.QueryAsync(code));
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "查询失败", ex.Message, "确定");
+            }
+            finally
+            {
+                SetLoading(false);
+            }
         }
         finally
         {
-            SetLoading(false);
+            _isHandlingScan = false;
         }
     }
 

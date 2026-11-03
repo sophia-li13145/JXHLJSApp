@@ -10,6 +10,7 @@ public partial class DeliveryOrderDetailPage : ContentPage
 {
     private readonly IWarehouseApi _warehouseApi;
     private readonly IScanService _scanService;
+    private bool _isHandlingScan;
     private readonly ObservableCollection<DeliveryOrderMaterialDetailDto> _materials = new();
     private readonly ObservableCollection<DeliveryOrderScanDetailDto> _scanDetails = new();
     private string? _deliveryNo;
@@ -26,6 +27,9 @@ public partial class DeliveryOrderDetailPage : ContentPage
         InitializeComponent();
         _warehouseApi = warehouseApi;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            code => ScanAndConfirmMaterialAsync(code),
+            () => !_isHandlingScan && (_detail is not null));
         ScanDetailList.ItemsSource = _scanDetails;
     }
 
@@ -91,12 +95,23 @@ public partial class DeliveryOrderDetailPage : ContentPage
         RefreshScanProgress();
     }
 
-    private async void OnScanMaterialClicked(object sender, EventArgs e)
-    {
-        var code = await _scanService.ScanAsync("扫描物料码");
-        if (string.IsNullOrWhiteSpace(code)) return;
+    private async void OnScanMaterialClicked(object sender, EventArgs e) => await ScanAndConfirmMaterialAsync();
 
-        await ScanActualAsync(code.Trim());
+    private async Task ScanAndConfirmMaterialAsync(string? hardwareCode = null)
+    {
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
+        try
+        {
+            var code = hardwareCode ?? await _scanService.ScanAsync("扫描物料码");
+            if (string.IsNullOrWhiteSpace(code)) return;
+
+            await ScanActualAsync(code.Trim());
+        }
+        finally
+        {
+            _isHandlingScan = false;
+        }
     }
 
     private async Task ScanActualAsync(string qrCode)

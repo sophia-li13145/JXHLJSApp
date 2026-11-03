@@ -28,6 +28,7 @@ public partial class MachineQualityDetailPage : ContentPage
     private const string SchemeDrawing = "拉拔";
     private readonly IQualityApi _qualityApi;
     private readonly IScanService _scanService;
+    private bool _isHandlingScan;
     private ProductionQualityDetailDto? _detail;
     private string? _qualityNo;
     private string? _workOrderNo;
@@ -66,6 +67,9 @@ public partial class MachineQualityDetailPage : ContentPage
         InitializeComponent();
         _qualityApi = qualityApi;
         _scanService = scanService;
+        _scanService.RegisterHardwareHandler(this,
+            code => ScanAndApplyMaterialAsync(code),
+            () => !_isHandlingScan && (InfoScanMaterialButton.IsVisible && InfoScanMaterialButton.IsEnabled));
         CoilDiameterPicker.ItemsSource = new[] { "合格", "不合格" };
         CoilPitchPicker.ItemsSource = new[] { "合格", "不合格" };
         InspectResultPicker.ItemsSource = new[] { "合格", "不合格" };
@@ -818,39 +822,50 @@ public partial class MachineQualityDetailPage : ContentPage
             (IsDrawingScheme(processName) && IsTorsionInspectionScheme(_inspectionSchemeName));
     }
 
-    private async void OnScanMaterialClicked(object sender, EventArgs e)
+    private async void OnScanMaterialClicked(object sender, EventArgs e) => await ScanAndApplyMaterialAsync();
+
+    private async Task ScanAndApplyMaterialAsync(string? hardwareCode = null)
     {
-        if (string.IsNullOrWhiteSpace(_qualityNo) || (!_isManualInspection && string.IsNullOrWhiteSpace(_workOrderNo)))
-        {
-            await DisplayAlert("提示", _isManualInspection ? "质检单号为空，无法扫码物料。" : "质检单号或工单号为空，无法扫码物料。", "确定");
-            return;
-        }
-
-        var code = await _scanService.ScanAsync("生产质检扫码物料");
-        if (string.IsNullOrWhiteSpace(code)) return;
-
+        if (_isHandlingScan) return;
+        _isHandlingScan = true;
         try
         {
-            var request = new ProductionQualityScanMaterialRequestDto
+            if (string.IsNullOrWhiteSpace(_qualityNo) || (!_isManualInspection && string.IsNullOrWhiteSpace(_workOrderNo)))
             {
-                qrCode = code,
-                qualityNo = _qualityNo,
-                workOrderNo = _workOrderNo
-            };
-            var manualInputState = ShouldPreserveManualInputsOnMaterialScan() ? CaptureManualInputState() : null;
-            var material = await ScanMaterialForCurrentFlowAsync(request);
-            if (ShouldRefreshDetailAfterMaterialScan())
-            {
-                await RefreshDetailAfterMaterialScanAsync();
+                await DisplayAlert("提示", _isManualInspection ? "质检单号为空，无法扫码物料。" : "质检单号或工单号为空，无法扫码物料。", "确定");
+                return;
             }
-            ApplyScannedMaterial(material, code);
-            RestoreManualInputState(manualInputState);
-            ApplyPreviousUnqualifiedState(material);
-            await DisplayAlert("扫码成功", "物料信息已更新到当前质检页面。", "确定");
+
+            var code = hardwareCode ?? await _scanService.ScanAsync("生产质检扫码物料");
+            if (string.IsNullOrWhiteSpace(code)) return;
+
+            try
+            {
+                var request = new ProductionQualityScanMaterialRequestDto
+                {
+                    qrCode = code,
+                    qualityNo = _qualityNo,
+                    workOrderNo = _workOrderNo
+                };
+                var manualInputState = ShouldPreserveManualInputsOnMaterialScan() ? CaptureManualInputState() : null;
+                var material = await ScanMaterialForCurrentFlowAsync(request);
+                if (ShouldRefreshDetailAfterMaterialScan())
+                {
+                    await RefreshDetailAfterMaterialScanAsync();
+                }
+                ApplyScannedMaterial(material, code);
+                RestoreManualInputState(manualInputState);
+                ApplyPreviousUnqualifiedState(material);
+                await DisplayAlert("扫码成功", "物料信息已更新到当前质检页面。", "确定");
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "扫码物料失败", ex.Message, "确定");
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            await ErrorDialogService.ShowAsync(this, "扫码物料失败", ex.Message, "确定");
+            _isHandlingScan = false;
         }
     }
 

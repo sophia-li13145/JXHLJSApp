@@ -8,6 +8,7 @@ namespace JXHLJSApp.Services;
 
 public interface IScanService
 {
+    void RegisterHardwareHandler(Page owner, Func<string, Task> handle, Func<bool>? canScan = null);
     Task<string?> ScanAsync(
         string title = "扫码",
         CancellationToken ct = default,
@@ -17,6 +18,13 @@ public interface IScanService
 
 public sealed class ScanService : IScanService
 {
+    private readonly HardwareScanService _hardwareScanner;
+
+    public ScanService(HardwareScanService hardwareScanner) => _hardwareScanner = hardwareScanner;
+
+    public void RegisterHardwareHandler(Page owner, Func<string, Task> handle, Func<bool>? canScan = null) =>
+        _hardwareScanner.Attach(owner, handle, canScan);
+
     public async Task<string?> ScanAsync(
         string title = "扫码",
         CancellationToken ct = default,
@@ -31,6 +39,11 @@ public sealed class ScanService : IScanService
             permission == PermissionStatus.Granted,
             formats ?? BarcodeFormats.All,
             () => ScanFromPhotoAsync("选择二维码图片", ct));
+        RegisterHardwareHandler(scannerPage, code =>
+        {
+            scannerPage.AcceptHardwareScan(code);
+            return Task.CompletedTask;
+        }, () => scannerPage.CanAcceptHardwareScan);
         await navigation.PushModalAsync(scannerPage);
 
         using var registration = ct.Register(() => scannerPage.Cancel());
@@ -168,9 +181,11 @@ public sealed class ScanService : IScanService
         private void StartScanner()
         {
             if (_completed || !_visible || _pickingPhoto) return;
+#if !ANDROID
+            _hardwareScanEntry.Focus();
+#endif
             if (!_enableCamera)
             {
-                _hardwareScanEntry.Focus();
                 return;
             }
 
@@ -200,6 +215,13 @@ public sealed class ScanService : IScanService
         }
 
         public Task<string?> WaitForResultAsync() => _resultSource.Task;
+
+        public bool CanAcceptHardwareScan => _visible && !_completed && !_pickingPhoto;
+
+        public void AcceptHardwareScan(string code)
+        {
+            if (CanAcceptHardwareScan) Complete(code);
+        }
 
         public void Cancel()
         {
@@ -346,7 +368,7 @@ public sealed class ScanService : IScanService
         {
             if (_completed) return;
 
-            var text = value?.Trim();
+            var text = HardwareScanService.Normalize(value);
             if (string.IsNullOrWhiteSpace(text))
             {
                 text = null;
