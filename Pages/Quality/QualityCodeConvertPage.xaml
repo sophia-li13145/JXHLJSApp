@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.Quality.QualityCodeConvertPage"
+             BackgroundColor="#F4F6FA" Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="10,12" HeightRequest="78">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,20,20" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="4">
+                <Button Text="‹" FontSize="28" TextColor="White" BackgroundColor="Transparent"
+                        WidthRequest="40" Padding="0" Clicked="OnBackClicked" SemanticProperties.Description="返回工作台" />
+                <Label Grid.Column="1" Text="质检转码" TextColor="White" FontSize="21" VerticalOptions="Center" />
+                <Button Grid.Column="2" Text="记录" FontSize="16" TextColor="White" BackgroundColor="Transparent"
+                        Padding="10,0" Clicked="OnRecordsClicked" />
+            </Grid>
+        </Border>
+        <ScrollView x:Name="PageScroll" Grid.Row="1">
+            <VerticalStackLayout Padding="20,30,20,32" Spacing="16">
+                <Border x:Name="CancelledBanner" IsVisible="False" BackgroundColor="#FFF0EE" StrokeThickness="0" Padding="14,16" Margin="0,-10,0,4">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                    <Label Text="已取消，可以重新扫码" FontSize="16" TextColor="#E6433A" />
+                </Border>
+                <Border x:Name="SuccessCard" IsVisible="False" BackgroundColor="#E2F4E9" StrokeThickness="0" Padding="16" Margin="0,-10,0,8">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="✓ 转码成功" FontSize="22" TextColor="#147C72" />
+                        <Label Text="请把质检标签贴到样品上" FontSize="14" TextColor="#147C72" />
+                        <Label x:Name="SuccessQrCode" FontSize="14" TextColor="#6D87AD" LineBreakMode="CharacterWrap" />
+                        <Button x:Name="CancelTransCodeButton" Text="刚才扫错了" Clicked="OnCancelTransCodeClicked"
+                                BackgroundColor="White" TextColor="#147C72" BorderColor="#9ACFB6" BorderWidth="1"
+                                CornerRadius="9" FontSize="16" MinimumHeightRequest="48" Margin="0,8,0,0" />
+                    </VerticalStackLayout>
+                </Border>
+                <Label x:Name="StepTitle" Text="先扫原物料码" FontSize="27" TextColor="#06234B" />
+                <Label x:Name="StepHint" Text="就是大件物料上的二维码" FontSize="14" TextColor="#6D87AD" Margin="0,-6,0,4" />
+                <Border x:Name="MaterialCard" BackgroundColor="#EDF5FF" Stroke="#244B88" StrokeThickness="2" Padding="16,22" MinimumHeightRequest="114">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                    <Grid ColumnDefinitions="44,*" ColumnSpacing="14">
+                        <Border x:Name="MaterialBadge" BackgroundColor="#244B88" StrokeThickness="0" WidthRequest="44" HeightRequest="44" VerticalOptions="Center">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape>
+                            <Label x:Name="MaterialNumber" Text="1" TextColor="White" FontSize="25" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="8" VerticalOptions="Center">
+                            <Label Text="原物料码" FontSize="21" TextColor="#06234B" />
+                            <Label x:Name="MaterialDescription" Text="等你扫码" FontSize="14" TextColor="#6D87AD" />
+                            <Label x:Name="MaterialCode" IsVisible="False" FontSize="14" TextColor="#6D87AD" LineBreakMode="CharacterWrap" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+                <Border x:Name="QualityCard" BackgroundColor="White" StrokeThickness="0" Padding="16,22" MinimumHeightRequest="114">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                    <Grid ColumnDefinitions="44,*" ColumnSpacing="14">
+                        <Border x:Name="QualityBadge" BackgroundColor="#E9EEF5" StrokeThickness="0" WidthRequest="44" HeightRequest="44" VerticalOptions="Center">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape>
+                            <Label x:Name="QualityNumber" Text="2" TextColor="#7B8EA8" FontSize="25" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="8" VerticalOptions="Center">
+                            <Label Text="空白质检码" FontSize="21" TextColor="#06234B" />
+                            <Label x:Name="QualityHint" Text="先扫上面的原物料码" FontSize="14" TextColor="#6D87AD" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+                <Button x:Name="ScanButton" Text="扫原物料码" ImageSource="scan_qr_white.png" ContentLayout="Left,10" BackgroundColor="#244B88" TextColor="White" FontSize="23"
+                        HeightRequest="82" CornerRadius="14" Margin="0,8,0,0" Clicked="OnScanClicked" />
+                <ActivityIndicator x:Name="LoadingIndicator" IsVisible="False" IsRunning="False" Color="#244B88" />
+                <Button x:Name="RescanButton" Text="物料扫错了，重扫" IsVisible="False" BackgroundColor="Transparent"
+                        TextColor="#4C72A4" FontSize="16" Clicked="OnRescanClicked" />
+                <Label Text="原物料码不变，只给样品多贴一个码" FontSize="13" TextColor="#7C92B2" HorizontalTextAlignment="Center" Margin="0,10,0,0" />
+            </VerticalStackLayout>
+        </ScrollView>
+        <ScrollView x:Name="CancelConfirmationScroll" Grid.Row="1" IsVisible="False">
+            <Border BackgroundColor="White" Stroke="#D5E0F1" StrokeThickness="2" Padding="22" Margin="16,20,16,32" VerticalOptions="Start">
+                <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                <Border.Shadow><Shadow Brush="Black" Opacity="0.08" Offset="0,6" Radius="12" /></Border.Shadow>
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="这条转码不要了？" FontSize="23" TextColor="#06234B" />
+                    <VerticalStackLayout Spacing="4">
+                        <Label x:Name="CancelMaterialName" FontSize="16" TextColor="#6D87AD" />
+                        <Label x:Name="CancelQualityCode" FontSize="16" TextColor="#6D87AD" LineBreakMode="CharacterWrap" />
+                    </VerticalStackLayout>
+                    <Label Text="取消后，这张质检二维码就置为空白码。原物料码不受影响" FontSize="15" TextColor="#6D87AD" LineHeight="1.5" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,6,0,0">
+                        <Button x:Name="KeepTransCodeButton" Text="不取消" Clicked="OnKeepTransCodeClicked" BackgroundColor="White"
+                                TextColor="#6D87AD" BorderColor="#D5E0F1" BorderWidth="1" CornerRadius="10" MinimumHeightRequest="54" FontSize="16" />
+                        <Button x:Name="ConfirmCancelButton" Grid.Column="1" Text="确定取消" Clicked="OnConfirmCancelClicked"
+                                BackgroundColor="#B54C40" TextColor="White" CornerRadius="10" MinimumHeightRequest="54" FontSize="16" />
+                    </Grid>
+                    <ActivityIndicator x:Name="CancelLoadingIndicator" IsVisible="False" IsRunning="False" Color="#244B88" />
+                </VerticalStackLayout>
+            </Border>
+        </ScrollView>
+    </Grid>
+</ContentPage>

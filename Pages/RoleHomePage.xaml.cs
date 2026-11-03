@@ -14,6 +14,7 @@ public partial class RoleHomePage : ContentPage
     private readonly IScanService _scanService;
     private readonly IAuthApi _authApi;
     private bool _isPackagingScanBusy;
+    private bool _isModuleNavigating;
     private bool _canHardwareBind;
     private bool _isBindingMachine;
     private bool _isRefreshingUserInfo;
@@ -299,13 +300,13 @@ public partial class RoleHomePage : ContentPage
 
         var card = new Border
         {
-            BackgroundColor = module.Highlight ? Color.FromArgb("#EAF4FF") : Colors.White,
-            Stroke = module.Highlight ? Color.FromArgb("#BBD8FF") : Colors.Transparent,
-            StrokeThickness = module.Highlight ? 1 : 0,
+            BackgroundColor = Colors.White,
+            Stroke = Colors.Transparent,
+            StrokeThickness = 0,
             Padding = new Thickness(20, 16),
             HeightRequest = 112,
             StrokeShape = new RoundRectangle { CornerRadius = 12 },
-            Shadow = module.Highlight ? null : new Shadow { Brush = Color.FromArgb("#18000000"), Offset = new Point(0, 3), Radius = 8 },
+            Shadow = new Shadow { Brush = Color.FromArgb("#18000000"), Offset = new Point(0, 3), Radius = 8 },
             Content = grid
         };
 
@@ -320,10 +321,32 @@ public partial class RoleHomePage : ContentPage
         var tap = new TapGestureRecognizer();
         tap.Tapped += async (_, _) =>
         {
-            if (module.Route == AppShell.RoutePackagingScan)
-                await ScanPackagingAsync();
-            else
-                await Shell.Current.GoToAsync(module.Route);
+            if (_isModuleNavigating) return;
+            _isModuleNavigating = true;
+            var card = module.HighlightOnTap ? view as Border : null;
+            if (card is not null)
+            {
+                card.BackgroundColor = Color.FromArgb("#EAF4FF");
+                card.Stroke = Color.FromArgb("#BBD8FF");
+                card.StrokeThickness = 1;
+            }
+            try
+            {
+                if (module.Route == AppShell.RoutePackagingScan)
+                    await ScanPackagingAsync();
+                else
+                    await Shell.Current.GoToAsync(module.Route);
+            }
+            finally
+            {
+                if (card is not null)
+                {
+                    card.BackgroundColor = Colors.White;
+                    card.Stroke = Colors.Transparent;
+                    card.StrokeThickness = 0;
+                }
+                _isModuleNavigating = false;
+            }
         };
         view.GestureRecognizers.Add(tap);
     }
@@ -359,7 +382,15 @@ public partial class RoleHomePage : ContentPage
             BackgroundColor = module.IconBackground,
             StrokeThickness = 0,
             StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(size / 2) },
-            Content = new Label
+            Content = module.IconImage is not null ? (View)new Image
+            {
+                Source = module.IconImage,
+                WidthRequest = iconSize,
+                HeightRequest = iconSize,
+                HorizontalOptions = LayoutOptions.Center,
+                VerticalOptions = LayoutOptions.Center,
+                Aspect = Aspect.AspectFit
+            } : new Label
             {
                 Text = module.IconGlyph,
                 FontSize = iconSize,
@@ -562,7 +593,7 @@ internal static class UserRoleAccess
 
 internal enum RoleHomeLayout { Grid, List }
 
-internal sealed record HomeModule(string Title, string IconGlyph, Color IconBackground, string Description = "", bool Highlight = false, string? Route = null);
+internal sealed record HomeModule(string Title, string IconGlyph, Color IconBackground, string Description = "", bool HighlightOnTap = false, string? Route = null, string? IconImage = null);
 
 internal sealed record RoleHomeDefinition(
     string RoleCode,
@@ -587,6 +618,7 @@ internal sealed record RoleHomeDefinition(
             "qualityInspector" => new("qualityInspector", "质检管理工作台", "#14295D", "👨‍🔬", RoleHomeLayout.List, new[]
             {
                 new HomeModule("扫码质检", "📷", Color.FromArgb("#EFF6FF"), "扫描物料或工单二维码查询质检记录", Route: AppShell.RouteProductionQualityScan),
+                new HomeModule("质检转码", "", Color.FromArgb("#EFF6FF"), "先扫物料，再扫质检码", HighlightOnTap: true, Route: AppShell.RouteQualityCodeConvert, IconImage: "quality_code_convert.png"),
                 new HomeModule("机台质检 (快捷取)", "🏭", Color.FromArgb("#DCEBFF"), "扫码机台，直达该机台质检任务", true, AppShell.RouteMachineQualityScan),
                 new HomeModule("生产质检记录 (PQC)", "⚙️", Color.FromArgb("#FFF1F1"), "首检 · 抽检 · 热处理 · 酸洗 任务池", Route: AppShell.RouteProductionQualityOrders),
                 new HomeModule("来料质检记录 (IQC)", "📥", Color.FromArgb("#FFFBEA"), "基于入库单的原材料质检记录", Route: AppShell.RouteIncomingQualityOrders)

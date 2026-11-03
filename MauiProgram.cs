@@ -85,6 +85,8 @@ namespace JXHLJSApp
             builder.Services.AddTransient<JXHLJSApp.Pages.Quality.IncomingQualityOrderDetailPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Quality.IncomingQualityScanPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Quality.ProductionQualityScanPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.Quality.QualityCodeConvertPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.Quality.QualityCodeRecordPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Quality.ProductionQualityOrderListPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Quality.MachineQualityScanPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.Quality.MachineQualityTaskListPage>();
@@ -133,6 +135,9 @@ namespace JXHLJSApp
                 .AddHttpMessageHandler<AuthHeaderHandler>()
                 .AddHttpMessageHandler<TokenExpiredHandler>();
             builder.Services.AddHttpClient<IMaterialScanQueryApi, MaterialScanQueryApi>(ConfigureBaseAddress)
+                .AddHttpMessageHandler<AuthHeaderHandler>()
+                .AddHttpMessageHandler<TokenExpiredHandler>();
+            builder.Services.AddHttpClient<IQualityCodeConvertApi, QualityCodeConvertApi>(ConfigureBaseAddress)
                 .AddHttpMessageHandler<AuthHeaderHandler>()
                 .AddHttpMessageHandler<TokenExpiredHandler>();
 

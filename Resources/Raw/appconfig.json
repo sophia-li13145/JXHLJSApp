@@ -156,6 +156,12 @@
     "materialScanQuery": {
       "completeInfo": "/pda/wmsMaterialQrCode/scanQueryCompleteMaterialInfo"
     },
+    "qualityCodeConvert": {
+      "scanMaterial": "/pda/wmsMaterialQrCode/scanQueryMaterialInfo",
+      "transCode": "/pda/qualityTransCode/transCode",
+      "cancelTransCode": "/pda/qualityTransCode/cancelTransCode",
+      "pageRecord": "/pda/qualityTransCode/pageRecord"
+    },
     "machineBind": {
       "scanToWork": "/pda/devUserMachineBindRecord/scanToWork"
     },

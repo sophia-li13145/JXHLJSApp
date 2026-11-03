@@ -268,7 +268,7 @@ public sealed class ProductionQualityCommitRequestDto
     public string? brokenDiameterMm { get; set; }
     public string? sectionShrinkageRate { get; set; }
     public string? tensileStrengthMpa { get; set; }
-    public string? twistCount { get; set; }
+    public string? torsion { get; set; }
     public string? inspectResult { get; set; }
     public string? memo { get; set; }
     public string? phosphatingTemperature { get; set; }
@@ -373,6 +373,7 @@ public sealed class ProductionPicklingCommitRequestDto
 
 public sealed class ProductionFirstInspectionCommitRequestDto
 {
+    public string? torsion { get; set; }
     public string? actualDiameterMm { get; set; }
     public string? coilDiameterControl { get; set; }
     public string? coilPitchControl { get; set; }
@@ -480,7 +481,6 @@ public sealed class ProductionQualityDetailDto
     public string? sectionShrinkageRate { get; set; }
     public string? tensileStrengthMpa { get; set; }
     public string? torsion { get; set; }
-    public string? twistCount { get; set; }
     public string? productionBatchNo { get; set; }
     public string? productionBatch { get; set; }
     public string? batchNo { get; set; }

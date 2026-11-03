@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.Quality.QualityCodeRecordPage"
+             BackgroundColor="#F4F6FA" Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="10,12" HeightRequest="78">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,0,20,20" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="4">
+                <Button Text="‹" FontSize="28" TextColor="White" BackgroundColor="Transparent" WidthRequest="40"
+                        Padding="0" Clicked="OnBackClicked" SemanticProperties.Description="返回质检转码" />
+                <Label Grid.Column="1" Text="转码记录" TextColor="White" FontSize="21" VerticalOptions="Center" />
+            </Grid>
+        </Border>
+        <Grid Grid.Row="1">
+            <RefreshView x:Name="RefreshContainer" Refreshing="OnRefreshing">
+                <ScrollView>
+                    <VerticalStackLayout Padding="20" Spacing="14">
+                        <Label x:Name="NoticeLabel" IsVisible="False" TextColor="#E6433A" FontSize="14" />
+                        <VerticalStackLayout x:Name="RecordsStack" Spacing="14" />
+                        <Label x:Name="EmptyLabel" Text="暂无转码记录" IsVisible="False" TextColor="#6D87AD" HorizontalTextAlignment="Center" Margin="0,35" />
+                        <Button x:Name="LoadMoreButton" Text="加载更多" IsVisible="False" Clicked="OnLoadMoreClicked"
+                                BackgroundColor="White" TextColor="#244B88" CornerRadius="10" />
+                        <Button x:Name="RetryButton" Text="重新加载" IsVisible="False" Clicked="OnRetryClicked"
+                                BackgroundColor="White" TextColor="#244B88" CornerRadius="10" />
+                    </VerticalStackLayout>
+                </ScrollView>
+            </RefreshView>
+            <ScrollView x:Name="ConfirmationScroll" IsVisible="False">
+                <Border BackgroundColor="White" Stroke="#D5E0F1" StrokeThickness="2" Padding="22" Margin="16,20,16,32" VerticalOptions="Start">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                    <VerticalStackLayout Spacing="16">
+                        <Label Text="这条转码不要了？" FontSize="23" TextColor="#06234B" />
+                        <VerticalStackLayout Spacing="4">
+                            <Label x:Name="CancelMaterialName" FontSize="16" TextColor="#6D87AD" />
+                            <Label x:Name="CancelQualityCode" FontSize="16" TextColor="#6D87AD" LineBreakMode="CharacterWrap" />
+                        </VerticalStackLayout>
+                        <Label Text="取消后，这张质检二维码就置为空白码。原物料码不受影响" FontSize="15" TextColor="#6D87AD" LineHeight="1.5" />
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,6,0,0">
+                            <Button x:Name="KeepButton" Text="不取消" Clicked="OnKeepClicked" BackgroundColor="White"
+                                    TextColor="#6D87AD" BorderColor="#D5E0F1" BorderWidth="1" CornerRadius="10" MinimumHeightRequest="54" FontSize="16" />
+                            <Button x:Name="ConfirmButton" Grid.Column="1" Text="确定取消" Clicked="OnConfirmClicked"
+                                    BackgroundColor="#B54C40" TextColor="White" CornerRadius="10" MinimumHeightRequest="54" FontSize="16" />
+                        </Grid>
+                        <ActivityIndicator x:Name="CancelLoading" IsVisible="False" IsRunning="False" Color="#244B88" />
+                    </VerticalStackLayout>
+                </Border>
+            </ScrollView>
+        </Grid>
+    </Grid>
+</ContentPage>

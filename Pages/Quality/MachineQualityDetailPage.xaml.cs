@@ -226,7 +226,7 @@ public partial class MachineQualityDetailPage : ContentPage
         AcidInputPanel.IsVisible = isAcid;
         HeatTreatmentInputPanel.IsVisible = isHeat;
         ProcessInputPanel.IsVisible = !isAcid && !isHeat;
-        TorsionInputPanel.IsVisible = isHeat || (isDrawing && IsTorsionInspectionScheme(detail.inspectionSchemeName));
+        TorsionInputPanel.IsVisible = !isAcid;
         ContinuousUnqualifiedPicker.IsEnabled = false;
         MemoLabel.Text = "备注";
         MemoLabel.IsVisible = true;
@@ -296,7 +296,7 @@ public partial class MachineQualityDetailPage : ContentPage
         SectionShrinkageLabel.Text = CalculateSectionShrinkageText();
         TensileStrengthEntry.Text = FirstNonEmpty(detail.tensileStrengthMpa, detail.strengthMpa);
         HeatElongationEntry.Text = detail.elongationRate;
-        TwistCountEntry.Text = FirstNonEmpty(detail.torsion, detail.twistCount);
+        TorsionEntry.Text = detail.torsion;
     }
 
     private void RenderInfo(ProductionQualityDetailDto detail)
@@ -912,7 +912,7 @@ public partial class MachineQualityDetailPage : ContentPage
             BrokenDiameterEntry.Text,
             TensileStrengthEntry.Text,
             HeatElongationEntry.Text,
-            TwistCountEntry.Text,
+            TorsionEntry.Text,
             CoilDiameterDescriptionEntry.Text,
             CoilPitchDescriptionEntry.Text,
             UnqualifiedDescriptionEditorControl?.Text,
@@ -938,7 +938,7 @@ public partial class MachineQualityDetailPage : ContentPage
         RestoreText(BrokenDiameterEntry, state.BrokenDiameter);
         RestoreText(TensileStrengthEntry, state.TensileStrength);
         RestoreText(HeatElongationEntry, state.HeatElongation);
-        RestoreText(TwistCountEntry, state.TwistCount);
+        RestoreText(TorsionEntry, state.Torsion);
         RestoreText(CoilDiameterDescriptionEntry, state.CoilDiameterDescription);
         RestoreText(CoilPitchDescriptionEntry, state.CoilPitchDescription);
         if (UnqualifiedDescriptionEditorControl is { } unqualifiedDescriptionEditor) RestoreText(unqualifiedDescriptionEditor, state.UnqualifiedDescription);
@@ -981,7 +981,7 @@ public partial class MachineQualityDetailPage : ContentPage
         string? BrokenDiameter,
         string? TensileStrength,
         string? HeatElongation,
-        string? TwistCount,
+        string? Torsion,
         string? CoilDiameterDescription,
         string? CoilPitchDescription,
         string? UnqualifiedDescription,
@@ -1137,7 +1137,7 @@ public partial class MachineQualityDetailPage : ContentPage
                 surfaceCondition = SurfaceEntry.Text?.Trim(),
                 surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
                 totalAcid = TotalAcidEntry.Text?.Trim(),
-                twistCount = TwistCountEntry.Text?.Trim(),
+                torsion = TorsionInputPanel.IsVisible ? TorsionEntry.Text?.Trim() : null,
                 totalAcidSampling = TotalAcidSamplingEntry.Text?.Trim(),
                 workOrderNo = _workOrderNo
             };
@@ -1187,7 +1187,7 @@ public partial class MachineQualityDetailPage : ContentPage
                     strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
                     surfaceCondition = SurfaceEntry.Text?.Trim(),
                     surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
-                    torsion = TorsionInputPanel.IsVisible ? TwistCountEntry.Text?.Trim() : null,
+                    torsion = TorsionInputPanel.IsVisible ? TorsionEntry.Text?.Trim() : null,
                     unqualifiedDescription = unqualifiedDescription,
                     workOrderNo = _workOrderNo
                 })
@@ -1236,13 +1236,14 @@ public partial class MachineQualityDetailPage : ContentPage
                         strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
                         surfaceCondition = SurfaceEntry.Text?.Trim(),
                         surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
-                        torsion = TorsionInputPanel.IsVisible ? TwistCountEntry.Text?.Trim() : null,
+                        torsion = TorsionInputPanel.IsVisible ? TorsionEntry.Text?.Trim() : null,
                         unqualifiedDescription = unqualifiedDescription,
                         workOrderNo = _workOrderNo
                     })
                     : useFirstInspectionCommit
                     ? await _qualityApi.CommitProductionFirstInspectionAsync(new ProductionFirstInspectionCommitRequestDto
                     {
+                        torsion = TorsionInputPanel.IsVisible ? TorsionEntry.Text?.Trim() : null,
                         actualDiameterMm = ActualDiameterEntry.Text?.Trim(),
                         coilDiameterControl = CoilDiameterPicker.SelectedItem?.ToString(),
                         coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
