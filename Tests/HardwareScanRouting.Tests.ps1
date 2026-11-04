@@ -14,6 +14,7 @@ public class Page
     public void Disappear() => Disappearing?.Invoke(this, EventArgs.Empty);
 }
 public class Navigation { public List<Page> ModalStack { get; } = new(); }
+public class Entry { }
 public class Shell : Page { public Page? CurrentPage { get; set; } }
 public class NavigationPage : Page { public Page? CurrentPage { get; set; } }
 public class TabbedPage : Page { public Page? CurrentPage { get; set; } }
@@ -145,6 +146,44 @@ public static class HardwareScanRegression
         tabContent.Appear();
         Send(scanner, "nested");
         Check(tabCalls == 1, "Nested navigation containers resolve to the visible content");
+
+        var home = new Page();
+        var homeReady = false;
+        Entry? homeEntry = null;
+        var homeCalls = 0;
+        var refreshes = 0;
+        scanner.StateChanged += () => refreshes++;
+        scanner.Attach(home, code => { homeCalls++; return Task.CompletedTask; }, () => homeReady, () => homeEntry);
+        Application.Current.MainPage = home;
+        home.Appear();
+        Check(!scanner.CanReceiveKeyboardInput, "Home profile loading initially prevents focus acquisition");
+        homeEntry = new Entry();
+        homeReady = true;
+        var beforeRefresh = refreshes;
+        scanner.Refresh(home);
+        Check(refreshes == beforeRefresh + 1 && scanner.CanReceiveKeyboardInput,
+            "Finishing asynchronous home initialization notifies native input to acquire focus");
+        Check(ReferenceEquals(scanner.KeyboardEntry, homeEntry), "Home machine Entry is the preferred scanner input");
+        Send(scanner, "MACHINE-001");
+        Check(homeCalls == 1, "Home machine scans use the registered business callback");
+        homeEntry = new Entry();
+        scanner.Refresh(home);
+        Check(ReferenceEquals(scanner.KeyboardEntry, homeEntry), "Recreated native handlers resolve the current machine Entry");
+        beforeRefresh = refreshes;
+        scanner.Refresh(first);
+        Check(refreshes == beforeRefresh, "A late background page refresh must not disturb foreground input");
+        scanner.Publish("queued-before-rebuild");
+        scanner.Refresh(home);
+        MainThread.Drain();
+        Check(homeCalls == 1, "Text queued against a replaced home input is discarded");
+        homeReady = false;
+        scanner.Refresh(home);
+        Check(!scanner.CanReceiveKeyboardInput, "Binding/navigation state suspends the home input");
+        homeReady = true;
+        scanner.Refresh(home);
+        Check(scanner.CanReceiveKeyboardInput, "A failed bind can re-enable the same page without navigating away");
+        home.Disappear();
+        Check(scanner.KeyboardEntry == null, "A departed home page must release its preferred input");
         Console.WriteLine("PASS: " + _assertions + " hardware scan routing assertions");
     }
 

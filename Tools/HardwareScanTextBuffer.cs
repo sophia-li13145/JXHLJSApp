@@ -3,7 +3,9 @@ namespace JXHLJSApp.Tools;
 /// <summary>Coalesces scanner text injection, including Newland's default output without Enter.</summary>
 internal sealed class HardwareScanTextBuffer
 {
-    internal const int SettleMilliseconds = 150;
+    // Low-end PDA keyboard wedges may pause while the UI/JIT processes the first key.
+    // A 150 ms window could submit the first character as a complete machine number.
+    internal const int SettleMilliseconds = 750;
     private string? _text;
     private int _generation;
     private long _readyAt;

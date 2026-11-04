@@ -16,9 +16,12 @@ public sealed class HardwareScanService
 
     public event Action? StateChanged;
     internal int Generation => _generation;
+    internal Entry? KeyboardEntry => CurrentRegistration?.KeyboardEntry?.Invoke();
+    private Registration? CurrentRegistration =>
+        _registrations.LastOrDefault(item => ReferenceEquals(item.Owner, GetForegroundPage()));
     internal bool CanReceiveKeyboardInput =>
         _foreground && _windowFocused && !_processing && !ErrorDialogService.IsDialogVisible &&
-        _registrations.LastOrDefault(item => ReferenceEquals(item.Owner, GetForegroundPage()))?.CanScan() == true;
+        CurrentRegistration?.CanScan() == true;
 
     public void SetForeground(bool foreground)
     {
@@ -35,9 +38,9 @@ public sealed class HardwareScanService
         StateChanged?.Invoke();
     }
 
-    public void Attach(Page owner, Func<string, Task> handle, Func<bool>? canScan = null)
+    public void Attach(Page owner, Func<string, Task> handle, Func<bool>? canScan = null, Func<Entry?>? keyboardEntry = null)
     {
-        var registration = new Registration(owner, handle, canScan ?? (() => true));
+        var registration = new Registration(owner, handle, canScan ?? (() => true), keyboardEntry);
         owner.Appearing += (_, _) =>
         {
             _registrations.Remove(registration);
@@ -56,6 +59,15 @@ public sealed class HardwareScanService
             _generation++;
             StateChanged?.Invoke();
         };
+    }
+
+    public void Refresh(Page owner)
+    {
+        // Dynamic pages can change scan readiness or recreate an Entry after Appearing.
+        // Refresh only the actual foreground recipient, never a page behind a modal.
+        if (!ReferenceEquals(CurrentRegistration?.Owner, owner)) return;
+        _generation++;
+        StateChanged?.Invoke();
     }
 
     public void Publish(string? rawCode)
@@ -142,5 +154,5 @@ public sealed class HardwareScanService
         return null;
     }
 
-    private sealed record Registration(Page Owner, Func<string, Task> Handle, Func<bool> CanScan);
+    private sealed record Registration(Page Owner, Func<string, Task> Handle, Func<bool> CanScan, Func<Entry?>? KeyboardEntry);
 }

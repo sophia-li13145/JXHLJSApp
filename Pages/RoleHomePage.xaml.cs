@@ -18,6 +18,11 @@ public partial class RoleHomePage : ContentPage
     private bool _canHardwareBind;
     private bool _isBindingMachine;
     private bool _isRefreshingUserInfo;
+    private bool _isPageVisible;
+    private bool _isOpeningMachineScanner;
+    private Entry? _machineCodeEntry;
+    private View? _machineBindCard;
+    private string? _renderedRoleCode;
     private string? _selectedRoleCode;
 
     public string? SelectedRoleCode
@@ -36,7 +41,8 @@ public partial class RoleHomePage : ContentPage
         _scanService = scanService;
         _scanService.RegisterHardwareHandler(this,
             code => BindMachineAndOpenOrdersAsync(code),
-            () => _canHardwareBind && !_isBindingMachine && !_isRefreshingUserInfo);
+            () => _isPageVisible && _canHardwareBind && !_isBindingMachine && !_isModuleNavigating && !_isOpeningMachineScanner,
+            () => _canHardwareBind ? _machineCodeEntry : null);
         _authApi = authApi;
         InitializeComponent();
         BuildRoleHome();
@@ -44,6 +50,7 @@ public partial class RoleHomePage : ContentPage
 
     protected override async void OnAppearing()
     {
+        _isPageVisible = true;
         base.OnAppearing();
 
         // Closing a modal error dialog reactivates the underlying page on Android.
@@ -53,7 +60,14 @@ public partial class RoleHomePage : ContentPage
             return;
         }
         await RefreshUserInfoAsync();
-        BuildRoleHome();
+        if (_isPageVisible && !_isBindingMachine && !_isModuleNavigating && !_isOpeningMachineScanner)
+            BuildRoleHome();
+    }
+
+    protected override void OnDisappearing()
+    {
+        _isPageVisible = false;
+        base.OnDisappearing();
     }
 
     private async Task RefreshUserInfoAsync()
@@ -102,12 +116,20 @@ public partial class RoleHomePage : ContentPage
             }).ToArray()
         };
         TitleLabel.Text = role.Title;
+        if (_renderedRoleCode == role.RoleCode && ContentStack.Children.Count > 0)
+        {
+            // Profile refreshes must not detach the machine Entry while it is receiving
+            // scanner characters or while the operator is editing a machine number.
+            ContentStack.Children[0] = CreateProfileCard(role, realName, workNumber, department, shift);
+            return;
+        }
+        _renderedRoleCode = role.RoleCode;
         ContentStack.Children.Clear();
         ContentStack.Children.Add(CreateProfileCard(role, realName, workNumber, department, shift));
 
         if (role.RoleCode == "production")
         {
-            ContentStack.Children.Add(CreateMachineBindCard());
+            ContentStack.Children.Add(_machineBindCard ??= CreateMachineBindCard());
         }
 
         if (!string.IsNullOrWhiteSpace(role.SectionTitle))
@@ -133,6 +155,7 @@ public partial class RoleHomePage : ContentPage
                 ContentStack.Children.Add(CreateWideModule(module));
             }
         }
+        _scanService.RefreshHardwareHandler(this);
     }
 
     private View CreateProfileCard(RoleHomeDefinition role, string realName, string workNumber, string department, string shift)
@@ -403,7 +426,7 @@ public partial class RoleHomePage : ContentPage
 
     private View CreateMachineBindCard()
     {
-        var entry = new Entry
+        var entry = _machineCodeEntry = new Entry
         {
             Placeholder = "或手动输入机台编号",
             PlaceholderColor = Color.FromArgb("#7A8797"),
@@ -412,6 +435,7 @@ public partial class RoleHomePage : ContentPage
             HeightRequest = 46,
             ReturnType = ReturnType.Done
         };
+        entry.HandlerChanged += (_, _) => _scanService.RefreshHardwareHandler(this);
 
         var scanButton = new Button
         {
@@ -425,10 +449,19 @@ public partial class RoleHomePage : ContentPage
         };
         scanButton.Clicked += async (_, _) =>
         {
-            var code = await _scanService.ScanAsync("扫码机台二维码上机");
-            if (!string.IsNullOrWhiteSpace(code))
+            if (_isOpeningMachineScanner || _isBindingMachine) return;
+            _isOpeningMachineScanner = true;
+            _scanService.RefreshHardwareHandler(this);
+            try
             {
-                await BindMachineAndOpenOrdersAsync(code);
+                var code = await _scanService.ScanAsync("扫码机台二维码上机");
+                if (_isPageVisible && !string.IsNullOrWhiteSpace(code))
+                    await BindMachineAndOpenOrdersAsync(code);
+            }
+            finally
+            {
+                _isOpeningMachineScanner = false;
+                _scanService.RefreshHardwareHandler(this);
             }
         };
 
@@ -479,6 +512,7 @@ public partial class RoleHomePage : ContentPage
     {
         if (_isBindingMachine) return;
         _isBindingMachine = true;
+        _scanService.RefreshHardwareHandler(this);
         try
         {
             var devCode = machineCode?.Trim();
@@ -487,6 +521,7 @@ public partial class RoleHomePage : ContentPage
                 await DisplayAlert("提示", "请输入机台编号", "确定");
                 return;
             }
+            if (_machineCodeEntry is not null) _machineCodeEntry.Text = devCode;
 
             try
             {
@@ -497,7 +532,7 @@ public partial class RoleHomePage : ContentPage
                     return;
                 }
 
-                await Shell.Current.GoToAsync(AppShell.RouteWorkStartOrders);
+                if (_isPageVisible) await Shell.Current.GoToAsync(AppShell.RouteWorkStartOrders);
             }
             catch (Exception ex)
             {
@@ -507,6 +542,7 @@ public partial class RoleHomePage : ContentPage
         finally
         {
             _isBindingMachine = false;
+            _scanService.RefreshHardwareHandler(this);
         }
     }
 

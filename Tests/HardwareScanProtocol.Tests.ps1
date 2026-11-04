@@ -36,18 +36,19 @@ public static class Regression
 
         var buffer = new HardwareScanTextBuffer();
         buffer.Update("direct-fill-no-enter", 1, 0);
-        Check(!buffer.TryTake(1, 149, out _), "Direct fill waits for a complete result");
-        Check(buffer.TryTake(1, 150, out var code) && code == "direct-fill-no-enter", "Default Newland text output must complete without Enter");
+        Check(!buffer.TryTake(1, 749, out _), "Direct fill waits for a complete result");
+        Check(buffer.TryTake(1, 750, out var code) && code == "direct-fill-no-enter", "Default Newland text output must complete without Enter");
         Check(!buffer.TryTake(1, 1000, out _), "One injection is consumed exactly once");
         buffer.Update("A", 2, 1000);
-        buffer.Update("AB", 2, 1100);
-        Check(!buffer.TryTake(2, 1150, out _), "A character burst must not submit the partial barcode");
-        Check(buffer.TryTake(2, 1250, out code) && code == "AB", "A character burst is coalesced into one barcode");
+        Check(!buffer.TryTake(2, 1200, out _), "A slow PDA must not submit the initial character at 150 ms");
+        buffer.Update("AB", 2, 1300);
+        Check(!buffer.TryTake(2, 1750, out _), "A character burst must not submit the partial barcode");
+        Check(buffer.TryTake(2, 2050, out code) && code == "AB", "A character burst is coalesced into one barcode");
         buffer.Update("with-enter\r\n", 3, 2000);
         Check(buffer.TryTake(3, 2000, out code) && code == "with-enter\r\n", "An Enter suffix supports immediate completion");
         buffer.Update("{\n\"code\":\"A\"\n}", 3, 3000);
         Check(!buffer.TryTake(3, 3000, out _), "An internal JSON newline must not terminate scanning");
-        Check(buffer.TryTake(3, 3150, out code) && code == "{\n\"code\":\"A\"\n}", "Multiline payload is preserved");
+        Check(buffer.TryTake(3, 3750, out code) && code == "{\n\"code\":\"A\"\n}", "Multiline payload is preserved");
         buffer.Update("old-page", 4, 4000);
         Check(!buffer.TryTake(5, 5000, out _), "Input must not cross a navigation generation");
         Check(!buffer.TryTake(4, 5000, out _), "Discarded input cannot reappear on the old page");

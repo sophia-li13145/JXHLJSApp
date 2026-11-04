@@ -8,7 +8,8 @@ namespace JXHLJSApp.Services;
 
 public interface IScanService
 {
-    void RegisterHardwareHandler(Page owner, Func<string, Task> handle, Func<bool>? canScan = null);
+    void RegisterHardwareHandler(Page owner, Func<string, Task> handle, Func<bool>? canScan = null, Func<Entry?>? keyboardEntry = null);
+    void RefreshHardwareHandler(Page owner);
     Task<string?> ScanAsync(
         string title = "扫码",
         CancellationToken ct = default,
@@ -22,8 +23,10 @@ public sealed class ScanService : IScanService
 
     public ScanService(HardwareScanService hardwareScanner) => _hardwareScanner = hardwareScanner;
 
-    public void RegisterHardwareHandler(Page owner, Func<string, Task> handle, Func<bool>? canScan = null) =>
-        _hardwareScanner.Attach(owner, handle, canScan);
+    public void RegisterHardwareHandler(Page owner, Func<string, Task> handle, Func<bool>? canScan = null, Func<Entry?>? keyboardEntry = null) =>
+        _hardwareScanner.Attach(owner, handle, canScan, keyboardEntry);
+
+    public void RefreshHardwareHandler(Page owner) => _hardwareScanner.Refresh(owner);
 
     public async Task<string?> ScanAsync(
         string title = "扫码",
