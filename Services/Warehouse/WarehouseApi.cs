@@ -30,6 +30,7 @@ public interface IWarehouseApi
     Task<List<WarehouseAreaDto>> QueryWarehouseAreaByWarehouseCodeAsync(string? warehouseCode, CancellationToken ct = default);
     Task<List<DictGroupDto>> GetRawMaterialReceivingDictListAsync(CancellationToken ct = default);
     Task<AttachmentDto> UploadAttachmentAsync(FileResult photo, string attachmentFolder, string attachmentLocation, CancellationToken ct = default);
+    Task<RawMaterialOcrDto> RecognizeIncomingAsync(AttachmentDto fileInfo, string instockNo, CancellationToken ct = default);
     Task<RawMaterialOcrDto> ScanIncomingAsync(string scanContent, string instockNo, CancellationToken ct = default);
     Task<bool?> SaveOcrIncomingImageAsync(SaveOcrIncomingImageRequestDto request, CancellationToken ct = default);
     Task<QrCodeInfoDto> QueryQrCodeInfoAsync(string? qsCode, CancellationToken ct = default);
@@ -41,6 +42,7 @@ public interface IWarehouseApi
 
 public sealed class WarehouseApi : IWarehouseApi
 {
+    internal const string OcrHttpClientName = "IncomingOcr";
     internal const string ScanIncomingHttpClientName = "IncomingScan";
 
     private readonly HttpClient _http;
@@ -52,6 +54,7 @@ public sealed class WarehouseApi : IWarehouseApi
     private readonly string _queryWarehouseAreaEndpoint;
     private readonly string _uploadAttachmentEndpoint;
     private readonly string _previewAttachmentEndpoint;
+    private readonly string _ocrIncomingEndpoint;
     private readonly string _scanIncomingEndpoint;
     private readonly string _saveOcrIncomingImageEndpoint;
     private readonly string _queryQrCodeInfoEndpoint;
@@ -97,6 +100,8 @@ public sealed class WarehouseApi : IWarehouseApi
             configLoader.GetApiPath("attachment.uploadAttachment", "/pda/attachment/uploadAttachment"), servicePath);
         _previewAttachmentEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("attachment.previewAttachment", "/pda/attachment/previewAttachment"), servicePath);
+        _ocrIncomingEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("rawMaterialReceiving.ocrIncoming", "/pda/rawMaterialReceiving/ocrIncoming"), servicePath);
         _scanIncomingEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("rawMaterialReceiving.scanIncoming", "/pda/rawMaterialReceiving/scanIncoming"), servicePath);
         _saveOcrIncomingImageEndpoint = ServiceUrlHelper.NormalizeRelative(
@@ -506,6 +511,16 @@ public sealed class WarehouseApi : IWarehouseApi
         };
     }
 
+    public async Task<RawMaterialOcrDto> RecognizeIncomingAsync(AttachmentDto fileInfo, string instockNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _ocrIncomingEndpoint);
+        using var ocrClient = _httpClientFactory.CreateClient(OcrHttpClientName);
+        using var resp = await ocrClient.PostAsJsonAsync(url, new { fileInfo, instockNo }, JsonOptions, ct).ConfigureAwait(false);
+        await EnsureSuccessStatusCodeWithBodyAsync(resp, ct).ConfigureAwait(false);
+        var data = await ReadApiResponseAsync<OcrIncomingResultDto>(resp, ct).ConfigureAwait(false);
+        return data.result is null ? new RawMaterialOcrDto() : MapIncomingResult(data.result);
+    }
+
     public async Task<RawMaterialOcrDto> ScanIncomingAsync(string scanContent, string instockNo, CancellationToken ct = default)
     {
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _scanIncomingEndpoint);
@@ -519,6 +534,12 @@ public sealed class WarehouseApi : IWarehouseApi
             throw new InvalidOperationException("扫码识别接口未返回票签信息。");
         }
 
+        result.ocrRawText ??= scanContent;
+        return MapIncomingResult(result);
+    }
+
+    private static RawMaterialOcrDto MapIncomingResult(OcrIncomingResultDto result)
+    {
         return new RawMaterialOcrDto
         {
             qrCode = FirstNonEmpty(result.qrCode, result.barcode),
@@ -531,7 +552,7 @@ public sealed class WarehouseApi : IWarehouseApi
             materialClass = result.materialClass,
             materialCode = result.brandNo,
             materialName = FirstNonEmpty(result.materialName, result.brandNo, result.productName),
-            ocrRawText = result.ocrRawText ?? scanContent,
+            ocrRawText = result.ocrRawText,
             originPlace = result.originPlace,
             pieceWeight = FormatNumber(result.pieceWeight),
             pieceWeightUnit = result.pieceWeightUnit,

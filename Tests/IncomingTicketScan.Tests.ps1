@@ -9,13 +9,22 @@ function Get-Methods([string] $start, [string] $end) {
 }
 $recognition = Get-Methods '    private async void OnScanIncomingClicked(' '    private void SetLoadingState('
 $binding = Get-Methods '    private async void OnScanBindClicked(' '    private void ShowBindConfirmDialog('
+$save = Get-Methods '    private async Task SaveOcrIncomingImageAsync(' '    private void SelectMaterialClass('
+$numbers = Get-Methods '    private static decimal? ParseNullableDecimal(' '    private void OnCloseSummaryTapped('
+$dto = (Get-Content (Join-Path $root 'Models/Warehouse/SaveOcrIncomingImageRequestDto.cs') -Raw).Replace('namespace JXHLJSApp.Models.Warehouse;', '')
+$raw = Get-Content (Join-Path $root 'Models/Warehouse/RawMaterialOcrDto.cs') -Raw
+$properties = [regex]::Matches($raw, 'public (?:string|decimal)\? \w+ \{ get; set; \}') | ForEach-Object { $_.Value }
+$rawDto = 'public class RawMaterialOcrDto {' + ($properties -join [Environment]::NewLine) + '}'
 $support = @'
-public class RawMaterialOcrDto { public string? ocrRawText; }
+public class AttachmentDto { }
 public class QrInfo { public string? qrCode; }
 public class FakeApi
 {
     public string? Content, Instock;
-    public int Calls, BindCalls;
+    public int Calls, BindCalls, SaveCalls;
+    public SaveOcrIncomingImageRequestDto? Saved;
+    public Task<bool?> SaveOcrIncomingImageAsync(SaveOcrIncomingImageRequestDto request)
+    { SaveCalls++; Saved = request; return Task.FromResult<bool?>(true); }
     public Func<Task<RawMaterialOcrDto>>? Recognize;
     public Task<RawMaterialOcrDto> ScanIncomingAsync(string content, string instock)
     { Calls++; Content = content; Instock = instock; return Recognize?.Invoke() ?? Task.FromResult(new RawMaterialOcrDto()); }
@@ -38,6 +47,7 @@ public partial class Page
 {
     private readonly FakeApi _warehouseApi = new();
     private readonly FakeScanner _scanner = new();
+    private AttachmentDto? _pendingTicketAttachment;
     private bool _isHandlingScan, _hasPendingTicketScan, _scanForRecognition = true;
     private string? _instockNo = "IN-100";
     private RawMaterialOcrDto? _selectedTicket;
@@ -52,11 +62,12 @@ public partial class Page
     public static async Task Run()
     {
         var page = new Page();
+        page._pendingTicketAttachment = new AttachmentDto();
         var original = "{\"coil\":\"001\",\n\"weight\":12.5}\u001Dtail";
         await page.HandleTicketScanAsync(original);
         Check(page._warehouseApi.Content == original && page._warehouseApi.Instock == "IN-100",
             "Recognition passes complete QR payload and current instock number");
-        Check(page.Confirmation != null && page._hasPendingTicketScan && !page.Loading && !page._isHandlingScan,
+        Check(page.Confirmation != null && page._pendingTicketAttachment == null && page._hasPendingTicketScan && !page.Loading && !page._isHandlingScan,
             "Recognition opens confirmation and enables saving without an attachment");
         page._selectedTicket = page.Confirmation;
         page.OnScanBindClicked(page, EventArgs.Empty);
@@ -82,13 +93,26 @@ public partial class Page
         await page.HandleTicketScanAsync("  ");
         page._instockNo = null; await page.HandleTicketScanAsync("NO-ORDER");
         Check(page._warehouseApi.Calls == calls, "Empty scans and missing instock number do not send requests");
+        page._instockNo = "IN-100";
+        var photo = new AttachmentDto();
+        page._pendingTicketAttachment = photo;
+        page._hasPendingTicketScan = false;
+        var ticket = new RawMaterialOcrDto { pieceWeight = "12.5", confidence = 0.9m };
+        await page.SaveOcrIncomingImageAsync(ticket);
+        Check(ReferenceEquals(page._warehouseApi.Saved?.fileInfo, photo)
+            && page._warehouseApi.Saved?.instockNo == "IN-100" && page._warehouseApi.Saved?.pieceWeight == 12.5m
+            && page._pendingTicketAttachment == null, "Photo confirmation saves the current attachment and clears it after success");
+        page._hasPendingTicketScan = true;
+        await page.SaveOcrIncomingImageAsync(ticket);
+        Check(page._warehouseApi.SaveCalls == 2 && page._warehouseApi.Saved?.fileInfo == null
+            && !page._hasPendingTicketScan, "Scan confirmation saves without reusing a photo attachment");
         Console.WriteLine("PASS: " + checks + " incoming ticket scan assertions");
     }
     private static int checks;
     private static void Check(bool ok, string message) { checks++; if (!ok) throw new Exception(message); }
 }
 '@
-$source = "#nullable enable`nusing System; using System.Threading.Tasks; namespace IncomingTicketScanTests {" +
-    $support + 'public partial class Page {' + $recognition + $binding + '}}'
+$source = "#nullable enable`nusing System; using System.Threading.Tasks; using System.Globalization; namespace IncomingTicketScanTests {" +
+    $dto + $rawDto + $support + 'public partial class Page {' + $recognition + $binding + $save + $numbers + '}}'
 Add-Type -TypeDefinition $source
 $null = [IncomingTicketScanTests.Page]::Run().GetAwaiter().GetResult()

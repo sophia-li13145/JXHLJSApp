@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Diagnostics;
+using JXHLJSApp.Services.Common;
 using Serilog;
 using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Services;
@@ -19,6 +21,8 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private RawMaterialOcrDto? _pendingOcr;
     private RawMaterialOcrDto? _selectedTicket;
     private bool _hasPendingTicketScan;
+    private AttachmentDto? _pendingTicketAttachment;
+    private readonly IImageCompressionService _imageCompressionService;
     private List<WarehouseInfoDto> _warehouses = new();
     private List<WarehouseAreaDto> _warehouseAreas = new();
     private List<DictItemDto> _materialClassOptions = CreateDefaultMaterialClassOptions();
@@ -32,11 +36,13 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     public AddRawMaterialReceivingPage(
         IWarehouseApi warehouseApi,
-        IRightKeyScanService scanner)
+        IRightKeyScanService scanner,
+        IImageCompressionService imageCompressionService)
     {
         InitializeComponent();
         _warehouseApi = warehouseApi;
         _scanner = scanner;
+        _imageCompressionService = imageCompressionService;
         _scanner.Register(this,
             HandleTicketScanAsync,
             () => !_isHandlingScan && !string.IsNullOrWhiteSpace(_instockNo) &&
@@ -312,6 +318,134 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         MaterialListTitle.Text = $"待入库列表 ({_ocrItems.Count})";
     }
 
+    private async void OnTakePhotoClicked(object sender, EventArgs e)
+    {
+        if (_isHandlingScan || LoadingOverlay.IsVisible) return;
+        _isHandlingScan = true;
+        try
+        {
+            await RecognizePhotoTicketAsync();
+        }
+        finally
+        {
+            _isHandlingScan = false;
+        }
+    }
+
+    private async Task RecognizePhotoTicketAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_instockNo))
+        {
+            await DisplayAlert("提示", "入库单号尚未生成，请稍后重试。", "确定");
+            return;
+        }
+
+        _pendingTicketAttachment = null;
+        _hasPendingTicketScan = false;
+        CompressedImageResult? compressedPhoto = null;
+        var compressionStopwatch = new Stopwatch();
+        var uploadStopwatch = new Stopwatch();
+        var ocrStopwatch = new Stopwatch();
+
+        SetLoadingState(true, "正在读取照片...");
+        try
+        {
+            var photo = await GetTicketPhotoAsync();
+            if (photo is null) return;
+
+            SetLoadingState(true, "正在处理照片...");
+            compressionStopwatch.Start();
+            compressedPhoto = await _imageCompressionService.CompressForOcrAsync(photo);
+            compressionStopwatch.Stop();
+            Log.Information(
+                "原料入库OCR图片处理完成，InstockNo={InstockNo}, Original={OriginalWidth}x{OriginalHeight}/{OriginalBytes} bytes, Output={OutputWidth}x{OutputHeight}/{CompressedBytes} bytes, IsTemporary={IsTemporary}, ElapsedMs={ElapsedMs}",
+                _instockNo,
+                compressedPhoto.OriginalWidth,
+                compressedPhoto.OriginalHeight,
+                compressedPhoto.OriginalBytes,
+                compressedPhoto.OutputWidth,
+                compressedPhoto.OutputHeight,
+                compressedPhoto.CompressedBytes,
+                compressedPhoto.IsTemporary,
+                compressionStopwatch.ElapsedMilliseconds);
+
+            SetLoadingState(true, "正在上传票签...");
+            uploadStopwatch.Start();
+            _pendingTicketAttachment = await _warehouseApi.UploadAttachmentAsync(compressedPhoto.File, "toolingManager", "images");
+            uploadStopwatch.Stop();
+            Log.Information(
+                "原料入库OCR附件上传完成，InstockNo={InstockNo}, ElapsedMs={ElapsedMs}",
+                _instockNo,
+                uploadStopwatch.ElapsedMilliseconds);
+        }
+        catch (Exception ex) when (ex is PermissionException or UnauthorizedAccessException)
+        {
+            await ErrorDialogService.ShowAsync(this, "权限错误", "没有相机、相册或照片文件访问权限，请在系统设置中授权后重试。", "确定");
+            return;
+        }
+        catch (HttpRequestException ex)
+        {
+            await ErrorDialogService.ShowAsync(this, "接口错误", $"附件上传接口请求失败：{ex.Message}", "确定");
+            return;
+        }
+        catch (InvalidOperationException ex)
+        {
+            await ErrorDialogService.ShowAsync(this, "接口错误", $"附件上传接口返回异常：{ex.Message}", "确定");
+            return;
+        }
+        catch (IOException ex)
+        {
+            await ErrorDialogService.ShowAsync(this, "照片读取失败", $"票签照片读取失败：{ex.Message}", "确定");
+            return;
+        }
+        catch (Exception ex)
+        {
+            await ErrorDialogService.ShowAsync(this, "拍照或上传失败", ex.Message, "确定");
+            return;
+        }
+        finally
+        {
+            if (_pendingTicketAttachment is null)
+            {
+                DeleteTemporaryCompressedPhoto(compressedPhoto);
+                SetLoadingState(false);
+            }
+        }
+
+        try
+        {
+            SetLoadingState(true, "正在识别票签，请稍候...");
+            ocrStopwatch.Start();
+            var ocr = await _warehouseApi.RecognizeIncomingAsync(_pendingTicketAttachment, _instockNo);
+            ocrStopwatch.Stop();
+            Log.Information(
+                "原料入库OCR识别完成，InstockNo={InstockNo}, CompressionMs={CompressionMs}, UploadMs={UploadMs}, OcrMs={OcrMs}",
+                _instockNo,
+                compressionStopwatch.ElapsedMilliseconds,
+                uploadStopwatch.ElapsedMilliseconds,
+                ocrStopwatch.ElapsedMilliseconds);
+            ShowTicketConfirmDialog(ocr, false);
+        }
+        catch (Exception ex)
+        {
+            ocrStopwatch.Stop();
+            Log.Error(
+                ex,
+                "原料入库OCR识别失败，InstockNo={InstockNo}, CompressionMs={CompressionMs}, UploadMs={UploadMs}, OcrMs={OcrMs}",
+                _instockNo,
+                compressionStopwatch.ElapsedMilliseconds,
+                uploadStopwatch.ElapsedMilliseconds,
+                ocrStopwatch.ElapsedMilliseconds);
+            await ErrorDialogService.ShowAsync(this, "OCR识别失败", ex.Message, "确定");
+            ShowTicketConfirmDialog(new RawMaterialOcrDto(), true);
+        }
+        finally
+        {
+            DeleteTemporaryCompressedPhoto(compressedPhoto);
+            SetLoadingState(false);
+        }
+    }
+
     private async void OnScanIncomingClicked(object sender, EventArgs e)
     {
         _scanForRecognition = true;
@@ -331,6 +465,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
         _isHandlingScan = true;
         _hasPendingTicketScan = false;
+        _pendingTicketAttachment = null;
         SetLoadingState(true, "正在识别票签，请稍候...");
         try
         {
@@ -363,8 +498,38 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         }
 
         ScanIncomingButton.IsEnabled = !isLoading;
+        TakePhotoButton.IsEnabled = !isLoading;
     }
 
+
+    private static void DeleteTemporaryCompressedPhoto(CompressedImageResult? compressedPhoto)
+    {
+        if (compressedPhoto?.IsTemporary != true ||
+            string.IsNullOrWhiteSpace(compressedPhoto.File.FullPath) ||
+            !File.Exists(compressedPhoto.File.FullPath))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(compressedPhoto.File.FullPath);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(
+                ex,
+                "删除OCR临时压缩图片失败。Path={Path}",
+                compressedPhoto.File.FullPath);
+        }
+    }
+
+    private async Task<FileResult?> GetTicketPhotoAsync()
+    {
+        var capturePage = new TicketPhotoCapturePage();
+        await Navigation.PushModalAsync(capturePage);
+        return await capturePage.Completion;
+    }
 
     private async void OnCalculateSummaryClicked(object sender, EventArgs e)
     {
@@ -449,7 +614,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         if (string.IsNullOrWhiteSpace(scanCode))
         {
             if (_selectedTicket is null)
-                await DisplayAlert("提示", "请先扫码识别并确认票签内容。", "确定");
+                await DisplayAlert("提示", "请先拍照或扫码识别并确认票签内容。", "确定");
             else
                 await _scanner.ShowHintAsync(this, "扫码绑定");
             return;
@@ -461,7 +626,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         {
             if (_selectedTicket is null)
             {
-                await DisplayAlert("提示", "请先扫码识别并确认票签内容。", "确定");
+                await DisplayAlert("提示", "请先拍照或扫码识别并确认票签内容。", "确定");
                 return;
             }
 
@@ -694,7 +859,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private async Task SaveOcrIncomingImageAsync(RawMaterialOcrDto ticket)
     {
-        if (!_hasPendingTicketScan || string.IsNullOrWhiteSpace(_instockNo))
+        if ((!_hasPendingTicketScan && _pendingTicketAttachment is null) || string.IsNullOrWhiteSpace(_instockNo))
         {
             return;
         }
@@ -709,6 +874,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                 coilNo = ticket.coilNo,
                 companyName = ticket.companyName,
                 confidence = ticket.confidence,
+                fileInfo = _pendingTicketAttachment,
                 furnaceNo = ticket.furnaceNo,
                 instockNo = _instockNo,
                 materialClass = ticket.materialClass,
@@ -739,6 +905,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         }
 
         _hasPendingTicketScan = false;
+        _pendingTicketAttachment = null;
     }
 
     private void SelectMaterialClass(Picker picker, string? value)
@@ -843,7 +1010,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         TicketList.IsVisible = false;
         SelectedTicketCard.IsVisible = false;
         ExtractedTextLabel.IsVisible = true;
-        ExtractedTextLabel.Text = "暂无票签内容，请先扫码识别";
+        ExtractedTextLabel.Text = "暂无票签内容，请先拍照或扫码识别";
     }
 
 

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace JXHLJSApp.Models.Warehouse;
 
 /// <summary>
-/// /pda/rawMaterialReceiving/scanIncoming 接口的原始识别结果。
+/// 拍照 OCR（ocrIncoming）和扫码（scanIncoming）接口共用的原始识别结果。
 /// 数值字段保持为可空数值类型，再由页面模型转换为可编辑文本。
 /// </summary>
 public sealed class OcrIncomingResultDto
