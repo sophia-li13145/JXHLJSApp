@@ -8,37 +8,32 @@ namespace JXHLJSApp.Pages;
 public partial class MaterialScanQueryPage : ContentPage
 {
     private readonly IMaterialScanQueryApi _api;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
-    private bool _scanStarted;
 
-    public MaterialScanQueryPage(IMaterialScanQueryApi api, IScanService scanService)
+    public MaterialScanQueryPage(IMaterialScanQueryApi api, IRightKeyScanService scanner)
     {
         InitializeComponent();
         _api = api;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => ScanAndQueryAsync(code),
             () => !_isHandlingScan);
     }
 
-    protected override void OnAppearing()
+    private async Task ScanAndQueryAsync(string? scanCode = null)
     {
-        base.OnAppearing();
-        if (!_scanStarted)
+        if (string.IsNullOrWhiteSpace(scanCode))
         {
-            _scanStarted = true;
-            _ = ScanAndQueryAsync();
+            await _scanner.ShowHintAsync(this, "扫描物料二维码");
+            return;
         }
-    }
 
-    private async Task ScanAndQueryAsync(string? hardwareCode = null)
-    {
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
-            var code = hardwareCode ?? await _scanService.ScanAsync("扫描物料二维码");
+            var code = scanCode;
             if (string.IsNullOrWhiteSpace(code)) return;
 
             try

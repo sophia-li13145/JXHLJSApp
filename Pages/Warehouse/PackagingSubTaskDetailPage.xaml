@@ -35,7 +35,7 @@
                     </VerticalStackLayout>
                 </Border>
 
-                <Button x:Name="ScanButton" Text="🔍  包装扫码" BackgroundColor="#EEF6FF" TextColor="#0A2E69" BorderColor="#244B88" BorderWidth="1" CornerRadius="10" HeightRequest="50" FontSize="16" FontAttributes="Bold" Clicked="OnScanClicked" />
+                <Button x:Name="ScanButton" Text="▣  按右侧键包装扫码" BackgroundColor="#EEF6FF" TextColor="#0A2E69" BorderColor="#244B88" BorderWidth="1" CornerRadius="10" HeightRequest="50" FontSize="16" FontAttributes="Bold" Clicked="OnScanClicked" />
 
                 <Border x:Name="ScanSuccessPanel" IsVisible="False" BackgroundColor="#EFFFF4" Stroke="#B8F0CB" StrokeThickness="1" Padding="14,9">
                     <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>

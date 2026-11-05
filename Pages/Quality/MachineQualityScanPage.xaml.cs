@@ -5,15 +5,15 @@ namespace JXHLJSApp.Pages.Quality;
 
 public partial class MachineQualityScanPage : ContentPage
 {
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
     private readonly IQualityApi _qualityApi;
 
-    public MachineQualityScanPage(IScanService scanService, IQualityApi qualityApi)
+    public MachineQualityScanPage(IRightKeyScanService scanner, IQualityApi qualityApi)
     {
         InitializeComponent();
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => ScanAndOpenTasksAsync(code),
             () => !_isHandlingScan);
         _qualityApi = qualityApi;
@@ -23,13 +23,19 @@ public partial class MachineQualityScanPage : ContentPage
 
     private async void OnScanTapped(object sender, TappedEventArgs e) => await ScanAndOpenTasksAsync();
 
-    private async Task ScanAndOpenTasksAsync(string? hardwareCode = null)
+    private async Task ScanAndOpenTasksAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "扫描机台二维码");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
-            var code = hardwareCode ?? await _scanService.ScanAsync("扫描机台二维码");
+            var code = scanCode;
             if (string.IsNullOrWhiteSpace(code)) return;
 
             try

@@ -48,6 +48,20 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
         _lastMaterialQrCode = qrCode;
         _manualWorkOrderNo = workOrderNo;
         _manualRecordLoaded = false;
+
+        // 扫码入口已完成查询，直接使用结果，避免进入详情后再次请求失败。
+        if (string.IsNullOrWhiteSpace(inputRecordId)
+            && query.TryGetValue("inputOutput", out var inputOutput)
+            && inputOutput is WorkOrderInputOutputDto scannedInputOutput)
+        {
+            _inputOutput = scannedInputOutput;
+            BindInputOutput(_inputOutput);
+            _manualRecordLoaded = true;
+            SuccessBannerLabel.Text = "✅ 已获取上料记录对应的下料信息！";
+            ShowResultStep();
+            return;
+        }
+
         ShowManualLoadingStep();
 
         if (_isAppeared)
@@ -230,9 +244,8 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
                 return;
             }
 
-            await Shell.Current.GoToAsync(
-                AppShell.RouteMaterialOperationSuccess,
-                new Dictionary<string, object> { ["operation"] = "unloading" });
+            // 跳过成功提示页，直接返回原“完成返回”按钮指向的页面。
+            await Shell.Current.GoToAsync("../..");
         }
         catch (Exception ex)
         {
@@ -377,7 +390,7 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
             : "小件";
     }
 
-    private static decimal? GetInitialOutputLength(WorkOrderInputOutputDto? inputOutput) => IsPicklingProcess(inputOutput)
+    private static decimal? GetInitialOutputLength(WorkOrderInputOutputDto? inputOutput) => UsesWeightBasedOutputLength(inputOutput)
         ? CalculateOutputLength(inputOutput?.pieceWeight, inputOutput?.outputSpecification)
         : null;
 
@@ -400,6 +413,9 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
     private static bool IsPicklingProcess(WorkOrderInputOutputDto? inputOutput) => ContainsProcessName(inputOutput, "酸洗");
 
     private static bool IsHeatTreatmentProcess(WorkOrderInputOutputDto? inputOutput) => ContainsProcessName(inputOutput, "热处理");
+
+    private static bool UsesWeightBasedOutputLength(WorkOrderInputOutputDto? inputOutput) =>
+        IsPicklingProcess(inputOutput) || IsHeatTreatmentProcess(inputOutput);
 
     private static bool IsBlankOpeningOrDrawingProcess(WorkOrderInputOutputDto? inputOutput) =>
         ContainsProcessName(inputOutput, "开胚") || ContainsProcessName(inputOutput, "拉拔");

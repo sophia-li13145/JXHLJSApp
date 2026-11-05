@@ -6,7 +6,7 @@ namespace JXHLJSApp.Pages.Quality;
 public partial class QualityCodeConvertPage : ContentPage, IQueryAttributable
 {
     private readonly IQualityCodeConvertApi _api;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private QualityCodeMaterialDto? _material;
     private QualityCodeConvertResultDto? _lastConversion;
     private string? _lastTargetQrCode;
@@ -23,12 +23,12 @@ public partial class QualityCodeConvertPage : ContentPage, IQueryAttributable
         query.Remove("cancelledQualityCodes");
     }
 
-    public QualityCodeConvertPage(IQualityCodeConvertApi api, IScanService scanService)
+    public QualityCodeConvertPage(IQualityCodeConvertApi api, IRightKeyScanService scanner)
     {
         InitializeComponent();
         _api = api;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this, code => ScanAsync(code), () => !_isHandlingScan && !_isConfirmingCancel);
+        _scanner = scanner;
+        _scanner.Register(this, code => ScanAsync(code), () => !_isHandlingScan && !_isConfirmingCancel);
     }
 
     protected override void OnNavigatedTo(NavigatedToEventArgs args)
@@ -44,20 +44,25 @@ public partial class QualityCodeConvertPage : ContentPage, IQueryAttributable
     protected override void OnNavigatedFrom(NavigatedFromEventArgs args)
     {
         base.OnNavigatedFrom(args);
-        // Opening the scanner modal must not cancel the scan operation.
+        // An error dialog does not end the current business operation.
         if (!Navigation.ModalStack.Any()) _navigationCts.Cancel();
     }
 
-    private async Task ScanAsync(string? hardwareCode = null)
+    private async Task ScanAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, _material is null ? "扫描原物料码" : "扫描空白质检码");
+            return;
+        }
+
         if (_isHandlingScan || _isConfirmingCancel) return;
         _isHandlingScan = true;
         SetBusy(true);
         var ct = _navigationCts.Token;
         try
         {
-            var code = (hardwareCode ?? await _scanService.ScanAsync(
-                _material is null ? "扫描原物料码" : "扫描空白质检码", ct))?.Trim();
+            var code = scanCode.Trim();
             if (string.IsNullOrWhiteSpace(code)) return;
             ct.ThrowIfCancellationRequested();
 
@@ -120,7 +125,7 @@ public partial class QualityCodeConvertPage : ContentPage, IQueryAttributable
         QualityBadge.BackgroundColor = Color.FromArgb(ready ? "#244B88" : "#E9EEF5");
         QualityNumber.TextColor = ready ? Colors.White : Color.FromArgb("#7B8EA8");
         QualityHint.Text = ready ? "扫要贴在样品上的新标签" : "先扫上面的原物料码";
-        ScanButton.Text = ready ? "扫空白质检码" : "扫原物料码";
+        ScanButton.Text = ready ? "按右侧键扫空白质检码" : "按右侧键扫原物料码";
         RescanButton.IsVisible = ready;
     }
 

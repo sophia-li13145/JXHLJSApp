@@ -18,7 +18,7 @@
 
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Padding="20,24,20,24" Spacing="16">
-                <Button Text="📷  物料扫码确认" BackgroundColor="White" TextColor="#0A2E69" BorderColor="#244B88" BorderWidth="1" CornerRadius="10" HeightRequest="52" FontSize="17" FontAttributes="Bold" Clicked="OnScanMaterialClicked" />
+                <Button Text="▣  按右侧键扫码确认" BackgroundColor="White" TextColor="#0A2E69" BorderColor="#244B88" BorderWidth="1" CornerRadius="10" HeightRequest="52" FontSize="17" FontAttributes="Bold" Clicked="OnScanMaterialClicked" />
 
                 <Border BackgroundColor="White" StrokeThickness="0" Padding="18,18">
                     <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="JXHLJSApp.Pages.LoginPage"
@@ -239,7 +239,7 @@
                     </Border>
 
                     <Label x:Name="QrStatusLabel"
-                           Text="支持摄像头、相册二维码和手持机扫码枪"
+                           Text="对准员工二维码，按右侧扫描键"
                            TextColor="#6C7E98"
                            FontSize="13"
                            HorizontalTextAlignment="Center" />

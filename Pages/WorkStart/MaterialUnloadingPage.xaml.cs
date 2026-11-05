@@ -6,19 +6,19 @@ namespace JXHLJSApp.Pages.WorkStart;
 public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
 {
     private readonly IWorkOrderApi _workOrderApi;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
     private readonly IProductionContextService _productionContext;
     private bool _machineConfirmed;
     private bool _isBusy;
     private bool _isRedirectingToDetail;
 
-    public MaterialUnloadingPage(IWorkOrderApi workOrderApi, IScanService scanService, IProductionContextService productionContext)
+    public MaterialUnloadingPage(IWorkOrderApi workOrderApi, IRightKeyScanService scanner, IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => _machineConfirmed ? ScanMaterialAsync(code) : ScanMachineAsync(code),
             () => !_isHandlingScan && (!_isBusy && !_isRedirectingToDetail));
         _productionContext = productionContext;
@@ -91,13 +91,19 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
         else await ScanMaterialAsync();
     }
 
-    private async Task ScanMachineAsync(string? hardwareCode = null)
+    private async Task ScanMachineAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "扫描机台二维码");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
-            var devCode = hardwareCode ?? await _scanService.ScanAsync("扫描机台二维码");
+            var devCode = scanCode;
             var workOrderNo = _productionContext.Current?.WorkOrderNo;
             if (string.IsNullOrWhiteSpace(devCode) || string.IsNullOrWhiteSpace(workOrderNo)) return;
 
@@ -144,24 +150,47 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
     private void ShowMaterialScanStep()
     {
         ScanIconLabel.Text = "📦";
-        ScanTitleLabel.Text = "2. 机台识别确认";
-        ScanHintLabel.Text = "点击扫描下料标签二维码";
+        ScanTitleLabel.Text = "2. 扫描物料二维码";
+        ScanHintLabel.Text = "按右侧扫描键扫描下料标签二维码";
     }
 
     private static bool IsPicklingProcess(string? operationName) =>
         operationName?.Contains("酸洗", StringComparison.OrdinalIgnoreCase) == true;
 
-    private async Task ScanMaterialAsync(string? hardwareCode = null)
+    private async Task ScanMaterialAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "扫描下料标签二维码");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
-            var qrCode = hardwareCode ?? await _scanService.ScanAsync("扫描下料标签二维码");
+            var qrCode = scanCode;
             var workOrderNo = _productionContext.Current?.WorkOrderNo;
             if (string.IsNullOrWhiteSpace(qrCode) || string.IsNullOrWhiteSpace(workOrderNo)) return;
 
-            await Shell.Current.GoToAsync($"{AppShell.RouteMaterialUnloadingDetail}?qrCode={Uri.EscapeDataString(qrCode.Trim())}&workOrderNo={Uri.EscapeDataString(workOrderNo)}");
+            // 先查询成功再进入详情；失败时停留在当前物料扫码步骤。
+            var materialQrCode = qrCode.Trim();
+            var inputOutput = (await _workOrderApi.GetWorkOrderInputOutputAsync(workOrderNo, materialQrCode)).FirstOrDefault();
+            if (inputOutput is null)
+            {
+                throw new InvalidOperationException("未查询到该物料对应的下料详情，请重新扫描物料二维码。");
+            }
+
+            await Shell.Current.GoToAsync(AppShell.RouteMaterialUnloadingDetail, new Dictionary<string, object>
+            {
+                ["qrCode"] = materialQrCode,
+                ["workOrderNo"] = workOrderNo,
+                ["inputOutput"] = inputOutput
+            });
+        }
+        catch (Exception ex)
+        {
+            await ErrorDialogService.ShowAsync(this, "扫码失败", ex.Message, "确定");
         }
         finally
         {

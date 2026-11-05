@@ -10,7 +10,7 @@ namespace JXHLJSApp.Pages.Quality;
 public partial class IncomingQualityOrderDetailPage : ContentPage
 {
     private readonly IQualityApi _qualityApi;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
     private readonly ObservableCollection<IncomingQualityScanDetailDto> _records = new();
     private string? _incomingQualityNo;
@@ -22,12 +22,12 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
         set => _incomingQualityNo = Uri.UnescapeDataString(value ?? string.Empty);
     }
 
-    public IncomingQualityOrderDetailPage(IQualityApi qualityApi, IScanService scanService)
+    public IncomingQualityOrderDetailPage(IQualityApi qualityApi, IRightKeyScanService scanner)
     {
         InitializeComponent();
         _qualityApi = qualityApi;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => ScanAndOpenInspectionAsync(code),
             () => !_isHandlingScan && _detail is not null && !_detail.isCompleted && !RefreshContainer.IsRefreshing);
         ScanRecordList.ItemsSource = _records;
@@ -167,20 +167,20 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
         ActionBar.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
         if (detail.isUnsubmitted)
         {
-            ActionBar.Add(CreateButton("质检扫码", "White", "#F59E0B", null, OnScanClicked), 0);
+            ActionBar.Add(CreateButton("右侧键扫码", "White", "#F59E0B", null, OnScanClicked), 0);
             ActionBar.Add(CreateButton("完成检验", "White", "#10B981", null, OnCompleteClicked), 1);
             return;
         }
 
         if (detail.isWaitInspection)
         {
-            ActionBar.Add(CreateButton("质检扫码", "White", "#F59E0B", null, OnScanClicked), 0);
+            ActionBar.Add(CreateButton("右侧键扫码", "White", "#F59E0B", null, OnScanClicked), 0);
             ActionBar.Add(CreateButton("完成检验", "White", "#10B981", null, OnCompleteClicked), 1);
             return;
         }
 
         ActionBar.Add(CreateButton("删除", "#FF4D5E", "#FFF2F2", "#FFB7BE", OnDeleteClicked), 0);
-        ActionBar.Add(CreateButton("质检扫码", "White", "#1E427C", null, OnScanClicked), 1);
+        ActionBar.Add(CreateButton("右侧键扫码", "White", "#1E427C", null, OnScanClicked), 1);
     }
 
     private static Border CreateOutlineAction(string text, EventHandler tapped)
@@ -230,13 +230,19 @@ public partial class IncomingQualityOrderDetailPage : ContentPage
 
     private async void OnScanClicked(object? sender, EventArgs e) => await ScanAndOpenInspectionAsync();
 
-    private async Task ScanAndOpenInspectionAsync(string? hardwareCode = null)
+    private async Task ScanAndOpenInspectionAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "来料质检扫码");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
-            var code = hardwareCode ?? await _scanService.ScanAsync("来料质检扫码");
+            var code = scanCode;
             if (string.IsNullOrWhiteSpace(code)) return;
 
             try

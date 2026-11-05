@@ -18,8 +18,8 @@
                     <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanTapped" /></Border.GestureRecognizers>
                     <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
                     <VerticalStackLayout Spacing="14" HorizontalOptions="Center" VerticalOptions="Center">
-                        <Label Text="📷" FontSize="34" HorizontalTextAlignment="Center" />
-                        <Label Text="1. 扫描下料物料二维码提取信息" TextColor="#0A2E69" FontSize="16" />
+                        <Label Text="▣" FontSize="34" HorizontalTextAlignment="Center" />
+                        <Label Text="1. 按右侧扫描键识别返工物料" TextColor="#0A2E69" FontSize="16" />
                     </VerticalStackLayout>
                 </Border>
                 <Border x:Name="SuccessBanner" IsVisible="False" BackgroundColor="#F0FFF6" Stroke="#B8F0CF" Padding="14">

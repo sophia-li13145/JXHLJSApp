@@ -1,18 +1,18 @@
-﻿using JXHLJSApp.Services;
+using JXHLJSApp.Services;
 
 namespace JXHLJSApp.Pages.Quality;
 
 public partial class ProductionQualityScanPage : ContentPage
 {
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
     private bool _isScanning;
 
-    public ProductionQualityScanPage(IScanService scanService)
+    public ProductionQualityScanPage(IRightKeyScanService scanner)
     {
         InitializeComponent();
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => ScanAndOpenOrdersAsync(code),
             () => !_isHandlingScan);
     }
@@ -21,8 +21,14 @@ public partial class ProductionQualityScanPage : ContentPage
 
     private async void OnScanTapped(object sender, TappedEventArgs e) => await ScanAndOpenOrdersAsync();
 
-    private async Task ScanAndOpenOrdersAsync(string? hardwareCode = null)
+    private async Task ScanAndOpenOrdersAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "扫描物料或工单二维码");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
@@ -31,7 +37,7 @@ public partial class ProductionQualityScanPage : ContentPage
             _isScanning = true;
             try
             {
-                var code = hardwareCode ?? await _scanService.ScanAsync("扫描物料或工单二维码");
+                var code = scanCode;
                 if (string.IsNullOrWhiteSpace(code)) return;
 
                 await Shell.Current.GoToAsync($"{AppShell.RouteProductionQualityOrders}?qrCode={Uri.EscapeDataString(code.Trim())}");

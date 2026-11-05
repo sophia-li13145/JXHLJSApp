@@ -17,8 +17,8 @@
             <Border BackgroundColor="#EEF6FF" Stroke="#B5D2FF" StrokeThickness="1" Padding="18" HeightRequest="76"><Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape><Label Text="请扫描产出物料上的二维码标签，系统将自动识别并展示需运往的下一道工序信息。" TextColor="#0051FF" FontSize="14" LineBreakMode="WordWrap" /></Border>
             <Border Stroke="#C8D4E3" StrokeThickness="2" StrokeDashArray="6,5" BackgroundColor="White" HeightRequest="228" Padding="24"><Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
                 <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="14">
-                    <Label Text="📷" FontSize="36" HorizontalTextAlignment="Center" />
-                    <Label Text="点击此处模拟扫描物料条码" TextColor="#223B5D" FontSize="17" HorizontalTextAlignment="Center" />
+                    <Label Text="▣" FontSize="36" HorizontalTextAlignment="Center" />
+                    <Label Text="按右侧扫描键扫描物料条码" TextColor="#223B5D" FontSize="17" HorizontalTextAlignment="Center" />
                 </VerticalStackLayout>
                 <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanTapped" /></Border.GestureRecognizers>
             </Border>

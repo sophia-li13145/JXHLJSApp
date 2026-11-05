@@ -60,7 +60,7 @@
                         </VerticalStackLayout>
                     </Grid>
                 </Border>
-                <Button x:Name="ScanButton" Text="扫原物料码" ImageSource="scan_qr_white.png" ContentLayout="Left,10" BackgroundColor="#244B88" TextColor="White" FontSize="23"
+                <Button x:Name="ScanButton" Text="按右侧键扫原物料码" ImageSource="scan_qr_white.png" ContentLayout="Left,10" BackgroundColor="#244B88" TextColor="White" FontSize="23"
                         HeightRequest="82" CornerRadius="14" Margin="0,8,0,0" Clicked="OnScanClicked" />
                 <ActivityIndicator x:Name="LoadingIndicator" IsVisible="False" IsRunning="False" Color="#244B88" />
                 <Button x:Name="RescanButton" Text="物料扫错了，重扫" IsVisible="False" BackgroundColor="Transparent"

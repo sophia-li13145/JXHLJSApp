@@ -68,8 +68,8 @@
                         <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanManualMaterialClicked" /></Border.GestureRecognizers>
                         <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
                         <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="10">
-                            <Label Text="📷" FontSize="34" HorizontalTextAlignment="Center" />
-                            <Label Text="扫描物料二维码" TextColor="#005BFF" FontSize="18" HorizontalTextAlignment="Center" />
+                            <Label Text="▣" FontSize="34" HorizontalTextAlignment="Center" />
+                            <Label Text="按右侧扫描键扫描物料二维码" TextColor="#005BFF" FontSize="18" HorizontalTextAlignment="Center" />
                             <Label Text="系统将自动识别物料归属工序" TextColor="#50627A" FontSize="13" HorizontalTextAlignment="Center" />
                         </VerticalStackLayout>
                     </Border>

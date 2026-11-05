@@ -77,17 +77,17 @@
 
                 <VerticalStackLayout Spacing="6">
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                        <Button x:Name="TakePhotoButton"
-                                Text="📷  拍照"
+                        <Button x:Name="ScanIncomingButton"
+                                Text="右侧键扫码识别"
                                 BackgroundColor="#EFFFF4"
                                 TextColor="#008C38"
                                 BorderColor="#0AA344"
                                 BorderWidth="1"
                                 CornerRadius="10"
                                 HeightRequest="46"
-                                Clicked="OnTakePhotoClicked" />
+                                Clicked="OnScanIncomingClicked" />
                         <Button Grid.Column="1"
-                                Text="◼  扫码绑定"
+                                Text="◼  右侧键扫码绑定"
                                 BackgroundColor="#F4F8FF"
                                 TextColor="#0B4FEA"
                                 BorderColor="#2263FF"
@@ -96,7 +96,7 @@
                                 HeightRequest="46"
                                 Clicked="OnScanBindClicked" />
                     </Grid>
-                    <Label Text="请尽量避免光线、角度等原因影响拍照识别效果"
+                    <Label Text="先按右侧扫描键识别票签，确认后再扫码绑定；切换票签请点扫码识别"
                            TextColor="#F64148"
                            FontSize="12" />
                 </VerticalStackLayout>
@@ -122,7 +122,7 @@
                         </Grid>
 
                         <Label x:Name="ExtractedTextLabel"
-                               Text="暂无票签内容，请先手动录入"
+                               Text="暂无票签内容，请先扫码识别"
                                TextColor="#8EA0B8"
                                FontSize="15"
                                HorizontalTextAlignment="Center" />
@@ -496,7 +496,7 @@
 
                         <Label x:Name="OcrFailedHintLabel"
                                IsVisible="False"
-                               Text="OCR识别失败，请重新拍照识别或者手动输入信息"
+                               Text="扫码识别失败，请重新扫码识别或者手动输入信息"
                                TextColor="#F64148"
                                FontSize="12"
                                FontAttributes="Bold" />

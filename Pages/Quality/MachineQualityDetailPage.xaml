@@ -22,7 +22,7 @@
                     <VerticalStackLayout Spacing="12">
                         <Grid ColumnDefinitions="*,Auto">
                             <Label x:Name="InfoTitleLabel" Text="生产卡片信息" TextColor="#00346F" FontSize="16" FontAttributes="Bold" VerticalOptions="Center" />
-                            <Button x:Name="InfoScanMaterialButton" Grid.Column="1" Text="▣  扫描物料" BackgroundColor="White" TextColor="#0B3D8B" BorderColor="#0B3D8B" BorderWidth="1" CornerRadius="6" HeightRequest="34" Padding="10,0" FontSize="13" FontAttributes="Bold" Clicked="OnScanMaterialClicked" IsVisible="False" />
+                            <Button x:Name="InfoScanMaterialButton" Grid.Column="1" Text="▣  右侧键扫码" BackgroundColor="White" TextColor="#0B3D8B" BorderColor="#0B3D8B" BorderWidth="1" CornerRadius="6" HeightRequest="34" Padding="10,0" FontSize="13" FontAttributes="Bold" Clicked="OnScanMaterialClicked" IsVisible="False" />
                         </Grid>
                         <BoxView HeightRequest="1" Color="#C8D2DF" />
                         <Grid x:Name="InfoGrid" ColumnDefinitions="*,*" RowSpacing="14" ColumnSpacing="16" />

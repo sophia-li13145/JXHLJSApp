@@ -1,12 +1,12 @@
 {
-  "schemaVersion": 16,
-  "hardwareScanner": {
-    "broadcastAction": "lc",
-    "dataKey": "data"
+  "schemaVersion": 17,
+  "rightKeyScanner": {
+    "broadcastAction": "nlscan.action.SCANNER_RESULT",
+    "dataKey": "SCAN_BARCODE1"
   },
   "server": {
     "scheme": "http",
-    "ipAddress": "221.216.53.191:9128"
+    "ipAddress": "114.250.22.34:9128"
   },
   "services": {
     "normalService": "/normalService",
@@ -31,7 +31,7 @@
       "queryDetailByInstockNo": "/pda/rawMaterialReceiving/queryDetailByInstockNo",
       "queryWarehouseInfo": "/pda/rawMaterialReceiving/queryWarehouseInfo",
       "queryWarehouseAreaByWarehouseCode": "/pda/rawMaterialReceiving/queryWarehouseAreaByWarehouseCode",
-      "ocrIncoming": "/pda/rawMaterialReceiving/ocrIncoming",
+      "scanIncoming": "/pda/rawMaterialReceiving/scanIncoming",
       "saveOcrIncomingImage": "/pda/rawMaterialReceiving/saveOcrIncomingImage",
       "queryQrCodeInfo": "/pda/rawMaterialReceiving/queryQrCodeInfo",
       "getDictList": "/pda/rawMaterialReceiving/getDictList",

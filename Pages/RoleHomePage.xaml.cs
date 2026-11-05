@@ -11,15 +11,14 @@ namespace JXHLJSApp.Pages;
 public partial class RoleHomePage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private readonly IAuthApi _authApi;
     private bool _isPackagingScanBusy;
     private bool _isModuleNavigating;
-    private bool _canHardwareBind;
+    private bool _canBindMachine;
     private bool _isBindingMachine;
     private bool _isRefreshingUserInfo;
     private bool _isPageVisible;
-    private bool _isOpeningMachineScanner;
     private Entry? _machineCodeEntry;
     private View? _machineBindCard;
     private string? _renderedRoleCode;
@@ -35,14 +34,14 @@ public partial class RoleHomePage : ContentPage
         }
     }
 
-    public RoleHomePage(IWorkOrderApi workOrderApi, IScanService scanService, IAuthApi authApi)
+    public RoleHomePage(IWorkOrderApi workOrderApi, IRightKeyScanService scanner, IAuthApi authApi)
     {
         _workOrderApi = workOrderApi;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => BindMachineAndOpenOrdersAsync(code),
-            () => _isPageVisible && _canHardwareBind && !_isBindingMachine && !_isModuleNavigating && !_isOpeningMachineScanner,
-            () => _canHardwareBind ? _machineCodeEntry : null);
+            () => _isPageVisible && _canBindMachine && !_isBindingMachine && !_isModuleNavigating,
+            () => _canBindMachine ? _machineCodeEntry : null);
         _authApi = authApi;
         InitializeComponent();
         BuildRoleHome();
@@ -60,7 +59,7 @@ public partial class RoleHomePage : ContentPage
             return;
         }
         await RefreshUserInfoAsync();
-        if (_isPageVisible && !_isBindingMachine && !_isModuleNavigating && !_isOpeningMachineScanner)
+        if (_isPageVisible && !_isBindingMachine && !_isModuleNavigating)
             BuildRoleHome();
     }
 
@@ -107,7 +106,7 @@ public partial class RoleHomePage : ContentPage
         var shift = Preferences.Get(UserSessionKeys.ShiftName, string.Empty);
 
         var role = RoleHomeDefinition.FromRoleCode(roleCode);
-        _canHardwareBind = role.RoleCode == "production";
+        _canBindMachine = role.RoleCode == "production";
         role = role with
         {
             Modules = role.Modules.Concat(new[]
@@ -155,7 +154,6 @@ public partial class RoleHomePage : ContentPage
                 ContentStack.Children.Add(CreateWideModule(module));
             }
         }
-        _scanService.RefreshHardwareHandler(this);
     }
 
     private View CreateProfileCard(RoleHomeDefinition role, string realName, string workNumber, string department, string shift)
@@ -435,11 +433,11 @@ public partial class RoleHomePage : ContentPage
             HeightRequest = 46,
             ReturnType = ReturnType.Done
         };
-        entry.HandlerChanged += (_, _) => _scanService.RefreshHardwareHandler(this);
+        entry.HandlerChanged += (_, _) => _scanner.RefreshInput(this);
 
         var scanButton = new Button
         {
-            Text = "📷  扫码机台二维码上机",
+            Text = "▣  按右侧扫描键扫码上机",
             BackgroundColor = Color.FromArgb("#1F447E"),
             TextColor = Colors.White,
             FontSize = 16,
@@ -447,23 +445,7 @@ public partial class RoleHomePage : ContentPage
             CornerRadius = 10,
             HeightRequest = 56
         };
-        scanButton.Clicked += async (_, _) =>
-        {
-            if (_isOpeningMachineScanner || _isBindingMachine) return;
-            _isOpeningMachineScanner = true;
-            _scanService.RefreshHardwareHandler(this);
-            try
-            {
-                var code = await _scanService.ScanAsync("扫码机台二维码上机");
-                if (_isPageVisible && !string.IsNullOrWhiteSpace(code))
-                    await BindMachineAndOpenOrdersAsync(code);
-            }
-            finally
-            {
-                _isOpeningMachineScanner = false;
-                _scanService.RefreshHardwareHandler(this);
-            }
-        };
+        scanButton.Clicked += async (_, _) => await _scanner.ShowHintAsync(this, "扫描机台二维码上机");
 
         var confirmButton = new Button
         {
@@ -483,7 +465,14 @@ public partial class RoleHomePage : ContentPage
             await BindMachineAndOpenOrdersAsync(entry.Text);
         }
 
-        entry.Completed += async (_, _) => await ConfirmMachineAsync();
+        entry.Completed += async (_, _) =>
+        {
+#if ANDROID
+            // Native scanner Enter is handled by the input adapter, exactly once.
+            if (Platform.CurrentActivity is MainActivity activity && activity.IsAutomaticScanInput(entry)) return;
+#endif
+            await ConfirmMachineAsync();
+        };
         confirmButton.Clicked += async (_, _) => await ConfirmMachineAsync();
 
         var inputGrid = new Grid
@@ -512,7 +501,6 @@ public partial class RoleHomePage : ContentPage
     {
         if (_isBindingMachine) return;
         _isBindingMachine = true;
-        _scanService.RefreshHardwareHandler(this);
         try
         {
             var devCode = machineCode?.Trim();
@@ -532,7 +520,7 @@ public partial class RoleHomePage : ContentPage
                     return;
                 }
 
-                if (_isPageVisible) await Shell.Current.GoToAsync(AppShell.RouteWorkStartOrders);
+                if (_isPageVisible) await Shell.Current.GoToAsync(AppShell.ProductionOrderSelectionRoute(devCode));
             }
             catch (Exception ex)
             {
@@ -542,7 +530,7 @@ public partial class RoleHomePage : ContentPage
         finally
         {
             _isBindingMachine = false;
-            _scanService.RefreshHardwareHandler(this);
+            _scanner.RefreshInput(this);
         }
     }
 
@@ -649,11 +637,11 @@ internal sealed record RoleHomeDefinition(
                 new HomeModule("采购入库", "📥", Color.FromArgb("#F3F0FF"), Route: AppShell.RouteRawMaterialReceiving),
                 new HomeModule("发货出库", "🚚", Color.FromArgb("#EFF8F0"), Route: AppShell.RouteDeliveryOrders),
                 new HomeModule("包装作业", "🎁", Color.FromArgb("#FFF5F5"), Route: AppShell.RoutePackagingSubTasks),
-                new HomeModule("扫码包装", "📷", Color.FromArgb("#EFF6FF"), Route: AppShell.RoutePackagingScan)
+                new HomeModule("扫码包装", "▣", Color.FromArgb("#EFF6FF"), Route: AppShell.RoutePackagingScan)
             }),
             "qualityInspector" => new("qualityInspector", "质检管理工作台", "#14295D", "👨‍🔬", RoleHomeLayout.List, new[]
             {
-                new HomeModule("扫码质检", "📷", Color.FromArgb("#EFF6FF"), "扫描物料或工单二维码查询质检记录", Route: AppShell.RouteProductionQualityScan),
+                new HomeModule("扫码质检", "▣", Color.FromArgb("#EFF6FF"), "扫描物料或工单二维码查询质检记录", Route: AppShell.RouteProductionQualityScan),
                 new HomeModule("质检转码", "", Color.FromArgb("#EFF6FF"), "先扫物料，再扫质检码", HighlightOnTap: true, Route: AppShell.RouteQualityCodeConvert, IconImage: "quality_code_convert.png"),
                 new HomeModule("机台质检 (快捷取)", "🏭", Color.FromArgb("#DCEBFF"), "扫码机台，直达该机台质检任务", true, AppShell.RouteMachineQualityScan),
                 new HomeModule("生产质检记录 (PQC)", "⚙️", Color.FromArgb("#FFF1F1"), "首检 · 抽检 · 热处理 · 酸洗 任务池", Route: AppShell.RouteProductionQualityOrders),

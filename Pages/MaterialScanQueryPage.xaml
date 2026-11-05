@@ -12,7 +12,7 @@
         </Grid>
         <ScrollView Grid.Row="1">
             <VerticalStackLayout x:Name="ResultStack" Padding="20,18,20,30" Spacing="22">
-                <Label x:Name="EmptyLabel" Text="请扫描物料二维码" TextColor="#667085" FontSize="16" HorizontalTextAlignment="Center" Margin="0,80,0,0" />
+                <Label x:Name="EmptyLabel" Text="按右侧扫描键扫描物料二维码" TextColor="#667085" FontSize="16" HorizontalTextAlignment="Center" Margin="0,80,0,0" />
             </VerticalStackLayout>
         </ScrollView>
         <ActivityIndicator x:Name="LoadingIndicator" Grid.RowSpan="2" IsVisible="False" IsRunning="False" Color="#1F5AA6" HorizontalOptions="Center" VerticalOptions="Center" />

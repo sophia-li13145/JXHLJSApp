@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFrameworks>net8.0-android</TargetFrameworks>
 		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks)</TargetFrameworks>
@@ -29,7 +29,7 @@
 		<AndroidTargetSdkVersion>34</AndroidTargetSdkVersion>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
-	  <!-- Keep side-loaded Debug APKs self-contained so the camera fix is deployed with the package. -->
+	  <!-- Keep side-loaded Debug APKs self-contained so the application assemblies are deployed with the package. -->
 	  <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
 	  <AndroidCreatePackagePerAbi>False</AndroidCreatePackagePerAbi>
 	</PropertyGroup>
@@ -62,10 +62,6 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
 		<PackageReference Include="Serilog" Version="4.3.0" />
 		<PackageReference Include="SkiaSharp" Version="3.119.1" />
-		<PackageReference Include="ZXing.Net" Version="0.16.9" />
-		<PackageReference Include="ZXing.Net.Bindings.SkiaSharp" Version="0.16.9" />
-		<PackageReference Include="ZXing.Net.Maui" Version="0.4.0" />
-		<PackageReference Include="ZXing.Net.Maui.Controls" Version="0.4.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<MauiXaml Update="App.xaml">

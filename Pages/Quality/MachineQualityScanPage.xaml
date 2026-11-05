@@ -19,8 +19,8 @@
             <Border BackgroundColor="White" Stroke="#C8D6EA" StrokeThickness="1" StrokeDashArray="4,3" Padding="24" HeightRequest="278">
                 <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
                 <VerticalStackLayout Spacing="14" HorizontalOptions="Center" VerticalOptions="Center">
-                    <Label Text="📷" FontSize="42" HorizontalTextAlignment="Center" />
-                    <Label Text="请扫描机台二维码" TextColor="#051B3D" FontSize="16" HorizontalTextAlignment="Center" />
+                    <Label Text="▣" FontSize="42" HorizontalTextAlignment="Center" />
+                    <Label Text="按右侧扫描键扫描机台二维码" TextColor="#051B3D" FontSize="16" HorizontalTextAlignment="Center" />
                     <Label Text="点击此处读取二维码，进入机台质检任务" TextColor="#8BA0C0" FontSize="14" HorizontalTextAlignment="Center" />
                 </VerticalStackLayout>
                 <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanTapped" /></Border.GestureRecognizers>

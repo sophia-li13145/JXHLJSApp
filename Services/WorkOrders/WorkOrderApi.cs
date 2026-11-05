@@ -195,7 +195,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private static List<WorkOrderTaskDto> DeduplicateCurrentUserMachineWorkOrders(IEnumerable<WorkOrderTaskDto> orders)
     {
         var result = new List<WorkOrderTaskDto>();
-        var seenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var seenKeys = new HashSet<(string Order, string Machine)>();
 
         foreach (var order in orders)
         {
@@ -206,7 +206,9 @@ public sealed class WorkOrderApi : IWorkOrderApi
                 continue;
             }
 
-            if (seenKeys.Add(key.Trim()))
+            // The same work order may be returned for multiple bound machines.
+            // Keep those rows distinct so selection can filter by the newly bound device.
+            if (seenKeys.Add((key.Trim().ToUpperInvariant(), order.deviceCode?.Trim().ToUpperInvariant() ?? string.Empty)))
             {
                 result.Add(order);
             }

@@ -10,7 +10,7 @@ namespace JXHLJSApp.Pages.Quality;
 public partial class IncomingQualityScanPage : ContentPage, IQueryAttributable
 {
     private readonly IQualityApi _qualityApi;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
     private string? _incomingQualityNo;
     private string? _qrCode;
@@ -34,14 +34,14 @@ public partial class IncomingQualityScanPage : ContentPage, IQueryAttributable
         set => _qrCode = Uri.UnescapeDataString(value ?? string.Empty);
     }
 
-    public IncomingQualityScanPage(IQualityApi qualityApi, IScanService scanService)
+    public IncomingQualityScanPage(IQualityApi qualityApi, IRightKeyScanService scanner)
     {
         InitializeComponent();
         _qualityApi = qualityApi;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => ScanAndLoadMaterialAsync(code),
-            () => !_isHandlingScan && (ScanPanel.IsVisible && _hasLoadedScanForm));
+            () => !_isHandlingScan && (_scanMaterial is null && _hasLoadedScanForm));
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -110,13 +110,19 @@ public partial class IncomingQualityScanPage : ContentPage, IQueryAttributable
 
     private async void OnScanPanelTapped(object sender, TappedEventArgs e) => await ScanAndLoadMaterialAsync();
 
-    private async Task ScanAndLoadMaterialAsync(string? hardwareCode = null)
+    private async Task ScanAndLoadMaterialAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "来料质检扫码");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
-            var code = hardwareCode ?? await _scanService.ScanAsync("来料质检扫码");
+            var code = scanCode;
             if (string.IsNullOrWhiteSpace(code)) return;
             try
             {

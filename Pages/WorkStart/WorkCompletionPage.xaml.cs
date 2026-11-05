@@ -6,23 +6,24 @@ namespace JXHLJSApp.Pages.WorkStart;
 public partial class WorkCompletionPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
     private readonly IProductionContextService _productionContext;
     private bool _isBusy;
+    private bool _machineVerified;
 
 
     public WorkCompletionPage(
         IWorkOrderApi workOrderApi,
-        IScanService scanService,
+        IRightKeyScanService scanner,
         IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => ScanAndVerifyMachineAsync(code),
-            () => !_isHandlingScan && (!_isBusy && ScanPanel.IsVisible));
+            () => !_isHandlingScan && (!_isBusy && !_machineVerified));
         _productionContext = productionContext;
     }
 
@@ -34,13 +35,19 @@ public partial class WorkCompletionPage : ContentPage
 
     private async void OnScanPanelTapped(object sender, TappedEventArgs e) => await ScanAndVerifyMachineAsync();
 
-    private async Task ScanAndVerifyMachineAsync(string? hardwareCode = null)
+    private async Task ScanAndVerifyMachineAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "扫码机台二维码验证完工");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
-            var code = hardwareCode ?? await _scanService.ScanAsync("扫码机台二维码验证完工");
+            var code = scanCode;
             if (!string.IsNullOrWhiteSpace(code))
             {
                 await VerifyMachineAsync(code);
@@ -78,6 +85,7 @@ public partial class WorkCompletionPage : ContentPage
 
             UpdateProductionContextMachine(devCode);
             await LoadCompletionStatusAsync();
+            _machineVerified = true;
             ScanPanel.IsVisible = false;
             SuccessBanner.IsVisible = true;
             ConfirmCard.IsVisible = true;

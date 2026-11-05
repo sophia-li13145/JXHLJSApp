@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="JXHLJSApp.Pages.Quality.ProductionQualityScanPage"
@@ -19,8 +19,8 @@
             <Border BackgroundColor="White" Stroke="#C8D6EA" StrokeThickness="1" StrokeDashArray="4,3" Padding="24" HeightRequest="278">
                 <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
                 <VerticalStackLayout Spacing="14" HorizontalOptions="Center" VerticalOptions="Center">
-                    <Label Text="📷" FontSize="42" HorizontalTextAlignment="Center" />
-                    <Label Text="请扫描物料或工单二维码" TextColor="#051B3D" FontSize="16" HorizontalTextAlignment="Center" />
+                    <Label Text="▣" FontSize="42" HorizontalTextAlignment="Center" />
+                    <Label Text="按右侧扫描键扫描物料或工单码" TextColor="#051B3D" FontSize="16" HorizontalTextAlignment="Center" />
                     <Label Text="点击此处读取二维码，查询生产质检记录" TextColor="#8BA0C0" FontSize="14" HorizontalTextAlignment="Center" />
                 </VerticalStackLayout>
                 <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanTapped" /></Border.GestureRecognizers>

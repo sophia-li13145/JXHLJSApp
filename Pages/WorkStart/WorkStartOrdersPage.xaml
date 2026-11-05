@@ -12,6 +12,10 @@
                     <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnRescanTapped" /></Label.GestureRecognizers>
                 </Label>
                 <Label Grid.Column="1" Text="选择工单开工" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" />
+                <Button Grid.Column="2" Text="刷新" Clicked="OnRefreshing"
+                        BackgroundColor="Transparent" TextColor="White" FontSize="15" Padding="8,0"
+                        HeightRequest="34" MinimumHeightRequest="0" MinimumWidthRequest="48" VerticalOptions="Center"
+                        SemanticProperties.Description="刷新当前机台的工单列表" />
             </Grid>
         </Border>
 

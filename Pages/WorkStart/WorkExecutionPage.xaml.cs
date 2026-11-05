@@ -7,21 +7,15 @@ namespace JXHLJSApp.Pages.WorkStart;
 public partial class WorkExecutionPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
-    private readonly IScanService _scanService;
-    private bool _isHandlingScan;
+    private bool _isOpeningMachineScanner;
     private readonly IProductionContextService _productionContext;
     private List<WorkOrderDetailDto> _tasks = new();
     public WorkExecutionPage(
         IWorkOrderApi workOrderApi,
-        IScanService scanService,
         IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
-            code => ScanAndSwitchMachineAsync(code),
-            () => !_isHandlingScan && (!RefreshContainer.IsRefreshing));
         _productionContext = productionContext;
     }
 
@@ -71,28 +65,6 @@ public partial class WorkExecutionPage : ContentPage
         {
             RefreshContainer.IsRefreshing = false;
         }
-    }
-
-    private void UpdateProductionContextMachine(string machineCode)
-    {
-        var current = _productionContext.Current;
-        if (current is null)
-        {
-            return;
-        }
-
-        _productionContext.Set(new ProductionContext
-        {
-            WorkOrderId = current.WorkOrderId,
-            WorkOrderNo = current.WorkOrderNo,
-            OperationName = current.OperationName,
-            ExecutionId = current.ExecutionId,
-            MachineCode = machineCode,
-            IsPicklingMachineConfirmed = current.IsPicklingMachineConfirmed,
-            Status = current.Status,
-            StartedAt = current.StartedAt,
-            SessionId = current.SessionId
-        });
     }
 
     private void UpdateProductionContextStatus(string status)
@@ -204,57 +176,21 @@ public partial class WorkExecutionPage : ContentPage
         await Shell.Current.GoToAsync(AppShell.RouteWorkCompletion);
     }
 
-    private async void OnSwitchMachineTapped(object sender, TappedEventArgs e) => await ScanAndSwitchMachineAsync();
-
-    private async Task ScanAndSwitchMachineAsync(string? hardwareCode = null)
+    private async void OnSwitchMachineTapped(object sender, TappedEventArgs e)
     {
-        if (_isHandlingScan) return;
-        _isHandlingScan = true;
+        if (_isOpeningMachineScanner || RefreshContainer.IsRefreshing || !ReferenceEquals(Shell.Current.CurrentPage, this)) return;
+        _isOpeningMachineScanner = true;
         try
         {
-            var code = hardwareCode ?? await _scanService.ScanAsync("扫码切换机台");
-            if (string.IsNullOrWhiteSpace(code))
-            {
-                return;
-            }
-
-            await BindMachineAndReturnHomeAsync(code);
-        }
-        finally
-        {
-            _isHandlingScan = false;
-        }
-    }
-
-    private async Task BindMachineAndReturnHomeAsync(string machineCode)
-    {
-        var devCode = machineCode.Trim();
-        if (string.IsNullOrWhiteSpace(devCode))
-        {
-            await DisplayAlert("提示", "机台编号为空，无法切换机台。", "确定");
-            return;
-        }
-
-        try
-        {
-            RefreshContainer.IsRefreshing = true;
-            var success = await _workOrderApi.BindWorkerMachineAsync(devCode);
-            if (!success)
-            {
-                await ErrorDialogService.ShowAsync(this, "切换失败", "机台绑定未成功，请确认机台编号后重试。", "确定");
-                return;
-            }
-
-            UpdateProductionContextMachine(devCode);
-            await Shell.Current.GoToAsync(AppShell.RouteProductionHome);
+            await Shell.Current.GoToAsync($"{AppShell.RouteWorkStartScan}?switchMachine=true");
         }
         catch (Exception ex)
         {
-            await ErrorDialogService.ShowAsync(this, "切换失败", ex.Message, "确定");
+            await ErrorDialogService.ShowAsync(this, "跳转失败", ex.Message, "确定");
         }
         finally
         {
-            RefreshContainer.IsRefreshing = false;
+            _isOpeningMachineScanner = false;
         }
     }
 

@@ -27,8 +27,10 @@ public partial class MachineQualityDetailPage : ContentPage
     private const string SchemeHeatTreatment = "热处理";
     private const string SchemeDrawing = "拉拔";
     private readonly IQualityApi _qualityApi;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
+    private bool _isUpdating;
+    private bool _canScanMaterial;
     private ProductionQualityDetailDto? _detail;
     private string? _qualityNo;
     private string? _workOrderNo;
@@ -62,14 +64,14 @@ public partial class MachineQualityDetailPage : ContentPage
     public string? MaterialName { get => _materialName; set => _materialName = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? QrCode { get => _qrCode; set => _qrCode = Uri.UnescapeDataString(value ?? string.Empty); }
 
-    public MachineQualityDetailPage(IQualityApi qualityApi, IScanService scanService)
+    public MachineQualityDetailPage(IQualityApi qualityApi, IRightKeyScanService scanner)
     {
         InitializeComponent();
         _qualityApi = qualityApi;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => ScanAndApplyMaterialAsync(code),
-            () => !_isHandlingScan && (InfoScanMaterialButton.IsVisible && InfoScanMaterialButton.IsEnabled));
+            () => !_isHandlingScan && !_isUpdating && _canScanMaterial);
         CoilDiameterPicker.ItemsSource = new[] { "合格", "不合格" };
         CoilPitchPicker.ItemsSource = new[] { "合格", "不合格" };
         InspectResultPicker.ItemsSource = new[] { "合格", "不合格" };
@@ -239,8 +241,9 @@ public partial class MachineQualityDetailPage : ContentPage
         CompleteButton.IsVisible = !isSubmitOnlyProcess;
         Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
         ScanMaterialButton.IsVisible = false;
-        InfoScanMaterialButton.IsVisible = !IsInspectionCompleted(_inspectStatus) && !isAcid &&
+        _canScanMaterial = !IsInspectionCompleted(_inspectStatus) && !isAcid &&
             ((!isDrawing || isManualPatrol) && (IsSamplingOrFullScheme(flowName) || IsProcessCardScheme(flowName)) || canScanDrawingSamplingOrFull);
+        InfoScanMaterialButton.IsVisible = _canScanMaterial;
         UpdateUnqualifiedDescriptionVisibility();
     }
 
@@ -824,8 +827,14 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private async void OnScanMaterialClicked(object sender, EventArgs e) => await ScanAndApplyMaterialAsync();
 
-    private async Task ScanAndApplyMaterialAsync(string? hardwareCode = null)
+    private async Task ScanAndApplyMaterialAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "生产质检扫码物料");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
@@ -836,7 +845,7 @@ public partial class MachineQualityDetailPage : ContentPage
                 return;
             }
 
-            var code = hardwareCode ?? await _scanService.ScanAsync("生产质检扫码物料");
+            var code = scanCode;
             if (string.IsNullOrWhiteSpace(code)) return;
 
             try
@@ -1084,90 +1093,36 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private async void OnSubmitClicked(object sender, EventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(_qualityNo) || string.IsNullOrWhiteSpace(_workOrderNo))
-        {
-            await DisplayAlert("提示", "质检单号或工单号为空，无法提交。", "确定");
-            return;
-        }
-
-        if (!await ValidateRequiredInputsAsync())
-        {
-            return;
-        }
-
+        if (_isUpdating || _isHandlingScan) return;
+        _isUpdating = true;
         try
         {
-            var unqualifiedDescription = UnqualifiedDescriptionEditorControl?.Text?.Trim();
-            if (UnqualifiedDescriptionPanelControl?.IsVisible == true && string.IsNullOrWhiteSpace(unqualifiedDescription))
+            if (string.IsNullOrWhiteSpace(_qualityNo) || string.IsNullOrWhiteSpace(_workOrderNo))
             {
-                await DisplayAlert("提示", "质检结果为不合格时，请填写不合格说明。", "确定");
-                UnqualifiedDescriptionEditorControl?.Focus();
+                await DisplayAlert("提示", "质检单号或工单号为空，无法提交。", "确定");
                 return;
             }
 
-            var request = new ProductionQualityCommitRequestDto
+            if (!await ValidateRequiredInputsAsync())
             {
-                acidRatio = AcidRatioEntry.Text?.Trim(),
-                actualDiameterMm = HeatTreatmentInputPanel.IsVisible ? HeatActualDiameterEntry.Text?.Trim() : ActualDiameterEntry.Text?.Trim(),
-                brokenDiameterMm = BrokenDiameterEntry.Text?.Trim(),
-                coilDiameterControl = CoilDiameterPicker.SelectedItem?.ToString(),
-                coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
-                coilDiameterDescription = CoilDiameterDescriptionEntry.Text?.Trim(),
-                coilPitchDescription = CoilPitchDescriptionEntry.Text?.Trim(),
-                continuousUnqualified = IsYesSelected(ContinuousUnqualifiedPicker),
-                diameterJudgment = DiameterJudgmentPicker.SelectedItem?.ToString(),
-                employeeIntervention = IsYesSelected(EmployeeInterventionPicker),
-                elongationRate = HeatTreatmentInputPanel.IsVisible ? HeatElongationEntry.Text?.Trim() : ElongationEntry.Text?.Trim(),
-                inspectResult = InspectResultPicker.SelectedItem?.ToString(),
-                sectionShrinkageRate = SectionShrinkageLabel.Text == "-" ? null : SectionShrinkageLabel.Text,
-                freeAcid = FreeAcidEntry.Text?.Trim(),
-                freeAcidSampling = FreeAcidSamplingEntry.Text?.Trim(),
-                hydrochloricAcidConcentration1 = HydrochloricAcid1Entry.Text?.Trim(),
-                hydrochloricAcidConcentration2 = HydrochloricAcid2Entry.Text?.Trim(),
-                memo = MemoEditor.Text?.Trim(),
-                phosphatingTemperature = PhosphatingTemperatureEntry.Text?.Trim(),
-                qualityNo = _qualityNo,
-                recorder = RecorderEntry.Text?.Trim(),
-                saponificationPhValue = SaponificationPhEntry.Text?.Trim(),
-                saponificationTemperature = SaponificationTemperatureEntry.Text?.Trim(),
-                standardDiameterMm = StandardDiameterEntry.Text?.Trim(),
-                strengthMpa = HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text?.Trim() : StrengthEntry.Text?.Trim(),
-                strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
-                tensileStrengthMpa = TensileStrengthEntry.Text?.Trim(),
-                surfaceCondition = SurfaceEntry.Text?.Trim(),
-                surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
-                totalAcid = TotalAcidEntry.Text?.Trim(),
-                torsion = TorsionInputPanel.IsVisible ? TorsionEntry.Text?.Trim() : null,
-                totalAcidSampling = TotalAcidSamplingEntry.Text?.Trim(),
-                workOrderNo = _workOrderNo
-            };
-
-            var useManualInspectionApi = ShouldUseManualInspectionResultApi();
-            var isAcid = !useManualInspectionApi && ShouldUsePicklingCommit();
-            var shouldStayAfterSubmit = IsHeatTreatmentScheme(CurrentProcessName) ||
-                IsHeatTreatmentScheme(_inspectionSchemeName) ||
-                IsBlankOpeningScheme(CurrentProcessName) ||
-                IsBlankOpeningScheme(_inspectionSchemeName) ||
-                (useManualInspectionApi && (IsDrawingScheme(CurrentProcessName) || IsDrawingScheme(_inspectionSchemeName)));
-            var useFirstInspectionCommit = !useManualInspectionApi && ShouldUseFirstInspectionCommit();
-            var useSamplingOrFullCommit = !useManualInspectionApi && ShouldUseSamplingOrFullCommit();
-            var isHeatTreatmentSamplingOrFull = useSamplingOrFullCommit &&
-                (IsHeatTreatmentScheme(CurrentProcessName) || IsHeatTreatmentScheme(_inspectionSchemeName));
-            SectionShrinkageLabel.Text = CalculateSectionShrinkageText();
-            var heatReductionOfAreaRate = SectionShrinkageLabel.Text == "-"
-                ? null
-                : SectionShrinkageLabel.Text.TrimEnd('%');
-            var picklingInspector = isAcid ? BuildCurrentRecorderUsername(RecorderEntry.Text) : string.Empty;
-            if (isAcid && string.IsNullOrWhiteSpace(picklingInspector))
-            {
-                await DisplayAlert("提示", "当前操作人 username 为空，无法提交酸洗质检。", "确定");
                 return;
             }
 
-            var committed = useManualInspectionApi
-                ? await _qualityApi.SaveManualInspectionResultAsync(new ProductionManualInspectionSaveResultRequestDto
+            try
+            {
+                var unqualifiedDescription = UnqualifiedDescriptionEditorControl?.Text?.Trim();
+                if (UnqualifiedDescriptionPanelControl?.IsVisible == true && string.IsNullOrWhiteSpace(unqualifiedDescription))
                 {
+                    await DisplayAlert("提示", "质检结果为不合格时，请填写不合格说明。", "确定");
+                    UnqualifiedDescriptionEditorControl?.Focus();
+                    return;
+                }
+
+                var request = new ProductionQualityCommitRequestDto
+                {
+                    acidRatio = AcidRatioEntry.Text?.Trim(),
                     actualDiameterMm = HeatTreatmentInputPanel.IsVisible ? HeatActualDiameterEntry.Text?.Trim() : ActualDiameterEntry.Text?.Trim(),
+                    brokenDiameterMm = BrokenDiameterEntry.Text?.Trim(),
                     coilDiameterControl = CoilDiameterPicker.SelectedItem?.ToString(),
                     coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
                     coilDiameterDescription = CoilDiameterDescriptionEntry.Text?.Trim(),
@@ -1177,45 +1132,55 @@ public partial class MachineQualityDetailPage : ContentPage
                     employeeIntervention = IsYesSelected(EmployeeInterventionPicker),
                     elongationRate = HeatTreatmentInputPanel.IsVisible ? HeatElongationEntry.Text?.Trim() : ElongationEntry.Text?.Trim(),
                     inspectResult = InspectResultPicker.SelectedItem?.ToString(),
-                    materialCode = _materialCode,
-                    materialName = _materialName,
-                    memo = MemoEditor.Text?.Trim(),
-                    qrCode = _qrCode,
-                    qualityMaterialId = _qualityMaterialId,
-                    qualityNo = _qualityNo,
-                    strengthMpa = HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text?.Trim() : StrengthEntry.Text?.Trim(),
-                    strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
-                    surfaceCondition = SurfaceEntry.Text?.Trim(),
-                    surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
-                    torsion = TorsionInputPanel.IsVisible ? TorsionEntry.Text?.Trim() : null,
-                    unqualifiedDescription = unqualifiedDescription,
-                    workOrderNo = _workOrderNo
-                })
-                : isAcid
-                ? await _qualityApi.CommitProductionPicklingAsync(new ProductionPicklingCommitRequestDto
-                {
-                    acidRatio = AcidRatioEntry.Text?.Trim(),
+                    sectionShrinkageRate = SectionShrinkageLabel.Text == "-" ? null : SectionShrinkageLabel.Text,
                     freeAcid = FreeAcidEntry.Text?.Trim(),
                     freeAcidSampling = FreeAcidSamplingEntry.Text?.Trim(),
                     hydrochloricAcidConcentration1 = HydrochloricAcid1Entry.Text?.Trim(),
                     hydrochloricAcidConcentration2 = HydrochloricAcid2Entry.Text?.Trim(),
-                    inspectDate = AcidDatePicker.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    inspectResult = InspectResultPicker.SelectedItem?.ToString(),
-                    inspecter = picklingInspector,
                     memo = MemoEditor.Text?.Trim(),
                     phosphatingTemperature = PhosphatingTemperatureEntry.Text?.Trim(),
                     qualityNo = _qualityNo,
+                    recorder = RecorderEntry.Text?.Trim(),
                     saponificationPhValue = SaponificationPhEntry.Text?.Trim(),
                     saponificationTemperature = SaponificationTemperatureEntry.Text?.Trim(),
+                    standardDiameterMm = StandardDiameterEntry.Text?.Trim(),
+                    strengthMpa = HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text?.Trim() : StrengthEntry.Text?.Trim(),
+                    strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
+                    tensileStrengthMpa = TensileStrengthEntry.Text?.Trim(),
+                    surfaceCondition = SurfaceEntry.Text?.Trim(),
+                    surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
                     totalAcid = TotalAcidEntry.Text?.Trim(),
+                    torsion = TorsionInputPanel.IsVisible ? TorsionEntry.Text?.Trim() : null,
                     totalAcidSampling = TotalAcidSamplingEntry.Text?.Trim(),
                     workOrderNo = _workOrderNo
-                })
-                : useSamplingOrFullCommit
-                    ? await _qualityApi.CommitProductionSamplingOrFullAsync(new ProductionSamplingOrFullCommitRequestDto
+                };
+
+                var useManualInspectionApi = ShouldUseManualInspectionResultApi();
+                var isAcid = !useManualInspectionApi && ShouldUsePicklingCommit();
+                var shouldStayAfterSubmit = IsHeatTreatmentScheme(CurrentProcessName) ||
+                    IsHeatTreatmentScheme(_inspectionSchemeName) ||
+                    IsBlankOpeningScheme(CurrentProcessName) ||
+                    IsBlankOpeningScheme(_inspectionSchemeName) ||
+                    (useManualInspectionApi && (IsDrawingScheme(CurrentProcessName) || IsDrawingScheme(_inspectionSchemeName)));
+                var useFirstInspectionCommit = !useManualInspectionApi && ShouldUseFirstInspectionCommit();
+                var useSamplingOrFullCommit = !useManualInspectionApi && ShouldUseSamplingOrFullCommit();
+                var isHeatTreatmentSamplingOrFull = useSamplingOrFullCommit &&
+                    (IsHeatTreatmentScheme(CurrentProcessName) || IsHeatTreatmentScheme(_inspectionSchemeName));
+                SectionShrinkageLabel.Text = CalculateSectionShrinkageText();
+                var heatReductionOfAreaRate = SectionShrinkageLabel.Text == "-"
+                    ? null
+                    : SectionShrinkageLabel.Text.TrimEnd('%');
+                var picklingInspector = isAcid ? BuildCurrentRecorderUsername(RecorderEntry.Text) : string.Empty;
+                if (isAcid && string.IsNullOrWhiteSpace(picklingInspector))
+                {
+                    await DisplayAlert("提示", "当前操作人 username 为空，无法提交酸洗质检。", "确定");
+                    return;
+                }
+
+                var committed = useManualInspectionApi
+                    ? await _qualityApi.SaveManualInspectionResultAsync(new ProductionManualInspectionSaveResultRequestDto
                     {
                         actualDiameterMm = HeatTreatmentInputPanel.IsVisible ? HeatActualDiameterEntry.Text?.Trim() : ActualDiameterEntry.Text?.Trim(),
-                        brokenDiameter = isHeatTreatmentSamplingOrFull ? BrokenDiameterEntry.Text?.Trim() : null,
                         coilDiameterControl = CoilDiameterPicker.SelectedItem?.ToString(),
                         coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
                         coilDiameterDescription = CoilDiameterDescriptionEntry.Text?.Trim(),
@@ -1231,7 +1196,6 @@ public partial class MachineQualityDetailPage : ContentPage
                         qrCode = _qrCode,
                         qualityMaterialId = _qualityMaterialId,
                         qualityNo = _qualityNo,
-                        reductionOfAreaRate = isHeatTreatmentSamplingOrFull ? heatReductionOfAreaRate : null,
                         strengthMpa = HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text?.Trim() : StrengthEntry.Text?.Trim(),
                         strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
                         surfaceCondition = SurfaceEntry.Text?.Trim(),
@@ -1240,56 +1204,110 @@ public partial class MachineQualityDetailPage : ContentPage
                         unqualifiedDescription = unqualifiedDescription,
                         workOrderNo = _workOrderNo
                     })
-                    : useFirstInspectionCommit
-                    ? await _qualityApi.CommitProductionFirstInspectionAsync(new ProductionFirstInspectionCommitRequestDto
+                    : isAcid
+                    ? await _qualityApi.CommitProductionPicklingAsync(new ProductionPicklingCommitRequestDto
                     {
-                        torsion = TorsionInputPanel.IsVisible ? TorsionEntry.Text?.Trim() : null,
-                        actualDiameterMm = ActualDiameterEntry.Text?.Trim(),
-                        coilDiameterControl = CoilDiameterPicker.SelectedItem?.ToString(),
-                        coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
-                        coilDiameterDescription = CoilDiameterDescriptionEntry.Text?.Trim(),
-                        coilPitchDescription = CoilPitchDescriptionEntry.Text?.Trim(),
-                        continuousUnqualified = IsYesSelected(ContinuousUnqualifiedPicker),
-                        diameterJudgment = DiameterJudgmentPicker.SelectedItem?.ToString(),
-                        employeeIntervention = IsYesSelected(EmployeeInterventionPicker),
-                        elongationRate = ElongationEntry.Text?.Trim(),
+                        acidRatio = AcidRatioEntry.Text?.Trim(),
+                        freeAcid = FreeAcidEntry.Text?.Trim(),
+                        freeAcidSampling = FreeAcidSamplingEntry.Text?.Trim(),
+                        hydrochloricAcidConcentration1 = HydrochloricAcid1Entry.Text?.Trim(),
+                        hydrochloricAcidConcentration2 = HydrochloricAcid2Entry.Text?.Trim(),
+                        inspectDate = AcidDatePicker.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                         inspectResult = InspectResultPicker.SelectedItem?.ToString(),
+                        inspecter = picklingInspector,
                         memo = MemoEditor.Text?.Trim(),
+                        phosphatingTemperature = PhosphatingTemperatureEntry.Text?.Trim(),
                         qualityNo = _qualityNo,
-                        strengthMpa = StrengthEntry.Text?.Trim(),
-                        strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
-                        surfaceCondition = SurfaceEntry.Text?.Trim(),
-                        surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
-                        unqualifiedDescription = unqualifiedDescription,
+                        saponificationPhValue = SaponificationPhEntry.Text?.Trim(),
+                        saponificationTemperature = SaponificationTemperatureEntry.Text?.Trim(),
+                        totalAcid = TotalAcidEntry.Text?.Trim(),
+                        totalAcidSampling = TotalAcidSamplingEntry.Text?.Trim(),
                         workOrderNo = _workOrderNo
                     })
-                    : await _qualityApi.CommitProductionQualityAsync(request);
-            if (!committed)
-            {
-                await ErrorDialogService.ShowAsync(this, isAcid ? "完成失败" : "提交失败", isAcid ? "接口未返回完成成功，请稍后重试。" : "接口未返回提交成功，请稍后重试。", "确定");
-                return;
+                    : useSamplingOrFullCommit
+                        ? await _qualityApi.CommitProductionSamplingOrFullAsync(new ProductionSamplingOrFullCommitRequestDto
+                        {
+                            actualDiameterMm = HeatTreatmentInputPanel.IsVisible ? HeatActualDiameterEntry.Text?.Trim() : ActualDiameterEntry.Text?.Trim(),
+                            brokenDiameter = isHeatTreatmentSamplingOrFull ? BrokenDiameterEntry.Text?.Trim() : null,
+                            coilDiameterControl = CoilDiameterPicker.SelectedItem?.ToString(),
+                            coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
+                            coilDiameterDescription = CoilDiameterDescriptionEntry.Text?.Trim(),
+                            coilPitchDescription = CoilPitchDescriptionEntry.Text?.Trim(),
+                            continuousUnqualified = IsYesSelected(ContinuousUnqualifiedPicker),
+                            diameterJudgment = DiameterJudgmentPicker.SelectedItem?.ToString(),
+                            employeeIntervention = IsYesSelected(EmployeeInterventionPicker),
+                            elongationRate = HeatTreatmentInputPanel.IsVisible ? HeatElongationEntry.Text?.Trim() : ElongationEntry.Text?.Trim(),
+                            inspectResult = InspectResultPicker.SelectedItem?.ToString(),
+                            materialCode = _materialCode,
+                            materialName = _materialName,
+                            memo = MemoEditor.Text?.Trim(),
+                            qrCode = _qrCode,
+                            qualityMaterialId = _qualityMaterialId,
+                            qualityNo = _qualityNo,
+                            reductionOfAreaRate = isHeatTreatmentSamplingOrFull ? heatReductionOfAreaRate : null,
+                            strengthMpa = HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text?.Trim() : StrengthEntry.Text?.Trim(),
+                            strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
+                            surfaceCondition = SurfaceEntry.Text?.Trim(),
+                            surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
+                            torsion = TorsionInputPanel.IsVisible ? TorsionEntry.Text?.Trim() : null,
+                            unqualifiedDescription = unqualifiedDescription,
+                            workOrderNo = _workOrderNo
+                        })
+                        : useFirstInspectionCommit
+                        ? await _qualityApi.CommitProductionFirstInspectionAsync(new ProductionFirstInspectionCommitRequestDto
+                        {
+                            torsion = TorsionInputPanel.IsVisible ? TorsionEntry.Text?.Trim() : null,
+                            actualDiameterMm = ActualDiameterEntry.Text?.Trim(),
+                            coilDiameterControl = CoilDiameterPicker.SelectedItem?.ToString(),
+                            coilPitchControl = CoilPitchPicker.SelectedItem?.ToString(),
+                            coilDiameterDescription = CoilDiameterDescriptionEntry.Text?.Trim(),
+                            coilPitchDescription = CoilPitchDescriptionEntry.Text?.Trim(),
+                            continuousUnqualified = IsYesSelected(ContinuousUnqualifiedPicker),
+                            diameterJudgment = DiameterJudgmentPicker.SelectedItem?.ToString(),
+                            employeeIntervention = IsYesSelected(EmployeeInterventionPicker),
+                            elongationRate = ElongationEntry.Text?.Trim(),
+                            inspectResult = InspectResultPicker.SelectedItem?.ToString(),
+                            memo = MemoEditor.Text?.Trim(),
+                            qualityNo = _qualityNo,
+                            strengthMpa = StrengthEntry.Text?.Trim(),
+                            strengthJudgment = StrengthJudgmentPicker.SelectedItem?.ToString(),
+                            surfaceCondition = SurfaceEntry.Text?.Trim(),
+                            surfaceJudgment = SurfaceJudgmentPicker.SelectedItem?.ToString(),
+                            unqualifiedDescription = unqualifiedDescription,
+                            workOrderNo = _workOrderNo
+                        })
+                        : await _qualityApi.CommitProductionQualityAsync(request);
+                if (!committed)
+                {
+                    await ErrorDialogService.ShowAsync(this, isAcid ? "完成失败" : "提交失败", isAcid ? "接口未返回完成成功，请稍后重试。" : "接口未返回提交成功，请稍后重试。", "确定");
+                    return;
+                }
+
+                await RefreshAfterSuccessfulOperationAsync();
+
+                if (isAcid)
+                {
+                    await Shell.Current.GoToAsync(AppShell.RouteProductionQualitySuccess);
+                    return;
+                }
+
+                await DisplayAlert("提交成功", "质检结果已提交。", "确定");
+                if (!shouldStayAfterSubmit)
+                {
+                    await Shell.Current.GoToAsync("..");
+                }
             }
-
-            await RefreshAfterSuccessfulOperationAsync();
-
-            if (isAcid)
+            catch (Exception ex)
             {
-                await Shell.Current.GoToAsync(AppShell.RouteProductionQualitySuccess);
-                return;
-            }
-
-            await DisplayAlert("提交成功", "质检结果已提交。", "确定");
-            if (!shouldStayAfterSubmit)
-            {
-                await Shell.Current.GoToAsync("..");
+                var message = ex.Message.Contains("物料名称不能为空", StringComparison.Ordinal)
+                    ? "请扫描物料"
+                    : ex.Message;
+                await ErrorDialogService.ShowAsync(this, "提交失败", message, "确定");
             }
         }
-        catch (Exception ex)
+        finally
         {
-            var message = ex.Message.Contains("物料名称不能为空", StringComparison.Ordinal)
-                ? "请扫描物料"
-                : ex.Message;
-            await ErrorDialogService.ShowAsync(this, "提交失败", message, "确定");
+            _isUpdating = false;
         }
     }
 
@@ -1318,67 +1336,76 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private async void OnCompleteClicked(object sender, EventArgs e)
     {
-        var useManualInspectionApi = ShouldUseManualInspectionResultApi();
-        var useSamplingOrFullComplete = ShouldUseSamplingOrFullComplete();
-        if (string.IsNullOrWhiteSpace(_qualityNo) || (!useManualInspectionApi && string.IsNullOrWhiteSpace(_workOrderNo)))
-        {
-            var message = useManualInspectionApi
-                ? "质检单号为空，无法完成。"
-                : "质检单号或工单号为空，无法完成。";
-            await DisplayAlert("提示", message, "确定");
-            return;
-        }
-
-        var confirmed = await DisplayAlert("确认完成", "是否已完成此工单质检内容？", "确认", "取消");
-        if (!confirmed)
-        {
-            return;
-        }
-
+        if (_isUpdating || _isHandlingScan) return;
+        _isUpdating = true;
         try
         {
-            if (useSamplingOrFullComplete)
+            var useManualInspectionApi = ShouldUseManualInspectionResultApi();
+            var useSamplingOrFullComplete = ShouldUseSamplingOrFullComplete();
+            if (string.IsNullOrWhiteSpace(_qualityNo) || (!useManualInspectionApi && string.IsNullOrWhiteSpace(_workOrderNo)))
             {
-                var completed = await _qualityApi.CompleteProductionSamplingOrFullAsync(new ProductionSamplingOrFullCompleteRequestDto
-                {
-                    qualityNo = _qualityNo,
-                    workOrderNo = _workOrderNo
-                });
-                if (!completed)
-                {
-                    await ErrorDialogService.ShowAsync(this, "完成失败", "接口未返回完成成功，请稍后重试。", "确定");
-                    return;
-                }
-            }
-            else if (useManualInspectionApi)
-            {
-                var completed = await _qualityApi.CompleteManualInspectionAsync(_qualityNo);
-                if (!completed)
-                {
-                    await ErrorDialogService.ShowAsync(this, "完成失败", "接口未返回完成成功，请稍后重试。", "确定");
-                    return;
-                }
-            }
-            else
-            {
-                var completed = await _qualityApi.CompleteProductionSamplingOrFullAsync(new ProductionSamplingOrFullCompleteRequestDto
-                {
-                    qualityNo = _qualityNo,
-                    workOrderNo = _workOrderNo
-                });
-                if (!completed)
-                {
-                    await ErrorDialogService.ShowAsync(this, "完成失败", "接口未返回完成成功，请稍后重试。", "确定");
-                    return;
-                }
+                var message = useManualInspectionApi
+                    ? "质检单号为空，无法完成。"
+                    : "质检单号或工单号为空，无法完成。";
+                await DisplayAlert("提示", message, "确定");
+                return;
             }
 
-            await DisplayAlert("完成成功", "质检任务已完成。", "确定");
-            await Shell.Current.GoToAsync("..");
+            var confirmed = await DisplayAlert("确认完成", "是否已完成此工单质检内容？", "确认", "取消");
+            if (!confirmed)
+            {
+                return;
+            }
+
+            try
+            {
+                if (useSamplingOrFullComplete)
+                {
+                    var completed = await _qualityApi.CompleteProductionSamplingOrFullAsync(new ProductionSamplingOrFullCompleteRequestDto
+                    {
+                        qualityNo = _qualityNo,
+                        workOrderNo = _workOrderNo
+                    });
+                    if (!completed)
+                    {
+                        await ErrorDialogService.ShowAsync(this, "完成失败", "接口未返回完成成功，请稍后重试。", "确定");
+                        return;
+                    }
+                }
+                else if (useManualInspectionApi)
+                {
+                    var completed = await _qualityApi.CompleteManualInspectionAsync(_qualityNo);
+                    if (!completed)
+                    {
+                        await ErrorDialogService.ShowAsync(this, "完成失败", "接口未返回完成成功，请稍后重试。", "确定");
+                        return;
+                    }
+                }
+                else
+                {
+                    var completed = await _qualityApi.CompleteProductionSamplingOrFullAsync(new ProductionSamplingOrFullCompleteRequestDto
+                    {
+                        qualityNo = _qualityNo,
+                        workOrderNo = _workOrderNo
+                    });
+                    if (!completed)
+                    {
+                        await ErrorDialogService.ShowAsync(this, "完成失败", "接口未返回完成成功，请稍后重试。", "确定");
+                        return;
+                    }
+                }
+
+                await DisplayAlert("完成成功", "质检任务已完成。", "确定");
+                await Shell.Current.GoToAsync("..");
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "完成失败", ex.Message, "确定");
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            await ErrorDialogService.ShowAsync(this, "完成失败", ex.Message, "确定");
+            _isUpdating = false;
         }
     }
 }

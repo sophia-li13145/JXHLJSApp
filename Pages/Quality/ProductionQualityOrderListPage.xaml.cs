@@ -9,7 +9,7 @@ public partial class ProductionQualityOrderListPage : ContentPage, IQueryAttribu
     private string? _qrCode;
     private bool _isLoading;
     private readonly IQualityApi _qualityApi;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
     private readonly List<ProductionQualityStatusOption> _statuses = new()
     {
@@ -20,12 +20,12 @@ public partial class ProductionQualityOrderListPage : ContentPage, IQueryAttribu
         new("检验完成", "3")
     };
 
-    public ProductionQualityOrderListPage(IQualityApi qualityApi, IScanService scanService)
+    public ProductionQualityOrderListPage(IQualityApi qualityApi, IRightKeyScanService scanner)
     {
         InitializeComponent();
         _qualityApi = qualityApi;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => ScanAndCreateInspectionAsync(code),
             () => !_isHandlingScan && (ManualInspectionPanel.IsVisible && ScanOverlay.IsVisible && !_isLoading));
         StatusPicker.ItemsSource = _statuses;
@@ -100,14 +100,20 @@ public partial class ProductionQualityOrderListPage : ContentPage, IQueryAttribu
 
     private async void OnScanManualMaterialClicked(object sender, TappedEventArgs e) => await ScanAndCreateInspectionAsync();
 
-    private async Task ScanAndCreateInspectionAsync(string? hardwareCode = null)
+    private async Task ScanAndCreateInspectionAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "扫描新增巡检");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
             ScanOverlay.IsVisible = false;
-            var qrCode = hardwareCode ?? await _scanService.ScanAsync("扫描新增巡检");
+            var qrCode = scanCode;
             if (string.IsNullOrWhiteSpace(qrCode)) return;
 
             try
@@ -127,6 +133,7 @@ public partial class ProductionQualityOrderListPage : ContentPage, IQueryAttribu
             }
             catch (Exception ex)
             {
+                ScanOverlay.IsVisible = true;
                 await ErrorDialogService.ShowAsync(this, "创建失败", ex.Message, "确定");
             }
         }

@@ -23,7 +23,7 @@
                     <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanPanelTapped" /></Border.GestureRecognizers>
                     <VerticalStackLayout Spacing="16" HorizontalOptions="Center" VerticalOptions="Center">
                         <Label Text="▣" TextColor="#5A4773" FontSize="48" HorizontalTextAlignment="Center" />
-                        <Label Text="1. 扫描机台二维码验证完工" TextColor="#001431" FontSize="16" HorizontalTextAlignment="Center" />
+                        <Label Text="1. 按右侧扫描键验证机台" TextColor="#001431" FontSize="16" HorizontalTextAlignment="Center" />
                     </VerticalStackLayout>
                 </Border>
 

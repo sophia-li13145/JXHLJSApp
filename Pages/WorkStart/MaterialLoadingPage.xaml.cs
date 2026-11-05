@@ -7,7 +7,7 @@ namespace JXHLJSApp.Pages.WorkStart;
 public partial class MaterialLoadingPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
     private readonly IProductionContextService _productionContext;
     private bool _machineConfirmed;
@@ -16,14 +16,14 @@ public partial class MaterialLoadingPage : ContentPage
     private MaterialInputConfirmDto? _confirmInput;
 
 
-    public MaterialLoadingPage(IWorkOrderApi workOrderApi, IScanService scanService, IProductionContextService productionContext)
+    public MaterialLoadingPage(IWorkOrderApi workOrderApi, IRightKeyScanService scanner, IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => _machineConfirmed ? ScanMaterialAsync(code) : ScanMachineAsync(code),
-            () => !_isHandlingScan && (!_isBusy && ScanPanel.IsVisible));
+            () => !_isHandlingScan && (!_isBusy && _confirmInput is null));
         _productionContext = productionContext;
         ReuseConfirmedPicklingMachine();
     }
@@ -58,13 +58,19 @@ public partial class MaterialLoadingPage : ContentPage
         await ScanMaterialAsync();
     }
 
-    private async Task ScanMachineAsync(string? hardwareCode = null)
+    private async Task ScanMachineAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "扫描机台二维码");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
-            var code = hardwareCode ?? await _scanService.ScanAsync("扫描机台二维码");
+            var code = scanCode;
             if (string.IsNullOrWhiteSpace(code)) return;
 
             await ConfirmMachineAsync(code);
@@ -138,13 +144,19 @@ public partial class MaterialLoadingPage : ContentPage
 
     }
 
-    private async Task ScanMaterialAsync(string? hardwareCode = null)
+    private async Task ScanMaterialAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "扫描上料物料二维码");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
-            var code = hardwareCode ?? await _scanService.ScanAsync("扫描上料物料二维码");
+            var code = scanCode;
             if (string.IsNullOrWhiteSpace(code)) return;
 
             try
@@ -152,11 +164,21 @@ public partial class MaterialLoadingPage : ContentPage
                 _isBusy = true;
                 _lastMaterialQrCode = code.Trim();
                 var material = await _workOrderApi.ScanQueryMaterialInfoAsync(_lastMaterialQrCode);
+                if (string.IsNullOrWhiteSpace(material?.materialCode))
+                {
+                    throw new InvalidOperationException("未查询到有效的上料物料，请重新扫描物料二维码。");
+                }
                 BindMaterial(material);
                 ShowResultStep();
             }
             catch (Exception ex)
             {
+                _confirmInput = null;
+                _lastMaterialQrCode = null;
+                ScanPanel.IsVisible = true;
+                SuccessBanner.IsVisible = false;
+                ResultCard.IsVisible = false;
+                ShowMaterialScanStep();
                 await ErrorDialogService.ShowAsync(this, "扫码失败", ex.Message, "确定");
             }
             finally
@@ -173,8 +195,8 @@ public partial class MaterialLoadingPage : ContentPage
     private void ShowMaterialScanStep()
     {
         ScanIconLabel.Text = "📦";
-        ScanTitleLabel.Text = "2. 机台识别确认";
-        ScanHintLabel.Text = "点击扫描上料物料二维码";
+        ScanTitleLabel.Text = "2. 扫描物料二维码";
+        ScanHintLabel.Text = "按右侧扫描键扫描上料物料二维码";
     }
 
     private void ShowResultStep()

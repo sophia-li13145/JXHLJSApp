@@ -10,8 +10,10 @@ public partial class ReworkReportPage : ContentPage
     private const string ReportModeRework = "rework";
 
     private readonly IWorkOrderApi _workOrderApi;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
+    private bool _isTakingPhoto;
+    private bool _isSubmitting;
     private readonly IProductionContextService _productionContext;
     private List<WorkOrderAbnormalOptionDto> _reworkReasons = new();
     private MaterialQrCodeInfoDto? _material;
@@ -21,15 +23,15 @@ public partial class ReworkReportPage : ContentPage
 
     public ReworkReportPage(
         IWorkOrderApi workOrderApi,
-        IScanService scanService,
+        IRightKeyScanService scanner,
         IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => ScanAndLoadMaterialAsync(code),
-            () => !_isHandlingScan);
+            () => !_isHandlingScan && !_isTakingPhoto && !_isSubmitting);
         _productionContext = productionContext;
     }
 
@@ -109,13 +111,19 @@ public partial class ReworkReportPage : ContentPage
 
     private async void OnScanTapped(object sender, TappedEventArgs e) => await ScanAndLoadMaterialAsync();
 
-    private async Task ScanAndLoadMaterialAsync(string? hardwareCode = null)
+    private async Task ScanAndLoadMaterialAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "扫描返工物料二维码");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
-            var code = hardwareCode ?? await _scanService.ScanAsync("扫描返工物料二维码");
+            var code = scanCode;
             if (string.IsNullOrWhiteSpace(code)) return;
             try
             {
@@ -148,80 +156,98 @@ public partial class ReworkReportPage : ContentPage
 
     private async void OnPhotoTapped(object sender, TappedEventArgs e)
     {
+        if (_isTakingPhoto || _isHandlingScan) return;
+        _isTakingPhoto = true;
         try
         {
-            var permission = await Permissions.RequestAsync<Permissions.Camera>();
-            if (permission != PermissionStatus.Granted)
+            try
             {
-                await DisplayAlert("提示", "未获得相机权限，无法拍照。", "确定");
-                return;
-            }
+                var permission = await Permissions.RequestAsync<Permissions.Camera>();
+                if (permission != PermissionStatus.Granted)
+                {
+                    await DisplayAlert("提示", "未获得相机权限，无法拍照。", "确定");
+                    return;
+                }
 
-            var photo = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "现场拍照" });
-            if (photo is null) return;
-            _photo = await _workOrderApi.UploadReworkAttachmentAsync(photo);
-            PhotoHintLabel.Text = "照片已上传";
-            PhotoPanel.BackgroundColor = Color.FromArgb("#F2FFF8");
+                var photo = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "现场拍照" });
+                if (photo is null) return;
+                _photo = await _workOrderApi.UploadReworkAttachmentAsync(photo);
+                PhotoHintLabel.Text = "照片已上传";
+                PhotoPanel.BackgroundColor = Color.FromArgb("#F2FFF8");
+            }
+            catch (Exception ex) when (ex is FeatureNotSupportedException or FeatureNotEnabledException)
+            {
+                await ErrorDialogService.ShowAsync(this, "拍照失败", "当前设备不支持调用相机或相机功能未启用。", "确定");
+            }
+            catch (Exception ex) when (ex is PermissionException or UnauthorizedAccessException)
+            {
+                await ErrorDialogService.ShowAsync(this, "权限错误", "没有相机或照片文件访问权限，请在系统设置中授权后重试。", "确定");
+            }
+            catch (HttpRequestException ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "接口错误", $"照片上传接口请求失败：{ex.Message}", "确定");
+            }
+            catch (InvalidOperationException ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "接口错误", $"照片上传接口返回异常：{ex.Message}", "确定");
+            }
+            catch (IOException ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "照片读取失败", $"已拍摄照片读取失败：{ex.Message}", "确定");
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "拍照或上传失败", ex.Message, "确定");
+            }
         }
-        catch (Exception ex) when (ex is FeatureNotSupportedException or FeatureNotEnabledException)
+        finally
         {
-            await ErrorDialogService.ShowAsync(this, "拍照失败", "当前设备不支持调用相机或相机功能未启用。", "确定");
-        }
-        catch (Exception ex) when (ex is PermissionException or UnauthorizedAccessException)
-        {
-            await ErrorDialogService.ShowAsync(this, "权限错误", "没有相机或照片文件访问权限，请在系统设置中授权后重试。", "确定");
-        }
-        catch (HttpRequestException ex)
-        {
-            await ErrorDialogService.ShowAsync(this, "接口错误", $"照片上传接口请求失败：{ex.Message}", "确定");
-        }
-        catch (InvalidOperationException ex)
-        {
-            await ErrorDialogService.ShowAsync(this, "接口错误", $"照片上传接口返回异常：{ex.Message}", "确定");
-        }
-        catch (IOException ex)
-        {
-            await ErrorDialogService.ShowAsync(this, "照片读取失败", $"已拍摄照片读取失败：{ex.Message}", "确定");
-        }
-        catch (Exception ex)
-        {
-            await ErrorDialogService.ShowAsync(this, "拍照或上传失败", ex.Message, "确定");
+            _isTakingPhoto = false;
         }
     }
 
     private async void OnSubmitClicked(object sender, EventArgs e)
     {
-        if (_material is null) { await DisplayAlert("提示", "请先扫描下料物料二维码。", "确定"); return; }
-        if (string.IsNullOrWhiteSpace(_selectedReworkReason)) { await DisplayAlert("提示", "请选择返工原因。", "确定"); return; }
-        if (_photo is null) { await DisplayAlert("提示", "请拍摄并上传现场照片。", "确定"); return; }
-
-        var workOrderNo = FirstNonEmpty(_material.workOrderNo, _productionContext.Current?.WorkOrderNo);
-        if (string.IsNullOrWhiteSpace(workOrderNo))
-        {
-            await DisplayAlert("提示", "扫码结果未返回工单号，无法提交返工上报。", "确定");
-            return;
-        }
-
+        if (_isSubmitting || _isHandlingScan) return;
+        _isSubmitting = true;
         try
         {
-            var request = new WorkOrderAbnormalAddRequestDto
+            if (_material is null) { await DisplayAlert("提示", "请先扫描下料物料二维码。", "确定"); return; }
+            if (string.IsNullOrWhiteSpace(_selectedReworkReason)) { await DisplayAlert("提示", "请选择返工原因。", "确定"); return; }
+            if (_photo is null) { await DisplayAlert("提示", "请拍摄并上传现场照片。", "确定"); return; }
+
+            var workOrderNo = FirstNonEmpty(_material.workOrderNo, _productionContext.Current?.WorkOrderNo);
+            if (string.IsNullOrWhiteSpace(workOrderNo))
             {
-                abnormalRecordAttachmentList = new List<AttachmentDto> { _photo },
-                materialCode = _material.materialCode,
-                materialName = _material.materialName,
-                materialType = _material.materialType,
-                qrCode = _scannedQrCode,
-                reportMode = ReportModeRework,
-                reworkReason = _selectedReworkReason,
-                weight = _material.weight ?? (decimal.TryParse(_material.coilWeight, out var weight) ? weight : null),
-                workOrderNo = workOrderNo
-            };
-            await _workOrderApi.AddAbnormalRecordAsync(request);
-            await Shell.Current.GoToAsync(AppShell.RouteAbnormalReportSuccess);
+                await DisplayAlert("提示", "扫码结果未返回工单号，无法提交返工上报。", "确定");
+                return;
+            }
+
+            try
+            {
+                var request = new WorkOrderAbnormalAddRequestDto
+                {
+                    abnormalRecordAttachmentList = new List<AttachmentDto> { _photo },
+                    materialCode = _material.materialCode,
+                    materialName = _material.materialName,
+                    materialType = _material.materialType,
+                    qrCode = _scannedQrCode,
+                    reportMode = ReportModeRework,
+                    reworkReason = _selectedReworkReason,
+                    weight = _material.weight ?? (decimal.TryParse(_material.coilWeight, out var weight) ? weight : null),
+                    workOrderNo = workOrderNo
+                };
+                await _workOrderApi.AddAbnormalRecordAsync(request);
+                await Shell.Current.GoToAsync(AppShell.RouteAbnormalReportSuccess);
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "返工提交失败", ex.Message, "确定");
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            await ErrorDialogService.ShowAsync(this, "返工提交失败", ex.Message, "确定");
+            _isSubmitting = false;
         }
     }
 

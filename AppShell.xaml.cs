@@ -62,6 +62,9 @@ public partial class AppShell : Shell
 
     public static string RouteProductionHome => $"{RouteHome}/{RouteRoleModule}?roleCode=production";
 
+    public static string ProductionOrderSelectionRoute(string machineCode) =>
+        $"{RouteHome}/{RouteRoleModule}/{RouteWorkStartOrders}?roleCode=production&refreshToken={Guid.NewGuid():N}&boundMachineCode={Uri.EscapeDataString(machineCode)}";
+
     public AppShell(IServiceProvider services)
     {
         InitializeComponent();

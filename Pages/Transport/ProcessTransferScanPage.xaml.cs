@@ -5,15 +5,15 @@ namespace JXHLJSApp.Pages.Transport;
 
 public partial class ProcessTransferScanPage : ContentPage
 {
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
     private readonly ITransportOrderApi _transportOrderApi;
     private bool _busy;
 
-    public ProcessTransferScanPage(IScanService scanService, ITransportOrderApi transportOrderApi)
+    public ProcessTransferScanPage(IRightKeyScanService scanner, ITransportOrderApi transportOrderApi)
     {
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => ScanAndOpenTransferAsync(code),
             () => !_isHandlingScan && (!_busy));
         _transportOrderApi = transportOrderApi;
@@ -24,14 +24,20 @@ public partial class ProcessTransferScanPage : ContentPage
 
     private async void OnScanTapped(object sender, TappedEventArgs e) => await ScanAndOpenTransferAsync();
 
-    private async Task ScanAndOpenTransferAsync(string? hardwareCode = null)
+    private async Task ScanAndOpenTransferAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "扫描物料二维码");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
             if (_busy) return;
-            var code = hardwareCode ?? await _scanService.ScanAsync("扫描物料二维码");
+            var code = scanCode;
             if (string.IsNullOrWhiteSpace(code)) return;
 
             try

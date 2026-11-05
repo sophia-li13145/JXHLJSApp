@@ -21,8 +21,8 @@
                     <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanPanelTapped" /></Border.GestureRecognizers>
                     <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
                     <VerticalStackLayout Spacing="10" HorizontalOptions="Center" VerticalOptions="Center">
-                        <Label Text="📷" FontSize="34" HorizontalTextAlignment="Center" />
-                        <Label Text="点击此处模拟扫描 异常物料二维码" TextColor="#D97706" FontSize="15" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                        <Label Text="▣" FontSize="34" HorizontalTextAlignment="Center" />
+                        <Label Text="按右侧扫描键扫描物料二维码" TextColor="#D97706" FontSize="15" FontAttributes="Bold" HorizontalTextAlignment="Center" />
                         <Label Text="状态判断将根据入库单是否提交有所不同" TextColor="#38557C" FontSize="12" HorizontalTextAlignment="Center" />
                     </VerticalStackLayout>
                 </Border>

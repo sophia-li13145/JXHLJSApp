@@ -1,27 +1,25 @@
-﻿using JXHLJSApp.Models;
+using JXHLJSApp.Models;
 using JXHLJSApp.Services;
 using Serilog;
-using System.Text.Json;
-using ZXing.Net.Maui;
 
 namespace JXHLJSApp.Pages;
 
 public partial class LoginPage : ContentPage
 {
     private readonly IAuthApi _authApi;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
     private bool _isBusy;
     private bool _credentialsLoaded;
     private bool _isPasswordVisible;
     private bool _isQrLoginTab;
 
-    public LoginPage(IAuthApi authApi, IScanService scanService)
+    public LoginPage(IAuthApi authApi, IRightKeyScanService scanner)
     {
         InitializeComponent();
         _authApi = authApi;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => ScanQrAndLoginAsync(code),
             () => !_isHandlingScan && (_isQrLoginTab && !_isBusy));
         VersionLabel.Text = $"V{AppInfo.Current.VersionString}";
@@ -161,8 +159,14 @@ public partial class LoginPage : ContentPage
         }
     }
 
-    private async Task ScanQrAndLoginAsync(string? hardwareCode = null)
+    private async Task ScanQrAndLoginAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "扫描员工二维码");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
@@ -176,11 +180,9 @@ public partial class LoginPage : ContentPage
             {
                 ClearMessage();
                 SetBusy(true);
-                QrStatusLabel.Text = "请将员工二维码对准扫码框";
+                QrStatusLabel.Text = "二维码已读取，正在校验";
 
-                var rawValue = hardwareCode ?? await _scanService.ScanAsync(
-                    "扫描员工二维码",
-                    formats: BarcodeFormat.QrCode);
+                var rawValue = scanCode;
                 if (string.IsNullOrWhiteSpace(rawValue))
                 {
                     QrStatusLabel.Text = "已取消扫码，请重新扫描";
@@ -189,11 +191,9 @@ public partial class LoginPage : ContentPage
 
                 if (!QrLoginPayload.TryParse(rawValue, out var qrPayload, out var parseError) || qrPayload is null)
                 {
-                    var escapedRawValue = JsonSerializer.Serialize(rawValue);
                     Log.Warning(
-                        "员工二维码解析失败，Length={Length}，RawValue={RawValue}",
-                        rawValue.Length,
-                        escapedRawValue);
+                        "员工二维码解析失败，Length={Length}",
+                        rawValue.Length);
 
                     QrStatusLabel.Text = "二维码识别失败";
                     ShowMessage(parseError);

@@ -23,7 +23,7 @@
                     <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanPanelTapped" /></Border.GestureRecognizers>
                     <VerticalStackLayout Spacing="18" HorizontalOptions="Center" VerticalOptions="Center">
                         <Label x:Name="ScanIconLabel" Text="▣" TextColor="#5A4773" FontSize="48" HorizontalTextAlignment="Center" />
-                        <Label x:Name="ScanTitleLabel" Text="1. 扫描机台二维码" TextColor="#001431" FontSize="16" HorizontalTextAlignment="Center" />
+                        <Label x:Name="ScanTitleLabel" Text="1. 按右侧扫描键扫描机台二维码" TextColor="#001431" FontSize="16" HorizontalTextAlignment="Center" />
                         <Label x:Name="ScanHintLabel" Text="" TextColor="#0057FF" FontSize="16" HorizontalTextAlignment="Center" />
                     </VerticalStackLayout>
                 </Border>

@@ -9,8 +9,9 @@ namespace JXHLJSApp.Pages.Warehouse;
 public partial class DeliveryOrderDetailPage : ContentPage
 {
     private readonly IWarehouseApi _warehouseApi;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
+    private bool _isSubmitting;
     private readonly ObservableCollection<DeliveryOrderMaterialDetailDto> _materials = new();
     private readonly ObservableCollection<DeliveryOrderScanDetailDto> _scanDetails = new();
     private string? _deliveryNo;
@@ -22,14 +23,14 @@ public partial class DeliveryOrderDetailPage : ContentPage
         set => _deliveryNo = Uri.UnescapeDataString(value ?? string.Empty);
     }
 
-    public DeliveryOrderDetailPage(IWarehouseApi warehouseApi, IScanService scanService)
+    public DeliveryOrderDetailPage(IWarehouseApi warehouseApi, IRightKeyScanService scanner)
     {
         InitializeComponent();
         _warehouseApi = warehouseApi;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => ScanAndConfirmMaterialAsync(code),
-            () => !_isHandlingScan && (_detail is not null));
+            () => !_isHandlingScan && !_isSubmitting && (_detail is not null));
         ScanDetailList.ItemsSource = _scanDetails;
     }
 
@@ -97,13 +98,19 @@ public partial class DeliveryOrderDetailPage : ContentPage
 
     private async void OnScanMaterialClicked(object sender, EventArgs e) => await ScanAndConfirmMaterialAsync();
 
-    private async Task ScanAndConfirmMaterialAsync(string? hardwareCode = null)
+    private async Task ScanAndConfirmMaterialAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "扫描物料码");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
-            var code = hardwareCode ?? await _scanService.ScanAsync("扫描物料码");
+            var code = scanCode;
             if (string.IsNullOrWhiteSpace(code)) return;
 
             await ScanActualAsync(code.Trim());
@@ -162,38 +169,47 @@ public partial class DeliveryOrderDetailPage : ContentPage
 
     private async void OnConfirmDeliveryClicked(object sender, EventArgs e)
     {
-        if (_materials.Count == 0)
-        {
-            await DisplayAlert("提示", "暂无可确认的发货明细。", "确定");
-            return;
-        }
-
-        if (_materials.Any(item => !item.isScanned))
-        {
-            await DisplayAlert("提示", "请先完成全部物料扫码复核。", "确定");
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(_deliveryNo))
-        {
-            await DisplayAlert("提示", "发货单号为空，无法确认发货完成。", "确定");
-            return;
-        }
-
+        if (_isSubmitting || _isHandlingScan) return;
+        _isSubmitting = true;
         try
         {
-            var success = await _warehouseApi.ConfirmDeliveryCompletionAsync(_deliveryNo);
-            if (success is false)
+            if (_materials.Count == 0)
             {
-                await ErrorDialogService.ShowAsync(this, "确认失败", "接口返回确认失败，请稍后重试。", "确定");
+                await DisplayAlert("提示", "暂无可确认的发货明细。", "确定");
                 return;
             }
 
-            await Shell.Current.GoToAsync(AppShell.RouteDeliveryCompletionSuccess);
+            if (_materials.Any(item => !item.isScanned))
+            {
+                await DisplayAlert("提示", "请先完成全部物料扫码复核。", "确定");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_deliveryNo))
+            {
+                await DisplayAlert("提示", "发货单号为空，无法确认发货完成。", "确定");
+                return;
+            }
+
+            try
+            {
+                var success = await _warehouseApi.ConfirmDeliveryCompletionAsync(_deliveryNo);
+                if (success is false)
+                {
+                    await ErrorDialogService.ShowAsync(this, "确认失败", "接口返回确认失败，请稍后重试。", "确定");
+                    return;
+                }
+
+                await Shell.Current.GoToAsync(AppShell.RouteDeliveryCompletionSuccess);
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "确认失败", ex.Message, "确定");
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            await ErrorDialogService.ShowAsync(this, "确认失败", ex.Message, "确定");
+            _isSubmitting = false;
         }
     }
 

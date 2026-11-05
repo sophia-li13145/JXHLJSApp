@@ -10,7 +10,7 @@ namespace JXHLJSApp.Pages.Warehouse;
 public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributable
 {
     private readonly IWarehouseApi _warehouseApi;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
     private string? _id;
     private PackagingSubTaskDetailDto? _detail;
@@ -42,13 +42,13 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
         set => _id = Uri.UnescapeDataString(value ?? string.Empty);
     }
 
-    public PackagingSubTaskDetailPage(IWarehouseApi warehouseApi, IScanService scanService)
+    public PackagingSubTaskDetailPage(IWarehouseApi warehouseApi, IRightKeyScanService scanner)
     {
         InitializeComponent();
         _warehouseApi = warehouseApi;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
-            HandleHardwareScanAsync,
+        _scanner = scanner;
+        _scanner.Register(this,
+            HandleRightKeyScanAsync,
             () => !_isHandlingScan && !_isSaving && !_isStartingQuickScan && !_isLoadingQuickDetail && (_detail is null ? _isQuickPackaging : !IsReadOnlyDetail(_detail)));
     }
 
@@ -114,7 +114,7 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
             {
                 _isQuickPackaging = true;
                 _quickScanRequested = true;
-                ShowQuickLoading();
+                ShowQuickWaiting();
             }
             return;
         }
@@ -161,6 +161,17 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
         _loadedTaskId = _id;
     }
 
+    private void ShowQuickWaiting()
+    {
+        _quickScanStarted = true;
+        DetailScrollView.IsVisible = false;
+        ActionBar.IsVisible = false;
+        LoadingPanel.IsVisible = true;
+        LoadingIndicator.IsRunning = false;
+        LoadingLabel.Text = "按右侧扫描键扫描包装物料二维码";
+        RetryLoadButton.IsVisible = false;
+    }
+
     private void ShowQuickLoading()
     {
         DetailScrollView.IsVisible = false;
@@ -203,17 +214,21 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
         }
     }
 
-    private async Task StartQuickScanAsync(string? hardwareCode = null)
+    private async Task StartQuickScanAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            ShowQuickWaiting();
+            return;
+        }
+
         if (_isStartingQuickScan) return;
         _quickScanStarted = true;
         _isStartingQuickScan = true;
         ShowQuickLoading();
         try
         {
-            // Let the initial detail-page navigation finish before pushing a modal.
-            await Task.Yield();
-            var code = hardwareCode ?? await _scanService.ScanAsync("扫码包装", formats: ZXing.Net.Maui.BarcodeFormat.QrCode);
+            var code = scanCode;
             if (string.IsNullOrWhiteSpace(code))
             {
                 await Shell.Current.GoToAsync("..", false);
@@ -267,18 +282,24 @@ public partial class PackagingSubTaskDetailPage : ContentPage, IQueryAttributabl
 
     }
 
-    private Task HandleHardwareScanAsync(string code) =>
+    private Task HandleRightKeyScanAsync(string code) =>
         _detail is null && _isQuickPackaging ? StartQuickScanAsync(code) : ScanAndApplyMaterialAsync(code);
 
     private async void OnScanClicked(object sender, EventArgs e) => await ScanAndApplyMaterialAsync();
 
-    private async Task ScanAndApplyMaterialAsync(string? hardwareCode = null)
+    private async Task ScanAndApplyMaterialAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "包装扫码");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
-            var code = hardwareCode ?? await _scanService.ScanAsync("包装扫码");
+            var code = scanCode;
             if (string.IsNullOrWhiteSpace(code))
             {
                 return;

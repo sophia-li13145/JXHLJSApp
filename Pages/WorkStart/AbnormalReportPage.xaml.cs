@@ -14,8 +14,10 @@ public partial class AbnormalReportPage : ContentPage
     private const string DefaultAbnormalType = "in_process_abnormal";
 
     private readonly IWorkOrderApi _workOrderApi;
-    private readonly IScanService _scanService;
+    private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
+    private bool _isTakingPhoto;
+    private bool _isSubmitting;
     private readonly IProductionContextService _productionContext;
     private readonly IImageCompressionService _imageCompressionService;
     private List<WorkOrderAbnormalOptionDto> _options = new();
@@ -27,16 +29,16 @@ public partial class AbnormalReportPage : ContentPage
 
     public AbnormalReportPage(
         IWorkOrderApi workOrderApi,
-        IScanService scanService,
+        IRightKeyScanService scanner,
         IProductionContextService productionContext,
         IImageCompressionService imageCompressionService)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
-        _scanService = scanService;
-        _scanService.RegisterHardwareHandler(this,
+        _scanner = scanner;
+        _scanner.Register(this,
             code => ScanAndLoadMaterialAsync(code),
-            () => !_isHandlingScan);
+            () => !_isHandlingScan && !_isTakingPhoto && !_isSubmitting);
         _productionContext = productionContext;
         _imageCompressionService = imageCompressionService;
     }
@@ -126,13 +128,19 @@ public partial class AbnormalReportPage : ContentPage
 
     private async void OnScanTapped(object sender, TappedEventArgs e) => await ScanAndLoadMaterialAsync();
 
-    private async Task ScanAndLoadMaterialAsync(string? hardwareCode = null)
+    private async Task ScanAndLoadMaterialAsync(string? scanCode = null)
     {
+        if (string.IsNullOrWhiteSpace(scanCode))
+        {
+            await _scanner.ShowHintAsync(this, "扫描异常对象二维码");
+            return;
+        }
+
         if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
-            var code = hardwareCode ?? await _scanService.ScanAsync("扫描异常对象二维码");
+            var code = scanCode;
             if (string.IsNullOrWhiteSpace(code)) return;
             try
             {
@@ -201,88 +209,97 @@ public partial class AbnormalReportPage : ContentPage
 
     private async Task CaptureAndUploadPhotoAsync()
     {
-        if (_material is null)
-        {
-            await DisplayAlert("提示", "请先扫描识别异常对象。", "确定");
-            return;
-        }
-
-        CompressedImageResult? compressedPhoto = null;
-        var compressionStopwatch = new Stopwatch();
-        var uploadStopwatch = new Stopwatch();
-
+        if (_isTakingPhoto || _isHandlingScan) return;
+        _isTakingPhoto = true;
         try
         {
-            var permission = await Permissions.RequestAsync<Permissions.Camera>();
-            if (permission != PermissionStatus.Granted)
+            if (_material is null)
             {
-                await DisplayAlert("提示", "未获得相机权限，无法拍照。", "确定");
+                await DisplayAlert("提示", "请先扫描识别异常对象。", "确定");
                 return;
             }
 
-            var photo = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "现场拍照" });
-            if (photo is null) return;
+            CompressedImageResult? compressedPhoto = null;
+            var compressionStopwatch = new Stopwatch();
+            var uploadStopwatch = new Stopwatch();
 
-            SetPhotoLoading(true);
             try
             {
-                await LoadPhotoPreviewAsync(photo);
+                var permission = await Permissions.RequestAsync<Permissions.Camera>();
+                if (permission != PermissionStatus.Granted)
+                {
+                    await DisplayAlert("提示", "未获得相机权限，无法拍照。", "确定");
+                    return;
+                }
 
-                compressionStopwatch.Start();
-                compressedPhoto = await _imageCompressionService.CompressForOcrAsync(photo);
-                compressionStopwatch.Stop();
-                Log.Information(
-                    "异常上报图片处理完成，QrCode={QrCode}, Original={OriginalWidth}x{OriginalHeight}/{OriginalBytes} bytes, Output={OutputWidth}x{OutputHeight}/{CompressedBytes} bytes, IsTemporary={IsTemporary}, ElapsedMs={ElapsedMs}",
-                    _scannedQrCode,
-                    compressedPhoto.OriginalWidth,
-                    compressedPhoto.OriginalHeight,
-                    compressedPhoto.OriginalBytes,
-                    compressedPhoto.OutputWidth,
-                    compressedPhoto.OutputHeight,
-                    compressedPhoto.CompressedBytes,
-                    compressedPhoto.IsTemporary,
-                    compressionStopwatch.ElapsedMilliseconds);
+                var photo = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "现场拍照" });
+                if (photo is null) return;
 
-                uploadStopwatch.Start();
-                _photo = await _workOrderApi.UploadAbnormalAttachmentAsync(compressedPhoto.File);
-                uploadStopwatch.Stop();
-                Log.Information(
-                    "异常上报图片上传完成，QrCode={QrCode}, CompressionMs={CompressionMs}, UploadMs={UploadMs}",
-                    _scannedQrCode,
-                    compressionStopwatch.ElapsedMilliseconds,
-                    uploadStopwatch.ElapsedMilliseconds);
+                SetPhotoLoading(true);
+                try
+                {
+                    await LoadPhotoPreviewAsync(photo);
 
-                ShowPhotoPreview();
+                    compressionStopwatch.Start();
+                    compressedPhoto = await _imageCompressionService.CompressForOcrAsync(photo);
+                    compressionStopwatch.Stop();
+                    Log.Information(
+                        "异常上报图片处理完成，QrCode={QrCode}, Original={OriginalWidth}x{OriginalHeight}/{OriginalBytes} bytes, Output={OutputWidth}x{OutputHeight}/{CompressedBytes} bytes, IsTemporary={IsTemporary}, ElapsedMs={ElapsedMs}",
+                        _scannedQrCode,
+                        compressedPhoto.OriginalWidth,
+                        compressedPhoto.OriginalHeight,
+                        compressedPhoto.OriginalBytes,
+                        compressedPhoto.OutputWidth,
+                        compressedPhoto.OutputHeight,
+                        compressedPhoto.CompressedBytes,
+                        compressedPhoto.IsTemporary,
+                        compressionStopwatch.ElapsedMilliseconds);
+
+                    uploadStopwatch.Start();
+                    _photo = await _workOrderApi.UploadAbnormalAttachmentAsync(compressedPhoto.File);
+                    uploadStopwatch.Stop();
+                    Log.Information(
+                        "异常上报图片上传完成，QrCode={QrCode}, CompressionMs={CompressionMs}, UploadMs={UploadMs}",
+                        _scannedQrCode,
+                        compressionStopwatch.ElapsedMilliseconds,
+                        uploadStopwatch.ElapsedMilliseconds);
+
+                    ShowPhotoPreview();
+                }
+                finally
+                {
+                    DeleteTemporaryCompressedPhoto(compressedPhoto);
+                    SetPhotoLoading(false);
+                }
             }
-            finally
+            catch (Exception ex) when (ex is FeatureNotSupportedException or FeatureNotEnabledException)
             {
-                DeleteTemporaryCompressedPhoto(compressedPhoto);
-                SetPhotoLoading(false);
+                await ErrorDialogService.ShowAsync(this, "拍照失败", "当前设备不支持调用相机或相机功能未启用。", "确定");
+            }
+            catch (Exception ex) when (ex is PermissionException or UnauthorizedAccessException)
+            {
+                await ErrorDialogService.ShowAsync(this, "权限错误", "没有相机或照片文件访问权限，请在系统设置中授权后重试。", "确定");
+            }
+            catch (HttpRequestException ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "接口错误", $"照片上传接口请求失败：{ex.Message}", "确定");
+            }
+            catch (InvalidOperationException ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "接口错误", $"照片上传接口返回异常：{ex.Message}", "确定");
+            }
+            catch (IOException ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "照片读取失败", $"已拍摄照片读取失败：{ex.Message}", "确定");
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "拍照或上传失败", ex.Message, "确定");
             }
         }
-        catch (Exception ex) when (ex is FeatureNotSupportedException or FeatureNotEnabledException)
+        finally
         {
-            await ErrorDialogService.ShowAsync(this, "拍照失败", "当前设备不支持调用相机或相机功能未启用。", "确定");
-        }
-        catch (Exception ex) when (ex is PermissionException or UnauthorizedAccessException)
-        {
-            await ErrorDialogService.ShowAsync(this, "权限错误", "没有相机或照片文件访问权限，请在系统设置中授权后重试。", "确定");
-        }
-        catch (HttpRequestException ex)
-        {
-            await ErrorDialogService.ShowAsync(this, "接口错误", $"照片上传接口请求失败：{ex.Message}", "确定");
-        }
-        catch (InvalidOperationException ex)
-        {
-            await ErrorDialogService.ShowAsync(this, "接口错误", $"照片上传接口返回异常：{ex.Message}", "确定");
-        }
-        catch (IOException ex)
-        {
-            await ErrorDialogService.ShowAsync(this, "照片读取失败", $"已拍摄照片读取失败：{ex.Message}", "确定");
-        }
-        catch (Exception ex)
-        {
-            await ErrorDialogService.ShowAsync(this, "拍照或上传失败", ex.Message, "确定");
+            _isTakingPhoto = false;
         }
     }
 
@@ -310,38 +327,47 @@ public partial class AbnormalReportPage : ContentPage
 
     private async void OnSubmitClicked(object sender, EventArgs e)
     {
-        if (_material is null) { await DisplayAlert("提示", "请先扫描异常对象二维码。", "确定"); return; }
-        if (string.IsNullOrWhiteSpace(_selectedAbnormalType)) { await DisplayAlert("提示", "请选择异常类型。", "确定"); return; }
-        if (_photo is null) { await DisplayAlert("提示", "请拍摄并上传现场照片。", "确定"); return; }
-
-        var workOrderNo = FirstNonEmpty(_material.workOrderNo, _productionContext.Current?.WorkOrderNo);
-        if (string.IsNullOrWhiteSpace(workOrderNo))
-        {
-            await DisplayAlert("提示", "扫码结果未返回工单号，无法提交异常上报。", "确定");
-            return;
-        }
-
+        if (_isSubmitting || _isHandlingScan) return;
+        _isSubmitting = true;
         try
         {
-            var request = new WorkOrderAbnormalAddRequestDto
+            if (_material is null) { await DisplayAlert("提示", "请先扫描异常对象二维码。", "确定"); return; }
+            if (string.IsNullOrWhiteSpace(_selectedAbnormalType)) { await DisplayAlert("提示", "请选择异常类型。", "确定"); return; }
+            if (_photo is null) { await DisplayAlert("提示", "请拍摄并上传现场照片。", "确定"); return; }
+
+            var workOrderNo = FirstNonEmpty(_material.workOrderNo, _productionContext.Current?.WorkOrderNo);
+            if (string.IsNullOrWhiteSpace(workOrderNo))
             {
-                abnormalRecordAttachmentList = new List<AttachmentDto> { _photo },
-                abnormalType = _selectedAbnormalType,
-                materialCode = _material.materialCode,
-                materialName = _material.materialName,
-                materialType = _material.materialType,
-                qrCode = _scannedQrCode,
-                reportMode = ReportModeAbnormal,
-                supplementaryDescription = DescriptionEditor.Text,
-                weight = _material.weight ?? (decimal.TryParse(_material.coilWeight, out var weight) ? weight : null),
-                workOrderNo = workOrderNo
-            };
-            await _workOrderApi.AddAbnormalRecordAsync(request);
-            await Shell.Current.GoToAsync(AppShell.RouteAbnormalReportSuccess);
+                await DisplayAlert("提示", "扫码结果未返回工单号，无法提交异常上报。", "确定");
+                return;
+            }
+
+            try
+            {
+                var request = new WorkOrderAbnormalAddRequestDto
+                {
+                    abnormalRecordAttachmentList = new List<AttachmentDto> { _photo },
+                    abnormalType = _selectedAbnormalType,
+                    materialCode = _material.materialCode,
+                    materialName = _material.materialName,
+                    materialType = _material.materialType,
+                    qrCode = _scannedQrCode,
+                    reportMode = ReportModeAbnormal,
+                    supplementaryDescription = DescriptionEditor.Text,
+                    weight = _material.weight ?? (decimal.TryParse(_material.coilWeight, out var weight) ? weight : null),
+                    workOrderNo = workOrderNo
+                };
+                await _workOrderApi.AddAbnormalRecordAsync(request);
+                await Shell.Current.GoToAsync(AppShell.RouteAbnormalReportSuccess);
+            }
+            catch (Exception ex)
+            {
+                await ErrorDialogService.ShowAsync(this, "上报失败", ex.Message, "确定");
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            await ErrorDialogService.ShowAsync(this, "上报失败", ex.Message, "确定");
+            _isSubmitting = false;
         }
     }
 

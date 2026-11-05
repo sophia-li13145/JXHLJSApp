@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Maui;
+using CommunityToolkit.Maui;
 using JXHLJSApp.Pages;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.Common;
@@ -10,8 +10,6 @@ using JXHLJSApp.Tools;
 using JXHLJSApp.ViewModels;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using ZXing.Net.Maui;
-using ZXing.Net.Maui.Controls;
 
 
 namespace JXHLJSApp
@@ -24,17 +22,11 @@ namespace JXHLJSApp
             builder
                 .UseMauiApp<App>()
                 .UseMauiCommunityToolkit()
-                .UseBarcodeReader()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
-#if ANDROID
-            builder.ConfigureMauiHandlers(handlers => handlers.AddHandler<
-                JXHLJSApp.Controls.FocusedCameraBarcodeReaderView,
-                JXHLJSApp.Platforms.Android.FocusedCameraBarcodeReaderHandler>());
-#endif
 #if DEBUG
             builder.Logging.AddDebug(); // ✅ 放在 Build 之前
 #endif
@@ -94,8 +86,8 @@ namespace JXHLJSApp
             builder.Services.AddTransient<AdminViewModel>();
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();
-            builder.Services.AddSingleton<IScanService, ScanService>();
-            builder.Services.AddSingleton<HardwareScanService>();
+            builder.Services.AddSingleton<RightKeyScanService>();
+            builder.Services.AddSingleton<IRightKeyScanService>(sp => sp.GetRequiredService<RightKeyScanService>());
             builder.Services.AddSingleton<IImageCompressionService, ImageCompressionService>();
             builder.Services.AddSingleton<IProductionContextService, ProductionContextService>();
             builder.Services.AddSingleton<AuthState>();
@@ -104,8 +96,8 @@ namespace JXHLJSApp
 
             // Core framework and configuration services.
             builder.Services.AddSingleton<IConfigLoader, ConfigLoader>();
-            // 仅 OCR 识别等待 5 分钟，其他业务客户端保持原有超时。
-            builder.Services.AddHttpClient(WarehouseApi.OcrHttpClientName, client =>
+            // 票签扫码识别等待 5 分钟，其他业务客户端保持原有超时。
+            builder.Services.AddHttpClient(WarehouseApi.ScanIncomingHttpClientName, client =>
             {
                 client.Timeout = TimeSpan.FromMinutes(5);
             })
