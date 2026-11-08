@@ -16,33 +16,36 @@
                 </Grid>
             </Border>
 
-            <VerticalStackLayout x:Name="FilterPanel" Grid.Row="1" Padding="18,30,18,16" Spacing="12" BackgroundColor="White">
+            <VerticalStackLayout x:Name="FilterPanel" Grid.Row="1" Padding="18,12" Spacing="8" BackgroundColor="White">
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                     <Entry x:Name="ResourceNameEntry" Placeholder="输入机台名称模糊筛选..." PlaceholderColor="#7A8797" BackgroundColor="#F8FAFD" HeightRequest="40" />
                     <Entry x:Name="QualityNoEntry" Grid.Column="1" Placeholder="输入单号..." PlaceholderColor="#7A8797" BackgroundColor="#F8FAFD" HeightRequest="40" />
                 </Grid>
                 <Picker x:Name="StatusPicker" ItemDisplayBinding="{Binding Name}" BackgroundColor="#F8FAFD" HeightRequest="42" />
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                    <Button Text="重置" TextColor="#051B3D" BackgroundColor="White" BorderColor="#D2DBE8" BorderWidth="1" CornerRadius="6" HeightRequest="42" Clicked="OnResetClicked" />
-                    <Button Grid.Column="1" Text="筛选" TextColor="White" BackgroundColor="#244B88" CornerRadius="6" HeightRequest="42" Clicked="OnFilterClicked" />
+                    <Button Text="重置" TextColor="#051B3D" BackgroundColor="White" BorderColor="#D2DBE8" BorderWidth="1" CornerRadius="6" HeightRequest="44" Clicked="OnResetClicked" />
+                    <Button Grid.Column="1" Text="筛选" TextColor="White" BackgroundColor="#244B88" CornerRadius="6" HeightRequest="44" Clicked="OnFilterClicked" />
                 </Grid>
             </VerticalStackLayout>
 
             <RefreshView Grid.Row="2" x:Name="RefreshContainer" Refreshing="OnRefreshing">
-                <CollectionView x:Name="OrderList" EmptyView="当前没有生产质检记录" Margin="18,12,18,0">
+                    <CollectionView x:Name="OrderList" EmptyView="当前没有生产质检记录" Margin="18,10,18,0">
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
-                            <Border BackgroundColor="White" StrokeThickness="0" Padding="20,18" Margin="0,0,0,12">
+                            <Border BackgroundColor="White" StrokeThickness="0" Padding="12,10" Margin="0,0,0,7">
                                 <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnOrderTapped" /></Border.GestureRecognizers>
-                                <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
-                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="3">
-                                    <Label Text="{Binding titleDisplay}" TextColor="#051B3D" FontSize="18" FontAttributes="Bold" />
-                                    <Border Grid.Column="1" BackgroundColor="{Binding statusBackground}" StrokeThickness="0" Padding="9,4" VerticalOptions="Start">
+                                <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="4">
+                                    <Label Text="{Binding titleDisplay}" TextColor="#051B3D" FontSize="16" FontAttributes="Bold" LineBreakMode="TailTruncation" VerticalOptions="Center" />
+                                    <Border Grid.Column="1" BackgroundColor="{Binding statusBackground}" StrokeThickness="0" Padding="7,3" VerticalOptions="Center">
                                         <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
                                         <Label Text="{Binding statusDisplay}" TextColor="{Binding statusColor}" FontSize="12" FontAttributes="Bold" />
                                     </Border>
-                                    <Label Grid.Row="1" Text="{Binding qualityNoDisplay, StringFormat='单号: {0}'}" TextColor="#00356E" FontSize="14" FontAttributes="Bold" />
-                                    <Label Grid.Row="2" Text="{Binding machineDisplay, StringFormat='机台: {0}'}" TextColor="#051B3D" FontSize="14" FontAttributes="Bold" />
+                                    <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding qualityNoDisplay, StringFormat='单号: {0}'}" TextColor="#00356E" FontSize="13" FontAttributes="Bold" LineBreakMode="TailTruncation" />
+                                    <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                        <Label Text="{Binding machineDisplay, StringFormat='机台: {0}'}" TextColor="#526880" FontSize="12" LineBreakMode="TailTruncation" VerticalOptions="Center" />
+                                        <Label Grid.Column="1" Text="{Binding outputTimeDisplay, StringFormat='下料 {0}'}" TextColor="#526880" FontSize="12" VerticalOptions="Center" />
+                                    </Grid>
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -50,8 +53,8 @@
                 </CollectionView>
             </RefreshView>
 
-            <Border x:Name="ManualInspectionPanel" Grid.Row="3" BackgroundColor="White" Stroke="#D8DEE8" StrokeThickness="1" Padding="18,16,18,26">
-                <Button Text="+ 新增巡检任务" TextColor="White" BackgroundColor="#18BD86" CornerRadius="9" HeightRequest="54" FontSize="17" FontAttributes="Bold" Clicked="OnAddManualInspectionClicked" />
+            <Border x:Name="ManualInspectionPanel" Grid.Row="3" BackgroundColor="White" Stroke="#D8DEE8" StrokeThickness="1" Padding="18,12,18,18">
+                <Button Text="+ 新增巡检任务" TextColor="White" BackgroundColor="#18BD86" CornerRadius="9" HeightRequest="50" FontSize="17" FontAttributes="Bold" Clicked="OnAddManualInspectionClicked" />
             </Border>
         </Grid>
 

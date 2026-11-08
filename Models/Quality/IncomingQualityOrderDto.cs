@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace JXHLJSApp.Models.Quality;
 
 public sealed class IncomingQualityOrderDto
@@ -419,6 +421,7 @@ public sealed class ProductionQualityOrderDto
     public string? inspectionSchemeName { get; set; }
     public string? machineNo { get; set; }
     public string? orderNumber { get; set; }
+    public string? outputTime { get; set; }
     public string? qualityNo { get; set; }
     public string? qualityType { get; set; }
     public string? qualityTypeName { get; set; }
@@ -451,6 +454,11 @@ public sealed class ProductionQualityOrderDto
     };
     public string qualityNoDisplay => string.IsNullOrWhiteSpace(qualityNo) ? "-" : qualityNo!;
     public string orderNumberDisplay => string.IsNullOrWhiteSpace(orderNumber) ? "-" : orderNumber!;
+    public string outputTimeDisplay => string.IsNullOrWhiteSpace(outputTime)
+        ? "暂无记录"
+        : DateTimeOffset.TryParse(outputTime, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var time)
+            ? time.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
+            : outputTime.Trim();
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
 }
