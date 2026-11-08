@@ -34,7 +34,10 @@ public partial class ProductionQualityOrderListPage : ContentPage, IQueryAttribu
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
-        _qrCode = query.TryGetValue("qrCode", out var value) ? value?.ToString()?.Trim() : null;
+        // IQueryAttributable 不会像 QueryProperty 一样自动解码 URI 参数。
+        _qrCode = query.TryGetValue("qrCode", out var value)
+            ? Uri.UnescapeDataString(value?.ToString() ?? string.Empty).Trim()
+            : null;
         var isScanQuery = !string.IsNullOrWhiteSpace(_qrCode);
         FilterPanel.IsVisible = !isScanQuery;
         ManualInspectionPanel.IsVisible = !isScanQuery;
@@ -152,7 +155,10 @@ public partial class ProductionQualityOrderListPage : ContentPage, IQueryAttribu
             return;
         }
 
-        await Shell.Current.GoToAsync($"{AppShell.RouteMachineQualityDetail}?qualityNo={Uri.EscapeDataString(item.qualityNo)}&workOrderNo={Uri.EscapeDataString(item.orderNumber)}&inspectStatus={Uri.EscapeDataString(item.inspectStatus ?? string.Empty)}&inspectionSchemeName={Uri.EscapeDataString(item.inspectionSchemeName ?? string.Empty)}&qualityType={Uri.EscapeDataString(item.qualityType ?? string.Empty)}&qualityTypeName={Uri.EscapeDataString(item.qualityTypeName ?? string.Empty)}");
+        var initialMaterialQuery = string.IsNullOrWhiteSpace(_qrCode)
+            ? string.Empty
+            : $"&initialMaterialQrCode={Uri.EscapeDataString(_qrCode)}";
+        await Shell.Current.GoToAsync($"{AppShell.RouteMachineQualityDetail}?qualityNo={Uri.EscapeDataString(item.qualityNo)}&workOrderNo={Uri.EscapeDataString(item.orderNumber)}&inspectStatus={Uri.EscapeDataString(item.inspectStatus ?? string.Empty)}&inspectionSchemeName={Uri.EscapeDataString(item.inspectionSchemeName ?? string.Empty)}&qualityType={Uri.EscapeDataString(item.qualityType ?? string.Empty)}&qualityTypeName={Uri.EscapeDataString(item.qualityTypeName ?? string.Empty)}{initialMaterialQuery}");
     }
 
     private sealed record ProductionQualityStatusOption(string Name, string? Value);

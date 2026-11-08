@@ -19,6 +19,7 @@ namespace JXHLJSApp.Pages.Quality;
 [QueryProperty(nameof(MaterialCode), "materialCode")]
 [QueryProperty(nameof(MaterialName), "materialName")]
 [QueryProperty(nameof(QrCode), "qrCode")]
+[QueryProperty(nameof(InitialMaterialQrCode), "initialMaterialQrCode")]
 public partial class MachineQualityDetailPage : ContentPage
 {
     private const string SchemeAcidPickling = "酸洗";
@@ -42,6 +43,7 @@ public partial class MachineQualityDetailPage : ContentPage
     private string? _qualityTypeNameFromQuery;
     private string? _listInspectionSchemeName;
     private string? _qrCode;
+    private string? _initialMaterialQrCode;
     private string? _qualityMaterialId;
     private string? _materialCode;
     private string? _materialName;
@@ -63,6 +65,8 @@ public partial class MachineQualityDetailPage : ContentPage
     public string? MaterialCode { get => _materialCode; set => _materialCode = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? MaterialName { get => _materialName; set => _materialName = Uri.UnescapeDataString(value ?? string.Empty); }
     public string? QrCode { get => _qrCode; set => _qrCode = Uri.UnescapeDataString(value ?? string.Empty); }
+    // Shell 已为 QueryProperty 解码，保留二维码原文中的百分号转义内容。
+    public string? InitialMaterialQrCode { get => _initialMaterialQrCode; set => _initialMaterialQrCode = value; }
 
     public MachineQualityDetailPage(IQualityApi qualityApi, IRightKeyScanService scanner)
     {
@@ -109,6 +113,14 @@ public partial class MachineQualityDetailPage : ContentPage
         }
 
         await LoadAsync();
+
+        if (_hasLoadedDetail && _canScanMaterial && !string.IsNullOrWhiteSpace(_initialMaterialQrCode))
+        {
+            // 仅消费扫码查询入口携带的码；刷新详情、关闭弹窗时不重复添加物料。
+            var code = _initialMaterialQrCode;
+            _initialMaterialQrCode = null;
+            await ScanAndApplyMaterialAsync(code, showSuccess: false);
+        }
     }
 
     private async Task RefreshAfterSuccessfulOperationAsync()
@@ -237,7 +249,14 @@ public partial class MachineQualityDetailPage : ContentPage
         var isDrawingSamplingOrFull = isDrawing && IsTorsionInspectionScheme(detail.inspectionSchemeName);
         var isSubmitOnlyProcess = isAcid || (isDrawing && !isManualPatrol && !isDrawingSamplingOrFull);
         var canScanDrawingSamplingOrFull = isDrawingSamplingOrFull && !isManualPatrol;
-        SubmitButton.Text = "提交质检";
+        SubmitButton.Text = isSubmitOnlyProcess ? "提交质检" : "提交本次质检";
+        SubmitButton.BackgroundColor = isSubmitOnlyProcess ? Colors.White : Color.FromArgb("#244B88");
+        SubmitButton.TextColor = isSubmitOnlyProcess ? Color.FromArgb("#0B3D8B") : Colors.White;
+        SubmitButton.BorderWidth = isSubmitOnlyProcess ? 1 : 0;
+        CompleteButton.BackgroundColor = Colors.White;
+        CompleteButton.TextColor = Color.FromArgb("#0B3D8B");
+        CompleteButton.BorderColor = Color.FromArgb("#0B3D8B");
+        CompleteButton.BorderWidth = 1;
         CompleteButton.IsVisible = !isSubmitOnlyProcess;
         Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
         ScanMaterialButton.IsVisible = false;
@@ -827,7 +846,7 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private async void OnScanMaterialClicked(object sender, EventArgs e) => await ScanAndApplyMaterialAsync();
 
-    private async Task ScanAndApplyMaterialAsync(string? scanCode = null)
+    private async Task ScanAndApplyMaterialAsync(string? scanCode = null, bool showSuccess = true)
     {
         if (string.IsNullOrWhiteSpace(scanCode))
         {
@@ -865,7 +884,10 @@ public partial class MachineQualityDetailPage : ContentPage
                 ApplyScannedMaterial(material, code);
                 RestoreManualInputState(manualInputState);
                 ApplyPreviousUnqualifiedState(material);
-                await DisplayAlert("扫码成功", "物料信息已更新到当前质检页面。", "确定");
+                if (showSuccess)
+                {
+                    await DisplayAlert("扫码成功", "物料信息已更新到当前质检页面。", "确定");
+                }
             }
             catch (Exception ex)
             {
