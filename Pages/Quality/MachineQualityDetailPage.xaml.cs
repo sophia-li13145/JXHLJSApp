@@ -31,6 +31,7 @@ public partial class MachineQualityDetailPage : ContentPage
     private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
     private bool _isUpdating;
+    private bool _isShowingInspectionRules;
     private bool _canScanMaterial;
     private ProductionQualityDetailDto? _detail;
     private string? _qualityNo;
@@ -94,6 +95,13 @@ public partial class MachineQualityDetailPage : ContentPage
         ContinuousUnqualifiedPicker.IsEnabled = false;
         EmployeeInterventionPicker.SelectedIndex = 0;
         UpdateUnqualifiedDescriptionVisibility();
+        ActualDiameterEntry.TextChanged += OnAutoInspectionInputChanged;
+        HeatActualDiameterEntry.TextChanged += OnAutoInspectionInputChanged;
+        StrengthEntry.TextChanged += OnAutoInspectionInputChanged;
+        TensileStrengthEntry.TextChanged += OnAutoInspectionInputChanged;
+        SurfaceJudgmentPicker.SelectedIndexChanged += OnAutoInspectionInputChanged;
+        CoilDiameterPicker.SelectedIndexChanged += OnAutoInspectionInputChanged;
+        CoilPitchPicker.SelectedIndexChanged += OnAutoInspectionInputChanged;
     }
 
     protected override async void OnAppearing()
@@ -188,6 +196,7 @@ public partial class MachineQualityDetailPage : ContentPage
             ApplyReadOnlyStateIfCompleted();
             _hasLoadedDetail = true;
             _loadedQualityNo = _qualityNo;
+            UpdateAutoInspectionResult();
         }
         catch (Exception ex)
         {
@@ -239,6 +248,7 @@ public partial class MachineQualityDetailPage : ContentPage
         InputTitleLabel.Text = isAcid ? "酸洗检验录入" : isHeat ? "理化检验录入" : "检验项目录入";
         AcidInputPanel.IsVisible = isAcid;
         HeatTreatmentInputPanel.IsVisible = isHeat;
+        ArrangeInspectionFields(isHeat, isAcid);
         ProcessInputPanel.IsVisible = !isAcid && !isHeat;
         TorsionInputPanel.IsVisible = !isAcid;
         ContinuousUnqualifiedPicker.IsEnabled = false;
@@ -257,13 +267,62 @@ public partial class MachineQualityDetailPage : ContentPage
         CompleteButton.TextColor = Color.FromArgb("#0B3D8B");
         CompleteButton.BorderColor = Color.FromArgb("#0B3D8B");
         CompleteButton.BorderWidth = 1;
-        CompleteButton.IsVisible = !isSubmitOnlyProcess;
-        Grid.SetColumnSpan(SubmitButton, isSubmitOnlyProcess ? 2 : 1);
+        ApplyActionButtons(isHeat, isSubmitOnlyProcess, detail.uninspectedQty);
         ScanMaterialButton.IsVisible = false;
         _canScanMaterial = !IsInspectionCompleted(_inspectStatus) && !isAcid &&
             ((!isDrawing || isManualPatrol) && (IsSamplingOrFullScheme(flowName) || IsProcessCardScheme(flowName)) || canScanDrawingSamplingOrFull);
         InfoScanMaterialButton.IsVisible = _canScanMaterial;
         UpdateUnqualifiedDescriptionVisibility();
+    }
+
+    private void ApplyActionButtons(bool isHeat, bool isSubmitOnlyProcess, decimal? uninspectedQty)
+    {
+        var submitOnly = isSubmitOnlyProcess || (isHeat && uninspectedQty > 1);
+        var completeOnly = isHeat && uninspectedQty == 1;
+        var hideActions = isHeat && (!uninspectedQty.HasValue || uninspectedQty == 0);
+        SubmitButton.Text = isHeat || isSubmitOnlyProcess ? "提交质检" : "提交本次质检";
+        CompleteButton.Text = isHeat ? "完成质检" : "完 成";
+        SubmitButton.IsVisible = !hideActions && !completeOnly;
+        CompleteButton.IsVisible = !hideActions && (completeOnly || !submitOnly);
+        Grid.SetColumn(CompleteButton, completeOnly ? 0 : 1);
+        Grid.SetColumnSpan(SubmitButton, submitOnly ? 2 : 1);
+        Grid.SetColumnSpan(CompleteButton, completeOnly ? 2 : 1);
+        ActionBar.Margin = isHeat ? new Thickness(20, 16) : new Thickness(6, 16);
+    }
+
+    private async void OnInspectionRulesClicked(object sender, EventArgs e)
+    {
+        if (_isShowingInspectionRules) return;
+        _isShowingInspectionRules = true;
+        try
+        {
+            var dialog = new QualityInspectionRulesPage(Navigation);
+            await Navigation.PushModalAsync(dialog, false);
+            await dialog.WaitForCloseAsync();
+        }
+        finally
+        {
+            _isShowingInspectionRules = false;
+        }
+    }
+
+    private void OnAutoInspectionInputChanged(object? sender, EventArgs e) => UpdateAutoInspectionResult();
+
+    private void UpdateAutoInspectionResult()
+    {
+        if (!_hasLoadedDetail || _detail is null || _isHandlingScan || _isUpdating ||
+            IsInspectionCompleted(_inspectStatus) || IsPicklingScheme(ResolveCurrentFlowName(_detail))) return;
+
+        var qualifies = ProductionQualityAutoResult.ShouldQualify(
+            IsPicklingScheme(ResolveCurrentFlowName(_detail)), ResolveProductDiameter(_detail),
+            _detail.lowerToleranceValue, _detail.upperToleranceValue,
+            HeatTreatmentInputPanel.IsVisible ? HeatActualDiameterEntry.Text : ActualDiameterEntry.Text,
+            _detail.strengthRequirement,
+            HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text : StrengthEntry.Text,
+            SurfaceJudgmentPicker.SelectedItem?.ToString(), CoilDiameterPicker.SelectedItem?.ToString(),
+            CoilPitchPicker.SelectedItem?.ToString());
+        // 只在判定输入变化后更新，质检结果自身的选择事件不触发重算，允许人工覆盖。
+        InspectResultPicker.SelectedIndex = qualifies ? 0 : 1;
     }
 
     private void OnInspectResultChanged(object sender, EventArgs e)
@@ -310,8 +369,51 @@ public partial class MachineQualityDetailPage : ContentPage
             : DateTime.Today;
     }
 
+    private void ArrangeInspectionFields(bool isHeat, bool isAcid)
+    {
+        View[] sharedFields = { TorsionInputPanel, InspectionResultPanel, MemoInputPanel, UnqualifiedDescriptionPanel };
+        foreach (var field in sharedFields)
+        {
+            (field.Parent as Layout)?.Children.Remove(field);
+            Grid.SetColumnSpan(field, 1);
+        }
+
+        var panel = isHeat ? HeatTreatmentInputPanel : isAcid ? AcidInputPanel : ProcessInputPanel;
+        var fieldIndex = panel.Children.Count;
+        var regularFieldCount = fieldIndex + (isAcid ? 0 : 1);
+        var textRow = (regularFieldCount + 1) / 2;
+        panel.RowDefinitions.Clear();
+        for (var row = 0; row < textRow + 3; row++)
+        {
+            panel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        }
+
+        foreach (var field in sharedFields)
+        {
+            if (isAcid && field == TorsionInputPanel)
+            {
+                // 酸洗不录入扭转，隐藏控件保留在公共容器中。
+                InspectionInputFields.Children.Add(field);
+                continue;
+            }
+            if (field == InspectionResultPanel || field == MemoInputPanel || field == UnqualifiedDescriptionPanel)
+            {
+                Grid.SetColumnSpan(field, 2);
+                panel.Add(field, 0, textRow++);
+            }
+            else
+            {
+                panel.Add(field, fieldIndex % 2, fieldIndex / 2);
+                fieldIndex++;
+            }
+        }
+    }
+
     private void FillHeatTreatmentInputs(ProductionQualityDetailDto detail)
     {
+        TotalInspectQtyEntry.Text = detail.totalInspectQty?.ToString(CultureInfo.CurrentCulture) ?? "—";
+        InspectedQtyEntry.Text = detail.inspectedQty?.ToString(CultureInfo.CurrentCulture) ?? "—";
+        UninspectedQtyEntry.Text = detail.uninspectedQty?.ToString(CultureInfo.CurrentCulture) ?? "—";
         HeatActualDiameterEntry.Text = detail.actualDiameterMm;
         StandardDiameterEntry.Text = FirstNonEmpty(detail.standardDiameterMm, detail.productDiameter);
         BrokenDiameterEntry.Text = detail.brokenDiameterMm;
@@ -323,6 +425,7 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private void RenderInfo(ProductionQualityDetailDto detail)
     {
+        UpdateInspectionInputTitles(detail);
         InfoGrid.Children.Clear();
         InfoGrid.RowDefinitions.Clear();
         var rows = BuildInfoRows(detail);
@@ -337,6 +440,26 @@ public partial class MachineQualityDetailPage : ContentPage
                 Grid.SetColumnSpan(cell, 2);
             }
         }
+    }
+
+    private void UpdateInspectionInputTitles(ProductionQualityDetailDto detail)
+    {
+        var diameter = ResolveProductDiameter(detail).Trim();
+        var diameterTitle = string.IsNullOrWhiteSpace(diameter)
+            ? "实测直径 (mm) *"
+            : $"实测直径{diameter}mm *";
+        ActualDiameterTitleLabel.Text = diameterTitle;
+        HeatActualDiameterTitleLabel.Text = diameterTitle;
+
+        var strength = detail.strengthRequirement?.Trim();
+        var strengthTitle = string.IsNullOrWhiteSpace(strength)
+            ? "实测强度MPa"
+            : $"实测强度MPa({strength})";
+        StrengthTitleLabel.Text = strengthTitle;
+        HeatStrengthTitleLabel.Text = strengthTitle;
+
+        var torsion = detail.torsion?.Trim();
+        TorsionTitleLabel.Text = string.IsNullOrWhiteSpace(torsion) ? "扭转" : $"扭转({torsion})";
     }
 
     private void ApplyScannedProcessNameFallback(ProductionQualityDetailDto detail)
@@ -579,6 +702,7 @@ public partial class MachineQualityDetailPage : ContentPage
         if (!IsInspectionCompleted(_inspectStatus)) return;
 
         SetReadOnly(Content);
+        InspectionRulesButton.IsEnabled = true;
         ActionBar.IsVisible = false;
     }
 
@@ -897,6 +1021,7 @@ public partial class MachineQualityDetailPage : ContentPage
         finally
         {
             _isHandlingScan = false;
+            UpdateAutoInspectionResult();
         }
     }
 

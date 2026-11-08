@@ -457,6 +457,9 @@ public sealed class ProductionQualityOrderDto
 
 public sealed class ProductionQualityDetailDto
 {
+    public decimal? totalInspectQty { get; set; }
+    public decimal? inspectedQty { get; set; }
+    public decimal? uninspectedQty { get; set; }
     public string? acidRatio { get; set; }
     public string? actualDiameterMm { get; set; }
     public string? businessType { get; set; }

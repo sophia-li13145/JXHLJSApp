@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JXHLJSApp.Pages.Quality.QualityInspectionRulesPage"
+             BackgroundColor="Transparent" NavigationPage.HasNavigationBar="False" Shell.NavBarIsVisible="False"
+             SizeChanged="OnPageSizeChanged">
+    <ContentPage.Resources>
+        <Style TargetType="Label">
+            <Setter Property="TextColor" Value="#243B58" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="LineBreakMode" Value="WordWrap" />
+            <Setter Property="LineHeight" Value="1.25" />
+        </Style>
+        <Style x:Key="RuleTitle" TargetType="Label">
+            <Setter Property="TextColor" Value="#142D50" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontAttributes" Value="Bold" />
+            <Setter Property="LineBreakMode" Value="WordWrap" />
+        </Style>
+    </ContentPage.Resources>
+    <Grid BackgroundColor="#66001431" Padding="20,24">
+        <Border x:Name="RulesCard" BackgroundColor="White" Stroke="#DDE6F1" StrokeThickness="1" Padding="20"
+                WidthRequest="340" HeightRequest="600" HorizontalOptions="Center" VerticalOptions="Center">
+            <Border.StrokeShape><RoundRectangle CornerRadius="20" /></Border.StrokeShape>
+            <Grid RowDefinitions="Auto,*,Auto" RowSpacing="16">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="ⓘ 质检结果判断规则" FontSize="20" FontAttributes="Bold" TextColor="#164C92" SemanticProperties.HeadingLevel="Level1" />
+                    <BoxView HeightRequest="1" Color="#E5EDF7" />
+                </VerticalStackLayout>
+                <ScrollView Grid.Row="1" VerticalScrollBarVisibility="Default">
+                    <VerticalStackLayout Spacing="18" Padding="0,0,4,4">
+                        <Label Text="自动判定规则" FontAttributes="Bold" TextColor="#142D50" />
+                        <Label Text="除酸洗外，以下五项条件全部满足时，系统自动判为“合格”：" />
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="① 直径在允许范围内" Style="{StaticResource RuleTitle}" />
+                            <Label Text="成品直径＋负偏差值 ≤ 实测直径 ≤ 成品直径＋正偏差值" />
+                            <Label Text="包含上下边界值。" FontSize="13" TextColor="#60738D" />
+                        </VerticalStackLayout>
+                        <Label Text="② 表面判定为“不合格”" Style="{StaticResource RuleTitle}" />
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="③ 实测强度在规定范围之外" Style="{StaticResource RuleTitle}" />
+                            <Label Text="实测强度低于下限或高于上限；等于边界值不属于范围之外。" FontSize="13" TextColor="#60738D" />
+                        </VerticalStackLayout>
+                        <Label Text="④ 圈径判定为“合格”" Style="{StaticResource RuleTitle}" />
+                        <Label Text="⑤ 圈距判定为“合格”" Style="{StaticResource RuleTitle}" />
+                        <Label Text="任意一项不满足时，系统自动判为“不合格”。所需数据为空或强度范围无法识别时，也无法自动判为“合格”。" />
+                        <Border BackgroundColor="#EEF5FF" StrokeThickness="0" Padding="14">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="支持手动调整" FontAttributes="Bold" TextColor="#164C92" />
+                                <Label Text="自动判定后仍可手动修改结果；再次修改相关测量值或判定选项时，系统会重新计算。" />
+                            </VerticalStackLayout>
+                        </Border>
+                        <Label Text="酸洗及已完成的质检记录不自动改写结果。" FontSize="13" TextColor="#60738D" />
+                    </VerticalStackLayout>
+                </ScrollView>
+                <Button Grid.Row="2" Text="我知道了" BackgroundColor="#244B88" TextColor="White" FontSize="16" FontAttributes="Bold"
+                        MinimumHeightRequest="52" CornerRadius="12" Clicked="OnCloseClicked" />
+            </Grid>
+        </Border>
+    </Grid>
+</ContentPage>
