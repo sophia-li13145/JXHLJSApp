@@ -29,7 +29,8 @@ public class Grid : Layout
     public List<RowDefinition> RowDefinitions = new();
     public Grid(int count) { for (var i = 0; i < count; i++) Children.Add(new View()); }
     public static void SetColumnSpan(View field, int span) { field.Span = span; }
-    public void Add(View field, int column, int row) { Children.Add(field); field.Column = column; field.Row = row; }
+    // Match MAUI Grid.Add: placement resets the column span to one.
+    public void Add(View field, int column, int row) { Children.Add(field); field.Column = column; field.Row = row; field.Span = 1; }
 }
 public class Page
 {

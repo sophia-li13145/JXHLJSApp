@@ -398,8 +398,9 @@ public partial class MachineQualityDetailPage : ContentPage
             }
             if (field == InspectionResultPanel || field == MemoInputPanel || field == UnqualifiedDescriptionPanel)
             {
-                Grid.SetColumnSpan(field, 2);
                 panel.Add(field, 0, textRow++);
+                // Grid.Add 会将跨列数重置为 1，必须在添加控件之后设置整行跨度。
+                Grid.SetColumnSpan(field, 2);
             }
             else
             {
