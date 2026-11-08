@@ -48,7 +48,6 @@ public sealed class QualityApi : IQualityApi
     private readonly string _incomingQualityCompletedEndpoint;
     private readonly string _incomingQualityDeleteEndpoint;
     private readonly string _productionQualityListEndpoint;
-    private readonly string _productionQualityDetailByNoEndpoint;
     private readonly string _productionQualityScanMaterialEndpoint;
     private readonly string _productionQualityCommitEndpoint;
     private readonly string _productionQualityFirstInspectionCommitEndpoint;
@@ -84,8 +83,6 @@ public sealed class QualityApi : IQualityApi
             configLoader.GetApiPath("incomingQualityOrder.delete", "/pda/qs/qsIncomingQualityOrder/delete"), servicePath);
         _productionQualityListEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("productionQualityOrder.list", "/pda/qsOrderQuality/list"), servicePath);
-        _productionQualityDetailByNoEndpoint = ServiceUrlHelper.NormalizeRelative(
-            configLoader.GetApiPath("productionQualityOrder.detailByNo", "/pda/qsOrderQuality/detailByNo"), servicePath);
         _productionQualityScanMaterialEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("productionQualityOrder.scanMaterial", "/pda/qsOrderQuality/scanMaterial"), servicePath);
         _productionQualityCommitEndpoint = ServiceUrlHelper.NormalizeRelative(
