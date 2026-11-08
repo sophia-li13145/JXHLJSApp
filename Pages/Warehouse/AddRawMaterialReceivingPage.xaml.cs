@@ -859,7 +859,16 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private async Task SaveOcrIncomingImageAsync(RawMaterialOcrDto ticket)
     {
-        if ((!_hasPendingTicketScan && _pendingTicketAttachment is null) || string.IsNullOrWhiteSpace(_instockNo))
+        // 扫码票签没有图片，不能调用附件必填的 OCR 图片保存接口。
+        // 确认后的字段由调用方保留，后续随绑定明细暂存或入库。
+        if (_hasPendingTicketScan)
+        {
+            _hasPendingTicketScan = false;
+            _pendingTicketAttachment = null;
+            return;
+        }
+
+        if (_pendingTicketAttachment is null || string.IsNullOrWhiteSpace(_instockNo))
         {
             return;
         }

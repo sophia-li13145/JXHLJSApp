@@ -34,7 +34,7 @@ Resources/Raw/appconfig.json：
 - 新增巡检：先打开原新增面板；创建失败恢复面板，普通列表不创建。
 - 质检详情：沿用工艺方案及已完成状态限制。
 - 质检转码：原物料码→空白质检码；成功准备下一组，保留取消转码。
-- 原料收货：并列提供“拍照识别”和“右侧键扫码识别”。拍照沿用压缩、上传附件和 /pda/rawMaterialReceiving/ocrIncoming（fileInfo、instockNo）；扫码将 instockNo 和二维码原文 scanContent 以 JSON POST 到 /pda/rawMaterialReceiving/scanIncoming。两种方式共用内容确认、保存、扫码绑定、暂存及入库流程。拍照保存携带本次附件，扫码保存 fileInfo 为空，需要后端支持无图片保存；切换方式会清除上次附件，避免串用。确认票签后下一次侧键扫码用于绑定；更换扫码票签先点击“右侧键扫码识别”。识别失败仍可手动补录。拍照、录入、绑定、汇总及加载时不接收其他扫码。
+- 原料收货：并列提供“拍照识别”和“右侧键扫码识别”。拍照沿用压缩、上传附件和 /pda/rawMaterialReceiving/ocrIncoming（fileInfo、instockNo）；扫码将 instockNo 和二维码原文 scanContent 以 JSON POST 到 /pda/rawMaterialReceiving/scanIncoming。两种方式共用内容确认、扫码绑定、暂存及入库流程。拍照确认调用 saveOcrIncomingImage 并携带本次附件；扫码确认只保留页面票签内容，不调用图片保存接口，物料明细随后续暂存或入库提交。切换方式会清除上次附件，避免串用。确认票签后下一次侧键扫码用于绑定；更换扫码票签先点击“右侧键扫码识别”。识别失败仍可手动补录。拍照、录入、绑定、汇总及加载时不接收其他扫码。
 - 包装：快捷入口进入等待状态；普通详情继续扫码，已完成详情不接收。
 - 发货：保留物料复核及确认发货流程。
 

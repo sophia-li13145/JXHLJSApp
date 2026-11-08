@@ -24,7 +24,12 @@ public class FakeApi
     public int Calls, BindCalls, SaveCalls;
     public SaveOcrIncomingImageRequestDto? Saved;
     public Task<bool?> SaveOcrIncomingImageAsync(SaveOcrIncomingImageRequestDto request)
-    { SaveCalls++; Saved = request; return Task.FromResult<bool?>(true); }
+    {
+        SaveCalls++;
+        if (request.fileInfo is null) throw new InvalidOperationException("附件信息不能为空");
+        Saved = request;
+        return Task.FromResult<bool?>(true);
+    }
     public Func<Task<RawMaterialOcrDto>>? Recognize;
     public Task<RawMaterialOcrDto> ScanIncomingAsync(string content, string instock)
     { Calls++; Content = content; Instock = instock; return Recognize?.Invoke() ?? Task.FromResult(new RawMaterialOcrDto()); }
@@ -104,8 +109,18 @@ public partial class Page
             && page._pendingTicketAttachment == null, "Photo confirmation saves the current attachment and clears it after success");
         page._hasPendingTicketScan = true;
         await page.SaveOcrIncomingImageAsync(ticket);
-        Check(page._warehouseApi.SaveCalls == 2 && page._warehouseApi.Saved?.fileInfo == null
-            && !page._hasPendingTicketScan, "Scan confirmation saves without reusing a photo attachment");
+        Check(page._warehouseApi.SaveCalls == 1 && !page._hasPendingTicketScan
+            && page._pendingTicketAttachment == null && !page.Loading,
+            "Scan confirmation skips the attachment-required image API and clears pending state");
+        page._hasPendingTicketScan = true;
+        page._pendingTicketAttachment = new AttachmentDto();
+        await page.SaveOcrIncomingImageAsync(ticket);
+        Check(page._warehouseApi.SaveCalls == 1 && page._pendingTicketAttachment == null,
+            "Scan mode cannot save an accidentally retained photo attachment");
+        page._pendingTicketAttachment = new AttachmentDto();
+        await page.SaveOcrIncomingImageAsync(ticket);
+        Check(page._warehouseApi.SaveCalls == 2,
+            "Switching from scan confirmation back to photo confirmation still saves the image");
         Console.WriteLine("PASS: " + checks + " incoming ticket scan assertions");
     }
     private static int checks;
