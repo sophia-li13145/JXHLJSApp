@@ -345,7 +345,15 @@ public sealed class QualityApi : IQualityApi
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _productionQualityScanMaterialEndpoint);
         using var resp = await _http.PostAsJsonAsync(url, request, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
-        var data = await ReadApiResponseAsync<ProductionQualityScanMaterialDto>(resp, ct).ConfigureAwait(false);
+        ApiResp<ProductionQualityScanMaterialDto> data;
+        try
+        {
+            data = await ReadApiResponseAsync<ProductionQualityScanMaterialDto>(resp, ct).ConfigureAwait(false);
+        }
+        catch (InvalidOperationException ex) when (QualityMaterialAlreadyInspectedException.IsAlreadyInspectedMessage(ex.Message))
+        {
+            throw new QualityMaterialAlreadyInspectedException(ex.Message, ex);
+        }
         var material = data.result ?? new ProductionQualityScanMaterialDto { qrCode = request.qrCode };
         await ApplyProductionQualityMaterialDictNamesAsync(material, ct).ConfigureAwait(false);
         return material;

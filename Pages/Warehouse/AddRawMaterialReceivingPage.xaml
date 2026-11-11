@@ -71,7 +71,8 @@
                                 Title="请选择"
                                 ItemDisplayBinding="{Binding displayName}"
                                 BackgroundColor="#F8FAFD"
-                                TextColor="#051B3D" />
+                                TextColor="#051B3D"
+                                SelectedIndexChanged="OnWarehouseAreaSelectedIndexChanged" />
                     </Grid>
                 </Border>
 
@@ -87,7 +88,8 @@
                                 HeightRequest="46"
                                 Clicked="OnTakePhotoClicked" />
                         <Button x:Name="ScanIncomingButton" Grid.Column="1"
-                                Text="右侧键扫码识别"
+                                Text="右侧键扫码（自动识别）"
+                                FontSize="12"
                                 BackgroundColor="#EFFFF4"
                                 TextColor="#008C38"
                                 BorderColor="#0AA344"
@@ -96,7 +98,7 @@
                                 HeightRequest="46"
                                 Clicked="OnScanIncomingClicked" />
                         <Button Grid.Row="1" Grid.ColumnSpan="2"
-                                Text="◼  右侧键扫码绑定"
+                                Text="◼  扫码新增待入库／识别票签"
                                 BackgroundColor="#F4F8FF"
                                 TextColor="#0B4FEA"
                                 BorderColor="#2263FF"
@@ -105,10 +107,20 @@
                                 HeightRequest="46"
                                 Clicked="OnScanBindClicked" />
                     </Grid>
-                    <Label Text="可拍照识别或使用右侧扫描键识别票签，确认内容后再扫码绑定"
+                    <Label Text="扫码自动判断：物料码新增待入库，其他码识别票签；请先确认并选择票签模板"
                            TextColor="#F64148"
                            FontSize="12" />
                 </VerticalStackLayout>
+
+                <Button Text="📊  计算汇总"
+                        BackgroundColor="#1F447E"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        CornerRadius="7"
+                        HeightRequest="36"
+                        Padding="12,0"
+                        HorizontalOptions="Start"
+                        Clicked="OnCalculateSummaryV2Clicked" />
 
                 <Border BackgroundColor="#FAFCFF"
                         Stroke="#C8D6EA"
@@ -446,7 +458,7 @@
                 BackgroundColor="White"
                 StrokeThickness="0"
                 Padding="18,16,18,22">
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="8">
                 <Button x:Name="StashInstockButton"
                         Text="暂存"
                         BackgroundColor="#E58A00"
@@ -456,6 +468,16 @@
                         CornerRadius="10"
                         HeightRequest="50"
                         Clicked="OnStashInstockV2Clicked" />
+                <Label x:Name="SaveStatusLabel"
+                       Grid.Row="1"
+                       Text="保存状态：待保存"
+                       FontSize="12"
+                       TextColor="#6B7280"
+                       HorizontalTextAlignment="Center">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnSaveStatusTapped" />
+                    </Label.GestureRecognizers>
+                </Label>
                 <Button x:Name="SubmitInstockButton"
                         Grid.Column="1"
                         Text="提交入库"

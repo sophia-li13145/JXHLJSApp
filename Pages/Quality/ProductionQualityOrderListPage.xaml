@@ -36,7 +36,10 @@
                                 <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnOrderTapped" /></Border.GestureRecognizers>
                                 <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                                 <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="4">
-                                    <Label Text="{Binding titleDisplay}" TextColor="#051B3D" FontSize="16" FontAttributes="Bold" LineBreakMode="TailTruncation" VerticalOptions="Center" />
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                        <Label Text="{Binding titleDisplay}" TextColor="#051B3D" FontSize="16" FontAttributes="Bold" VerticalOptions="Center" />
+                                        <Label Grid.Column="1" Text="{Binding processNameDisplay}" TextColor="#526880" FontSize="14" LineBreakMode="TailTruncation" VerticalOptions="Center" />
+                                    </Grid>
                                     <Border Grid.Column="1" BackgroundColor="{Binding statusBackground}" StrokeThickness="0" Padding="7,3" VerticalOptions="Center">
                                         <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
                                         <Label Text="{Binding statusDisplay}" TextColor="{Binding statusColor}" FontSize="12" FontAttributes="Bold" />

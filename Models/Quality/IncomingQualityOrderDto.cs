@@ -413,6 +413,7 @@ public sealed class IncomingQualityStatusFilter
 
 public sealed class ProductionQualityOrderDto
 {
+    public string? processName { get; set; }
     public string? businessType { get; set; }
     public string? id { get; set; }
     public string? inspectStatus { get; set; }
@@ -429,6 +430,7 @@ public sealed class ProductionQualityOrderDto
     public string? resourceName { get; set; }
 
     public string titleDisplay => FirstNonEmpty(inspectionSchemeName, qualityTypeName, inspectionSchemeTypeName, "质检任务");
+    public string processNameDisplay => FirstNonEmpty(processName, "-");
     public string machineDisplay => FirstNonEmpty(resourceName, machineNo, resourceCode, "-");
     public string statusDisplay => inspectStatus switch
     {

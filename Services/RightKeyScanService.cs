@@ -20,7 +20,6 @@ public sealed class RightKeyScanService : IRightKeyScanService
     private readonly ConditionalWeakTable<Page, Registration> _pages = new();
     private bool _active;
     private bool _focused;
-    private bool _processing;
     private int _revision;
     private WeakReference<Page>? _lastPage;
     private string? _lastCode;
@@ -52,7 +51,13 @@ public sealed class RightKeyScanService : IRightKeyScanService
         var registration = new Registration(handle, canScan ?? (() => true), textEntry);
         _pages.Add(owner, registration);
         owner.Appearing += (_, _) => { registration.Visible = true; Invalidate(); };
-        owner.Disappearing += (_, _) => { registration.Visible = false; Invalidate(); };
+        owner.Disappearing += (_, _) =>
+        {
+            registration.Visible = false;
+            // 页面离开即结束本次扫码会话，旧异步回调不能阻塞返回后的页面。
+            registration.Operation = null;
+            Invalidate();
+        };
     }
 
     public void RefreshInput(Page owner)
@@ -86,7 +91,7 @@ public sealed class RightKeyScanService : IRightKeyScanService
         if (!CanReceive(page, out var registration))
         {
             Log.Information("Scan result ignored. Page={Page}, Active={Active}, Focused={Focused}, Processing={Processing}, Dialog={Dialog}",
-                page?.GetType().Name, _active, _focused, _processing, ErrorDialogService.IsDialogVisible);
+                page?.GetType().Name, _active, _focused, registration?.Operation is not null, ErrorDialogService.IsDialogVisible);
             return;
         }
         var code = rawCode?.Trim(' ', '\t', '\r', '\n', '\uFEFF', '\0', '\u0002', '\u0003');
@@ -102,7 +107,8 @@ public sealed class RightKeyScanService : IRightKeyScanService
             _lastPage = new WeakReference<Page>(page!);
             _lastCode = code;
             _lastAt = now;
-            _processing = true;
+            var operation = new object();
+            registration!.Operation = operation;
             _revision++; // Discard any other results queued against the preceding step.
             StateChanged?.Invoke();
             try
@@ -113,13 +119,17 @@ public sealed class RightKeyScanService : IRightKeyScanService
             catch (Exception ex)
             {
                 Log.Error(ex, "Right-key scan failed. Page={Page}", page!.GetType().Name);
-                if (ReferenceEquals(page, GetForegroundPage()))
+                if (ReferenceEquals(registration.Operation, operation) && ReferenceEquals(page, GetForegroundPage()))
                     await ErrorDialogService.ShowAsync(page, "扫码失败", ex.Message);
             }
             finally
             {
-                _processing = false;
-                StateChanged?.Invoke();
+                // 旧请求晚结束时，不得清除同一页面新一轮扫码的处理状态。
+                if (ReferenceEquals(registration.Operation, operation))
+                {
+                    registration.Operation = null;
+                    StateChanged?.Invoke();
+                }
             }
         });
     }
@@ -127,9 +137,9 @@ public sealed class RightKeyScanService : IRightKeyScanService
     private bool CanReceive(Page? page, out Registration? registration)
     {
         registration = null;
-        return _active && _focused && !_processing && !ErrorDialogService.IsDialogVisible &&
+        return _active && _focused && !ErrorDialogService.IsDialogVisible &&
             page is not null && _pages.TryGetValue(page, out registration) &&
-            registration.Visible && registration.CanScan();
+            registration.Visible && registration.Operation is null && registration.CanScan();
     }
 
     public Task ShowHintAsync(Page owner, string target)
@@ -173,5 +183,6 @@ public sealed class RightKeyScanService : IRightKeyScanService
         public Func<bool> CanScan { get; } = canScan;
         public Func<Entry?>? TextEntry { get; } = textEntry;
         public bool Visible { get; set; }
+        public object? Operation { get; set; }
     }
 }

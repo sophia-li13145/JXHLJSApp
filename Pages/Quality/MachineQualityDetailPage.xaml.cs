@@ -33,6 +33,7 @@ public partial class MachineQualityDetailPage : ContentPage
     private bool _isUpdating;
     private bool _isShowingInspectionRules;
     private bool _canScanMaterial;
+    private bool _requiresUninspectedMaterial;
     private ProductionQualityDetailDto? _detail;
     private string? _qualityNo;
     private string? _workOrderNo;
@@ -147,6 +148,12 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private async Task LoadAsync()
     {
+        // 详情返回前不展示操作按钮，避免使用默认值或上一次的未检数量。
+        ActionBar.IsVisible = false;
+        SubmitButton.IsVisible = false;
+        CompleteButton.IsVisible = false;
+        _hasLoadedDetail = false;
+
         if (string.IsNullOrWhiteSpace(_qualityNo))
         {
             await DisplayAlert("提示", "质检单号为空。", "确定");
@@ -176,6 +183,10 @@ public partial class MachineQualityDetailPage : ContentPage
                 _loadedQualityNo = null;
                 throw new InvalidOperationException($"详情接口返回数据为空或字段未正确映射，qualityNo={_qualityNo}");
             }
+            if (detail.resultSaved == true)
+            {
+                ShowAlreadyInspectedMaterial();
+            }
             ApplySchemeLayout(detail);
             RenderInfo(detail);
             RenderMaterialInfo(detail);
@@ -197,6 +208,8 @@ public partial class MachineQualityDetailPage : ContentPage
             _hasLoadedDetail = true;
             _loadedQualityNo = _qualityNo;
             UpdateAutoInspectionResult();
+            ActionBar.IsVisible = !_requiresUninspectedMaterial && !IsInspectionCompleted(_inspectStatus) &&
+                (SubmitButton.IsVisible || CompleteButton.IsVisible);
         }
         catch (Exception ex)
         {
@@ -310,7 +323,7 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private void UpdateAutoInspectionResult()
     {
-        if (!_hasLoadedDetail || _detail is null || _isHandlingScan || _isUpdating ||
+        if (!_hasLoadedDetail || _detail is null || _requiresUninspectedMaterial || _isHandlingScan || _isUpdating ||
             IsInspectionCompleted(_inspectStatus) || IsPicklingScheme(ResolveCurrentFlowName(_detail))) return;
 
         var qualifies = ProductionQualityAutoResult.ShouldQualify(
@@ -320,7 +333,8 @@ public partial class MachineQualityDetailPage : ContentPage
             _detail.strengthRequirement,
             HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text : StrengthEntry.Text,
             SurfaceJudgmentPicker.SelectedItem?.ToString(), CoilDiameterPicker.SelectedItem?.ToString(),
-            CoilPitchPicker.SelectedItem?.ToString());
+            CoilPitchPicker.SelectedItem?.ToString(),
+            isHeatTreatment: IsHeatTreatmentScheme(ResolveCurrentFlowName(_detail)));
         // 只在判定输入变化后更新，质检结果自身的选择事件不触发重算，允许人工覆盖。
         InspectResultPicker.SelectedIndex = qualifies ? 0 : 1;
     }
@@ -971,6 +985,19 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private async void OnScanMaterialClicked(object sender, EventArgs e) => await ScanAndApplyMaterialAsync();
 
+    private bool HasSavedResultForMaterial(string code) =>
+        _detail?.resultSaved == true &&
+        !string.IsNullOrWhiteSpace(_detail.qrCode) &&
+        string.Equals(_detail.qrCode, code, StringComparison.Ordinal);
+
+    private void ShowAlreadyInspectedMaterial()
+    {
+        _requiresUninspectedMaterial = true;
+        MaterialScanStatusLabel.Text = "该二维码已提交质检结果，请扫描其他未检物料。";
+        MaterialScanStatusLabel.IsVisible = true;
+        ActionBar.IsVisible = false;
+    }
+
     private async Task ScanAndApplyMaterialAsync(string? scanCode = null, bool showSuccess = true)
     {
         if (string.IsNullOrWhiteSpace(scanCode))
@@ -979,7 +1006,7 @@ public partial class MachineQualityDetailPage : ContentPage
             return;
         }
 
-        if (_isHandlingScan) return;
+        if (_isHandlingScan || _isUpdating) return;
         _isHandlingScan = true;
         try
         {
@@ -992,6 +1019,12 @@ public partial class MachineQualityDetailPage : ContentPage
             var code = scanCode;
             if (string.IsNullOrWhiteSpace(code)) return;
 
+            if (HasSavedResultForMaterial(code))
+            {
+                ShowAlreadyInspectedMaterial();
+                return;
+            }
+
             try
             {
                 var request = new ProductionQualityScanMaterialRequestDto
@@ -1000,7 +1033,9 @@ public partial class MachineQualityDetailPage : ContentPage
                     qualityNo = _qualityNo,
                     workOrderNo = _workOrderNo
                 };
-                var manualInputState = ShouldPreserveManualInputsOnMaterialScan() ? CaptureManualInputState() : null;
+                var manualInputState = !_requiresUninspectedMaterial && ShouldPreserveManualInputsOnMaterialScan()
+                    ? CaptureManualInputState()
+                    : null;
                 var material = await ScanMaterialForCurrentFlowAsync(request);
                 if (ShouldRefreshDetailAfterMaterialScan())
                 {
@@ -1009,10 +1044,24 @@ public partial class MachineQualityDetailPage : ContentPage
                 ApplyScannedMaterial(material, code);
                 RestoreManualInputState(manualInputState);
                 ApplyPreviousUnqualifiedState(material);
+                _requiresUninspectedMaterial = material.resultSaved;
+                MaterialScanStatusLabel.IsVisible = _requiresUninspectedMaterial;
+                if (_requiresUninspectedMaterial)
+                {
+                    ShowAlreadyInspectedMaterial();
+                    return;
+                }
+                ActionBar.IsVisible = _hasLoadedDetail && !IsInspectionCompleted(_inspectStatus) &&
+                    (SubmitButton.IsVisible || CompleteButton.IsVisible);
                 if (showSuccess)
                 {
                     await DisplayAlert("扫码成功", "物料信息已更新到当前质检页面。", "确定");
                 }
+            }
+            catch (QualityMaterialAlreadyInspectedException)
+            {
+                // 已检码不是新的待检物料，保留现有详情，禁止误提交其他物料的数据。
+                ShowAlreadyInspectedMaterial();
             }
             catch (Exception ex)
             {
@@ -1239,9 +1288,16 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
 
-    private async void OnSubmitClicked(object sender, EventArgs e)
+    private async void OnSubmitClicked(object sender, EventArgs e) => await SubmitInspectionAsync();
+
+    private async Task SubmitInspectionAsync(bool completeHeatTreatment = false)
     {
         if (_isUpdating || _isHandlingScan) return;
+        if (_requiresUninspectedMaterial)
+        {
+            ShowAlreadyInspectedMaterial();
+            return;
+        }
         _isUpdating = true;
         try
         {
@@ -1252,6 +1308,12 @@ public partial class MachineQualityDetailPage : ContentPage
             }
 
             if (!await ValidateRequiredInputsAsync())
+            {
+                return;
+            }
+
+            if (completeHeatTreatment &&
+                !await DisplayAlert("确认完成", "是否已完成此工单质检内容？", "确认", "取消"))
             {
                 return;
             }
@@ -1303,15 +1365,15 @@ public partial class MachineQualityDetailPage : ContentPage
                     workOrderNo = _workOrderNo
                 };
 
-                var useManualInspectionApi = ShouldUseManualInspectionResultApi();
-                var isAcid = !useManualInspectionApi && ShouldUsePicklingCommit();
+                var useManualInspectionApi = !completeHeatTreatment && ShouldUseManualInspectionResultApi();
+                var isAcid = !completeHeatTreatment && !useManualInspectionApi && ShouldUsePicklingCommit();
                 var shouldStayAfterSubmit = IsHeatTreatmentScheme(CurrentProcessName) ||
                     IsHeatTreatmentScheme(_inspectionSchemeName) ||
                     IsBlankOpeningScheme(CurrentProcessName) ||
                     IsBlankOpeningScheme(_inspectionSchemeName) ||
                     (useManualInspectionApi && (IsDrawingScheme(CurrentProcessName) || IsDrawingScheme(_inspectionSchemeName)));
                 var useFirstInspectionCommit = !useManualInspectionApi && ShouldUseFirstInspectionCommit();
-                var useSamplingOrFullCommit = !useManualInspectionApi && ShouldUseSamplingOrFullCommit();
+                var useSamplingOrFullCommit = completeHeatTreatment || (!useManualInspectionApi && ShouldUseSamplingOrFullCommit());
                 var isHeatTreatmentSamplingOrFull = useSamplingOrFullCommit &&
                     (IsHeatTreatmentScheme(CurrentProcessName) || IsHeatTreatmentScheme(_inspectionSchemeName));
                 SectionShrinkageLabel.Text = CalculateSectionShrinkageText();
@@ -1427,7 +1489,15 @@ public partial class MachineQualityDetailPage : ContentPage
                         : await _qualityApi.CommitProductionQualityAsync(request);
                 if (!committed)
                 {
-                    await ErrorDialogService.ShowAsync(this, isAcid ? "完成失败" : "提交失败", isAcid ? "接口未返回完成成功，请稍后重试。" : "接口未返回提交成功，请稍后重试。", "确定");
+                    var isCompleting = isAcid || completeHeatTreatment;
+                    await ErrorDialogService.ShowAsync(this, isCompleting ? "完成失败" : "提交失败", isCompleting ? "接口未返回完成成功，请稍后重试。" : "接口未返回提交成功，请稍后重试。", "确定");
+                    return;
+                }
+
+                if (completeHeatTreatment)
+                {
+                    await DisplayAlert("完成成功", "质检任务已完成。", "确定");
+                    await Shell.Current.GoToAsync("..");
                     return;
                 }
 
@@ -1450,7 +1520,7 @@ public partial class MachineQualityDetailPage : ContentPage
                 var message = ex.Message.Contains("物料名称不能为空", StringComparison.Ordinal)
                     ? "请扫描物料"
                     : ex.Message;
-                await ErrorDialogService.ShowAsync(this, "提交失败", message, "确定");
+                await ErrorDialogService.ShowAsync(this, completeHeatTreatment ? "完成失败" : "提交失败", message, "确定");
             }
         }
         finally
@@ -1484,6 +1554,18 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private async void OnCompleteClicked(object sender, EventArgs e)
     {
+        if (_requiresUninspectedMaterial)
+        {
+            ShowAlreadyInspectedMaterial();
+            return;
+        }
+        if (IsHeatTreatmentScheme(CurrentProcessName) || IsHeatTreatmentScheme(_inspectionSchemeName))
+        {
+            // 热处理最后一次检验也提交当前物料及检验数据。
+            await SubmitInspectionAsync(completeHeatTreatment: true);
+            return;
+        }
+
         if (_isUpdating || _isHandlingScan) return;
         _isUpdating = true;
         try

@@ -37,8 +37,8 @@ public partial class AddRawMaterialReceivingPage
             return;
         }
 
-        WarehousePicker.IsEnabled = !BindConfirmOverlay.IsVisible;
-        WarehouseAreaPicker.IsEnabled = !BindConfirmOverlay.IsVisible;
+        WarehousePicker.IsEnabled = !BindConfirmOverlay.IsVisible && !_isStashingInstock && !_isChangingWarehouseSelection && !_isSubmittingInstock && _failedStashRequest is null;
+        WarehouseAreaPicker.IsEnabled = WarehousePicker.IsEnabled;
 
         if (BindConfirmOverlay.IsVisible)
         {
@@ -437,6 +437,17 @@ public partial class AddRawMaterialReceivingPage
         object sender,
         EventArgs e)
     {
+        if (_isStashingInstock || _isSubmittingInstock || _isChangingWarehouseSelection || _failedStashRequest is not null)
+        {
+            return;
+        }
+
+        if (_editingPendingMaterial is null &&
+            await RejectDuplicatePendingMaterialAsync(_pendingQrCode))
+        {
+            return;
+        }
+
         var materialClass = GetSelectedMaterialClassV2(
             BindMaterialTypePicker,
             _selectedTicket?.materialClass);
@@ -537,6 +548,15 @@ public partial class AddRawMaterialReceivingPage
             if (index >= 0)
             {
                 _ocrItems[index] = bound;
+                // The detail edit is already persisted; retain the updated row
+                // and editing target if saving the full draft needs a retry.
+                _editingPendingMaterial = bound;
+                _selectedTicket = bound;
+                if (!await SaveStashInstockV2Async(showSuccess: false))
+                {
+                    BindConfirmOverlay.IsVisible = false;
+                    return;
+                }
             }
             _editingPendingMaterial = null;
         }
@@ -545,6 +565,14 @@ public partial class AddRawMaterialReceivingPage
             // Keep the most recently scanned material at the top so operators
             // can immediately verify the row they just added.
             _ocrItems.Insert(0, bound);
+            MaterialListTitle.Text = $"待入库列表 ({_ocrItems.Count})";
+            if (!await SaveStashInstockV2Async(showSuccess: false))
+            {
+                _ocrItems.Remove(bound);
+                MaterialListTitle.Text = $"待入库列表 ({_ocrItems.Count})";
+                BindConfirmOverlay.IsVisible = false;
+                return;
+            }
         }
         MaterialListTitle.Text =
             $"待入库列表 ({_ocrItems.Count})";
@@ -606,12 +634,14 @@ public partial class AddRawMaterialReceivingPage
         object sender,
         EventArgs e)
     {
-        if (_isSubmittingInstock)
+        if (_isSubmittingInstock || _isStashingInstock || _isChangingWarehouseSelection || _failedStashRequest is not null)
         {
             return;
         }
 
         _isSubmittingInstock = true;
+        WarehousePicker.IsEnabled = false;
+        WarehouseAreaPicker.IsEnabled = false;
         SubmitInstockButton.IsEnabled = false;
         SubmitInstockButton.Text = "提交中...";
         var submitSucceeded = false;
@@ -757,6 +787,8 @@ public partial class AddRawMaterialReceivingPage
             if (!submitSucceeded)
             {
                 _isSubmittingInstock = false;
+                WarehousePicker.IsEnabled = !BindConfirmOverlay.IsVisible;
+                WarehouseAreaPicker.IsEnabled = WarehousePicker.IsEnabled;
                 SubmitInstockButton.IsEnabled = true;
                 SubmitInstockButton.Text = "提交入库";
             }
@@ -765,15 +797,42 @@ public partial class AddRawMaterialReceivingPage
 
     private async void OnStashInstockV2Clicked(object sender, EventArgs e)
     {
-        if (_isStashingInstock)
+        if (_isChangingWarehouseSelection)
         {
             return;
+        }
+
+        if (_failedStashRequest is not null && _failedStashItems is not null)
+        {
+            await ExecuteStashInstockV2Async(_failedStashRequest, _failedStashItems, showSuccess: false);
+        }
+        else
+        {
+            await SaveStashInstockV2Async(allowEmpty: true);
+        }
+    }
+
+    private void OnSaveStatusTapped(object sender, TappedEventArgs e)
+    {
+        if (_failedStashRequest is not null)
+        {
+            OnStashInstockV2Clicked(sender, EventArgs.Empty);
+        }
+    }
+
+    private async Task<bool> SaveStashInstockV2Async(
+        bool showSuccess = true,
+        bool allowEmpty = false)
+    {
+        if (_isStashingInstock || _isSubmittingInstock)
+        {
+            return false;
         }
 
         if (string.IsNullOrWhiteSpace(_instockNo))
         {
             await DisplayAlert("提示", "入库单号尚未生成，请稍后重试。", "确定");
-            return;
+            return false;
         }
 
         var warehouse = GetSelectedWarehouse();
@@ -782,20 +841,20 @@ public partial class AddRawMaterialReceivingPage
             string.IsNullOrWhiteSpace(warehouse.selectedCode))
         {
             await DisplayAlert("提示", "请选择有效的入库仓库。", "确定");
-            return;
+            return false;
         }
 
         var warehouseArea = GetSelectedWarehouseArea();
         if (warehouseArea is null || string.IsNullOrWhiteSpace(warehouseArea.selectedLocation))
         {
             await DisplayAlert("提示", "请选择有效的库区。", "确定");
-            return;
+            return false;
         }
 
-        if (_ocrItems.Count == 0)
+        if (!allowEmpty && _ocrItems.Count == 0)
         {
             await DisplayAlert("提示", "请先扫码绑定至少一条待入库物料。", "确定");
-            return;
+            return false;
         }
 
         var invalidItem = _ocrItems.FirstOrDefault(item =>
@@ -804,35 +863,94 @@ public partial class AddRawMaterialReceivingPage
         if (invalidItem is not null)
         {
             await DisplayAlert("提示", "请确认每条明细都已填写物料分类和有效件重。", "确定");
-            return;
+            return false;
         }
 
+        return await ExecuteStashInstockV2Async(
+            CreateInstockRequestV2(warehouse, warehouseArea), _ocrItems.ToList(), showSuccess);
+    }
+
+    private async Task<bool> ExecuteStashInstockV2Async(
+        QuickInstockRequestDto request,
+        List<RawMaterialOcrDto> items,
+        bool showSuccess)
+    {
+        if (_isStashingInstock || _isSubmittingInstock)
+        {
+            return false;
+        }
+
+        var isRetry = _failedStashRequest is not null;
+        _failedStashRequest = request;
+        _failedStashItems = items;
         _isStashingInstock = true;
+        WarehousePicker.IsEnabled = false;
+        WarehouseAreaPicker.IsEnabled = false;
         StashInstockButton.IsEnabled = false;
-        StashInstockButton.Text = "暂存中...";
+        StashInstockButton.Text = "保存中…";
+        SubmitInstockButton.IsEnabled = false;
+        SaveStatusLabel.Text = "保存状态：保存中";
+        SaveStatusLabel.TextColor = Color.FromArgb("#2563EB");
 
         try
         {
-            var request = CreateInstockRequestV2(warehouse, warehouseArea);
             var success = await _warehouseApi.StashRawMaterialInstockAsync(request);
             if (success != true)
             {
+                SetStashFailedStateV2();
                 await ErrorDialogService.ShowAsync(this, "暂存失败", "接口未返回明确的成功结果。", "确定");
-                return;
+                return false;
             }
 
-            await DisplayAlert("提示", "暂存成功。", "确定");
+            if (isRetry)
+            {
+                _ocrItems.Clear();
+                foreach (var item in items)
+                {
+                    _ocrItems.Add(item);
+                }
+                MaterialListTitle.Text = $"待入库列表 ({_ocrItems.Count})";
+                _editingPendingMaterial = null;
+                BindConfirmOverlay.IsVisible = false;
+            }
+            _failedStashRequest = null;
+            _failedStashItems = null;
+            SaveStatusLabel.Text = "保存状态：已保存";
+            SaveStatusLabel.TextColor = Color.FromArgb("#15803D");
+
+            if (showSuccess)
+            {
+                await DisplayAlert("提示", "暂存成功。", "确定");
+            }
+            return true;
         }
         catch (Exception ex)
         {
+            SetStashFailedStateV2();
             await ErrorDialogService.ShowAsync(this, "暂存失败", ex.Message, "确定");
+            return false;
         }
         finally
         {
             _isStashingInstock = false;
+            var failed = _failedStashRequest is not null;
+            if (failed)
+            {
+                SetStashFailedStateV2();
+            }
+            WarehousePicker.IsEnabled = !failed && !_isChangingWarehouseSelection && !BindConfirmOverlay.IsVisible;
+            WarehouseAreaPicker.IsEnabled = WarehousePicker.IsEnabled;
             StashInstockButton.IsEnabled = true;
-            StashInstockButton.Text = "暂存";
+            StashInstockButton.Text = failed ? "↻ 重试" : "暂存";
+            SubmitInstockButton.IsEnabled = !failed;
         }
+    }
+
+    private void SetStashFailedStateV2()
+    {
+        StashInstockButton.Text = "↻ 重试";
+        SaveStatusLabel.Text = "保存状态：保存失败，点击重试";
+        SaveStatusLabel.TextColor = Color.FromArgb("#DC2626");
     }
 
     private QuickInstockRequestDto CreateInstockRequestV2(

@@ -5,8 +5,7 @@ namespace JXHLJSApp.Pages.Quality;
 public partial class ProductionQualityScanPage : ContentPage
 {
     private readonly IRightKeyScanService _scanner;
-    private bool _isHandlingScan;
-    private bool _isScanning;
+    private object? _scanOperation;
 
     public ProductionQualityScanPage(IRightKeyScanService scanner)
     {
@@ -14,7 +13,15 @@ public partial class ProductionQualityScanPage : ContentPage
         _scanner = scanner;
         _scanner.Register(this,
             code => ScanAndOpenOrdersAsync(code),
-            () => !_isHandlingScan);
+            () => _scanOperation is null);
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        // 返回扫码入口后开启新会话，不等待上一轮导航任务结束。
+        _scanOperation = null;
+        _scanner.RefreshInput(this);
     }
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
@@ -29,31 +36,25 @@ public partial class ProductionQualityScanPage : ContentPage
             return;
         }
 
-        if (_isHandlingScan) return;
-        _isHandlingScan = true;
+        if (_scanOperation is not null) return;
+        var operation = new object();
+        _scanOperation = operation;
         try
         {
-            if (_isScanning) return;
-            _isScanning = true;
-            try
-            {
-                var code = scanCode;
-                if (string.IsNullOrWhiteSpace(code)) return;
-
-                await Shell.Current.GoToAsync($"{AppShell.RouteProductionQualityOrders}?qrCode={Uri.EscapeDataString(code.Trim())}");
-            }
-            catch (Exception ex)
-            {
+            await Shell.Current.GoToAsync($"{AppShell.RouteProductionQualityOrders}?qrCode={Uri.EscapeDataString(scanCode.Trim())}");
+        }
+        catch (Exception ex)
+        {
+            if (ReferenceEquals(_scanOperation, operation))
                 await ErrorDialogService.ShowAsync(this, "扫码查询失败", ex.Message, "确定");
-            }
-            finally
-            {
-                _isScanning = false;
-            }
         }
         finally
         {
-            _isHandlingScan = false;
+            if (ReferenceEquals(_scanOperation, operation))
+            {
+                _scanOperation = null;
+                _scanner.RefreshInput(this);
+            }
         }
     }
 }

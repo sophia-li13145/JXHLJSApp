@@ -124,14 +124,28 @@ public static class RightKeyScanRegression
 
         var processing = new Page();
         var pending = new TaskCompletionSource();
+        var nextPending = new TaskCompletionSource();
         var processingCalls = 0;
-        scanner.Register(processing, code => { processingCalls++; return pending.Task; });
+        scanner.Register(processing, code => { processingCalls++; return processingCalls == 1 ? pending.Task : nextPending.Task; });
         shell.CurrentPage = processing;
         processing.Appear();
         Send(scanner, "one");
         Send(scanner, "two");
         Check(processingCalls == 1, "An in-flight operation must reject a second scan");
+        processing.Disappear();
+        shell.CurrentPage = first;
+        first.Appear();
+        var beforeReturningScan = firstCalls;
+        Send(scanner, "AFTER-BACK");
+        Check(firstCalls == beforeReturningScan + 1, "A pending operation on the departed page must not block the returned scan page");
+        shell.CurrentPage = processing;
+        processing.Appear();
+        Send(scanner, "NEW-OPERATION");
+        Check(processingCalls == 2, "Returning to the same page starts a new scan session despite the old pending operation");
         pending.SetResult();
+        Send(scanner, "WHILE-NEW-OPERATION-PENDING");
+        Check(processingCalls == 2, "Late completion of the old session must not unlock the new in-flight scan");
+        nextPending.SetResult();
 
         var failing = new Page();
         var failures = 0;

@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using JXHLJSApp.Services.Common;
 using Serilog;
 using JXHLJSApp.Models.Warehouse;
@@ -14,7 +15,6 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private readonly IWarehouseApi _warehouseApi;
     private readonly IRightKeyScanService _scanner;
     private bool _isHandlingScan;
-    private bool _scanForRecognition = true;
     private readonly ObservableCollection<RawMaterialOcrDto> _ocrItems = new();
     private readonly ObservableCollection<RawMaterialOcrDto> _ticketItems = new();
     private readonly ObservableCollection<MaterialSummaryItem> _summaryItems = new();
@@ -33,6 +33,10 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
     private bool _loadedExistingInstock;
     private bool _isSubmittingInstock;
     private bool _isStashingInstock;
+    private QuickInstockRequestDto? _failedStashRequest;
+    private List<RawMaterialOcrDto>? _failedStashItems;
+    private bool _isInitializingWarehouseSelection = true;
+    private bool _isChangingWarehouseSelection;
 
     public AddRawMaterialReceivingPage(
         IWarehouseApi warehouseApi,
@@ -48,7 +52,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             () => !_isHandlingScan && !string.IsNullOrWhiteSpace(_instockNo) &&
                 !TicketConfirmOverlay.IsVisible && !BindConfirmOverlay.IsVisible &&
                 !LoadingOverlay.IsVisible && !SummaryOverlay.IsVisible &&
-                !_isSubmittingInstock && !_isStashingInstock);
+                !_isSubmittingInstock && !_isStashingInstock && !_isChangingWarehouseSelection && _failedStashRequest is null);
         OcrList.ItemsSource = _ocrItems;
         TicketList.ItemsSource = _ticketItems;
         SummaryList.ItemsSource = _summaryItems;
@@ -100,6 +104,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
             await LoadMaterialClassOptionsAsync();
             await LoadWarehousesAsync();
+            _isInitializingWarehouseSelection = false;
         }
         catch (Exception ex)
         {
@@ -120,10 +125,11 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             var detail = await _warehouseApi.GetRawMaterialReceivingDetailAsync(instockNo);
             _instockNo = detail.instockNo ?? instockNo;
             InstockNoLabel.Text = string.IsNullOrWhiteSpace(_instockNo) ? "--" : _instockNo;
-            SelectWarehouse(detail.detailItems.FirstOrDefault());
+            await SelectWarehouseAsync(detail.detailItems.FirstOrDefault());
             ApplyOcrList(detail.ocrList);
             ApplyDetailList(detail.detailItems);
             _loadedExistingInstock = true;
+            _isInitializingWarehouseSelection = false;
         }
         catch (Exception ex)
         {
@@ -200,7 +206,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         }
     }
 
-    private void SelectWarehouse(RawMaterialReceivingDetailItemDto? firstDetail)
+    private async Task SelectWarehouseAsync(RawMaterialReceivingDetailItemDto? firstDetail)
     {
         if (firstDetail is null || _warehouses.Count == 0) return;
 
@@ -211,14 +217,58 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         {
             WarehousePicker.SelectedIndex = index;
             WarehousePicker.SelectedItem = _warehouses[index];
-            _ = LoadWarehouseAreasAsync(_warehouses[index], firstDetail.location);
+            await LoadWarehouseAreasAsync(_warehouses[index], firstDetail.location);
         }
     }
 
 
     private async void OnWarehouseSelectedIndexChanged(object sender, EventArgs e)
     {
-        await LoadWarehouseAreasAsync(GetSelectedWarehouse());
+        if (_isInitializingWarehouseSelection || _isChangingWarehouseSelection)
+        {
+            return;
+        }
+
+        _isChangingWarehouseSelection = true;
+        SaveStatusLabel.Text = "保存状态：待保存";
+        SaveStatusLabel.TextColor = Color.FromArgb("#6B7280");
+        WarehousePicker.IsEnabled = false;
+        WarehouseAreaPicker.IsEnabled = false;
+        try
+        {
+            await LoadWarehouseAreasAsync(GetSelectedWarehouse());
+            await SaveWarehouseSelectionAsync();
+        }
+        finally
+        {
+            _isChangingWarehouseSelection = false;
+            WarehousePicker.IsEnabled = _failedStashRequest is null;
+            WarehouseAreaPicker.IsEnabled = WarehousePicker.IsEnabled;
+        }
+    }
+
+    private async void OnWarehouseAreaSelectedIndexChanged(object sender, EventArgs e)
+    {
+        if (_isInitializingWarehouseSelection || _isChangingWarehouseSelection)
+        {
+            return;
+        }
+
+        await SaveWarehouseSelectionAsync();
+    }
+
+    private async Task SaveWarehouseSelectionAsync()
+    {
+        SaveStatusLabel.Text = "保存状态：待保存";
+        SaveStatusLabel.TextColor = Color.FromArgb("#6B7280");
+        // Warehouse fields are carried by detail rows in the existing API.
+        // Before the first row is added, its automatic save will persist them.
+        if (_ocrItems.Count == 0 || GetSelectedWarehouseArea() is null)
+        {
+            return;
+        }
+
+        await SaveStashInstockV2Async(showSuccess: false);
     }
 
     private async Task LoadWarehouseAreasAsync(WarehouseInfoDto? warehouse, string? preferredLocation = null)
@@ -448,15 +498,37 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private async void OnScanIncomingClicked(object sender, EventArgs e)
     {
-        _scanForRecognition = true;
         _scanner.RefreshInput(this);
-        await _scanner.ShowHintAsync(this, "扫码识别票签");
+        await _scanner.ShowHintAsync(this, "扫码自动识别：物料码新增待入库，其他码识别票签");
     }
 
-    private Task HandleTicketScanAsync(string scanContent) =>
-        _scanForRecognition || _selectedTicket is null
-            ? ScanIncomingTicketAsync(scanContent)
-            : ScanAndBindTicketAsync(scanContent);
+    private Task HandleTicketScanAsync(string scanContent)
+    {
+        if (_isHandlingScan || _isStashingInstock || _isSubmittingInstock ||
+            _isChangingWarehouseSelection || _failedStashRequest is not null ||
+            string.IsNullOrWhiteSpace(_instockNo) || string.IsNullOrWhiteSpace(scanContent))
+        {
+            return Task.CompletedTask;
+        }
+
+        return TryNormalizePendingMaterialCode(scanContent, out var materialCode)
+            ? ScanAndBindTicketAsync(materialCode)
+            : ScanIncomingTicketAsync(scanContent);
+    }
+
+    private static bool TryNormalizePendingMaterialCode(string scanContent, out string materialCode)
+    {
+        var code = scanContent.Trim();
+        if (Regex.IsMatch(code, @"\A(?:ZJ|Y|CP|OTHER|BCP)[0-9]{12}\z",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            materialCode = code.ToUpperInvariant();
+            return true;
+        }
+
+        materialCode = string.Empty;
+        return false;
+    }
 
     private async Task ScanIncomingTicketAsync(string scanContent)
     {
@@ -602,12 +674,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private void OnCloseSummaryClicked(object sender, EventArgs e) => SummaryOverlay.IsVisible = false;
 
-    private async void OnScanBindClicked(object sender, EventArgs e)
-    {
-        _scanForRecognition = false;
-        _scanner.RefreshInput(this);
-        await ScanAndBindTicketAsync();
-    }
+    private void OnScanBindClicked(object sender, EventArgs e) => OnScanIncomingClicked(sender, e);
 
     private async Task ScanAndBindTicketAsync(string? scanCode = null)
     {
@@ -624,9 +691,14 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         _isHandlingScan = true;
         try
         {
+            if (await RejectDuplicatePendingMaterialAsync(scanCode))
+            {
+                return;
+            }
+
             if (_selectedTicket is null)
             {
-                await DisplayAlert("提示", "请先拍照或扫码识别并确认票签内容。", "确定");
+                await DisplayAlert("提示", "请先识别并选择票签，再扫描物料码。", "确定");
                 return;
             }
 
@@ -636,6 +708,10 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                 if (string.IsNullOrWhiteSpace(qsCode)) return;
 
                 var qrInfo = await _warehouseApi.QueryQrCodeInfoAsync(qsCode.Trim());
+                if (await RejectDuplicatePendingMaterialAsync(qrInfo.qrCode ?? qsCode.Trim()))
+                {
+                    return;
+                }
                 ShowBindConfirmDialog(qrInfo.qrCode ?? qsCode.Trim(), _selectedTicket);
             }
             catch (Exception ex)
@@ -671,8 +747,22 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         BindConfirmOverlay.IsVisible = true;
     }
 
-    private void OnConfirmBindClicked(object sender, EventArgs e)
+    private async Task<bool> RejectDuplicatePendingMaterialAsync(string? qrCode)
     {
+        if (string.IsNullOrWhiteSpace(qrCode) ||
+            !_ocrItems.Any(item => string.Equals(item.qrCode?.Trim(), qrCode.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            return false;
+        }
+
+        await DisplayAlert("提示", $"追溯码 {qrCode.Trim()} 已存在于待入库列表中，不能重复新增。", "确定");
+        return true;
+    }
+
+    private async void OnConfirmBindClicked(object sender, EventArgs e)
+    {
+        if (await RejectDuplicatePendingMaterialAsync(_pendingQrCode)) return;
+
         var materialClass = GetSelectedMaterialClass(BindMaterialTypePicker, _selectedTicket?.materialClass);
         var bound = new RawMaterialOcrDto
         {
@@ -700,19 +790,40 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         BindConfirmOverlay.IsVisible = false;
     }
 
-    private void OnRemovePendingMaterialTapped(object sender, TappedEventArgs e)
+    private async void OnRemovePendingMaterialTapped(object sender, TappedEventArgs e)
     {
+        if (_isStashingInstock || _isSubmittingInstock || _isChangingWarehouseSelection || _failedStashRequest is not null || BindConfirmOverlay.IsVisible)
+        {
+            return;
+        }
+
         if (sender is not BindableObject { BindingContext: RawMaterialOcrDto item })
         {
             return;
         }
 
-        _ocrItems.Remove(item);
+        var index = _ocrItems.IndexOf(item);
+        if (index < 0)
+        {
+            return;
+        }
+
+        _ocrItems.RemoveAt(index);
         MaterialListTitle.Text = $"待入库列表 ({_ocrItems.Count})";
+        if (!await SaveStashInstockV2Async(showSuccess: false, allowEmpty: true))
+        {
+            _ocrItems.Insert(index, item);
+            MaterialListTitle.Text = $"待入库列表 ({_ocrItems.Count})";
+        }
     }
 
     private void OnEditPendingMaterialTapped(object sender, TappedEventArgs e)
     {
+        if (_isStashingInstock || _isSubmittingInstock || _isChangingWarehouseSelection || _failedStashRequest is not null)
+        {
+            return;
+        }
+
         if (sender is not BindableObject { BindingContext: RawMaterialOcrDto item } ||
             string.IsNullOrWhiteSpace(item.qrCode))
         {
@@ -981,7 +1092,6 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private void ApplySelectedTicket(RawMaterialOcrDto ticket)
     {
-        _scanForRecognition = false;
         foreach (var item in _ticketItems)
         {
             item.isSelected = ReferenceEquals(item, ticket);
@@ -1012,7 +1122,6 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
     private void ClearSelectedTicket()
     {
-        _scanForRecognition = true;
         _selectedTicket = null;
         _ticketItems.Clear();
         TicketList.SelectedItem = null;
