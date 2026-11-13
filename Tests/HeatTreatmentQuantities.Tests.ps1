@@ -33,7 +33,11 @@ $cases = @'
         Check(page.TotalInspectQtyEntry.Text == "20" && page.InspectedQtyEntry.Text == "8" && page.UninspectedQtyEntry.Text == "12", "Refresh replaces quantities and accepts numeric strings like the API client");
         Load("{\"result\":{\"totalInspectQty\":null,\"inspectedQty\":null}}");
         Check(page.TotalInspectQtyEntry.Text == "—" && page.InspectedQtyEntry.Text == "—" && page.UninspectedQtyEntry.Text == "—", "Null and omitted quantities clear stale values without inventing zeroes");
-        Console.WriteLine("PASS: 5 heat treatment quantity assertions");
+        Load("{\"result\":{\"standardDiameterMm\":\"6.5\",\"productDiameter\":\"10\"}}");
+        Check(page.StandardDiameterEntry.Text == "6.5", "Standard diameter uses standardDiameterMm even when product diameter differs");
+        Load("{\"result\":{\"productDiameter\":\"10\"}}");
+        Check(page.StandardDiameterEntry.Text == null, "Missing standard diameter clears the field without falling back to product diameter");
+        Console.WriteLine("PASS: 7 heat treatment quantity and standard diameter assertions");
     }
     private static void Check(bool ok, string message) { if (!ok) throw new Exception(message); }
 }

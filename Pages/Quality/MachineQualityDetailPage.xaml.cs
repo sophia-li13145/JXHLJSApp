@@ -257,11 +257,11 @@ public partial class MachineQualityDetailPage : ContentPage
         var isFirstInspection = isDrawing && HasSchemeToken(flowName, "首检", "首件检");
 
         TitleLabel.Text = isAcid ? "酸洗质检池" : isHeat ? "执行热处理质检" : isFirstInspection ? "执行拉拔工序质检" : "执行工序质检";
-        InfoTitleLabel.Text = isAcid ? "酸洗任务信息" : isHeat ? "热处理卡片信息" : "生产卡片信息";
+        InfoTitleLabel.Text = isAcid ? "酸洗任务信息" : isHeat && !IsSemiFinishedHeatTreatment(detail) ? "热处理卡片信息" : "生产卡片信息";
         InputTitleLabel.Text = isAcid ? "酸洗检验录入" : isHeat ? "理化检验录入" : "检验项目录入";
         AcidInputPanel.IsVisible = isAcid;
         HeatTreatmentInputPanel.IsVisible = isHeat;
-        ArrangeInspectionFields(isHeat, isAcid);
+        ArrangeInspectionFields(isHeat, isAcid, IsBlankOpeningScheme(flowName), isDrawing);
         ProcessInputPanel.IsVisible = !isAcid && !isHeat;
         TorsionInputPanel.IsVisible = !isAcid;
         ContinuousUnqualifiedPicker.IsEnabled = false;
@@ -326,15 +326,17 @@ public partial class MachineQualityDetailPage : ContentPage
         if (!_hasLoadedDetail || _detail is null || _requiresUninspectedMaterial || _isHandlingScan || _isUpdating ||
             IsInspectionCompleted(_inspectStatus) || IsPicklingScheme(ResolveCurrentFlowName(_detail))) return;
 
+        var isHeatTreatment = IsHeatTreatmentScheme(ResolveCurrentFlowName(_detail));
         var qualifies = ProductionQualityAutoResult.ShouldQualify(
-            IsPicklingScheme(ResolveCurrentFlowName(_detail)), ResolveProductDiameter(_detail),
+            IsPicklingScheme(ResolveCurrentFlowName(_detail)),
+            isHeatTreatment ? _detail.standardDiameterMm : ResolveProductDiameter(_detail),
             _detail.lowerToleranceValue, _detail.upperToleranceValue,
             HeatTreatmentInputPanel.IsVisible ? HeatActualDiameterEntry.Text : ActualDiameterEntry.Text,
             _detail.strengthRequirement,
             HeatTreatmentInputPanel.IsVisible ? TensileStrengthEntry.Text : StrengthEntry.Text,
             SurfaceJudgmentPicker.SelectedItem?.ToString(), CoilDiameterPicker.SelectedItem?.ToString(),
             CoilPitchPicker.SelectedItem?.ToString(),
-            isHeatTreatment: IsHeatTreatmentScheme(ResolveCurrentFlowName(_detail)));
+            isHeatTreatment: isHeatTreatment);
         // 只在判定输入变化后更新，质检结果自身的选择事件不触发重算，允许人工覆盖。
         InspectResultPicker.SelectedIndex = qualifies ? 0 : 1;
     }
@@ -383,18 +385,75 @@ public partial class MachineQualityDetailPage : ContentPage
             : DateTime.Today;
     }
 
-    private void ArrangeInspectionFields(bool isHeat, bool isAcid)
+    private void ArrangeInspectionFields(bool isHeat, bool isAcid, bool isBlankOpening = false, bool isDrawing = false)
     {
-        View[] sharedFields = { TorsionInputPanel, InspectionResultPanel, MemoInputPanel, UnqualifiedDescriptionPanel };
+        // 显式恢复公共工序字段，保证拉拔扫码刷新和切换工序时顺序稳定。
+        View[] processFields =
+        {
+            CoilDiameterInputPanel, CoilDiameterDescriptionPanel, CoilPitchInputPanel, CoilPitchDescriptionPanel,
+            ActualDiameterInputPanel, DiameterJudgmentPanel, StrengthInputPanel, StrengthJudgmentPanel,
+            ElongationInputPanel, SurfaceInputPanel, SurfaceJudgmentPanel, ContinuousUnqualifiedPanel,
+            EmployeeInterventionPanel
+        };
+        foreach (var field in processFields)
+        {
+            (field.Parent as Layout)?.Children.Remove(field);
+            Grid.SetColumnSpan(field, 1);
+            ProcessInputPanel.Children.Add(field);
+        }
+
+        if (isDrawing && !isHeat && !isAcid)
+        {
+            View[] drawingFields =
+            {
+                ActualDiameterInputPanel, DiameterJudgmentPanel, StrengthInputPanel, StrengthJudgmentPanel,
+                TorsionInputPanel, CoilDiameterInputPanel, CoilDiameterDescriptionPanel, CoilPitchInputPanel,
+                CoilPitchDescriptionPanel, SurfaceJudgmentPanel, SurfaceInputPanel, ElongationInputPanel,
+                InspectionResultPanel, EmployeeInterventionPanel, ContinuousUnqualifiedPanel,
+                UnqualifiedDescriptionPanel, MemoInputPanel
+            };
+            foreach (var field in drawingFields)
+                (field.Parent as Layout)?.Children.Remove(field);
+
+            ProcessInputPanel.RowDefinitions.Clear();
+            var row = 0;
+            var column = 0;
+            foreach (var field in drawingFields)
+            {
+                var fullWidth = field == InspectionResultPanel || field == UnqualifiedDescriptionPanel || field == MemoInputPanel;
+                if (fullWidth && column != 0) { row++; column = 0; }
+                while (ProcessInputPanel.RowDefinitions.Count <= row)
+                    ProcessInputPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                ProcessInputPanel.Add(field, column, row);
+                Grid.SetColumnSpan(field, fullWidth ? 2 : 1);
+                if (fullWidth || column == 1) { row++; column = 0; }
+                else column = 1;
+            }
+            return;
+        }
+
+        var moveStrengthToEnd = isBlankOpening && !isHeat && !isAcid;
+        View[] sharedFields = moveStrengthToEnd
+            ? new View[] { TorsionInputPanel, StrengthInputPanel, InspectionResultPanel, MemoInputPanel, UnqualifiedDescriptionPanel }
+            : new View[] { TorsionInputPanel, InspectionResultPanel, MemoInputPanel, UnqualifiedDescriptionPanel };
+        // 每次先恢复常规字段顺序，避免刷新或切换工序后累积位移。
+        (StrengthInputPanel.Parent as Layout)?.Children.Remove(StrengthInputPanel);
         foreach (var field in sharedFields)
         {
             (field.Parent as Layout)?.Children.Remove(field);
             Grid.SetColumnSpan(field, 1);
         }
 
+        if (!moveStrengthToEnd) ProcessInputPanel.Children.Insert(6, StrengthInputPanel);
+        for (var index = 0; index < ProcessInputPanel.Children.Count; index++)
+        {
+            Grid.SetColumn((View)ProcessInputPanel.Children[index], index % 2);
+            Grid.SetRow((View)ProcessInputPanel.Children[index], index / 2);
+        }
+
         var panel = isHeat ? HeatTreatmentInputPanel : isAcid ? AcidInputPanel : ProcessInputPanel;
         var fieldIndex = panel.Children.Count;
-        var regularFieldCount = fieldIndex + (isAcid ? 0 : 1);
+        var regularFieldCount = fieldIndex + (isAcid ? 0 : moveStrengthToEnd ? 2 : 1);
         var textRow = (regularFieldCount + 1) / 2;
         panel.RowDefinitions.Clear();
         for (var row = 0; row < textRow + 3; row++)
@@ -430,7 +489,7 @@ public partial class MachineQualityDetailPage : ContentPage
         InspectedQtyEntry.Text = detail.inspectedQty?.ToString(CultureInfo.CurrentCulture) ?? "—";
         UninspectedQtyEntry.Text = detail.uninspectedQty?.ToString(CultureInfo.CurrentCulture) ?? "—";
         HeatActualDiameterEntry.Text = detail.actualDiameterMm;
-        StandardDiameterEntry.Text = FirstNonEmpty(detail.standardDiameterMm, detail.productDiameter);
+        StandardDiameterEntry.Text = detail.standardDiameterMm;
         BrokenDiameterEntry.Text = detail.brokenDiameterMm;
         SectionShrinkageLabel.Text = CalculateSectionShrinkageText();
         TensileStrengthEntry.Text = FirstNonEmpty(detail.tensileStrengthMpa, detail.strengthMpa);
@@ -440,6 +499,9 @@ public partial class MachineQualityDetailPage : ContentPage
 
     private void RenderInfo(ProductionQualityDetailDto detail)
     {
+        // 扫码合并发生在详情刷新之后，生产类型变化时同时更新卡片标题。
+        if (IsHeatTreatmentScheme(ResolveCurrentFlowName(detail)))
+            InfoTitleLabel.Text = IsSemiFinishedHeatTreatment(detail) ? "生产卡片信息" : "热处理卡片信息";
         UpdateInspectionInputTitles(detail);
         InfoGrid.Children.Clear();
         InfoGrid.RowDefinitions.Clear();
@@ -464,7 +526,10 @@ public partial class MachineQualityDetailPage : ContentPage
             ? "实测直径 (mm) *"
             : $"实测直径{diameter}mm *";
         ActualDiameterTitleLabel.Text = diameterTitle;
-        HeatActualDiameterTitleLabel.Text = diameterTitle;
+        var standardDiameter = detail.standardDiameterMm?.Trim();
+        HeatActualDiameterTitleLabel.Text = string.IsNullOrWhiteSpace(standardDiameter)
+            ? "实测直径（mm）*"
+            : $"实测直径（{standardDiameter}mm）*";
 
         var strength = detail.strengthRequirement?.Trim();
         var strengthTitle = string.IsNullOrWhiteSpace(strength)
@@ -507,6 +572,12 @@ public partial class MachineQualityDetailPage : ContentPage
         return FirstNonEmpty(detail.inspectionSchemeName, detail.qualityTypeName, detail.inspectionSchemeTypeName, detail.processName, detail.processCode).Trim();
     }
 
+    private bool IsSemiFinishedHeatTreatment(ProductionQualityDetailDto detail)
+    {
+        return string.Equals(detail.productionType?.Trim(), "半成品", StringComparison.Ordinal) &&
+            IsHeatTreatmentScheme(ResolveCurrentFlowName(detail));
+    }
+
     private (string Label, string? Value)[] BuildInfoRows(ProductionQualityDetailDto detail)
     {
         var schemeName = ResolveCurrentFlowName(detail);
@@ -515,6 +586,23 @@ public partial class MachineQualityDetailPage : ContentPage
             return new (string Label, string? Value)[]
             {
                 ("检验日期", DateTime.Now.ToString("yyyy-MM-dd"))
+            };
+        }
+
+        if (IsSemiFinishedHeatTreatment(detail))
+        {
+            return new[]
+            {
+                ("日期", ResolveHeatTreatmentCardDate(detail)), ("机台", ResolveMachine(detail)),
+                ("客户代码", detail.customerCode), ("炉号", detail.furnaceNo),
+                ("钢号", detail.steelGrade), ("挂牌", detail.inputSpecification),
+                ("工号", detail.workOrderNo), ("盘号", detail.plateNo),
+                ("产地", detail.originPlace), ("投料直径", detail.inputDiameterMm),
+                ("开胚投料直径", detail.billetInputDiameterMm), ("成品直径", ResolveProductDiameter(detail)),
+                ("上公差", FormatSignedTolerance(detail.billetUpperTolerance?.ToString(CultureInfo.InvariantCulture), '+')),
+                ("下公差", FormatSignedTolerance(detail.billetLowerTolerance?.ToString(CultureInfo.InvariantCulture), '-')),
+                ("圈径", detail.coilDiameter), ("圈径控制", detail.coilDiameterControl),
+                ("圈距控制", FormatCoilPitchControl(detail.coilPitchControl))
             };
         }
 
@@ -1200,6 +1288,30 @@ public partial class MachineQualityDetailPage : ContentPage
         int EmployeeInterventionIndex,
         int InspectResultIndex);
 
+    private void ApplyScannedProductionCardFields(ProductionQualityDetailDto detail, ProductionQualityScanMaterialDto material)
+    {
+        // 使用本次扫码值（包括空值），避免另一件物料沿用上一次的类型和指令卡数据。
+        detail.productionType = material.productionType;
+        detail.billetInputDiameterMm = material.billetInputDiameterMm;
+        detail.billetUpperTolerance = material.billetUpperTolerance;
+        detail.billetLowerTolerance = material.billetLowerTolerance;
+        detail.coilDiameter = material.coilDiameter;
+        detail.plateNo = material.plateNo;
+        if (!IsSemiFinishedHeatTreatment(detail)) return;
+
+        detail.machine = FirstNonEmpty(material.machine, material.machineNo, material.deviceName, material.deviceCode);
+        detail.customerCode = material.customerCode;
+        detail.furnaceNo = material.furnaceNo;
+        detail.steelGrade = material.steelGrade;
+        detail.inputSpecification = FirstNonEmpty(material.listing, material.inputSpecification);
+        detail.originPlace = material.originPlace;
+        detail.inputDiameterMm = material.inputDiameterMm;
+        detail.productDiameter = material.productDiameter;
+        detail.prodcutDiameter = material.prodcutDiameter;
+        detail.coilDiameterControl = material.coilDiameterControl;
+        detail.coilPitchControl = material.coilPitchControl;
+    }
+
     private void ApplyScannedMaterial(ProductionQualityScanMaterialDto material, string fallbackQrCode)
     {
         _qrCode = FirstNonEmpty(material.qrCode, fallbackQrCode);
@@ -1239,8 +1351,7 @@ public partial class MachineQualityDetailPage : ContentPage
         _detail.phosphatingTemperature = FirstNonEmpty(material.phosphatingTemperature, _detail.phosphatingTemperature);
         _detail.pieceNo = FirstNonEmpty(material.pieceNo, _detail.pieceNo);
         _detail.originPlace = FirstNonEmpty(material.originPlace, _detail.originPlace);
-        // 每次扫码都使用接口返回的成品直径刷新热处理质检的标准直径。
-        _detail.standardDiameterMm = material.productDiameter;
+        // 标准直径使用扫码后刷新详情返回的 standardDiameterMm，不用成品直径覆盖。
         _detail.productDiameter = material.productDiameter;
         _detail.prodcutDiameter = FirstNonEmpty(material.prodcutDiameter, material.productDiameter, _detail.prodcutDiameter);
         _detail.productionDate = FirstNonEmpty(material.productionDate, _detail.productionDate);
@@ -1271,6 +1382,7 @@ public partial class MachineQualityDetailPage : ContentPage
         _workOrderNo = FirstNonEmpty(_detail.workOrderNo, _workOrderNo);
         _inspectionSchemeName = ResolveQualityFlowName(_detail);
 
+        ApplyScannedProductionCardFields(_detail, material);
         RenderInfo(_detail);
         RenderMaterialInfo(_detail);
         RenderInspectionItems(_detail);

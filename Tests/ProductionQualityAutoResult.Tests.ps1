@@ -19,6 +19,7 @@ public class Picker
 public class Detail
 {
     public string? lowerToleranceValue = "-0.1", upperToleranceValue = "0.2", strengthRequirement = "400-600";
+    public string? standardDiameterMm = "10";
     public string Process = "拉拔";
 }
 public class Page
@@ -90,10 +91,13 @@ public static class Tests
         foreach (var pitch in new string?[] { "合格", "不合格", null })
             Check(Evaluate(heat: true, surface: surface, coil: coil, pitch: pitch),
                 "Heat treatment ignores surface, coil diameter and coil pitch judgments");
-        Check(Evaluate(heat: true, actual: "9.9") && Evaluate(heat: true, actual: "10.2"),
-            "Heat treatment diameter tolerance boundaries are inclusive");
-        Check(!Evaluate(heat: true, actual: "9.89") && !Evaluate(heat: true, actual: "10.21"),
-            "Heat treatment rejects diameters outside either tolerance");
+        Check(Evaluate(heat: true, lower: null, upper: null), "Heat treatment requires no tolerance values");
+        Check(Evaluate(heat: true, lower: "invalid", upper: "invalid", actual: "10.00"),
+            "Heat treatment compares numeric equality and ignores tolerance format");
+        Check(!Evaluate(heat: true, actual: "9.999") && !Evaluate(heat: true, actual: "10.001"),
+            "Heat treatment rejects any diameter different from standard");
+        Check(!Evaluate(heat: true, actual: "9.9") && !Evaluate(heat: true, actual: "10.2"),
+            "Former tolerance boundaries no longer qualify for heat treatment");
         Check(!Evaluate(heat: true, strength: "400") && !Evaluate(heat: true, strength: "500") &&
             !Evaluate(heat: true, strength: "600"), "Heat treatment requires strength strictly outside its range");
         Check(Evaluate(heat: true, strength: "399") && Evaluate(heat: true, strength: "601"),
@@ -101,7 +105,7 @@ public static class Tests
         Check(Evaluate(heat: true, range: "1900左右", strength: "2011") &&
             !Evaluate(heat: true, range: "1900", strength: "2010"), "Heat treatment retains center plus or minus 110 parsing");
         Check(!Evaluate(heat: true, actual: null) && !Evaluate(heat: true, strength: null) &&
-            !Evaluate(heat: true, range: "未知") && !Evaluate(heat: true, lower: null),
+            !Evaluate(heat: true, range: "未知") && !Evaluate(heat: true, diameter: null),
             "Heat treatment cannot qualify with missing or invalid measurement requirements");
         Check(!Evaluate(acid: true, heat: true), "Acid remains excluded from automatic qualification");
         var page = new Page();
@@ -109,6 +113,10 @@ public static class Tests
         Check(page.InspectResultPicker.SelectedIndex == 0, "All five conditions select qualified in the UI");
         page.HeatTreatmentInputPanel.IsVisible = true;
         page._detail!.Process = "热处理";
+        page._detail.lowerToleranceValue = null;
+        page._detail.upperToleranceValue = null;
+        page._detail.standardDiameterMm = "6.5";
+        page.HeatActualDiameterEntry.Text = "6.50";
         page.SurfaceJudgmentPicker.SelectedItem = "合格";
         page.CoilDiameterPicker.SelectedItem = "不合格";
         page.CoilPitchPicker.SelectedItem = null;
@@ -120,8 +128,18 @@ public static class Tests
         page.TensileStrengthEntry.Text = "2010";
         page.UpdateAutoInspectionResult();
         Check(page.InspectResultPicker.SelectedIndex == 1, "Heat treatment upper boundary is within range");
+        page.TensileStrengthEntry.Text = "2011";
+        page.HeatActualDiameterEntry.Text = "6.49";
+        page.UpdateAutoInspectionResult();
+        Check(page.InspectResultPicker.SelectedIndex == 1, "Heat treatment UI rejects actual diameter different from standard");
+        page._detail.standardDiameterMm = null;
+        page.HeatActualDiameterEntry.Text = "10";
+        page.UpdateAutoInspectionResult();
+        Check(page.InspectResultPicker.SelectedIndex == 1, "Missing standard diameter does not fall back to product diameter");
         page.HeatTreatmentInputPanel.IsVisible = false;
         page._detail.Process = "拉拔";
+        page._detail.lowerToleranceValue = "-0.1";
+        page._detail.upperToleranceValue = "0.2";
         page.SurfaceJudgmentPicker.SelectedItem = "不合格";
         page.CoilDiameterPicker.SelectedItem = "合格";
         page.CoilPitchPicker.SelectedItem = "合格";

@@ -149,55 +149,55 @@
                             </VerticalStackLayout>
                         </Grid>
                         <Grid x:Name="ProcessInputPanel" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="16">
-                            <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="8">
+                            <VerticalStackLayout x:Name="CoilDiameterInputPanel" Grid.Row="0" Grid.Column="0" Spacing="8">
                                 <Label Text="圈径控制480－680mm" TextColor="#051B3D" FontAttributes="Bold" LineBreakMode="WordWrap" />
                                 <Picker x:Name="CoilDiameterPicker" BackgroundColor="#F8FAFD" TextColor="#051B3D" HeightRequest="52" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="8">
+                            <VerticalStackLayout x:Name="CoilDiameterDescriptionPanel" Grid.Row="0" Grid.Column="1" Spacing="8">
                                 <Label Text="圈径描述" TextColor="#051B3D" FontAttributes="Bold" />
                                 <Entry x:Name="CoilDiameterDescriptionEntry" Placeholder="可为空" MaxLength="255" BackgroundColor="#F8FAFD" HeightRequest="52" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="8">
+                            <VerticalStackLayout x:Name="CoilPitchInputPanel" Grid.Row="1" Grid.Column="0" Spacing="8">
                                 <Label Text="圈距控制≤80mm" TextColor="#051B3D" FontAttributes="Bold" LineBreakMode="WordWrap" />
                                 <Picker x:Name="CoilPitchPicker" BackgroundColor="#F8FAFD" TextColor="#051B3D" HeightRequest="52" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="8">
+                            <VerticalStackLayout x:Name="CoilPitchDescriptionPanel" Grid.Row="1" Grid.Column="1" Spacing="8">
                                 <Label Text="圈距描述" TextColor="#051B3D" FontAttributes="Bold" />
                                 <Entry x:Name="CoilPitchDescriptionEntry" Placeholder="可为空" MaxLength="255" BackgroundColor="#F8FAFD" HeightRequest="52" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Row="2" Grid.Column="0" Spacing="8">
+                            <VerticalStackLayout x:Name="ActualDiameterInputPanel" Grid.Row="2" Grid.Column="0" Spacing="8">
                                 <Label x:Name="ActualDiameterTitleLabel" Text="实测直径 (mm) *" TextColor="#051B3D" FontAttributes="Bold" LineBreakMode="WordWrap" />
                                 <Entry x:Name="ActualDiameterEntry" Placeholder="输入测量直径" Keyboard="Text" BackgroundColor="#F8FAFD" HeightRequest="52" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Row="2" Grid.Column="1" Spacing="8">
+                            <VerticalStackLayout x:Name="DiameterJudgmentPanel" Grid.Row="2" Grid.Column="1" Spacing="8">
                                 <Label Text="直径判定" TextColor="#051B3D" FontAttributes="Bold" />
                                 <Picker x:Name="DiameterJudgmentPicker" BackgroundColor="#F8FAFD" TextColor="#051B3D" HeightRequest="52" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Row="3" Grid.Column="0" Spacing="8">
+                            <VerticalStackLayout x:Name="StrengthInputPanel" Grid.Row="3" Grid.Column="0" Spacing="8">
                                 <Label x:Name="StrengthTitleLabel" Text="实测强度MPa" TextColor="#051B3D" FontAttributes="Bold" LineBreakMode="WordWrap" />
                                 <Entry x:Name="StrengthEntry" Placeholder="检测强度值" Keyboard="Numeric" BackgroundColor="#F8FAFD" HeightRequest="52" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Row="3" Grid.Column="1" Spacing="8">
+                            <VerticalStackLayout x:Name="StrengthJudgmentPanel" Grid.Row="3" Grid.Column="1" Spacing="8">
                                 <Label Text="强度判定" TextColor="#051B3D" FontAttributes="Bold" />
                                 <Picker x:Name="StrengthJudgmentPicker" BackgroundColor="#F8FAFD" TextColor="#051B3D" HeightRequest="52" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Row="4" Grid.Column="0" Spacing="8">
+                            <VerticalStackLayout x:Name="ElongationInputPanel" Grid.Row="4" Grid.Column="0" Spacing="8">
                                 <Label Text="延伸率 (%)" TextColor="#051B3D" FontAttributes="Bold" />
                                 <Entry x:Name="ElongationEntry" Placeholder="可为空" Keyboard="Numeric" BackgroundColor="#F8FAFD" HeightRequest="52" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Row="4" Grid.Column="1" Spacing="8">
+                            <VerticalStackLayout x:Name="SurfaceInputPanel" Grid.Row="4" Grid.Column="1" Spacing="8">
                                 <Label Text="表面描述" TextColor="#051B3D" FontAttributes="Bold" />
                                 <Entry x:Name="SurfaceEntry" Placeholder="正常" BackgroundColor="#F8FAFD" HeightRequest="52" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Row="5" Grid.Column="0" Spacing="8">
+                            <VerticalStackLayout x:Name="SurfaceJudgmentPanel" Grid.Row="5" Grid.Column="0" Spacing="8">
                                 <Label Text="表面判定" TextColor="#051B3D" FontAttributes="Bold" />
                                 <Picker x:Name="SurfaceJudgmentPicker" BackgroundColor="#F8FAFD" TextColor="#051B3D" HeightRequest="52" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Row="5" Grid.Column="1" Spacing="8">
+                            <VerticalStackLayout x:Name="ContinuousUnqualifiedPanel" Grid.Row="5" Grid.Column="1" Spacing="8">
                                 <Label Text="是否连续性不合格品" TextColor="#051B3D" FontAttributes="Bold" />
                                 <Picker x:Name="ContinuousUnqualifiedPicker" BackgroundColor="#F8FAFD" TextColor="#051B3D" HeightRequest="52" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Row="6" Grid.Column="0" Spacing="8">
+                            <VerticalStackLayout x:Name="EmployeeInterventionPanel" Grid.Row="6" Grid.Column="0" Spacing="8">
                                 <Label Text="是否员工干预" TextColor="#051B3D" FontAttributes="Bold" />
                                 <Picker x:Name="EmployeeInterventionPicker" BackgroundColor="#F8FAFD" TextColor="#051B3D" HeightRequest="52" />
                             </VerticalStackLayout>

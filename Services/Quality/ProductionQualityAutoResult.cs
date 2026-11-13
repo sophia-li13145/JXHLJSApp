@@ -13,16 +13,26 @@ public static class ProductionQualityAutoResult
         // 热处理只判断直径和强度；其他非酸洗工序保留表面、圈径和圈距条件。
         if (isAcid ||
             (!isHeatTreatment && (surfaceJudgment != "不合格" || coilDiameter != "合格" || coilPitch != "合格")) ||
-            !TryNumber(productDiameter, out var product) || !TryNumber(lowerTolerance, out var lower) ||
-            !TryNumber(upperTolerance, out var upper) || !TryNumber(actualDiameter, out var actual) ||
+            !TryNumber(productDiameter, out var product) || !TryNumber(actualDiameter, out var actual) ||
             !TryNumber(actualStrength, out var strength) || product <= 0 || actual <= 0 || strength < 0)
         {
             return false;
         }
 
-        // 与详情卡片一致，下公差按负偏差、上公差按正偏差处理。
         try
         {
+            // 热处理没有上下公差，按数值比较实测直径与标准直径是否相等。
+            if (isHeatTreatment)
+            {
+                return actual == product && IsStrengthOutsideRange(strengthRequirement, strength);
+            }
+
+            if (!TryNumber(lowerTolerance, out var lower) || !TryNumber(upperTolerance, out var upper))
+            {
+                return false;
+            }
+
+            // 其他工序仍按下公差负偏差、上公差正偏差处理。
             return actual >= product - Math.Abs(lower) && actual <= product + Math.Abs(upper) &&
                 IsStrengthOutsideRange(strengthRequirement, strength);
         }

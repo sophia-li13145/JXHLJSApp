@@ -188,6 +188,12 @@ public sealed class ProductionQualityScanMaterialRequestDto
 
 public sealed class ProductionQualityScanMaterialDto
 {
+    public string? productionType { get; set; }
+    public string? billetInputDiameterMm { get; set; }
+    public decimal? billetUpperTolerance { get; set; }
+    public decimal? billetLowerTolerance { get; set; }
+    public string? coilDiameter { get; set; }
+    public string? plateNo { get; set; }
     public string? acidRatio { get; set; }
     public string? actualDiameterMm { get; set; }
     public string? productionBatchNo { get; set; }
@@ -467,6 +473,12 @@ public sealed class ProductionQualityOrderDto
 
 public sealed class ProductionQualityDetailDto
 {
+    public string? productionType { get; set; }
+    public string? billetInputDiameterMm { get; set; }
+    public decimal? billetUpperTolerance { get; set; }
+    public decimal? billetLowerTolerance { get; set; }
+    public string? coilDiameter { get; set; }
+    public string? plateNo { get; set; }
     public decimal? totalInspectQty { get; set; }
     public decimal? inspectedQty { get; set; }
     public decimal? uninspectedQty { get; set; }
