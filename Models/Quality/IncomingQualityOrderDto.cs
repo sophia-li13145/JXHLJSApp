@@ -188,6 +188,7 @@ public sealed class ProductionQualityScanMaterialRequestDto
 
 public sealed class ProductionQualityScanMaterialDto
 {
+    public string? strengthRange { get; set; }
     public string? productionType { get; set; }
     public string? billetInputDiameterMm { get; set; }
     public decimal? billetUpperTolerance { get; set; }
@@ -473,6 +474,7 @@ public sealed class ProductionQualityOrderDto
 
 public sealed class ProductionQualityDetailDto
 {
+    public string? strengthRange { get; set; }
     public string? productionType { get; set; }
     public string? billetInputDiameterMm { get; set; }
     public decimal? billetUpperTolerance { get; set; }

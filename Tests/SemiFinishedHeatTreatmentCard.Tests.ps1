@@ -31,15 +31,16 @@ $cases = @'
          "billetLowerTolerance":"-0.2","coilDiameter":"480-680","plateNo":"PLATE-01",
          "machineNo":"M-01","customerCode":"C-01","furnaceNo":"F-01","steelGrade":"S-01",
          "listing":"挂牌A","inputSpecification":"旧挂牌","originPlace":"产地A","inputDiameterMm":"8.5",
-         "productDiameter":"6.5","coilDiameterControl":"收紧","coilPitchControl":"80","pieceNo":"WRONG"}
+         "productDiameter":"6.5","coilDiameterControl":"收紧","coilPitchControl":"80","pieceNo":"WRONG",
+         "strengthRange":"900-1100MPa","strengthRequirement":"OTHER"}
         """, options)!;
         var detail = new ProductionQualityDetailDto { processName = "热处理", inspectDate = "2026-11-12", workOrderNo = "W-01", standardDiameterMm = "9.5" };
         p.ApplyScannedProductionCardFields(detail, material);
         Check(p.IsSemiFinishedHeatTreatment(detail), "Semi-finished heat treatment selects the production card");
         var rows = p.BuildInfoRows(detail);
-        string[] labels = { "日期", "机台", "客户代码", "炉号", "钢号", "挂牌", "工号", "盘号", "产地", "投料直径", "开胚投料直径", "成品直径", "上公差", "下公差", "圈径", "圈径控制", "圈距控制" };
-        string[] values = { "20261112", "M-01", "C-01", "F-01", "S-01", "挂牌A", "W-01", "PLATE-01", "产地A", "8.5", "12.5", "6.5", "+0.15", "-0.2", "480-680", "收紧", "≤80mm" };
-        Check(rows.Length == 17, "Card contains exactly 17 fields");
+        string[] labels = { "日期", "机台", "客户代码", "炉号", "钢号", "挂牌", "工号", "盘号", "产地", "投料直径", "开胚投料直径", "成品直径", "上公差", "下公差", "圈径", "圈径控制", "圈距控制", "强度要求" };
+        string[] values = { "20261112", "M-01", "C-01", "F-01", "S-01", "挂牌A", "W-01", "PLATE-01", "产地A", "8.5", "12.5", "6.5", "+0.15", "-0.2", "480-680", "收紧", "≤80mm", "900-1100MPa" };
+        Check(rows.Length == 18, "Card contains exactly 18 fields with strength range beside coil pitch control");
         for (int i = 0; i < labels.Length; i++)
             Check(rows[i].Label == labels[i] && rows[i].Value == values[i], "Correct label, order and API source for " + labels[i]);
         Check(detail.standardDiameterMm == "9.5", "Card diameters do not overwrite the inspection standard diameter");
@@ -71,10 +72,10 @@ $cases = @'
         detail.prodcutDiameter = "7.5";
         Check(p.BuildInfoRows(detail)[11].Value == "7.5", "Legacy product diameter remains supported");
         var refreshed = JsonSerializer.Deserialize<ProductionQualityDetailDto>("""
-        {"processName":"热处理","productionType":"半成品","plateNo":"REFRESHED","billetInputDiameterMm":"13","billetUpperTolerance":null}
+        {"processName":"热处理","productionType":"半成品","plateNo":"REFRESHED","billetInputDiameterMm":"13","billetUpperTolerance":null,"strengthRange":"950-1150"}
         """, options)!;
         Check(p.IsSemiFinishedHeatTreatment(refreshed) && p.BuildInfoRows(refreshed)[7].Value == "REFRESHED" &&
-            p.BuildInfoRows(refreshed)[10].Value == "13", "Detail refresh can deserialize and display the new fields");
+            p.BuildInfoRows(refreshed)[10].Value == "13" && p.BuildInfoRows(refreshed)[17].Value == "950-1150", "Detail refresh can deserialize and display the new fields");
         Console.WriteLine("PASS: " + checks + " semi-finished heat treatment card assertions");
     }
     private static int checks;

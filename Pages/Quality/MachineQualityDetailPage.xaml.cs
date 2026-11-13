@@ -602,7 +602,7 @@ public partial class MachineQualityDetailPage : ContentPage
                 ("上公差", FormatSignedTolerance(detail.billetUpperTolerance?.ToString(CultureInfo.InvariantCulture), '+')),
                 ("下公差", FormatSignedTolerance(detail.billetLowerTolerance?.ToString(CultureInfo.InvariantCulture), '-')),
                 ("圈径", detail.coilDiameter), ("圈径控制", detail.coilDiameterControl),
-                ("圈距控制", FormatCoilPitchControl(detail.coilPitchControl))
+                ("圈距控制", FormatCoilPitchControl(detail.coilPitchControl)), ("强度要求", detail.strengthRange)
             };
         }
 
@@ -1292,6 +1292,7 @@ public partial class MachineQualityDetailPage : ContentPage
     {
         // 使用本次扫码值（包括空值），避免另一件物料沿用上一次的类型和指令卡数据。
         detail.productionType = material.productionType;
+        detail.strengthRange = material.strengthRange;
         detail.billetInputDiameterMm = material.billetInputDiameterMm;
         detail.billetUpperTolerance = material.billetUpperTolerance;
         detail.billetLowerTolerance = material.billetLowerTolerance;
