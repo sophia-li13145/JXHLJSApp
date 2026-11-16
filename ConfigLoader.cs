@@ -50,7 +50,8 @@ public static class ConfigLoaderStatic
     };
 
     /// <summary>
-    /// 用包内更高版本覆盖本地（不做任何字段保留/合并）。
+    /// 包内 schemaVersion 更高时，用包内配置刷新配置结构与接口表，
+    /// 但保留管理员在现场配置过的服务器地址、服务名与服务路径、打印配置。
     /// 首次运行：直接复制包内文件到 AppData。
     /// </summary>
     public static async Task EnsureConfigIsLatestAsync()
@@ -81,15 +82,135 @@ public static class ConfigLoaderStatic
             localNode = JsonNode.Parse(fs)!;
         }
 
-        int pkgVer = pkgNode?["schemaVersion"]?.GetValue<int?>() ?? 0;
-        int localVer = localNode?["schemaVersion"]?.GetValue<int?>() ?? 0;
+        var pkgVer = ReadSchemaVersion(pkgNode);
+        var localVer = ReadSchemaVersion(localNode);
 
-        // 包内版本更高 → 直接覆盖（整文件替换）
-        if (pkgVer > localVer)
+        // 无论版本高低，先把现场可编辑配置写进包内副本，避免升级后把现场地址冲成包内默认值。
+        PreserveLocalOverrides(pkgNode, localNode);
+
+        // 包内版本更高 → 用包内配置刷新结构与接口；IP 已在上面强制保留。
+        if (CompareSchemaVersion(localVer, pkgVer) < 0)
         {
             await File.WriteAllTextAsync(appDataPath, pkgNode.ToJsonString(JsonOpts)).ConfigureAwait(false);
         }
         // 否则保持本地不动
+    }
+
+    /// <summary>读取 schemaVersion，兼容数字（17）与字符串（"V1.4_202610.29"）两种写法。</summary>
+    private static string ReadSchemaVersion(JsonNode? node)
+    {
+        var value = node?["schemaVersion"];
+        if (value is null)
+        {
+            return "0";
+        }
+
+        return value.GetValueKind() switch
+        {
+            JsonValueKind.Number => value.ToJsonString(),
+            JsonValueKind.String => value.GetValue<string>()?.Trim() is { Length: > 0 } text ? text : "0",
+            _ => "0"
+        };
+    }
+
+    /// <summary>
+    /// 把管理员在设置页可改的现场配置合并进包内配置副本：
+    /// 服务器 IP、打印服务地址与打印机名、服务名与服务路径。
+    /// 其余结构（apiEndpoints、rightKeyScanner、logging）以包内为准，实现配置升级。
+    /// </summary>
+    private static void PreserveLocalOverrides(JsonNode packageNode, JsonNode localNode)
+    {
+        // 1) 现场服务器 IP（含端口）
+        var localIpAddress = localNode?["server"]?["ipAddress"]?.GetValue<string>();
+        if (!string.IsNullOrWhiteSpace(localIpAddress))
+        {
+            var packageServer = packageNode["server"] as JsonObject;
+            if (packageServer is null)
+            {
+                packageServer = new JsonObject();
+                packageNode["server"] = packageServer;
+            }
+
+            packageServer["ipAddress"] = localIpAddress;
+        }
+
+        // 2) 现场打印配置
+        if (localNode["printing"] is JsonObject localPrinting)
+        {
+            packageNode["printing"] = localPrinting.DeepClone();
+        }
+
+        // 3) 现场服务名与服务路径：以包内为底，用本地同名键覆盖，保证 current 不丢
+        if (localNode["services"] is JsonObject localServices
+            && packageNode["services"] is JsonObject packageServices)
+        {
+            foreach (var item in localServices.ToList())
+            {
+                packageServices[item.Key] = item.Value?.DeepClone();
+            }
+        }
+    }
+
+    /// <summary>按非字母数字分段逐段比较（数字段按数值比较），支持 V1.10 大于 V1.9。</summary>
+    private static int CompareSchemaVersion(string? current, string? package)
+    {
+        var currentParts = SplitVersionParts(current);
+        var packageParts = SplitVersionParts(package);
+        var max = Math.Max(currentParts.Count, packageParts.Count);
+
+        for (var i = 0; i < max; i++)
+        {
+            var left = i < currentParts.Count ? currentParts[i] : "0";
+            var right = i < packageParts.Count ? packageParts[i] : "0";
+
+            var leftIsNum = int.TryParse(left, out var leftNum);
+            var rightIsNum = int.TryParse(right, out var rightNum);
+
+            var cmp = leftIsNum && rightIsNum
+                ? leftNum.CompareTo(rightNum)
+                : string.Compare(left, right, StringComparison.OrdinalIgnoreCase);
+
+            if (cmp != 0)
+            {
+                return cmp;
+            }
+        }
+
+        return 0;
+    }
+
+    private static List<string> SplitVersionParts(string? version)
+    {
+        if (string.IsNullOrWhiteSpace(version))
+        {
+            return ["0"];
+        }
+
+        var parts = new List<string>();
+        var span = version.AsSpan();
+        var start = 0;
+
+        for (var i = 0; i < span.Length; i++)
+        {
+            if (char.IsLetterOrDigit(span[i]))
+            {
+                continue;
+            }
+
+            if (i > start)
+            {
+                parts.Add(version[start..i]);
+            }
+
+            start = i + 1;
+        }
+
+        if (start < span.Length)
+        {
+            parts.Add(version[start..]);
+        }
+
+        return parts.Count == 0 ? ["0"] : parts;
     }
 
     public static void EnsureConfigExists()

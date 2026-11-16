@@ -18,7 +18,10 @@ namespace JXHLJSApp.Tools
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var path = request.RequestUri?.AbsolutePath?.ToLowerInvariant() ?? string.Empty;
-            var skipAuth = path.Contains("/auth/login") || path.Contains("/auth/refresh");
+            // 登录/刷新/版本检查等接口排除，避免登录失败或启动检查时也触发 Logout。
+            var skipAuth = path.Contains("/auth/login")
+                           || path.Contains("/auth/refresh")
+                           || path.Contains("checkupdate");
 
             var resp = await base.SendAsync(request, ct).ConfigureAwait(false);
 

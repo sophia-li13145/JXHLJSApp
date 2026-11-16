@@ -8,17 +8,19 @@ public partial class LoginPage : ContentPage
 {
     private readonly IAuthApi _authApi;
     private readonly IRightKeyScanService _scanner;
+    private readonly IAppVersionService _appVersionService;
     private bool _isHandlingScan;
     private bool _isBusy;
     private bool _credentialsLoaded;
     private bool _isPasswordVisible;
     private bool _isQrLoginTab;
 
-    public LoginPage(IAuthApi authApi, IRightKeyScanService scanner)
+    public LoginPage(IAuthApi authApi, IRightKeyScanService scanner, IAppVersionService appVersionService)
     {
         InitializeComponent();
         _authApi = authApi;
         _scanner = scanner;
+        _appVersionService = appVersionService;
         _scanner.Register(this,
             code => ScanQrAndLoginAsync(code),
             () => !_isHandlingScan && (_isQrLoginTab && !_isBusy));
@@ -258,6 +260,13 @@ public partial class LoginPage : ContentPage
             {
                 result.UserInfo.workNumber = fallbackWorkNumber;
             }
+        }
+
+        // 登录前做一次版本门禁：版本高于企业可用版本时直接拦截，避免用错版本操作业务数据。
+        if (!await _appVersionService.EnsureVersionAllowedAsync())
+        {
+            ShowMessage("当前版本不符合要求，请更新后再登录");
+            return false;
         }
 
         await TokenStorage.SaveAsync(result.Token);

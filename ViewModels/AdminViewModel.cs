@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using JXHLJSApp.Services;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace JXHLJSApp.ViewModels;
@@ -7,26 +9,41 @@ namespace JXHLJSApp.ViewModels;
 public sealed class AdminViewModel : ObservableObject
 {
     private readonly IConfigLoader _configLoader;
+    private readonly IAppVersionService _appVersionService;
     private string _scheme = "http";
     private string _host = string.Empty;
     private string _serviceName = "normalService";
     private string _servicePath = "/normalService";
     private string _printerHost = string.Empty;
     private string _printerName = string.Empty;
+    private string _configVersion = "0";
     private string _message = string.Empty;
     private Color _messageColor = Color.FromArgb("#1E7E34");
     private bool _isMessageVisible;
 
-    public AdminViewModel(IConfigLoader configLoader)
+    public AdminViewModel(IConfigLoader configLoader, IAppVersionService appVersionService)
     {
         _configLoader = configLoader;
+        _appVersionService = appVersionService;
         ReloadCommand = new RelayCommand(LoadConfig);
         SaveCommand = new RelayCommand(SaveConfig);
+        CheckUpdateCommand = new AsyncRelayCommand(CheckUpdateAsync);
         LoadConfig();
     }
 
     public IRelayCommand ReloadCommand { get; }
     public IRelayCommand SaveCommand { get; }
+    public IAsyncRelayCommand CheckUpdateCommand { get; }
+
+    /// <summary>当前安装包版本，只读展示。</summary>
+    public string AppVersion => $"V{AppInfo.Current.VersionString}";
+
+    /// <summary>当前生效配置的 schemaVersion，只读展示。</summary>
+    public string ConfigVersion
+    {
+        get => _configVersion;
+        private set => SetProperty(ref _configVersion, value);
+    }
 
     public string Scheme
     {
@@ -96,7 +113,33 @@ public sealed class AdminViewModel : ObservableObject
             ?? "/normalService";
         PrinterHost = cfg?["printing"]?["serverAddress"]?.GetValue<string>() ?? string.Empty;
         PrinterName = cfg?["printing"]?["printerName"]?.GetValue<string>() ?? string.Empty;
+        ConfigVersion = ReadSchemaVersion(cfg);
+        OnPropertyChanged(nameof(AppVersion));
         IsMessageVisible = false;
+    }
+
+    private async Task CheckUpdateAsync()
+    {
+        // 复用启动检查逻辑：无新版本或检查失败时由服务内部记录日志，这里不重复弹窗。
+        await _appVersionService.CheckManuallyAsync();
+        ShowMessage("版本检查已完成。", false);
+    }
+
+    /// <summary>读取 schemaVersion，兼容数字与字符串两种写法。</summary>
+    private static string ReadSchemaVersion(JsonNode? cfg)
+    {
+        var value = cfg?["schemaVersion"];
+        if (value is null)
+        {
+            return "0";
+        }
+
+        return value.GetValueKind() switch
+        {
+            JsonValueKind.Number => value.ToJsonString(),
+            JsonValueKind.String => value.GetValue<string>()?.Trim() is { Length: > 0 } text ? text : "0",
+            _ => "0"
+        };
     }
 
     private void SaveConfig()

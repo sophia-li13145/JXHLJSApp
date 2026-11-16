@@ -1,4 +1,5 @@
-﻿using Microsoft.Maui.Controls;
+﻿using JXHLJSApp.Services;
+using Microsoft.Maui.Controls;
 using Microsoft.Maui.Storage;
 using Serilog;
 using System.IO;
@@ -9,13 +10,15 @@ public partial class App : Application
 {
     private readonly IConfigLoader _configLoader;
     private readonly AppShell _shell;
+    private readonly IAppVersionService _appVersionService;
 
-    public App(IConfigLoader configLoader, AppShell shell)
+    public App(IConfigLoader configLoader, AppShell shell, IAppVersionService appVersionService)
     {
         InitializeComponent();
 
         _configLoader = configLoader;
         _shell = shell;
+        _appVersionService = appVersionService;
 
         // ===== 初始化 Serilog（跨平台安全路径）=====
         InitSerilog();
@@ -76,6 +79,16 @@ public partial class App : Application
 
     private async Task InitAsync()
     {
+        // 版本检查内部已吞异常，这里再兜一层，确保任何情况下都不阻断启动。
+        try
+        {
+            await _appVersionService.HandleStartupUpdateAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "启动版本检查异常");
+        }
+
         var token = await TokenStorage.LoadAsync();
         ApiClient.SetBearer(token);
         bool authed = !string.IsNullOrWhiteSpace(token);

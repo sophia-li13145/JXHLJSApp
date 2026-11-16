@@ -20,6 +20,9 @@
   },
   "apiEndpoints": {
     "login": "/pda/auth/login",
+    "appVersion": {
+      "checkUpdate": "/pda/pdaAppVersion/checkUpdate"
+    },
     "auth": {
       "qrLogin": "/pda/auth/qrLogin",
       "alluser": "/pda/auth/allUsers",

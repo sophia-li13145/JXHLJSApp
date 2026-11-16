@@ -139,6 +139,9 @@ namespace JXHLJSApp
             builder.Services.AddHttpClient<IQualityCodeConvertApi, QualityCodeConvertApi>(ConfigureBaseAddress)
                 .AddHttpMessageHandler<AuthHeaderHandler>()
                 .AddHttpMessageHandler<TokenExpiredHandler>();
+            builder.Services.AddHttpClient<IAppVersionService, AppVersionService>(ConfigureBaseAddress)
+                .AddHttpMessageHandler<AuthHeaderHandler>()
+                .AddHttpMessageHandler<TokenExpiredHandler>();
 
             var app = builder.Build();
             //CrashTrap.Init(); //Debug

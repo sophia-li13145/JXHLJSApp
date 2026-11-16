@@ -19,6 +19,29 @@
                     <RoundRectangle CornerRadius="14" />
                 </Border.StrokeShape>
                 <VerticalStackLayout Spacing="12">
+                    <Label Text="版本信息" FontAttributes="Bold" TextColor="#0D2D59" />
+
+                    <Label Text="应用版本（只读）" FontAttributes="Bold" TextColor="#0D2D59" />
+                    <Entry Text="{Binding AppVersion, Mode=OneWay}" IsReadOnly="True" />
+
+                    <Label Text="配置版本（只读）" FontAttributes="Bold" TextColor="#0D2D59" />
+                    <Entry Text="{Binding ConfigVersion, Mode=OneWay}" IsReadOnly="True" />
+
+                    <Button Text="检查更新"
+                            Command="{Binding CheckUpdateCommand}"
+                            BackgroundColor="#214779"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            HeightRequest="44"
+                            CornerRadius="8" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border BackgroundColor="White" Stroke="#DDE5F0" StrokeThickness="1" Padding="16">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="14" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
                     <Label Text="协议" FontAttributes="Bold" TextColor="#0D2D59" />
                     <Entry Text="{Binding Scheme}" Placeholder="http 或 https" />
 

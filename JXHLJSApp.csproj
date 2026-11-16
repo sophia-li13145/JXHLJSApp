@@ -10,7 +10,7 @@
 		<Nullable>enable</Nullable>
 		<ApplicationTitle>联创数智管家</ApplicationTitle>
 		<ApplicationId>com.jxhljs.app</ApplicationId>
-		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationDisplayVersion>1.0.2_20261113</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">11.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">13.1</SupportedOSPlatformVersion>
