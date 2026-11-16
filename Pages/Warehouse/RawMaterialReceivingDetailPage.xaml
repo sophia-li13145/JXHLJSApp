@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:warehouse="clr-namespace:JXHLJSApp.Pages.Warehouse"
              x:Class="JXHLJSApp.Pages.Warehouse.RawMaterialReceivingDetailPage"
              Title="采购入库详情"
              BackgroundColor="#F4F6F9"
@@ -43,7 +44,14 @@
                         </VerticalStackLayout>
                     </Border>
 
-                    <Label x:Name="DetailTitleLabel" Text="入库明细 (共 0 件)" TextColor="#051B3D" FontSize="16" FontAttributes="Bold" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <Label x:Name="DetailTitleLabel" Text="入库明细 (共 0 件)" TextColor="#051B3D"
+                               FontSize="16" FontAttributes="Bold" VerticalOptions="Center" />
+                        <Button Grid.Column="1" x:Name="CalculateSummaryButton" Text="计算汇总"
+                                BackgroundColor="#1F447E" TextColor="White" FontSize="14" FontAttributes="Bold"
+                                CornerRadius="7" Padding="12,0" MinimumHeightRequest="44" IsEnabled="False"
+                                Clicked="OnCalculateSummaryClicked" />
+                    </Grid>
                     <CollectionView x:Name="DetailList" EmptyView="暂无入库明细">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
@@ -121,5 +129,6 @@
                 </VerticalStackLayout>
             </ScrollView>
         </RefreshView>
+        <warehouse:MaterialReceivingSummaryView x:Name="SummaryOverlay" Grid.RowSpan="2" IsVisible="False" />
     </Grid>
 </ContentPage>

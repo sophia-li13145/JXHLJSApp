@@ -55,7 +55,6 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
                 !_isSubmittingInstock && !_isStashingInstock && !_isChangingWarehouseSelection && _failedStashRequest is null);
         OcrList.ItemsSource = _ocrItems;
         TicketList.ItemsSource = _ticketItems;
-        SummaryList.ItemsSource = _summaryItems;
         ApplyMaterialClassOptions(_materialClassOptions);
     }
 
@@ -633,8 +632,10 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             return;
         }
 
-        SummaryOverlay.IsVisible = true;
+        ShowSummaryOverlay();
     }
+
+    private void ShowSummaryOverlay() => SummaryOverlay.Show("待入库明细汇总台账", _summaryItems);
 
     private static decimal ParseWeight(string? value)
     {
@@ -669,10 +670,6 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
         var parsed = ParseNullableDecimal(value);
         return parsed.HasValue ? (int?)decimal.ToInt32(decimal.Truncate(parsed.Value)) : null;
     }
-
-    private void OnCloseSummaryTapped(object sender, TappedEventArgs e) => SummaryOverlay.IsVisible = false;
-
-    private void OnCloseSummaryClicked(object sender, EventArgs e) => SummaryOverlay.IsVisible = false;
 
     private void OnScanBindClicked(object sender, EventArgs e) => OnScanIncomingClicked(sender, e);
 

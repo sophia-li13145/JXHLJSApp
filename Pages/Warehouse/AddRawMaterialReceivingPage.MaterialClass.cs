@@ -627,7 +627,7 @@ public partial class AddRawMaterialReceivingPage
             return;
         }
 
-        SummaryOverlay.IsVisible = true;
+        ShowSummaryOverlay();
     }
 
     private async void OnSubmitInstockV2Clicked(

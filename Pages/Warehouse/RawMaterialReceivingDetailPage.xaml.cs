@@ -1,3 +1,4 @@
+using System.Globalization;
 using JXHLJSApp.Models.Warehouse;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.Warehouse;
@@ -10,6 +11,7 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
     private readonly IWarehouseApi _warehouseApi;
     private string? _instockNo;
     private bool _isOpeningAttachment;
+    private IReadOnlyList<RawMaterialReceivingDetailItemDto> _detailItems = [];
 
     public string? InstockNo
     {
@@ -55,8 +57,10 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
             InstockDateLabel.Text = detail.instockDateDisplay;
             WarehouseLabel.Text = detail.warehouseDisplay;
             LocationLabel.Text = detail.locationDisplay;
-            DetailTitleLabel.Text = $"入库明细 (共 {detail.detailItems.Count} 件)";
-            DetailList.ItemsSource = detail.detailItems;
+            _detailItems = detail.detailItems;
+            DetailTitleLabel.Text = $"入库明细 (共 {_detailItems.Count} 件)";
+            DetailList.ItemsSource = _detailItems;
+            CalculateSummaryButton.IsEnabled = _detailItems.Count > 0;
             var attachments = detail.attachments;
             AttachmentEmptyLabel.IsVisible = attachments.Count == 0;
             AttachmentLayout.IsVisible = attachments.Count > 0;
@@ -72,6 +76,56 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
         {
             RefreshContainer.IsRefreshing = false;
         }
+    }
+
+    private void OnCalculateSummaryClicked(object sender, EventArgs e)
+    {
+        var summaries = _detailItems
+            .GroupBy(item => new
+            {
+                materialName = item.materialNameDisplay.Trim(),
+                materialType = item.materialTypeDisplay.Trim(),
+                originPlace = item.originDisplay.Trim(),
+                weightUnit = NormalizeWeightUnit(item)
+            })
+            .Select(group => new MaterialSummaryItem(
+                group.Key.materialName,
+                group.Key.materialType,
+                group.Key.originPlace,
+                group.Count(),
+                group.Sum(item => item.instockQty ?? item.pieceWeight ??
+                    (decimal.TryParse(item.weight, NumberStyles.Number, CultureInfo.InvariantCulture, out var weight)
+                        ? weight
+                        : 0m)),
+                group.Key.weightUnit))
+            .OrderBy(item => item.materialName)
+            .ThenBy(item => item.materialType)
+            .ThenBy(item => item.originPlace)
+            .ToList();
+
+        SummaryOverlay.Show("入库明细汇总台账", summaries);
+    }
+
+    private static string NormalizeWeightUnit(RawMaterialReceivingDetailItemDto item)
+    {
+        var unit = item.unit?.Trim();
+        return unit?.ToUpperInvariant() switch
+        {
+            "KG" or "千克" or "公斤" => "KG",
+            "T" or null or "" => "吨",
+            _ => unit
+        };
+    }
+
+    protected override bool OnBackButtonPressed()
+    {
+        if (SummaryOverlay.IsVisible)
+        {
+            SummaryOverlay.IsVisible = false;
+            return true;
+        }
+
+        return base.OnBackButtonPressed();
     }
 
     private async Task LoadAttachmentPreviewsAsync(IEnumerable<AttachmentDto> attachments)
