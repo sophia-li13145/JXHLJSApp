@@ -107,13 +107,14 @@ public partial class RoleHomePage : ContentPage
 
         var role = RoleHomeDefinition.FromRoleCode(roleCode);
         _canBindMachine = role.RoleCode == "production";
-        role = role with
+        var modules = role.Modules.ToList();
+        modules.Add(new HomeModule("扫码查询", "▦", Color.FromArgb("#E8F7FF"), "扫描二维码查询物料完整信息", Route: AppShell.RouteMaterialScanQuery));
+        if (role.RoleCode == "production")
         {
-            Modules = role.Modules.Concat(new[]
-            {
-                new HomeModule("扫码查询", "▦", Color.FromArgb("#E8F7FF"), "扫描二维码查询物料完整信息", Route: AppShell.RouteMaterialScanQuery)
-            }).ToArray()
-        };
+            modules.Add(RoleHomeDefinition.QualityCodeConvertModule);
+        }
+
+        role = role with { Modules = modules };
         TitleLabel.Text = role.Title;
         if (_renderedRoleCode == role.RoleCode && ContentStack.Children.Count > 0)
         {
@@ -628,6 +629,10 @@ internal sealed record RoleHomeDefinition(
     IReadOnlyList<HomeModule> Modules,
     string SectionTitle = "")
 {
+    internal static HomeModule QualityCodeConvertModule { get; } = new(
+        "质检转码", "", Color.FromArgb("#EFF6FF"), "先扫物料，再扫质检码",
+        HighlightOnTap: true, Route: AppShell.RouteQualityCodeConvert, IconImage: "quality_code_convert.png");
+
     public static RoleHomeDefinition FromRoleCode(string? roleCode)
     {
         return (roleCode ?? string.Empty).Trim() switch
@@ -642,7 +647,7 @@ internal sealed record RoleHomeDefinition(
             "qualityInspector" => new("qualityInspector", "质检管理工作台", "#14295D", "👨‍🔬", RoleHomeLayout.List, new[]
             {
                 new HomeModule("扫码质检", "▣", Color.FromArgb("#EFF6FF"), "扫描物料或工单二维码查询质检记录", Route: AppShell.RouteProductionQualityScan),
-                new HomeModule("质检转码", "", Color.FromArgb("#EFF6FF"), "先扫物料，再扫质检码", HighlightOnTap: true, Route: AppShell.RouteQualityCodeConvert, IconImage: "quality_code_convert.png"),
+                QualityCodeConvertModule,
                 new HomeModule("机台质检 (快捷取)", "🏭", Color.FromArgb("#DCEBFF"), "扫码机台，直达该机台质检任务", true, AppShell.RouteMachineQualityScan),
                 new HomeModule("生产质检记录 (PQC)", "⚙️", Color.FromArgb("#FFF1F1"), "首检 · 抽检 · 热处理 · 酸洗 任务池", Route: AppShell.RouteProductionQualityOrders),
                 new HomeModule("来料质检记录 (IQC)", "📥", Color.FromArgb("#FFFBEA"), "基于入库单的原材料质检记录", Route: AppShell.RouteIncomingQualityOrders)
