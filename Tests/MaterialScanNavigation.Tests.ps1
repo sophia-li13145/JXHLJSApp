@@ -14,7 +14,12 @@ public class Material { public string? materialCode = "MAT"; }
 public class Output { }
 public class Context { public string WorkOrderNo = "ORDER"; }
 public class ContextService { public Context Current = new(); }
-public class Scanner { public Task ShowHintAsync(object page, string target) => Task.CompletedTask; }
+public class CameraScanner
+{
+    public TaskCompletionSource<string?>? Pending;
+    public Task<string?> ScanAsync(object page, string target) =>
+        Pending?.Task ?? Task.FromResult<string?>(null);
+}
 public class Api
 {
     public bool Fail, Empty;
@@ -53,10 +58,11 @@ public class Shell
 public class ScanState
 {
     protected readonly Api _workOrderApi = new();
-    protected readonly Scanner _scanner = new();
+    protected readonly CameraScanner _cameraScanner = new();
     protected readonly ContextService _productionContext = new();
     protected bool _isHandlingScan;
     public Api Api => _workOrderApi;
+    public CameraScanner Camera => _cameraScanner;
     public bool Busy => _isHandlingScan;
 }
 public partial class Loading : ScanState
@@ -84,6 +90,17 @@ public static class Regression
     }
     public static async Task Run()
     {
+        var dualScan = new Loading();
+        var camera = new TaskCompletionSource<string?>();
+        dualScan.Camera.Pending = camera;
+        var cameraScan = dualScan.ScanMaterialAsync();
+        await dualScan.ScanMaterialAsync("HARDWARE");
+        Check(dualScan.Busy && !dualScan.ResultCard.IsVisible, "Hardware results cannot interrupt the open camera");
+        camera.SetResult(null);
+        await cameraScan;
+        await dualScan.ScanMaterialAsync("HARDWARE");
+        Check(dualScan.ResultCard.IsVisible, "Hardware scanning resumes after camera cancellation");
+
         foreach (var failure in new[] { "api", "empty", "binding" })
         {
             var page = new Loading();
@@ -117,6 +134,6 @@ public static class Regression
 $source = '#nullable enable' + [Environment]::NewLine +
     'using System; using System.Collections.Generic; using System.Linq; using System.Threading.Tasks; namespace MaterialScanTests {' +
     $support + 'public partial class Loading {' + $loading + '}' +
-    'public class Unloading : ScanState {' + $unloading + '}}'
+    'public class Unloading : ScanState { private bool _isBusy = false, _isRedirectingToDetail = false;' + $unloading + '}}'
 Add-Type -TypeDefinition $source
 $null = [MaterialScanTests.Regression]::Run().GetAwaiter().GetResult()

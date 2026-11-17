@@ -10,7 +10,7 @@ public partial class ReworkReportPage : ContentPage
     private const string ReportModeRework = "rework";
 
     private readonly IWorkOrderApi _workOrderApi;
-    private readonly IRightKeyScanService _scanner;
+    private readonly CameraScanService _cameraScanner;
     private bool _isHandlingScan;
     private bool _isTakingPhoto;
     private bool _isSubmitting;
@@ -23,13 +23,13 @@ public partial class ReworkReportPage : ContentPage
 
     public ReworkReportPage(
         IWorkOrderApi workOrderApi,
-        IRightKeyScanService scanner,
+        CameraScanService cameraScanner, IRightKeyScanService scanner,
         IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
-        _scanner = scanner;
-        _scanner.Register(this,
+        _cameraScanner = cameraScanner;
+        scanner.Register(this,
             code => ScanAndLoadMaterialAsync(code),
             () => !_isHandlingScan && !_isTakingPhoto && !_isSubmitting);
         _productionContext = productionContext;
@@ -109,22 +109,18 @@ public partial class ReworkReportPage : ContentPage
         }
     }
 
-    private async void OnScanTapped(object sender, TappedEventArgs e) => await ScanAndLoadMaterialAsync();
+    private async void OnScanClicked(object sender, EventArgs e) => await ScanAndLoadMaterialAsync();
 
     private async Task ScanAndLoadMaterialAsync(string? scanCode = null)
     {
-        if (string.IsNullOrWhiteSpace(scanCode))
-        {
-            await _scanner.ShowHintAsync(this, "扫描返工物料二维码");
-            return;
-        }
+        if (_isHandlingScan || _isTakingPhoto || _isSubmitting) return;
 
-        if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
+            scanCode ??= await _cameraScanner.ScanAsync(this, "扫描返工物料二维码");
+            if (string.IsNullOrWhiteSpace(scanCode)) return;
             var code = scanCode;
-            if (string.IsNullOrWhiteSpace(code)) return;
             try
             {
                 _scannedQrCode = code.Trim();

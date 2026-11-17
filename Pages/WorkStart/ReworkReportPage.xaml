@@ -15,11 +15,11 @@
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Padding="20,16" Spacing="16">
                 <Border x:Name="ScanPanel" BackgroundColor="White" Stroke="#BFD0E8" StrokeThickness="2" StrokeDashArray="7,4" Padding="24" HeightRequest="186">
-                    <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanTapped" /></Border.GestureRecognizers>
                     <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
                     <VerticalStackLayout Spacing="14" HorizontalOptions="Center" VerticalOptions="Center">
                         <Label Text="▣" FontSize="34" HorizontalTextAlignment="Center" />
-                        <Label Text="1. 按右侧扫描键识别返工物料" TextColor="#0A2E69" FontSize="16" />
+                        <Button Text="摄像头扫描返工物料" Clicked="OnScanClicked" BackgroundColor="#244B88" TextColor="White" HorizontalOptions="Center" />
+                        <Label Text="也可按设备右侧扫描键" FontSize="14" TextColor="#475467" HorizontalTextAlignment="Center" />
                     </VerticalStackLayout>
                 </Border>
                 <Border x:Name="SuccessBanner" IsVisible="False" BackgroundColor="#F0FFF6" Stroke="#B8F0CF" Padding="14">

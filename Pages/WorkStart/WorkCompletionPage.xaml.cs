@@ -6,7 +6,7 @@ namespace JXHLJSApp.Pages.WorkStart;
 public partial class WorkCompletionPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
-    private readonly IRightKeyScanService _scanner;
+    private readonly CameraScanService _cameraScanner;
     private bool _isHandlingScan;
     private readonly IProductionContextService _productionContext;
     private bool _isBusy;
@@ -15,15 +15,15 @@ public partial class WorkCompletionPage : ContentPage
 
     public WorkCompletionPage(
         IWorkOrderApi workOrderApi,
-        IRightKeyScanService scanner,
+        CameraScanService cameraScanner, IRightKeyScanService scanner,
         IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
-        _scanner = scanner;
-        _scanner.Register(this,
+        _cameraScanner = cameraScanner;
+        scanner.Register(this,
             code => ScanAndVerifyMachineAsync(code),
-            () => !_isHandlingScan && (!_isBusy && !_machineVerified));
+            () => !_isHandlingScan && !_isBusy && !_machineVerified);
         _productionContext = productionContext;
     }
 
@@ -33,20 +33,17 @@ public partial class WorkCompletionPage : ContentPage
         await Shell.Current.GoToAsync("..");
     }
 
-    private async void OnScanPanelTapped(object sender, TappedEventArgs e) => await ScanAndVerifyMachineAsync();
+    private async void OnScanPanelClicked(object sender, EventArgs e) => await ScanAndVerifyMachineAsync();
 
     private async Task ScanAndVerifyMachineAsync(string? scanCode = null)
     {
-        if (string.IsNullOrWhiteSpace(scanCode))
-        {
-            await _scanner.ShowHintAsync(this, "扫码机台二维码验证完工");
-            return;
-        }
+        if (_isHandlingScan || _isBusy || _machineVerified) return;
 
-        if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
+            scanCode ??= await _cameraScanner.ScanAsync(this, "扫码机台二维码验证完工");
+            if (string.IsNullOrWhiteSpace(scanCode)) return;
             var code = scanCode;
             if (!string.IsNullOrWhiteSpace(code))
             {

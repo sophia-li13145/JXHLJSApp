@@ -7,7 +7,7 @@ namespace JXHLJSApp.Pages.WorkStart;
 public partial class MaterialLoadingPage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
-    private readonly IRightKeyScanService _scanner;
+    private readonly CameraScanService _cameraScanner;
     private bool _isHandlingScan;
     private readonly IProductionContextService _productionContext;
     private bool _machineConfirmed;
@@ -16,14 +16,14 @@ public partial class MaterialLoadingPage : ContentPage
     private MaterialInputConfirmDto? _confirmInput;
 
 
-    public MaterialLoadingPage(IWorkOrderApi workOrderApi, IRightKeyScanService scanner, IProductionContextService productionContext)
+    public MaterialLoadingPage(IWorkOrderApi workOrderApi, CameraScanService cameraScanner, IRightKeyScanService scanner, IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
-        _scanner = scanner;
-        _scanner.Register(this,
+        _cameraScanner = cameraScanner;
+        scanner.Register(this,
             code => _machineConfirmed ? ScanMaterialAsync(code) : ScanMachineAsync(code),
-            () => !_isHandlingScan && (!_isBusy && _confirmInput is null));
+            () => !_isHandlingScan && !_isBusy && _confirmInput is null);
         _productionContext = productionContext;
         ReuseConfirmedPicklingMachine();
     }
@@ -45,7 +45,7 @@ public partial class MaterialLoadingPage : ContentPage
         await Shell.Current.GoToAsync("..");
     }
 
-    private async void OnScanPanelTapped(object sender, TappedEventArgs e)
+    private async void OnScanPanelClicked(object sender, EventArgs e)
     {
         if (_isBusy) return;
 
@@ -60,18 +60,14 @@ public partial class MaterialLoadingPage : ContentPage
 
     private async Task ScanMachineAsync(string? scanCode = null)
     {
-        if (string.IsNullOrWhiteSpace(scanCode))
-        {
-            await _scanner.ShowHintAsync(this, "扫描机台二维码");
-            return;
-        }
+        if (_isHandlingScan || _isBusy || _confirmInput is not null) return;
 
-        if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
+            scanCode ??= await _cameraScanner.ScanAsync(this, "扫描机台二维码");
+            if (string.IsNullOrWhiteSpace(scanCode)) return;
             var code = scanCode;
-            if (string.IsNullOrWhiteSpace(code)) return;
 
             await ConfirmMachineAsync(code);
         }
@@ -146,18 +142,14 @@ public partial class MaterialLoadingPage : ContentPage
 
     private async Task ScanMaterialAsync(string? scanCode = null)
     {
-        if (string.IsNullOrWhiteSpace(scanCode))
-        {
-            await _scanner.ShowHintAsync(this, "扫描上料物料二维码");
-            return;
-        }
+        if (_isHandlingScan || _isBusy || _confirmInput is not null) return;
 
-        if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
+            scanCode ??= await _cameraScanner.ScanAsync(this, "扫描上料物料二维码");
+            if (string.IsNullOrWhiteSpace(scanCode)) return;
             var code = scanCode;
-            if (string.IsNullOrWhiteSpace(code)) return;
 
             try
             {
@@ -195,8 +187,8 @@ public partial class MaterialLoadingPage : ContentPage
     private void ShowMaterialScanStep()
     {
         ScanIconLabel.Text = "📦";
-        ScanTitleLabel.Text = "2. 扫描物料二维码";
-        ScanHintLabel.Text = "按右侧扫描键扫描上料物料二维码";
+        ScanTitleLabel.Text = "2. 摄像头扫描上料物料码";
+        ScanHintLabel.Text = $"已验证机台 {_productionContext.Current?.MachineCode}";
     }
 
     private void ShowResultStep()
