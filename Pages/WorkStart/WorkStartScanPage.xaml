@@ -5,50 +5,42 @@
              BackgroundColor="#F4F6FA"
              Shell.NavBarIsVisible="False">
     <Grid RowDefinitions="Auto,*">
-        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="20,18,20,14" HeightRequest="66">
+        <Border BackgroundColor="#244B88" StrokeThickness="0" Padding="12,8">
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="0,0,18,18" />
             </Border.StrokeShape>
-            <Grid ColumnDefinitions="Auto,*,Auto">
-                <Label Text="‹ 返回" TextColor="White" FontSize="15" VerticalOptions="Center">
-                    <Label.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnBackTapped" />
-                    </Label.GestureRecognizers>
-                </Label>
+            <Grid ColumnDefinitions="72,*,72">
+                <Button Text="‹ 返回" Clicked="OnBackClicked" BackgroundColor="Transparent"
+                        TextColor="White" FontSize="15" Padding="0" MinimumHeightRequest="48" />
                 <Label x:Name="PageTitleLabel" Grid.Column="1" Text="扫码上机" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center" />
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1" RowDefinitions="*,Auto,Auto,3*" Padding="23,40,23,0" RowSpacing="18">
-            <Border Grid.Row="0" BackgroundColor="White" Stroke="#244B88" StrokeThickness="2" Padding="22">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="16" />
-                </Border.StrokeShape>
-                <VerticalStackLayout Spacing="12" VerticalOptions="Center" HorizontalOptions="Center">
-                    <Border WidthRequest="64" HeightRequest="64" BackgroundColor="#C7B7DD" Stroke="#5A4773" StrokeThickness="5">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="4" />
-                        </Border.StrokeShape>
-                    </Border>
-                    <Label Text="按右侧扫描键扫描机台二维码" TextColor="#0B3D8B" FontSize="18" FontAttributes="Bold" HorizontalTextAlignment="Center" />
-                    <Label x:Name="ScanHintLabel" Text="对准机台标签，无需点击屏幕" TextColor="#8BA0C0" FontSize="14" HorizontalTextAlignment="Center" />
-                </VerticalStackLayout>
-                <Border.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnScanTapped" />
-                </Border.GestureRecognizers>
-            </Border>
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,24" Spacing="18">
+                <Border BackgroundColor="White" Stroke="#244B88" StrokeThickness="2" Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="12">
+                        <Button x:Name="ScanButton" Text="摄像头扫描机台二维码" Clicked="OnScanClicked"
+                                BackgroundColor="#244B88" TextColor="White" MinimumHeightRequest="48" />
+                        <Label x:Name="ScanHintLabel" Text="也可按设备右侧扫描键扫描机台码" TextColor="#475467" FontSize="14" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Border>
 
-            <Label Grid.Row="1" Text="或" TextColor="#647895" FontSize="14" HorizontalTextAlignment="Center" />
+                <Label Text="或" TextColor="#647895" FontSize="14" HorizontalTextAlignment="Center" />
 
-            <Border Grid.Row="2" BackgroundColor="White" Stroke="#DDE6F1" StrokeThickness="1" Padding="12" HeightRequest="68">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="16" />
-                </Border.StrokeShape>
-                <Grid ColumnDefinitions="*,66" ColumnSpacing="10" VerticalOptions="Center">
-                    <Entry x:Name="MachineNoEntry" Placeholder="手动输入机台编号" PlaceholderColor="#7A8797" FontSize="15" BackgroundColor="#F8FAFD" ReturnType="Done" Completed="OnConfirmClicked" />
-                    <Button Grid.Column="1" Text="确认" FontSize="16" FontAttributes="Bold" BackgroundColor="#0B3D8B" TextColor="White" CornerRadius="14" Padding="0" Clicked="OnConfirmClicked" />
-                </Grid>
-            </Border>
-        </Grid>
+                <Border BackgroundColor="White" Stroke="#DDE6F1" StrokeThickness="1" Padding="12">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+                    <Grid ColumnDefinitions="*,66" ColumnSpacing="10" VerticalOptions="Center">
+                        <Entry x:Name="MachineNoEntry" Placeholder="手动输入机台编号" PlaceholderColor="#7A8797" FontSize="15" BackgroundColor="#F8FAFD" ReturnType="Done" Completed="OnConfirmClicked" />
+                        <Button Grid.Column="1" Text="确认" FontSize="16" FontAttributes="Bold" BackgroundColor="#0B3D8B" TextColor="White" CornerRadius="14" Padding="0" Clicked="OnConfirmClicked" />
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
     </Grid>
 </ContentPage>

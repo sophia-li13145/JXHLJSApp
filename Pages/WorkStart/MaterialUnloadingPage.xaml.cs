@@ -6,21 +6,21 @@ namespace JXHLJSApp.Pages.WorkStart;
 public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
 {
     private readonly IWorkOrderApi _workOrderApi;
-    private readonly IRightKeyScanService _scanner;
+    private readonly CameraScanService _cameraScanner;
     private bool _isHandlingScan;
     private readonly IProductionContextService _productionContext;
     private bool _machineConfirmed;
     private bool _isBusy;
     private bool _isRedirectingToDetail;
 
-    public MaterialUnloadingPage(IWorkOrderApi workOrderApi, IRightKeyScanService scanner, IProductionContextService productionContext)
+    public MaterialUnloadingPage(IWorkOrderApi workOrderApi, CameraScanService cameraScanner, IRightKeyScanService scanner, IProductionContextService productionContext)
     {
         InitializeComponent();
         _workOrderApi = workOrderApi;
-        _scanner = scanner;
-        _scanner.Register(this,
+        _cameraScanner = cameraScanner;
+        scanner.Register(this,
             code => _machineConfirmed ? ScanMaterialAsync(code) : ScanMachineAsync(code),
-            () => !_isHandlingScan && (!_isBusy && !_isRedirectingToDetail));
+            () => !_isHandlingScan && !_isBusy && !_isRedirectingToDetail);
         _productionContext = productionContext;
         ReuseConfirmedPicklingMachine();
     }
@@ -84,7 +84,7 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
 
     private async void OnBackTapped(object sender, TappedEventArgs e) => await Shell.Current.GoToAsync("..");
 
-    private async void OnScanPanelTapped(object sender, TappedEventArgs e)
+    private async void OnScanPanelClicked(object sender, EventArgs e)
     {
         if (_isBusy) return;
         if (!_machineConfirmed) await ScanMachineAsync();
@@ -93,16 +93,13 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
 
     private async Task ScanMachineAsync(string? scanCode = null)
     {
-        if (string.IsNullOrWhiteSpace(scanCode))
-        {
-            await _scanner.ShowHintAsync(this, "扫描机台二维码");
-            return;
-        }
+        if (_isHandlingScan || _isBusy || _isRedirectingToDetail) return;
 
-        if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
+            scanCode ??= await _cameraScanner.ScanAsync(this, "扫描机台二维码");
+            if (string.IsNullOrWhiteSpace(scanCode)) return;
             var devCode = scanCode;
             var workOrderNo = _productionContext.Current?.WorkOrderNo;
             if (string.IsNullOrWhiteSpace(devCode) || string.IsNullOrWhiteSpace(workOrderNo)) return;
@@ -150,8 +147,8 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
     private void ShowMaterialScanStep()
     {
         ScanIconLabel.Text = "📦";
-        ScanTitleLabel.Text = "2. 扫描物料二维码";
-        ScanHintLabel.Text = "按右侧扫描键扫描下料标签二维码";
+        ScanTitleLabel.Text = "2. 摄像头扫描下料标签码";
+        ScanHintLabel.Text = $"已验证机台 {_productionContext.Current?.MachineCode}";
     }
 
     private static bool IsPicklingProcess(string? operationName) =>
@@ -159,16 +156,13 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
 
     private async Task ScanMaterialAsync(string? scanCode = null)
     {
-        if (string.IsNullOrWhiteSpace(scanCode))
-        {
-            await _scanner.ShowHintAsync(this, "扫描下料标签二维码");
-            return;
-        }
+        if (_isHandlingScan || _isBusy || _isRedirectingToDetail) return;
 
-        if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
+            scanCode ??= await _cameraScanner.ScanAsync(this, "扫描下料标签二维码");
+            if (string.IsNullOrWhiteSpace(scanCode)) return;
             var qrCode = scanCode;
             var workOrderNo = _productionContext.Current?.WorkOrderNo;
             if (string.IsNullOrWhiteSpace(qrCode) || string.IsNullOrWhiteSpace(workOrderNo)) return;

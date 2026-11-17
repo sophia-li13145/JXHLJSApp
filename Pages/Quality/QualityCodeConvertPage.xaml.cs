@@ -7,6 +7,8 @@ public partial class QualityCodeConvertPage : ContentPage, IQueryAttributable
 {
     private readonly IQualityCodeConvertApi _api;
     private readonly IRightKeyScanService _scanner;
+    private readonly CameraScanService _cameraScanner;
+    private bool _enableCamera;
     private QualityCodeMaterialDto? _material;
     private QualityCodeConvertResultDto? _lastConversion;
     private string? _lastTargetQrCode;
@@ -17,17 +19,24 @@ public partial class QualityCodeConvertPage : ContentPage, IQueryAttributable
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
+        if (query.TryGetValue(CameraScanService.EnableCameraParameter, out var mode))
+        {
+            _enableCamera = bool.TryParse(mode?.ToString(), out var enabled) && enabled;
+            RenderStep();
+        }
+
         if (query.TryGetValue("cancelledQualityCodes", out var value) && value is string[] codes &&
             _lastTargetQrCode is not null && codes.Contains(_lastTargetQrCode))
             ShowCancelled();
         query.Remove("cancelledQualityCodes");
     }
 
-    public QualityCodeConvertPage(IQualityCodeConvertApi api, IRightKeyScanService scanner)
+    public QualityCodeConvertPage(IQualityCodeConvertApi api, IRightKeyScanService scanner, CameraScanService cameraScanner)
     {
         InitializeComponent();
         _api = api;
         _scanner = scanner;
+        _cameraScanner = cameraScanner;
         _scanner.Register(this, code => ScanAsync(code), () => !_isHandlingScan && !_isConfirmingCancel);
     }
 
@@ -50,18 +59,24 @@ public partial class QualityCodeConvertPage : ContentPage, IQueryAttributable
 
     private async Task ScanAsync(string? scanCode = null)
     {
-        if (string.IsNullOrWhiteSpace(scanCode))
+        if (_isHandlingScan || _isConfirmingCancel) return;
+
+        var target = _material is null ? "扫描原物料码" : "扫描空白质检码";
+        if (string.IsNullOrWhiteSpace(scanCode) && !_enableCamera)
         {
-            await _scanner.ShowHintAsync(this, _material is null ? "扫描原物料码" : "扫描空白质检码");
+            await _scanner.ShowHintAsync(this, target);
             return;
         }
 
-        if (_isHandlingScan || _isConfirmingCancel) return;
         _isHandlingScan = true;
         SetBusy(true);
         var ct = _navigationCts.Token;
         try
         {
+            scanCode ??= await _cameraScanner.ScanAsync(this, target);
+            if (string.IsNullOrWhiteSpace(scanCode)) return;
+
+            ct = _navigationCts.Token;
             var code = scanCode.Trim();
             if (string.IsNullOrWhiteSpace(code)) return;
             ct.ThrowIfCancellationRequested();
@@ -125,7 +140,9 @@ public partial class QualityCodeConvertPage : ContentPage, IQueryAttributable
         QualityBadge.BackgroundColor = Color.FromArgb(ready ? "#244B88" : "#E9EEF5");
         QualityNumber.TextColor = ready ? Colors.White : Color.FromArgb("#7B8EA8");
         QualityHint.Text = ready ? "扫要贴在样品上的新标签" : "先扫上面的原物料码";
-        ScanButton.Text = ready ? "按右侧键扫空白质检码" : "按右侧键扫原物料码";
+        var scanTarget = ready ? "空白质检码" : "原物料码";
+        ScanButton.Text = _enableCamera ? $"摄像头扫描{scanTarget}" : $"按右侧键扫{scanTarget}";
+        HardwareScanHint.IsVisible = _enableCamera;
         RescanButton.IsVisible = ready;
     }
 
@@ -186,11 +203,12 @@ public partial class QualityCodeConvertPage : ContentPage, IQueryAttributable
 
     private async void OnScanClicked(object sender, EventArgs e) => await ScanAsync();
 
-    private void OnRescanClicked(object sender, EventArgs e)
+    private async void OnRescanClicked(object sender, EventArgs e)
     {
         if (_isHandlingScan) return;
         _material = null;
         RenderStep();
+        if (_enableCamera) await ScanAsync();
     }
 
     protected override bool OnBackButtonPressed()

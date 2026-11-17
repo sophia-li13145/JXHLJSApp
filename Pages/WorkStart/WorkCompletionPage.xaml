@@ -20,10 +20,10 @@
             <VerticalStackLayout Padding="22,18,22,28" Spacing="16">
                 <Border x:Name="ScanPanel" BackgroundColor="White" Stroke="#C7D6EA" StrokeThickness="2" StrokeDashArray="6,4" Padding="24" HeightRequest="186">
                     <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
-                    <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnScanPanelTapped" /></Border.GestureRecognizers>
                     <VerticalStackLayout Spacing="16" HorizontalOptions="Center" VerticalOptions="Center">
                         <Label Text="▣" TextColor="#5A4773" FontSize="48" HorizontalTextAlignment="Center" />
-                        <Label Text="1. 按右侧扫描键验证机台" TextColor="#001431" FontSize="16" HorizontalTextAlignment="Center" />
+                        <Button Text="摄像头扫描机台码验证完工" Clicked="OnScanPanelClicked" BackgroundColor="#244B88" TextColor="White" HorizontalOptions="Center" />
+                        <Label Text="也可按设备右侧扫描键" FontSize="14" TextColor="#475467" HorizontalTextAlignment="Center" />
                     </VerticalStackLayout>
                 </Border>
 

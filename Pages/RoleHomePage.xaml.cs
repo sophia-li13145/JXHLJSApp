@@ -11,12 +11,14 @@ namespace JXHLJSApp.Pages;
 public partial class RoleHomePage : ContentPage
 {
     private readonly IWorkOrderApi _workOrderApi;
-    private readonly IRightKeyScanService _scanner;
+    private readonly CameraScanService _cameraScanner;
+    private readonly IRightKeyScanService _rightKeyScanner;
     private readonly IAuthApi _authApi;
     private bool _isPackagingScanBusy;
     private bool _isModuleNavigating;
     private bool _canBindMachine;
     private bool _isBindingMachine;
+    private bool _isOpeningCamera;
     private bool _isRefreshingUserInfo;
     private bool _isPageVisible;
     private Entry? _machineCodeEntry;
@@ -34,13 +36,14 @@ public partial class RoleHomePage : ContentPage
         }
     }
 
-    public RoleHomePage(IWorkOrderApi workOrderApi, IRightKeyScanService scanner, IAuthApi authApi)
+    public RoleHomePage(IWorkOrderApi workOrderApi, CameraScanService cameraScanner, IRightKeyScanService rightKeyScanner, IAuthApi authApi)
     {
         _workOrderApi = workOrderApi;
-        _scanner = scanner;
-        _scanner.Register(this,
+        _cameraScanner = cameraScanner;
+        _rightKeyScanner = rightKeyScanner;
+        _rightKeyScanner.Register(this,
             code => BindMachineAndOpenOrdersAsync(code),
-            () => _isPageVisible && _canBindMachine && !_isBindingMachine && !_isModuleNavigating,
+            () => _isPageVisible && _canBindMachine && !_isBindingMachine && !_isModuleNavigating && !_isOpeningCamera,
             () => _canBindMachine ? _machineCodeEntry : null);
         _authApi = authApi;
         InitializeComponent();
@@ -357,7 +360,13 @@ public partial class RoleHomePage : ContentPage
                 if (module.Route == AppShell.RoutePackagingScan)
                     await ScanPackagingAsync();
                 else
-                    await Shell.Current.GoToAsync(module.Route);
+                {
+                    var route = _canBindMachine &&
+                        (module.Route is AppShell.RouteMaterialScanQuery or AppShell.RouteQualityCodeConvert)
+                        ? $"{module.Route}?{CameraScanService.EnableCameraParameter}=true"
+                        : module.Route;
+                    await Shell.Current.GoToAsync(route);
+                }
             }
             finally
             {
@@ -434,11 +443,11 @@ public partial class RoleHomePage : ContentPage
             HeightRequest = 46,
             ReturnType = ReturnType.Done
         };
-        entry.HandlerChanged += (_, _) => _scanner.RefreshInput(this);
+        entry.HandlerChanged += (_, _) => _rightKeyScanner.RefreshInput(this);
 
         var scanButton = new Button
         {
-            Text = "▣  按右侧扫描键扫码上机",
+            Text = "▣  摄像头扫码上机",
             BackgroundColor = Color.FromArgb("#1F447E"),
             TextColor = Colors.White,
             FontSize = 16,
@@ -446,7 +455,23 @@ public partial class RoleHomePage : ContentPage
             CornerRadius = 10,
             HeightRequest = 56
         };
-        scanButton.Clicked += async (_, _) => await _scanner.ShowHintAsync(this, "扫描机台二维码上机");
+        scanButton.Clicked += async (_, _) =>
+        {
+            if (_isBindingMachine || _isModuleNavigating || _isOpeningCamera) return;
+            _isOpeningCamera = true;
+            _rightKeyScanner.RefreshInput(this);
+            try
+            {
+                var code = await _cameraScanner.ScanAsync(this, "扫描机台二维码");
+                if (code is not null && _isPageVisible)
+                    await BindMachineAndOpenOrdersAsync(code);
+            }
+            finally
+            {
+                _isOpeningCamera = false;
+                _rightKeyScanner.RefreshInput(this);
+            }
+        };
 
         var confirmButton = new Button
         {
@@ -461,6 +486,7 @@ public partial class RoleHomePage : ContentPage
         };
         async Task ConfirmMachineAsync()
         {
+            if (_isOpeningCamera || _isModuleNavigating) return;
             entry.Unfocus();
             await entry.HideKeyboardAsync(CancellationToken.None);
             await BindMachineAndOpenOrdersAsync(entry.Text);
@@ -469,7 +495,6 @@ public partial class RoleHomePage : ContentPage
         entry.Completed += async (_, _) =>
         {
 #if ANDROID
-            // Native scanner Enter is handled by the input adapter, exactly once.
             if (Platform.CurrentActivity is MainActivity activity && activity.IsAutomaticScanInput(entry)) return;
 #endif
             await ConfirmMachineAsync();
@@ -493,7 +518,12 @@ public partial class RoleHomePage : ContentPage
             Content = new VerticalStackLayout
             {
                 Spacing = 16,
-                Children = { scanButton, inputGrid }
+                Children =
+                {
+                    new Label { Text = "按设备右侧扫描键扫描机台码", TextColor = Color.FromArgb("#475467") },
+                    scanButton,
+                    inputGrid
+                }
             }
         };
     }
@@ -531,7 +561,7 @@ public partial class RoleHomePage : ContentPage
         finally
         {
             _isBindingMachine = false;
-            _scanner.RefreshInput(this);
+            _rightKeyScanner.RefreshInput(this);
         }
     }
 

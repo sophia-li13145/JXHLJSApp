@@ -68,6 +68,16 @@ public sealed class FakeScanner : IRightKeyScanService
     public Task ShowHintAsync(ContentPage page, string hint) => Task.CompletedTask;
     public Task Scan(string code) => Handle!(code);
 }
+public sealed class CameraScanService
+{
+    public string? Code;
+    public int Calls;
+    public Task<string?> ScanAsync(ContentPage page, string title)
+    {
+        Calls++;
+        return Task.FromResult(Code);
+    }
+}
 public sealed record WorkOrderOperationResult(bool success, string? message);
 public interface IWorkOrderApi
 {
@@ -116,6 +126,11 @@ public sealed class Shell
         { FailNextSelection = false; throw new Exception("navigation failed"); }
         CurrentPage.Leave();
         if (route == "..") Stack.RemoveAt(Stack.Count - 1);
+        else if (route == AppShell.RouteProductionHome)
+        {
+            Stack.Clear();
+            Stack.Add(new RoleHomePage());
+        }
         else if (route.StartsWith("//Home/RoleModule/WorkStartOrders"))
         {
             Stack.Clear(); Stack.Add(new ContentPage());
@@ -138,12 +153,15 @@ public sealed class Shell
         CurrentPage.Enter(); return Task.CompletedTask;
     }
 }
+public sealed class RoleHomePage : ContentPage { }
 public partial class WorkStartScanPage
 {
     private void InitializeComponent() { }
     public Label PageTitleLabel = new(), ScanHintLabel = new();
+    public Label ScanButton = new();
     public Entry MachineNoEntry = new();
-    public void TapRetry() => OnScanTapped(this, new());
+    public void TapRetry() => OnScanClicked(this, EventArgs.Empty);
+    public void TapBack() => OnBackClicked(this, EventArgs.Empty);
     public bool PressBack() => OnBackButtonPressed();
 }
 public partial class WorkStartOrdersPage
@@ -187,12 +205,13 @@ public static class Regression
             Context.Set(Original);
             Shell = MachineSelectionTests.Shell.Current = new Shell
             {
-                CreateScanner = () => new WorkStartScanPage(Api, Scanner, Context),
+                CreateScanner = () => new WorkStartScanPage(Api, Camera, Scanner, Context),
                 CreateOrders = () => new WorkStartOrdersPage(Api, Context)
             };
             Shell.Stack.Add(OldExecution);
         }
         public void Switch() => OldExecution.ClickSwitch();
+        public CameraScanService Camera { get; } = new();
     }
     private static WorkOrderTaskDto Order(string machine, string number = "SHARED") =>
         new() { id = machine + number, workOrderNo = number, deviceCode = machine, operationName = "酸洗" };
@@ -244,7 +263,7 @@ public static class Regression
 
         var n = new Fixture(); n.Switch(); n.Shell.FailNextSelection = true; n.Scanner.Scan("B").GetAwaiter().GetResult();
         var retry = (WorkStartScanPage)n.Shell.CurrentPage;
-        Check(n.Context.Current is null && retry.ScanHintLabel.Text!.Contains("重试"), "Navigation failure cannot restore old local session");
+        Check(n.Context.Current is null && retry.ScanButton.Text!.Contains("重试"), "Navigation failure cannot restore old local session");
         retry.TapRetry();
         Check(n.Api.BindCalls == 1 && n.Shell.CurrentPage is WorkStartOrdersPage && !n.Shell.Stack.Contains(n.OldExecution), "Navigation retry reuses binding and removes old execution");
 
@@ -255,8 +274,18 @@ public static class Regression
         var r = new Fixture(); r.Switch(); r.Api.Rows.Add(Order("B")); r.Scanner.Scan("B").GetAwaiter().GetResult();
         ((WorkStartOrdersPage)r.Shell.CurrentPage).Rescan();
         Check(r.Shell.CurrentPage is WorkStartScanPage, "Rescan opens scanner rather than old execution");
-        r.Api.Rows.Clear(); r.Api.Rows.Add(Order("D")); r.Scanner.Scan("D").GetAwaiter().GetResult();
-        Check(((WorkStartOrdersPage)r.Shell.CurrentPage).Rows.Single().deviceCode == "D", "Rescan rebuilds selection for another machine");
+        r.Api.Rows.Clear(); r.Api.Rows.Add(Order("D")); r.Camera.Code = "D";
+        ((WorkStartScanPage)r.Shell.CurrentPage).TapRetry();
+        Check(r.Camera.Calls == 1 && ((WorkStartOrdersPage)r.Shell.CurrentPage).Rows.Single().deviceCode == "D",
+            "Camera rescan rebuilds selection for another machine");
+        ((WorkStartOrdersPage)r.Shell.CurrentPage).Rescan();
+        ((WorkStartScanPage)r.Shell.CurrentPage).TapBack();
+        Check(r.Shell.CurrentPage is RoleHomePage && r.Shell.Stack.Count == 1, "Back from normal rescan opens production home");
+
+        var cancelSwitch = new Fixture(); cancelSwitch.Switch();
+        Check(((WorkStartScanPage)cancelSwitch.Shell.CurrentPage).PressBack() &&
+            ReferenceEquals(cancelSwitch.Shell.CurrentPage, cancelSwitch.OldExecution),
+            "Back before binding a new machine preserves the current execution");
 
         var v = new Fixture(); v.Switch(); var oldLoad = v.Api.PendingLoad = new();
         v.Scanner.Scan("B").GetAwaiter().GetResult(); var versioned = (WorkStartOrdersPage)v.Shell.CurrentPage;
@@ -311,7 +340,8 @@ public static class Regression
 '@
 $nl = [Environment]::NewLine
 $appShell = 'public static class AppShell {' + $nl +
-    'public const string RouteHome = "//Home", RouteRoleModule = "RoleModule", RouteWorkStartScan = "WorkStartScan", RouteWorkStartOrders = "WorkStartOrders", RouteWorkExecution = "WorkExecution", RouteWorkOrderInstruction = "WorkOrderInstruction";' + $routeMethod + '}'
+    'public const string RouteHome = "//Home", RouteRoleModule = "RoleModule", RouteWorkStartScan = "WorkStartScan", RouteWorkStartOrders = "WorkStartOrders", RouteWorkExecution = "WorkExecution", RouteWorkOrderInstruction = "WorkOrderInstruction";' +
+    'public static string RouteProductionHome => $"{RouteHome}/{RouteRoleModule}?roleCode=production";' + $routeMethod + '}'
 $source = '#nullable enable' + $nl + 'using System; using System.Collections.Generic; using System.Linq; using System.Threading; using System.Threading.Tasks;' + $nl +
     'namespace MachineSelectionTests {' + $scanSource + $ordersSource + $contextSource + $dtoSource +
     'public partial class WorkExecutionPage {' + $switchMethod + '}' + $appShell + 'public static class ApiTools {' + $dedupMethod + '}' + $doubles + '}'

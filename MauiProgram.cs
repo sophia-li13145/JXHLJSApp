@@ -1,3 +1,4 @@
+using ZXing.Net.Maui.Controls;
 using CommunityToolkit.Maui;
 using JXHLJSApp.Pages;
 using JXHLJSApp.Services;
@@ -21,6 +22,7 @@ namespace JXHLJSApp
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseBarcodeReader()
                 .UseMauiCommunityToolkit()
                 .ConfigureFonts(fonts =>
                 {
@@ -86,6 +88,7 @@ namespace JXHLJSApp
             builder.Services.AddTransient<AdminViewModel>();
             builder.Services.AddTransient<LogsViewModel>();
             builder.Services.AddSingleton<LogService>();
+            builder.Services.AddSingleton<CameraScanService>();
             builder.Services.AddSingleton<RightKeyScanService>();
             builder.Services.AddSingleton<IRightKeyScanService>(sp => sp.GetRequiredService<RightKeyScanService>());
             builder.Services.AddSingleton<IImageCompressionService, ImageCompressionService>();

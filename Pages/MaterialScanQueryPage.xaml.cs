@@ -5,36 +5,52 @@ using System.Globalization;
 
 namespace JXHLJSApp.Pages;
 
-public partial class MaterialScanQueryPage : ContentPage
+public partial class MaterialScanQueryPage : ContentPage, IQueryAttributable
 {
     private readonly IMaterialScanQueryApi _api;
     private readonly IRightKeyScanService _scanner;
+    private readonly CameraScanService _cameraScanner;
+    private bool _enableCamera;
     private bool _isHandlingScan;
 
-    public MaterialScanQueryPage(IMaterialScanQueryApi api, IRightKeyScanService scanner)
+    public MaterialScanQueryPage(IMaterialScanQueryApi api, IRightKeyScanService scanner, CameraScanService cameraScanner)
     {
         InitializeComponent();
         _api = api;
         _scanner = scanner;
+        _cameraScanner = cameraScanner;
         _scanner.Register(this,
             code => ScanAndQueryAsync(code),
             () => !_isHandlingScan);
     }
 
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (query.TryGetValue(CameraScanService.EnableCameraParameter, out var mode))
+        {
+            _enableCamera = bool.TryParse(mode?.ToString(), out var enabled) && enabled;
+            InitialScanButton.IsVisible = _enableCamera;
+        }
+    }
+
     private async Task ScanAndQueryAsync(string? scanCode = null)
     {
-        if (string.IsNullOrWhiteSpace(scanCode))
+        if (_isHandlingScan) return;
+
+        var target = "扫描物料二维码";
+        if (string.IsNullOrWhiteSpace(scanCode) && !_enableCamera)
         {
-            await _scanner.ShowHintAsync(this, "扫描物料二维码");
+            await _scanner.ShowHintAsync(this, target);
             return;
         }
 
-        if (_isHandlingScan) return;
         _isHandlingScan = true;
         try
         {
+            scanCode ??= await _cameraScanner.ScanAsync(this, target);
+            if (string.IsNullOrWhiteSpace(scanCode)) return;
+
             var code = scanCode;
-            if (string.IsNullOrWhiteSpace(code)) return;
 
             try
             {
