@@ -16,12 +16,16 @@ public sealed class WorkOrderTaskDto
     public string? targetSpecification { get; set; }
     public string? workOrderNo { get; set; }
     public string? workOrderStatus { get; set; }
+    public string? originPlace { get; set; }
 
     public string inputMaterialDisplay => JoinNonEmpty(steelGrade, inputSpecification);
+    public string originPlaceDisplay => string.IsNullOrWhiteSpace(originPlace) ? "" : $"{originPlace.Trim()}";
     public string targetMaterialDisplay => JoinNonEmpty(steelGrade, targetSpecification);
     public string machineDisplay => FirstNonEmpty(machineNo, deviceName, deviceCode);
     public string operationDisplay => FirstNonEmpty(operationName, operationCode);
-    public bool hasProductionInstructionCard => operationName?.Contains("酸洗", StringComparison.OrdinalIgnoreCase) != true;
+    public bool hasProductionInstructionCard => !isPicklingOrder;
+    public bool showsTargetMaterial => !isPicklingOrder;
+    public bool isPicklingOrder => operationName?.Trim().StartsWith("酸洗", StringComparison.OrdinalIgnoreCase) == true;
     public string plannedWeightDisplay => FormatDecimal(plannedWeight, "吨");
     public string productionWeightDisplay => plannedWeight.HasValue ? plannedWeightDisplay : FormatDecimal(plannedQuantity, "");
     public string statusBackgroundColor => IsCompletedStatus ? "#EAFBF1" : IsRunningStatus ? "#EAF3FF" : "#F4F6FA";

@@ -526,6 +526,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
         foreach (var order in orders)
         {
             order.workOrderStatus = MapWorkOrderDictName(order.workOrderStatus, dictNames, "workOrderStatus");
+            order.originPlace = MapWorkOrderDictName(order.originPlace, dictNames, "originPlace");
         }
     }
 
@@ -584,6 +585,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
         detail.saleMode = MapWorkOrderDictName(detail.saleMode, dictNames, "saleMode");
         detail.rawOrQuench = MapWorkOrderDictName(detail.rawOrQuench, dictNames, "rawOrQuench");
         detail.wireShape = MapWorkOrderDictName(detail.wireShape, dictNames, "wireShape");
+        detail.inputOriginPlace = MapWorkOrderDictName(detail.inputOriginPlace, dictNames, "originPlace");
+        detail.originPlace = MapWorkOrderDictName(detail.originPlace, dictNames, "originPlace");
     }
 
     private async Task<IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>> GetWorkOrderDictNamesAsync(CancellationToken ct)
