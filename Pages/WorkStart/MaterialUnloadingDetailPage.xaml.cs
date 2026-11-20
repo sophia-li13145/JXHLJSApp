@@ -310,21 +310,30 @@ public partial class MaterialUnloadingDetailPage : ContentPage, IQueryAttributab
 
     private void ConfigureProcessSpecificInputs(WorkOrderInputOutputDto? inputOutput)
     {
-        InspectStatusLabel.Text = IsHeatTreatmentProcess(inputOutput)
+        var isPickling = IsPicklingProcess(inputOutput);
+        var isHeatTreatment = IsHeatTreatmentProcess(inputOutput);
+
+        InspectStatusLabel.Text = isHeatTreatment
             ? "产品检验状态*"
             : "产品检验状态（系统智能判定）*";
-        InspectStatusEntry.IsVisible = !IsHeatTreatmentProcess(inputOutput);
-        InspectStatusPicker.IsVisible = IsHeatTreatmentProcess(inputOutput);
+        // 酸洗工艺下隐藏 产品检验状态/产出长度/件重 三项，其余工艺保持原有展示与交互
+        InspectStatusLabel.IsVisible = !isPickling;
+        InspectStatusEntry.IsVisible = !isPickling && !isHeatTreatment;
+        InspectStatusPicker.IsVisible = !isPickling && isHeatTreatment;
         InspectStatusPicker.SelectedItem = "合格品";
 
         OutputLengthLabel.Text = IsDefaultProcess(inputOutput)
             ? $"产出长度（m）（指令卡标准：{FormatDecimalWithUnit(TryParseDecimal(inputOutput?.wireTakeUpLength), "m")}）*"
             : "产出长度（m）*";
-        OutputLengthEntry.IsReadOnly = IsPicklingProcess(inputOutput);
+        OutputLengthLabel.IsVisible = !isPickling;
+        OutputLengthEntry.IsVisible = !isPickling;
+        OutputLengthEntry.IsReadOnly = isPickling;
 
-        PieceWeightLabel.Text = IsPicklingProcess(inputOutput)
+        PieceWeightLabel.Text = isPickling
             ? "件重（KG）*"
             : "件重（KG）（长度×0.00617×规格²）*";
+        PieceWeightLabel.IsVisible = !isPickling;
+        PieceWeightEntry.IsVisible = !isPickling;
     }
 
     private void RecalculateOutputFields()

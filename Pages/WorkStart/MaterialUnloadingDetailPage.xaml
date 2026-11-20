@@ -32,7 +32,7 @@
                         </Grid>
                         <Label x:Name="InspectStatusLabel" Text="产品检验状态（系统智能判定）*" TextColor="#001431" FontSize="14" FontAttributes="Bold" />
                         <Entry x:Name="InspectStatusEntry" Text="合格品" TextColor="#00A86B" FontAttributes="Bold" BackgroundColor="#F4F7FB" IsReadOnly="True" />
-                        <Picker x:Name="InspectStatusPicker" Title="产品检验状态" TextColor="#00A86B" FontAttributes="Bold" BackgroundColor="#F4F7FB" IsVisible="False" SelectedIndexChanged="OnInspectStatusPickerChanged">
+                        <Picker x:Name="InspectStatusPicker" Title="产品检验状态" TextColor="#00A86B" FontAttributes="Bold" BackgroundColor="#F4F7FB" SelectedIndexChanged="OnInspectStatusPickerChanged">
                             <Picker.ItemsSource>
                                 <x:Array Type="{x:Type x:String}">
                                     <x:String>合格品</x:String>
