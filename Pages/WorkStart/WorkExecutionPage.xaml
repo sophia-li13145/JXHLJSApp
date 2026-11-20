@@ -88,19 +88,35 @@
                                                     <Label Text="{Binding workOrderNo}" TextColor="#001431" FontSize="18" FontAttributes="Bold" />
                                                     <Label Grid.Column="1" Text="{Binding workOrderStatus}" TextColor="{Binding statusTextColor}" FontAttributes="Bold" />
                                                 </Grid>
-                                                <Grid ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="8">
+                                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
                                                     <Label Text="所属机台" TextColor="#5C6F8F" />
                                                     <Label Grid.Column="1" Text="{Binding machineDisplay}" TextColor="#001431" FontAttributes="Bold" />
-                                                    <Label Grid.Column="2" Text="钢号/规格" TextColor="#5C6F8F" />
-                                                    <Label Grid.Column="3" Text="{Binding steelGradeSpecificationDisplay}" TextColor="#001431" FontAttributes="Bold" />
+                                                    <HorizontalStackLayout Grid.Column="2" Spacing="8" IsVisible="{Binding showsProcessMaterial}">
+                                                        <Label Text="钢号/规格" TextColor="#5C6F8F" />
+                                                        <Label Text="{Binding steelGradeSpecificationDisplay}" TextColor="#001431" FontAttributes="Bold" />
+                                                    </HorizontalStackLayout>
                                                 </Grid>
+                                                <VerticalStackLayout Spacing="10" IsVisible="{Binding isPicklingTask}">
+                                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                                        <Label Text="原料钢号" TextColor="#5C6F8F" />
+                                                        <Label Grid.Column="1" Text="{Binding rawSteelGradeDisplay}" TextColor="#001431" FontAttributes="Bold" />
+                                                    </Grid>
+                                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                                        <Label Text="原料产地" TextColor="#5C6F8F" />
+                                                        <Label Grid.Column="1" Text="{Binding rawOriginPlaceDisplay}" TextColor="#001431" FontAttributes="Bold" />
+                                                    </Grid>
+                                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                                        <Label Text="原料规格" TextColor="#5C6F8F" />
+                                                        <Label Grid.Column="1" Text="{Binding rawSpecificationDisplay}" TextColor="#001431" FontAttributes="Bold" />
+                                                    </Grid>
+                                                </VerticalStackLayout>
                                                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
                                                     <Label Text="生产重量" TextColor="#5C6F8F" />
                                                     <Label Grid.Column="1" Text="{Binding completedWeightDisplay}" TextColor="{Binding statusTextColor}" FontAttributes="Bold" />
                                                 </Grid>
-                                                <BoxView HeightRequest="1" Color="{Binding statusSeparatorColor}" />
-                                                <Label Text="模序" TextColor="#5C6F8F" />
-                                                <Border BackgroundColor="#EEF4FF" StrokeThickness="0" Padding="10">
+                                                <BoxView HeightRequest="1" Color="{Binding statusSeparatorColor}" IsVisible="{Binding showsMoldSequence}" />
+                                                <Label Text="模序" TextColor="#5C6F8F" IsVisible="{Binding showsMoldSequence}" />
+                                                <Border BackgroundColor="#EEF4FF" StrokeThickness="0" Padding="10" IsVisible="{Binding showsMoldSequence}">
                                                     <Border.StrokeShape><RoundRectangle CornerRadius="4" /></Border.StrokeShape>
                                                     <Label Text="{Binding moldSequenceDisplay}" TextColor="#0A2E69" FontAttributes="Bold" LineBreakMode="WordWrap" />
                                                 </Border>

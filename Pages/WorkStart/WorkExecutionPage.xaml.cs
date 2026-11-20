@@ -55,6 +55,10 @@ public partial class WorkExecutionPage : ContentPage
 
             RefreshContainer.IsRefreshing = true;
             _tasks = await _workOrderApi.GetCurrentTaskPoolAsync(workOrderNo);
+            foreach (var task in _tasks)
+            {
+                task.isPicklingContext = isPickling;
+            }
             TaskPoolList.ItemsSource = _tasks;
         }
         catch (Exception ex)

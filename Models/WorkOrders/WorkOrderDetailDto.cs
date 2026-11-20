@@ -24,6 +24,7 @@ public sealed class WorkOrderDetailDto
     public string? furnaceNo { get; set; }
     public string? hangCard { get; set; }
     public string? id { get; set; }
+    public string? inputOriginPlace { get; set; }
     public string? inputSpecification { get; set; }
     public string? inputSteelGrade { get; set; }
     public string? inspectionSchemeCode { get; set; }
@@ -41,6 +42,7 @@ public sealed class WorkOrderDetailDto
     public bool? needPhosphating { get; set; }
     public string? operationCode { get; set; }
     public string? operationName { get; set; }
+    public string? originPlace { get; set; }
     public string? otherRequirement { get; set; }
     public string? ovalityControl { get; set; }
     public string? packageMethod { get; set; }
@@ -67,6 +69,16 @@ public sealed class WorkOrderDetailDto
     public string? workOrderNo { get; set; }
     public string? workOrderStatus { get; set; }
 
+    /// <summary>由页面按当前生产上下文写入的酸洗标记，非接口返回列。</summary>
+    public bool isPicklingContext { get; set; }
+
+    public bool isPicklingTask => isPicklingContext
+        || operationName?.Trim().StartsWith("酸洗", StringComparison.OrdinalIgnoreCase) == true;
+    public bool showsProcessMaterial => !isPicklingTask;
+    public bool showsMoldSequence => !isPicklingTask;
+    public string rawSteelGradeDisplay => FirstNonEmpty(inputSteelGrade);
+    public string rawOriginPlaceDisplay => FirstNonEmpty(inputOriginPlace, originPlace);
+    public string rawSpecificationDisplay => FirstNonEmpty(inputSpecification);
     public string machineDisplay => FirstNonEmpty(machineNo, machineType, deviceName);
     public string specificationDisplay => FirstNonEmpty(productSpecification, intermediateSpecification);
     public string steelGradeSpecificationDisplay => JoinNonEmpty(steelGrade, FirstNonEmptyOrDefault(productSpecification, intermediateSpecification));
