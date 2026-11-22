@@ -17,6 +17,7 @@ public sealed class WorkOrderTaskDto
     public string? workOrderNo { get; set; }
     public string? workOrderStatus { get; set; }
     public string? originPlace { get; set; }
+    public bool? priorityQueueFlag { get; set; }
 
     public string inputMaterialDisplay => JoinNonEmpty(steelGrade, inputSpecification);
     public string originPlaceDisplay => string.IsNullOrWhiteSpace(originPlace) ? "" : $"{originPlace.Trim()}";
@@ -26,6 +27,7 @@ public sealed class WorkOrderTaskDto
     public bool hasProductionInstructionCard => !isPicklingOrder;
     public bool showsTargetMaterial => !isPicklingOrder;
     public bool isPicklingOrder => operationName?.Trim().StartsWith("酸洗", StringComparison.OrdinalIgnoreCase) == true;
+    public bool isPriorityQueueOrder => priorityQueueFlag == true;
     public string plannedWeightDisplay => FormatDecimal(plannedWeight, "吨");
     public string productionWeightDisplay => plannedWeight.HasValue ? plannedWeightDisplay : FormatDecimal(plannedQuantity, "");
     public string statusBackgroundColor => IsCompletedStatus ? "#EAFBF1" : IsRunningStatus ? "#EAF3FF" : "#F4F6FA";

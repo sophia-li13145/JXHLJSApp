@@ -32,18 +32,26 @@
                         <Border BackgroundColor="White" Stroke="#DDE6F1" StrokeThickness="1" Padding="20" Margin="0,0,0,14">
                             <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
                             <VerticalStackLayout Spacing="14">
-                                <Grid ColumnDefinitions="*,Auto,Auto">
-                                    <Label Text="{Binding workOrderNo}" TextColor="#12346A" FontSize="20" FontAttributes="Bold"
-                                           LineBreakMode="TailTruncation" VerticalOptions="Center" />
-                                    <Label Grid.Column="1" Text="{Binding originPlaceDisplay}" TextColor="#4B6688" FontSize="13"
-                                           LineBreakMode="TailTruncation" MaximumWidthRequest="120" VerticalOptions="Center"
-                                           Margin="10,0,0,0" IsVisible="{Binding isPicklingOrder}" />
-                                    <Border Grid.Column="2" BackgroundColor="#F3F7FC" StrokeThickness="0" Padding="10,5"
-                                            VerticalOptions="Center" Margin="10,0,0,0">
+                                <VerticalStackLayout Spacing="6">
+                                    <Grid ColumnDefinitions="*,Auto,Auto">
+                                        <Label Text="{Binding workOrderNo}" TextColor="#12346A" FontSize="20" FontAttributes="Bold"
+                                               LineBreakMode="TailTruncation" VerticalOptions="Center" />
+                                        <Label Grid.Column="1" Text="{Binding originPlaceDisplay}" TextColor="#4B6688" FontSize="13"
+                                               LineBreakMode="TailTruncation" MaximumWidthRequest="120" VerticalOptions="Center"
+                                               Margin="10,0,0,0" IsVisible="{Binding isPicklingOrder}" />
+                                        <Border Grid.Column="2" BackgroundColor="#F3F7FC" StrokeThickness="0" Padding="10,5"
+                                                VerticalOptions="Center" Margin="10,0,0,0">
+                                            <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
+                                            <Label Text="{Binding workOrderStatus}" TextColor="#333333" FontAttributes="Bold" FontSize="13" />
+                                        </Border>
+                                    </Grid>
+                                    <!-- 插单工单标签：priorityQueueFlag 为 true 时显示 -->
+                                    <Border BackgroundColor="#FFF3E8" Stroke="#FFD3B0" StrokeThickness="1" Padding="8,3"
+                                            HorizontalOptions="Start" IsVisible="{Binding isPriorityQueueOrder}">
                                         <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
-                                        <Label Text="{Binding workOrderStatus}" TextColor="#333333" FontAttributes="Bold" FontSize="13" />
+                                        <Label Text="插单" TextColor="#E2620B" FontSize="13" FontAttributes="Bold" />
                                     </Border>
-                                </Grid>
+                                </VerticalStackLayout>
                                 <Grid ColumnDefinitions="*,Auto">
                                     <Label Text="上料规格" TextColor="#4B6688" FontSize="14" />
                                     <Label Grid.Column="1" Text="{Binding inputMaterialDisplay}" TextColor="#001431" FontSize="15" FontAttributes="Bold" />
