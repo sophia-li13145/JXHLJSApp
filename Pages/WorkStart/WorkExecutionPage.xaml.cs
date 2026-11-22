@@ -44,7 +44,10 @@ public partial class WorkExecutionPage : ContentPage
             var current = _productionContext.Current;
             var workOrderNo = current?.WorkOrderNo;
             var isPickling = current?.OperationName?.Contains("酸洗", StringComparison.OrdinalIgnoreCase) == true;
-            InstructionCardButton.IsEnabled = !isPickling;
+            InstructionCardButton.IsVisible = !isPickling;
+            WorkCompletionButton.IsVisible = !isPickling;
+            PauseButton.IsVisible = !isPickling;
+            SwitchMachineButton.IsVisible = !isPickling;
             ManualUnloadingCardButton.IsVisible = isPickling;
             if (string.IsNullOrWhiteSpace(workOrderNo))
             {
