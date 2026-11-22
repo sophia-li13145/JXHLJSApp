@@ -591,6 +591,7 @@ public partial class AddRawMaterialReceivingPage
                 materialName = NormalizeSummaryTextV2(
                     item.materialName),
                 materialType = ResolveSummaryMaterialTypeV2(item),
+                spec = NormalizeSummaryTextV2(item.spec),
                 originPlace = NormalizeSummaryTextV2(
                     item.originPlace),
                 weightUnit = ResolveSummaryWeightUnitV2(item)
@@ -606,10 +607,12 @@ public partial class AddRawMaterialReceivingPage
                     group.Key.originPlace,
                     group.Count(),
                     totalWeight,
-                    group.Key.weightUnit);
+                    group.Key.weightUnit,
+                    group.Key.spec);
             })
             .OrderBy(item => item.materialName)
             .ThenBy(item => item.materialType)
+            .ThenBy(item => item.spec)
             .ThenBy(item => item.originPlace)
             .ToList();
 

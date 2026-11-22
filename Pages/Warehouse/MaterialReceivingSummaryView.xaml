@@ -70,9 +70,9 @@
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="10" />
                                 </Border.StrokeShape>
-                                <Grid RowDefinitions="Auto,Auto"
+                                <Grid RowDefinitions="Auto,Auto,Auto"
                                       ColumnDefinitions="*,Auto"
-                                      RowSpacing="12">
+                                      RowSpacing="8">
                                     <HorizontalStackLayout Spacing="8">
                                         <Label Text="{Binding materialName}"
                                                TextColor="#0A3C7D"
@@ -104,9 +104,16 @@
                                     </Border>
 
                                     <Label Grid.Row="1"
+                                           Grid.ColumnSpan="2"
+                                           Text="{Binding spec, StringFormat='规格: {0}'}"
+                                           TextColor="#38557C"
+                                           FontSize="13"
+                                           LineBreakMode="TailTruncation" />
+
+                                    <Label Grid.Row="2"
                                            Text="{Binding count, StringFormat='件数: {0}'}"
                                            TextColor="#38557C" />
-                                    <Label Grid.Row="1"
+                                    <Label Grid.Row="2"
                                            Grid.Column="1"
                                            Text="{Binding totalWeightDisplay, StringFormat='总重: {0}'}"
                                            TextColor="#00A060"

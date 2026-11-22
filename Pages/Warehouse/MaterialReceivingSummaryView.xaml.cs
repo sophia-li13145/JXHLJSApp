@@ -9,6 +9,12 @@ public partial class MaterialReceivingSummaryView : ContentView
 
     internal void Show(string title, IReadOnlyList<MaterialSummaryItem> items)
     {
+        if (items.Count == 0)
+        {
+            IsVisible = false;
+            return;
+        }
+
         SummaryTitle.Text = title;
         SummaryList.ItemsSource = items;
         SummaryTotalCount.Text = $"{items.Sum(item => item.count)} 件";

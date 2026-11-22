@@ -85,6 +85,7 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
             {
                 materialName = item.materialNameDisplay.Trim(),
                 materialType = item.materialTypeDisplay.Trim(),
+                spec = item.specDisplay.Trim(),
                 originPlace = item.originDisplay.Trim(),
                 weightUnit = NormalizeWeightUnit(item)
             })
@@ -97,9 +98,11 @@ public partial class RawMaterialReceivingDetailPage : ContentPage
                     (decimal.TryParse(item.weight, NumberStyles.Number, CultureInfo.InvariantCulture, out var weight)
                         ? weight
                         : 0m)),
-                group.Key.weightUnit))
+                group.Key.weightUnit,
+                group.Key.spec))
             .OrderBy(item => item.materialName)
             .ThenBy(item => item.materialType)
+            .ThenBy(item => item.spec)
             .ThenBy(item => item.originPlace)
             .ToList();
 

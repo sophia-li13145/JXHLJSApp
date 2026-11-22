@@ -1288,7 +1288,8 @@ internal sealed record MaterialSummaryItem(
     string originPlace,
     int count,
     decimal totalWeight,
-    string weightUnit = "吨")
+    string weightUnit = "吨",
+    string spec = "--")
 {
-    public string totalWeightDisplay => $"{totalWeight:0.##} {weightUnit}";
+    public string totalWeightDisplay => $"{totalWeight:0.000} {weightUnit}";
 }
