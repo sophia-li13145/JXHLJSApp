@@ -10,6 +10,7 @@ public sealed class WorkOrderTaskDto
     public string? materialName { get; set; }
     public string? operationCode { get; set; }
     public string? operationName { get; set; }
+    public decimal? plannedHangCount { get; set; }
     public decimal? plannedQuantity { get; set; }
     public decimal? plannedWeight { get; set; }
     public string? steelGrade { get; set; }
@@ -29,6 +30,8 @@ public sealed class WorkOrderTaskDto
     public bool isPicklingOrder => operationName?.Trim().StartsWith("酸洗", StringComparison.OrdinalIgnoreCase) == true;
     public bool isPriorityQueueOrder => priorityQueueFlag == true;
     public string plannedWeightDisplay => FormatDecimal(plannedWeight, "吨");
+    /// <summary>生产件数（吊）：后端按 1吊=2.3吨 向上取整后返回。</summary>
+    public string plannedHangCountDisplay => FormatDecimal(plannedHangCount, "吊");
     public string productionWeightDisplay => plannedWeight.HasValue ? plannedWeightDisplay : FormatDecimal(plannedQuantity, "");
     public string statusBackgroundColor => IsCompletedStatus ? "#EAFBF1" : IsRunningStatus ? "#EAF3FF" : "#F4F6FA";
     public string statusTextColor => IsCompletedStatus ? "#009B57" : IsRunningStatus ? "#006BFF" : "#001431";

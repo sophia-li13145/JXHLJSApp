@@ -2,6 +2,7 @@ namespace JXHLJSApp.Models.WorkOrders;
 
 public sealed class WorkOrderDetailDto
 {
+    public decimal? actualHangCount { get; set; }
     public decimal? actualQuantity { get; set; }
     public decimal? actualWeight { get; set; }
     public string? aggregateNo { get; set; }
@@ -50,6 +51,7 @@ public sealed class WorkOrderDetailDto
     public string? packagingClothColor { get; set; }
     public decimal? pieceWeight { get; set; }
     public string? pitchControl { get; set; }
+    public decimal? plannedHangCount { get; set; }
     public decimal? plannedQuantity { get; set; }
     public decimal? plannedWeight { get; set; }
     public string? productSpecification { get; set; }
@@ -84,6 +86,8 @@ public sealed class WorkOrderDetailDto
     public string steelGradeSpecificationDisplay => JoinNonEmpty(steelGrade, FirstNonEmptyOrDefault(productSpecification, intermediateSpecification));
     public string completedWeightDisplay => FormatProgress(actualWeight, plannedWeight, "吨");
     public string completedQuantityDisplay => FormatProgress(actualQuantity, plannedQuantity, "件");
+    /// <summary>生产件数（吊）：后端按 1吊=2.3吨 向上取整后返回。</summary>
+    public string hangCountDisplay => FormatProgress(actualHangCount, plannedHangCount, "吊");
     public string statusBackgroundColor => IsPausedStatus ? "#FFF8E8" : "#F2FFF8";
     public string statusBorderColor => IsPausedStatus ? "#F5A623" : "#18C77A";
     public string statusTextColor => IsPausedStatus ? "#C47A00" : "#00A651";
