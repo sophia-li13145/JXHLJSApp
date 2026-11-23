@@ -11,11 +11,6 @@ namespace JXHLJSApp.Pages.Warehouse;
 /// </summary>
 public partial class AddRawMaterialReceivingPage
 {
-    /// <summary>
-    /// 本次会话最近一次填写的车牌号，提交失败重试时用于预填。
-    /// </summary>
-    private string? _lastCarrierLicense;
-
     private void OnTicketMaterialClassChangedV2(object sender, EventArgs e)
     {
         RefreshMaterialClassFormVisibilityV2(isBindDialog: false);
@@ -642,111 +637,7 @@ public partial class AddRawMaterialReceivingPage
         object sender,
         EventArgs e)
     {
-        if (_isSubmittingInstock || _isStashingInstock || _isChangingWarehouseSelection ||
-            _failedStashRequest is not null || CarrierLicenseOverlay.IsVisible)
-        {
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(_instockNo))
-        {
-            await DisplayAlert(
-                "提示",
-                "入库单号尚未生成，请稍后重试。",
-                "确定");
-            return;
-        }
-
-        var warehouse = GetSelectedWarehouse();
-        if (warehouse is null ||
-            string.IsNullOrWhiteSpace(
-                warehouse.selectedName) ||
-            string.IsNullOrWhiteSpace(
-                warehouse.selectedCode))
-        {
-            await DisplayAlert(
-                "提示",
-                "请选择有效的入库仓库。",
-                "确定");
-            return;
-        }
-
-        var warehouseArea = GetSelectedWarehouseArea();
-        if (warehouseArea is null ||
-            string.IsNullOrWhiteSpace(
-                warehouseArea.selectedLocation))
-        {
-            await DisplayAlert(
-                "提示",
-                "请选择有效的库区。",
-                "确定");
-            return;
-        }
-
-        if (_ocrItems.Count == 0)
-        {
-            await DisplayAlert(
-                "提示",
-                "请先扫码绑定至少一条待入库物料。",
-                "确定");
-            return;
-        }
-
-        var invalidItem = _ocrItems.FirstOrDefault(item =>
-            string.IsNullOrWhiteSpace(item.qrCode) ||
-            string.IsNullOrWhiteSpace(item.materialClass) ||
-            ParsePieceWeightValueV2(item.pieceWeight) <= 0m);
-
-        if (invalidItem is not null)
-        {
-            await DisplayAlert(
-                "提示",
-                "请确认每条明细都已填写追溯码、物料分类和有效件重。",
-                "确定");
-            return;
-        }
-
-        // 前置校验全部通过后再询问车牌号，避免用户填完车牌才发现明细不完整。
-        // 预填上一次输入的车牌号，提交失败重试时无需重新录入。
-        CarrierLicenseHintLabel.IsVisible = false;
-        CarrierLicenseEntry.Text = _lastCarrierLicense ?? string.Empty;
-        CarrierLicenseOverlay.IsVisible = true;
-    }
-
-    private void OnCloseCarrierLicenseTapped(
-        object sender,
-        TappedEventArgs e) =>
-        CarrierLicenseOverlay.IsVisible = false;
-
-    private void OnCancelCarrierLicenseClicked(
-        object sender,
-        EventArgs e) =>
-        CarrierLicenseOverlay.IsVisible = false;
-
-    private async void OnConfirmCarrierLicenseClicked(
-        object sender,
-        EventArgs e)
-    {
-        var carrierLicense = CarrierLicenseEntry.Text?.Trim();
-        if (string.IsNullOrWhiteSpace(carrierLicense))
-        {
-            CarrierLicenseHintLabel.IsVisible = true;
-            CarrierLicenseEntry.Focus();
-            return;
-        }
-
-        _lastCarrierLicense = carrierLicense;
-        CarrierLicenseEntry.Text = carrierLicense;
-        CarrierLicenseHintLabel.IsVisible = false;
-        CarrierLicenseOverlay.IsVisible = false;
-        await SubmitInstockV2Async(carrierLicense);
-    }
-
-    private async Task SubmitInstockV2Async(
-        string carrierLicense)
-    {
-        if (_isSubmittingInstock || _isStashingInstock || _isChangingWarehouseSelection ||
-            _failedStashRequest is not null)
+        if (_isSubmittingInstock || _isStashingInstock || _isChangingWarehouseSelection || _failedStashRequest is not null)
         {
             return;
         }
@@ -852,10 +743,6 @@ public partial class AddRawMaterialReceivingPage
                                 warehouse.selectedCode,
                             warehouseAreaNo =
                                 warehouseArea.selectedLocation,
-
-                            // 车牌号在提交入库时统一登记，逐条写入入库明细。
-                            carrierLicense = carrierLicense,
-
                             materialClass =
                                 item.materialClass,
                             materialCode =

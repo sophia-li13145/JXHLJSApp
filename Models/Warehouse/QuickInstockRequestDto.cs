@@ -17,7 +17,6 @@ public sealed class QuickInstockDetailDto
     public string? instockWarehouse { get; set; }
     public string? instockWarehouseCode { get; set; }
     public string? warehouseAreaNo { get; set; }
-    public string? carrierLicense { get; set; }
     public string? materialClass { get; set; }
     public string? materialCode { get; set; }
     public string? materialName { get; set; }
