@@ -52,6 +52,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             () => !_isHandlingScan && !string.IsNullOrWhiteSpace(_instockNo) &&
                 !TicketConfirmOverlay.IsVisible && !BindConfirmOverlay.IsVisible &&
                 !LoadingOverlay.IsVisible && !SummaryOverlay.IsVisible &&
+                !CarrierLicenseOverlay.IsVisible &&
                 !_isSubmittingInstock && !_isStashingInstock && !_isChangingWarehouseSelection && _failedStashRequest is null);
         OcrList.ItemsSource = _ocrItems;
         TicketList.ItemsSource = _ticketItems;
