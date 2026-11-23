@@ -205,4 +205,17 @@ public partial class WorkExecutionPage : ContentPage
     {
         await Shell.Current.GoToAsync("..");
     }
+
+    private async void OnQualityCodeConvertTapped(object sender, TappedEventArgs e)
+    {
+        try
+        {
+            // 与生产作业首页入口保持一致：生产端进入质检转码页时启用摄像头扫码。
+            await Shell.Current.GoToAsync($"{AppShell.RouteQualityCodeConvert}?{CameraScanService.EnableCameraParameter}=true");
+        }
+        catch (Exception ex)
+        {
+            await ErrorDialogService.ShowAsync(this, "跳转失败", ex.Message, "确定");
+        }
+    }
 }

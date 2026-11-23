@@ -60,6 +60,17 @@
                             <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
                             <VerticalStackLayout Spacing="10" HorizontalOptions="Center"><Border BackgroundColor="#18A5E1" WidthRequest="44" HeightRequest="44"><Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape><Label Text="▰" TextColor="White" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" FontSize="24" /></Border><Label Text="手动下料" TextColor="#001431" FontAttributes="Bold" FontSize="14" WidthRequest="82" HorizontalTextAlignment="Center" LineBreakMode="NoWrap" /></VerticalStackLayout>
                         </Border>
+                        <Border x:Name="QualityCodeConvertCardButton" FlexLayout.Basis="31%" Margin="0,0,0,12" BackgroundColor="White" StrokeThickness="0" Padding="12" HeightRequest="103">
+                            <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnQualityCodeConvertTapped" /></Border.GestureRecognizers>
+                            <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                            <VerticalStackLayout Spacing="10" HorizontalOptions="Center">
+                                <Border BackgroundColor="#EFF6FF" WidthRequest="44" HeightRequest="44">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape>
+                                    <Image Source="quality_code_convert.png" WidthRequest="24" HeightRequest="24" Aspect="AspectFit" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <Label Text="质检转码" TextColor="#001431" FontAttributes="Bold" FontSize="14" WidthRequest="82" HorizontalTextAlignment="Center" LineBreakMode="NoWrap" />
+                            </VerticalStackLayout>
+                        </Border>
                         <BoxView FlexLayout.Basis="31%" HeightRequest="0" Color="Transparent" InputTransparent="True" />
                         <BoxView FlexLayout.Basis="31%" HeightRequest="0" Color="Transparent" InputTransparent="True" />
                     </FlexLayout>
