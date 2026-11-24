@@ -1,3 +1,5 @@
+using CommunityToolkit.Maui.Alerts;
+using CommunityToolkit.Maui.Core;
 using JXHLJSApp.Models.WorkOrders;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.WorkOrders;
@@ -257,7 +259,17 @@ public partial class MaterialLoadingPage : ContentPage
                 return;
             }
 
-            await Shell.Current.GoToAsync(AppShell.RouteMaterialOperationSuccess);
+            // 成功只做轻提示，不再进入“操作提示（操作成功）”页，直接回到上一层“生产执行中”页面。
+            try
+            {
+                await Toast.Make("上料成功", ToastDuration.Short).Show();
+            }
+            catch
+            {
+                // 轻提示失败不影响返回执行页。
+            }
+
+            await Shell.Current.GoToAsync("..");
         }
         catch (Exception ex)
         {
