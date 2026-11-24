@@ -67,7 +67,8 @@
                                     <Label Text="生产目标" TextColor="#4B6688" FontSize="14" />
                                     <Label Grid.Column="1" Text="{Binding plannedWeightDisplay}" TextColor="#00B050" FontSize="16" FontAttributes="Bold" />
                                 </Grid>
-                                <Grid ColumnDefinitions="*,Auto">
+                                <!-- 生产件数（吊）为酸洗工序专有字段，仅酸洗工单展示 -->
+                                <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding isPicklingOrder}">
                                     <Label Text="生产件数" TextColor="#4B6688" FontSize="14" />
                                     <Label Grid.Column="1" Text="{Binding plannedHangCountDisplay}" TextColor="#00B050" FontSize="16" FontAttributes="Bold" />
                                 </Grid>
