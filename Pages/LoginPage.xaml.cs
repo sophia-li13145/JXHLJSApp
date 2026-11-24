@@ -272,6 +272,8 @@ public partial class LoginPage : ContentPage
         await TokenStorage.SaveAsync(result.Token);
         ApiClient.SetBearer(result.Token);
         UserSessionStore.Save(result.UserInfo);
+        Preferences.Set(UserSessionKeys.LoginUsername,
+            string.IsNullOrWhiteSpace(result.UserInfo?.username) ? fallbackUsername : result.UserInfo.username);
         Preferences.Set(UserSessionKeys.UserName, fallbackUsername);
 
         if (afterLoginAsync is not null)

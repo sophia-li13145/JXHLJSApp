@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 17,
+  "schemaVersion": 18,
   "rightKeyScanner": {
     "broadcastAction": "nlscan.action.SCANNER_RESULT",
     "dataKey": "SCAN_BARCODE1"
@@ -19,6 +19,9 @@
     "printJobsPath": "/api/v1/print-jobs"
   },
   "apiEndpoints": {
+    "sysConfig": {
+      "getConfigByCode": "/pda/sysConfig/getConfigByCode"
+    },
     "login": "/pda/auth/login",
     "appVersion": {
       "checkUpdate": "/pda/pdaAppVersion/checkUpdate"

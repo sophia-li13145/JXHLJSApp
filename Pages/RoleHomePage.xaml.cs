@@ -2,6 +2,7 @@ using CommunityToolkit.Maui.Core.Platform;
 using JXHLJSApp.Models;
 using JXHLJSApp.Services;
 using JXHLJSApp.Services.WorkOrders;
+using JXHLJSApp.Tools;
 using Microsoft.Maui.Controls.Shapes;
 using Microsoft.Maui.Layouts;
 
@@ -14,6 +15,11 @@ public partial class RoleHomePage : ContentPage
     private readonly CameraScanService _cameraScanner;
     private readonly IRightKeyScanService _rightKeyScanner;
     private readonly IAuthApi _authApi;
+    private readonly ISysConfigApi _sysConfigApi;
+    private CancellationTokenSource? _homeRefreshCts;
+    private bool _canShowTaskList;
+    private bool _renderedTaskListVisible;
+    private View? _moduleGrid;
     private bool _isPackagingScanBusy;
     private bool _isModuleNavigating;
     private bool _canBindMachine;
@@ -36,7 +42,7 @@ public partial class RoleHomePage : ContentPage
         }
     }
 
-    public RoleHomePage(IWorkOrderApi workOrderApi, CameraScanService cameraScanner, IRightKeyScanService rightKeyScanner, IAuthApi authApi)
+    public RoleHomePage(IWorkOrderApi workOrderApi, CameraScanService cameraScanner, IRightKeyScanService rightKeyScanner, IAuthApi authApi, ISysConfigApi sysConfigApi)
     {
         _workOrderApi = workOrderApi;
         _cameraScanner = cameraScanner;
@@ -46,6 +52,7 @@ public partial class RoleHomePage : ContentPage
             () => _isPageVisible && _canBindMachine && !_isBindingMachine && !_isModuleNavigating && !_isOpeningCamera,
             () => _canBindMachine ? _machineCodeEntry : null);
         _authApi = authApi;
+        _sysConfigApi = sysConfigApi;
         InitializeComponent();
         BuildRoleHome();
     }
@@ -61,26 +68,55 @@ public partial class RoleHomePage : ContentPage
         {
             return;
         }
-        await RefreshUserInfoAsync();
-        if (_isPageVisible && !_isBindingMachine && !_isModuleNavigating)
+        _homeRefreshCts?.Cancel();
+        _homeRefreshCts?.Dispose();
+        var refreshCts = _homeRefreshCts = new CancellationTokenSource();
+        var ct = refreshCts.Token;
+        _canShowTaskList = false;
+        BuildRoleHome();
+        await RefreshUserInfoAsync(ct);
+        if (ct.IsCancellationRequested || _homeRefreshCts != refreshCts) return;
+        if (_canBindMachine)
+        {
+            try
+            {
+                var config = await _sysConfigApi.GetConfigByCodeAsync(TaskListVisibility.ConfigCode, ct);
+                if (ct.IsCancellationRequested || _homeRefreshCts != refreshCts) return;
+                _canShowTaskList = TaskListVisibility.CanShow(config?.configValue,
+                    Preferences.Get(UserSessionKeys.LoginUsername, string.Empty));
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Warning(ex, "查询任务列表入口配置失败，默认隐藏入口");
+            }
+        }
+        if (!ct.IsCancellationRequested && _homeRefreshCts == refreshCts
+            && _isPageVisible)
             BuildRoleHome();
     }
 
     protected override void OnDisappearing()
     {
         _isPageVisible = false;
+        _homeRefreshCts?.Cancel();
+        _homeRefreshCts?.Dispose();
+        _homeRefreshCts = null;
         base.OnDisappearing();
     }
 
-    private async Task RefreshUserInfoAsync()
+    private async Task RefreshUserInfoAsync(CancellationToken ct)
     {
         if (_isRefreshingUserInfo) return;
 
         try
         {
             _isRefreshingUserInfo = true;
-            var userInfo = await _authApi.GetUserInfoAsync();
-            if (userInfo is not null)
+            var userInfo = await _authApi.GetUserInfoAsync(ct);
+            if (!ct.IsCancellationRequested && userInfo is not null)
             {
                 // 登录接口返回的 roleList 是首页权限的唯一来源。
                 // 用户信息刷新接口可能不返回 roleList，不能在这里覆盖已保存的模块权限，
@@ -111,6 +147,8 @@ public partial class RoleHomePage : ContentPage
         var role = RoleHomeDefinition.FromRoleCode(roleCode);
         _canBindMachine = role.RoleCode == "production";
         var modules = role.Modules.ToList();
+        if (role.RoleCode == "production" && !_canShowTaskList)
+            modules.RemoveAll(module => module.Route == AppShell.RouteWorkOrderTasks);
         modules.Add(new HomeModule("扫码查询", "▦", Color.FromArgb("#E8F7FF"), "扫描二维码查询物料完整信息", Route: AppShell.RouteMaterialScanQuery));
         if (role.RoleCode == "production")
         {
@@ -124,9 +162,22 @@ public partial class RoleHomePage : ContentPage
             // Profile refreshes must not detach the machine Entry while it is receiving
             // scanner characters or while the operator is editing a machine number.
             ContentStack.Children[0] = CreateProfileCard(role, realName, workNumber, department, shift);
+            if (role.RoleCode == "production" && _renderedTaskListVisible != _canShowTaskList
+                && _moduleGrid is not null)
+            {
+                var index = ContentStack.Children.IndexOf(_moduleGrid);
+                if (index >= 0)
+                {
+                    _moduleGrid = CreateModuleGrid(role.Modules);
+                    ContentStack.Children[index] = _moduleGrid;
+                    _renderedTaskListVisible = _canShowTaskList;
+                }
+            }
             return;
         }
         _renderedRoleCode = role.RoleCode;
+        _renderedTaskListVisible = _canShowTaskList;
+        _moduleGrid = null;
         ContentStack.Children.Clear();
         ContentStack.Children.Add(CreateProfileCard(role, realName, workNumber, department, shift));
 
@@ -149,7 +200,8 @@ public partial class RoleHomePage : ContentPage
 
         if (role.Layout == RoleHomeLayout.Grid)
         {
-            ContentStack.Children.Add(CreateModuleGrid(role.Modules));
+            _moduleGrid = CreateModuleGrid(role.Modules);
+            ContentStack.Children.Add(_moduleGrid);
         }
         else
         {
@@ -578,6 +630,7 @@ internal static class UserSessionKeys
     public const string RoleCode = "RoleCode";
     public const string RealName = "RealName";
     public const string UserName = "UserName";
+    public const string LoginUsername = "LoginUsername";
     public const string WorkNumber = "WorkNumber";
     public const string DepartmentName = "DepartmentName";
     public const string TeamName = "TeamName";
@@ -592,11 +645,14 @@ internal static class UserSessionStore
         var roleCodes = UserRoleAccess.GetRoleCodes(userInfo).ToArray();
         Preferences.Set(UserSessionKeys.RoleCode, roleCodes.FirstOrDefault() ?? string.Empty);
         Preferences.Set(UserSessionKeys.RoleCodes, string.Join(',', roleCodes));
+        Preferences.Remove(UserSessionKeys.LoginUsername);
         SaveProfile(userInfo);
     }
 
     public static void SaveProfile(UserInfoDto? userInfo)
     {
+        if (!string.IsNullOrWhiteSpace(userInfo?.username))
+            Preferences.Set(UserSessionKeys.LoginUsername, userInfo.username);
         Preferences.Set(UserSessionKeys.RealName, FirstNonEmpty(userInfo?.realname, userInfo?.username, "未命名"));
         Preferences.Set(UserSessionKeys.UserName, FirstNonEmpty(userInfo?.username, userInfo?.realname, userInfo?.workNumber, userInfo?.workNo, userInfo?.employeeNo, userInfo?.empNo, userInfo?.userCode, userInfo?.id, string.Empty));
         Preferences.Set(UserSessionKeys.WorkNumber, FirstNonEmpty(userInfo?.workNumber, userInfo?.workNo, userInfo?.employeeNo, userInfo?.empNo, userInfo?.userCode, userInfo?.id, string.Empty));
@@ -610,6 +666,7 @@ internal static class UserSessionStore
         Preferences.Remove(UserSessionKeys.RoleCode);
         Preferences.Remove(UserSessionKeys.RealName);
         Preferences.Remove(UserSessionKeys.UserName);
+        Preferences.Remove(UserSessionKeys.LoginUsername);
         Preferences.Remove(UserSessionKeys.WorkNumber);
         Preferences.Remove(UserSessionKeys.DepartmentName);
         Preferences.Remove(UserSessionKeys.TeamName);
