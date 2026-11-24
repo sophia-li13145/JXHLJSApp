@@ -301,7 +301,14 @@ public partial class MaterialScanQueryPage : ContentPage, IQueryAttributable
     private static string FormatLowerTolerance(string? value)
     {
         var text = FormatUnit(value, "mm");
-        return text == "--" || text.StartsWith('-') ? text : $"-{text}";
+        if (text == "--" || string.IsNullOrWhiteSpace(text)) return text;
+
+        // 用户已填写符号（正/负）：原样保留，不再强制改写方向
+        if (text.StartsWith('-') || text.StartsWith('－')) return text;
+        if (text.StartsWith('+') || text.StartsWith('＋')) return text;
+
+        // 旧数据无符号：下公差默认补负号
+        return $"-{text}";
     }
 
     private static string FormatUpperLimit(string? value)

@@ -755,13 +755,20 @@ public partial class MachineQualityDetailPage : ContentPage
         return string.IsNullOrWhiteSpace(text) ? string.Empty : $"≤{text}mm";
     }
 
-    private static string FormatSignedTolerance(string? value, char sign)
+    private static string FormatSignedTolerance(string? value, char defaultSign)
     {
         if (string.IsNullOrWhiteSpace(value)) return string.Empty;
 
         var text = value.Trim();
-        text = text.TrimStart('+', '-', '＋', '－').TrimStart();
-        return string.IsNullOrWhiteSpace(text) ? string.Empty : $"{sign}{text}";
+
+        // 用户已填写符号：原样保留（仅全角转半角），不再强制改写方向
+        if (text.StartsWith('-') || text.StartsWith('－'))
+            return $"-{text.TrimStart('-', '－').TrimStart()}";
+        if (text.StartsWith('+') || text.StartsWith('＋'))
+            return $"+{text.TrimStart('+', '＋').TrimStart()}";
+
+        // 旧数据无符号：按默认符号补齐（上公差 +、下公差 -）
+        return $"{defaultSign}{text}";
     }
 
     private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;

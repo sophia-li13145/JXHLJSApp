@@ -784,9 +784,16 @@ public partial class WorkOrderInstructionPage : ContentPage
     private static string FormatNegativeTolerance(string? value)
     {
         var text = ProcessParamValueOrEmpty(value).Trim();
-        return string.IsNullOrWhiteSpace(text) || text.StartsWith("-", StringComparison.Ordinal)
-            ? text
-            : $"-{text}";
+        if (string.IsNullOrWhiteSpace(text)) return text;
+
+        // 用户已填写符号（正/负）：原样保留，仅全角转半角，不再强制改写方向
+        if (text.StartsWith('－') || text.StartsWith('-'))
+            return $"-{text.TrimStart('－', '-').TrimStart()}";
+        if (text.StartsWith('＋') || text.StartsWith('+'))
+            return $"+{text.TrimStart('＋', '+').TrimStart()}";
+
+        // 旧数据无符号：下公差默认补负号
+        return $"-{text}";
     }
 
     private static string FormatLessThanOrEqualMillimeter(string? value)
