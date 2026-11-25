@@ -686,6 +686,16 @@ public partial class AddRawMaterialReceivingPage
                 return;
             }
 
+            var carrierLicense = GetCarrierLicense();
+            if (string.IsNullOrWhiteSpace(carrierLicense))
+            {
+                await DisplayAlert(
+                    "提示",
+                    "请填写车牌号。",
+                    "确定");
+                return;
+            }
+
             if (_ocrItems.Count == 0)
             {
                 await DisplayAlert(
@@ -711,6 +721,7 @@ public partial class AddRawMaterialReceivingPage
 
             var request = new QuickInstockRequestDto
             {
+                carrierLicense = carrierLicense,
                 detailList = _ocrItems
                     .Select((item, index) =>
                     {
@@ -807,11 +818,13 @@ public partial class AddRawMaterialReceivingPage
 
         if (_failedStashRequest is not null && _failedStashItems is not null)
         {
+            // 重试时以当前页面车牌号为准，避免沿用失败那一刻的旧值。
+            _failedStashRequest.carrierLicense = GetCarrierLicense();
             await ExecuteStashInstockV2Async(_failedStashRequest, _failedStashItems, showSuccess: false);
         }
         else
         {
-            await SaveStashInstockV2Async(allowEmpty: true);
+            await SaveStashInstockV2Async(allowEmpty: true, requireCarrierLicense: true);
         }
     }
 
@@ -825,7 +838,8 @@ public partial class AddRawMaterialReceivingPage
 
     private async Task<bool> SaveStashInstockV2Async(
         bool showSuccess = true,
-        bool allowEmpty = false)
+        bool allowEmpty = false,
+        bool requireCarrierLicense = false)
     {
         if (_isStashingInstock || _isSubmittingInstock)
         {
@@ -857,6 +871,19 @@ public partial class AddRawMaterialReceivingPage
         if (!allowEmpty && _ocrItems.Count == 0)
         {
             await DisplayAlert("提示", "请先扫码绑定至少一条待入库物料。", "确定");
+            return false;
+        }
+
+        if (requireCarrierLicense && string.IsNullOrWhiteSpace(GetCarrierLicense()))
+        {
+            await DisplayAlert("提示", "请填写车牌号。", "确定");
+            return false;
+        }
+
+        if (requireCarrierLicense && _ocrItems.Count == 0)
+        {
+            // 暂存接口要求至少一条明细，提前拦截，避免进入失败重试状态。
+            await DisplayAlert("提示", "请先扫码绑定至少一条待入库物料后再暂存。", "确定");
             return false;
         }
 
@@ -960,6 +987,7 @@ public partial class AddRawMaterialReceivingPage
         WarehouseInfoDto warehouse,
         WarehouseAreaDto warehouseArea) => new()
         {
+            carrierLicense = GetCarrierLicense(),
             detailList = _ocrItems
                 .Select((item, index) =>
                 {

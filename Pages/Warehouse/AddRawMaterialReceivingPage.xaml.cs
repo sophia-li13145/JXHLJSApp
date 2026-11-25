@@ -124,6 +124,7 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
             var detail = await _warehouseApi.GetRawMaterialReceivingDetailAsync(instockNo);
             _instockNo = detail.instockNo ?? instockNo;
             InstockNoLabel.Text = string.IsNullOrWhiteSpace(_instockNo) ? "--" : _instockNo;
+            CarrierLicenseEntry.Text = detail.carrierLicense;
             await SelectWarehouseAsync(detail.detailItems.FirstOrDefault());
             ApplyOcrList(detail.ocrList);
             ApplyDetailList(detail.detailItems);
@@ -1194,6 +1195,8 @@ public partial class AddRawMaterialReceivingPage : ContentPage, IQueryAttributab
 
         return _warehouses.FirstOrDefault();
     }
+
+    private string? GetCarrierLicense() => CarrierLicenseEntry.Text?.Trim();
 
     private async void OnSubmitInstockClicked(object sender, EventArgs e)
     {

@@ -5,6 +5,7 @@ namespace JXHLJSApp.Models.Warehouse;
 public sealed class RawMaterialReceivingDetailDto
 {
     public string? arrivalNo { get; set; }
+    public string? carrierLicense { get; set; }
     public string? consignor { get; set; }
     public List<RawMaterialReceivingDetailItemDto>? detailList { get; set; }
     public string? factoryCode { get; set; }

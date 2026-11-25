@@ -2,6 +2,7 @@ namespace JXHLJSApp.Models.Warehouse;
 
 public sealed class QuickInstockRequestDto
 {
+    public string? carrierLicense { get; set; }
     public List<QuickInstockDetailDto> detailList { get; set; } = new();
 }
 

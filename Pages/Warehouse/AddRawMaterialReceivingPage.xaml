@@ -35,7 +35,7 @@
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="14" />
                     </Border.StrokeShape>
-                    <Grid RowDefinitions="Auto,Auto,Auto"
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto"
                           ColumnDefinitions="Auto,*"
                           RowSpacing="14">
                         <Label Text="入库单号" TextColor="#38557C" FontSize="14" />
@@ -74,6 +74,21 @@
                                 BackgroundColor="#F8FAFD"
                                 TextColor="#051B3D"
                                 SelectedIndexChanged="OnWarehouseAreaSelectedIndexChanged" />
+
+                        <Label Grid.Row="3"
+                               Text="车牌号 *"
+                               TextColor="#38557C"
+                               FontSize="14"
+                               VerticalOptions="Center" />
+                        <Entry Grid.Row="3"
+                               Grid.Column="1"
+                               x:Name="CarrierLicenseEntry"
+                               Placeholder="请输入车牌号"
+                               MaxLength="64"
+                               BackgroundColor="#F8FAFD"
+                               TextColor="#051B3D"
+                               HorizontalTextAlignment="Start"
+                               ClearButtonVisibility="WhileEditing" />
                     </Grid>
                 </Border>
 
