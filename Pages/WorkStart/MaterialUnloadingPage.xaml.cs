@@ -10,6 +10,8 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
     private bool _isHandlingScan;
     private readonly IProductionContextService _productionContext;
     private bool _machineConfirmed;
+    private readonly bool _skipMachineScan = UserSessionStore.IsPicklingWorkshop;
+    private bool RequiresMachineScan => !_skipMachineScan && !_machineConfirmed;
     private bool _isBusy;
     private bool _isRedirectingToDetail;
 
@@ -19,10 +21,11 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
         _workOrderApi = workOrderApi;
         _cameraScanner = cameraScanner;
         scanner.Register(this,
-            code => _machineConfirmed ? ScanMaterialAsync(code) : ScanMachineAsync(code),
+            code => RequiresMachineScan ? ScanMachineAsync(code) : ScanMaterialAsync(code),
             () => !_isHandlingScan && !_isBusy && !_isRedirectingToDetail);
         _productionContext = productionContext;
         ReuseConfirmedPicklingMachine();
+        if (_skipMachineScan) ShowMaterialScanStep();
     }
 
     private void ReuseConfirmedPicklingMachine()
@@ -40,7 +43,7 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
         // 兼容旧的手动下料链接：扫码路由收到手动下料参数时直接转到详情路由。
-        // 不带 inputRecordId 的正常扫码下料仍完整保留原有机台、物料扫码流程。
+        // 不带 inputRecordId 的扫码下料按车间规则选择机台或物料扫码步骤。
         if (_isRedirectingToDetail || !TryReadQueryValue(query, "inputRecordId", out var inputRecordId))
         {
             return;
@@ -87,7 +90,7 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
     private async void OnScanPanelClicked(object sender, EventArgs e)
     {
         if (_isBusy) return;
-        if (!_machineConfirmed) await ScanMachineAsync();
+        if (RequiresMachineScan) await ScanMachineAsync();
         else await ScanMaterialAsync();
     }
 
@@ -147,8 +150,10 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
     private void ShowMaterialScanStep()
     {
         ScanIconLabel.Text = "📦";
-        ScanTitleLabel.Text = "2. 摄像头扫描下料标签码";
-        ScanHintLabel.Text = $"已验证机台 {_productionContext.Current?.MachineCode}";
+        ScanTitleLabel.Text = _skipMachineScan ? "摄像头扫描下料标签码" : "2. 摄像头扫描下料标签码";
+        ScanHintLabel.Text = _skipMachineScan
+            ? "酸洗车间无需扫描机台，请扫描下料标签码"
+            : $"已验证机台 {_productionContext.Current?.MachineCode}";
     }
 
     private static bool IsPicklingProcess(string? operationName) =>
@@ -157,6 +162,11 @@ public partial class MaterialUnloadingPage : ContentPage, IQueryAttributable
     private async Task ScanMaterialAsync(string? scanCode = null)
     {
         if (_isHandlingScan || _isBusy || _isRedirectingToDetail) return;
+        if (string.IsNullOrWhiteSpace(_productionContext.Current?.WorkOrderNo))
+        {
+            await DisplayAlert("提示", "当前生产工单为空，请返回生产执行页面。", "确定");
+            return;
+        }
 
         _isHandlingScan = true;
         try

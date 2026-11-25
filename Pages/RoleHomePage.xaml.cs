@@ -28,6 +28,7 @@ public partial class RoleHomePage : ContentPage
     private bool _isRefreshingUserInfo;
     private bool _isPageVisible;
     private Entry? _machineCodeEntry;
+    private bool _machineCodeHasChanged;
     private View? _machineBindCard;
     private string? _renderedRoleCode;
     private string? _selectedRoleCode;
@@ -122,6 +123,7 @@ public partial class RoleHomePage : ContentPage
                 // 用户信息刷新接口可能不返回 roleList，不能在这里覆盖已保存的模块权限，
                 // 否则从角色首页返回 PDA 首页时会因角色列表被清空而显示空白。
                 UserSessionStore.SaveProfile(userInfo);
+                ApplyDefaultMachineCode(userInfo.picklingDevCode);
             }
         }
         catch
@@ -132,6 +134,17 @@ public partial class RoleHomePage : ContentPage
         {
             _isRefreshingUserInfo = false;
         }
+    }
+
+    private void ApplyDefaultMachineCode(string? machineCode)
+    {
+        if (!_isPageVisible || !_canBindMachine || _machineCodeEntry is null
+            || _machineCodeHasChanged || _isBindingMachine || _isOpeningCamera
+            || !string.IsNullOrWhiteSpace(_machineCodeEntry.Text)
+            || string.IsNullOrWhiteSpace(machineCode)) return;
+
+        // 仅提供默认输入；绑定和页面跳转仍由确认或扫码操作触发。
+        _machineCodeEntry.Text = machineCode.Trim();
     }
 
     private void BuildRoleHome()
@@ -496,6 +509,8 @@ public partial class RoleHomePage : ContentPage
             ReturnType = ReturnType.Done
         };
         entry.HandlerChanged += (_, _) => _rightKeyScanner.RefreshInput(this);
+        // 包括输入后主动清空的情况，刷新资料或返回首页时不再覆盖。
+        entry.TextChanged += (_, _) => _machineCodeHasChanged = true;
 
         var scanButton = new Button
         {
@@ -633,6 +648,7 @@ internal static class UserSessionKeys
     public const string LoginUsername = "LoginUsername";
     public const string WorkNumber = "WorkNumber";
     public const string DepartmentName = "DepartmentName";
+    public const string WorkshopName = "WorkshopName";
     public const string TeamName = "TeamName";
     public const string ShiftName = "ShiftName";
     public const string RoleCodes = "RoleCodes";
@@ -640,6 +656,10 @@ internal static class UserSessionKeys
 
 internal static class UserSessionStore
 {
+    public static bool IsPicklingWorkshop => string.Equals(
+        Preferences.Get(UserSessionKeys.WorkshopName, string.Empty).Trim(),
+        "酸洗车间", StringComparison.Ordinal);
+
     public static void Save(UserInfoDto? userInfo)
     {
         var roleCodes = UserRoleAccess.GetRoleCodes(userInfo).ToArray();
@@ -657,6 +677,7 @@ internal static class UserSessionStore
         Preferences.Set(UserSessionKeys.UserName, FirstNonEmpty(userInfo?.username, userInfo?.realname, userInfo?.workNumber, userInfo?.workNo, userInfo?.employeeNo, userInfo?.empNo, userInfo?.userCode, userInfo?.id, string.Empty));
         Preferences.Set(UserSessionKeys.WorkNumber, FirstNonEmpty(userInfo?.workNumber, userInfo?.workNo, userInfo?.employeeNo, userInfo?.empNo, userInfo?.userCode, userInfo?.id, string.Empty));
         Preferences.Set(UserSessionKeys.DepartmentName, FirstNonEmpty(userInfo?.workshopName, userInfo?.factoryName, string.Empty));
+        Preferences.Set(UserSessionKeys.WorkshopName, userInfo?.workshopName ?? string.Empty);
         Preferences.Set(UserSessionKeys.TeamName, FirstNonEmpty(userInfo?.teamName, userInfo?.roleName, string.Empty));
         Preferences.Set(UserSessionKeys.ShiftName, FirstNonEmpty(userInfo?.shiftName, userInfo?.loginType, string.Empty));
     }
@@ -669,6 +690,7 @@ internal static class UserSessionStore
         Preferences.Remove(UserSessionKeys.LoginUsername);
         Preferences.Remove(UserSessionKeys.WorkNumber);
         Preferences.Remove(UserSessionKeys.DepartmentName);
+        Preferences.Remove(UserSessionKeys.WorkshopName);
         Preferences.Remove(UserSessionKeys.TeamName);
         Preferences.Remove(UserSessionKeys.ShiftName);
         Preferences.Remove(UserSessionKeys.RoleCodes);

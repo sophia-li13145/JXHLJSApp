@@ -13,6 +13,8 @@ public partial class MaterialLoadingPage : ContentPage
     private bool _isHandlingScan;
     private readonly IProductionContextService _productionContext;
     private bool _machineConfirmed;
+    private readonly bool _skipMachineScan = UserSessionStore.IsPicklingWorkshop;
+    private bool RequiresMachineScan => !_skipMachineScan && !_machineConfirmed;
     private bool _isBusy;
     private string? _lastMaterialQrCode;
     private MaterialInputConfirmDto? _confirmInput;
@@ -24,10 +26,11 @@ public partial class MaterialLoadingPage : ContentPage
         _workOrderApi = workOrderApi;
         _cameraScanner = cameraScanner;
         scanner.Register(this,
-            code => _machineConfirmed ? ScanMaterialAsync(code) : ScanMachineAsync(code),
+            code => RequiresMachineScan ? ScanMachineAsync(code) : ScanMaterialAsync(code),
             () => !_isHandlingScan && !_isBusy && _confirmInput is null);
         _productionContext = productionContext;
         ReuseConfirmedPicklingMachine();
+        if (_skipMachineScan) ShowMaterialScanStep();
     }
 
     private void ReuseConfirmedPicklingMachine()
@@ -51,7 +54,7 @@ public partial class MaterialLoadingPage : ContentPage
     {
         if (_isBusy) return;
 
-        if (!_machineConfirmed)
+        if (RequiresMachineScan)
         {
             await ScanMachineAsync();
             return;
@@ -145,6 +148,11 @@ public partial class MaterialLoadingPage : ContentPage
     private async Task ScanMaterialAsync(string? scanCode = null)
     {
         if (_isHandlingScan || _isBusy || _confirmInput is not null) return;
+        if (string.IsNullOrWhiteSpace(_productionContext.Current?.WorkOrderNo))
+        {
+            await DisplayAlert("提示", "当前生产工单为空，请返回生产执行页面。", "确定");
+            return;
+        }
 
         _isHandlingScan = true;
         try
@@ -189,8 +197,10 @@ public partial class MaterialLoadingPage : ContentPage
     private void ShowMaterialScanStep()
     {
         ScanIconLabel.Text = "📦";
-        ScanTitleLabel.Text = "2. 摄像头扫描上料物料码";
-        ScanHintLabel.Text = $"已验证机台 {_productionContext.Current?.MachineCode}";
+        ScanTitleLabel.Text = _skipMachineScan ? "摄像头扫描上料物料码" : "2. 摄像头扫描上料物料码";
+        ScanHintLabel.Text = _skipMachineScan
+            ? "酸洗车间无需扫描机台，请扫描上料物料码"
+            : $"已验证机台 {_productionContext.Current?.MachineCode}";
     }
 
     private void ShowResultStep()

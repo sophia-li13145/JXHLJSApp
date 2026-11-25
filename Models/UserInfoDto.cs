@@ -18,6 +18,7 @@ namespace JXHLJSApp.Models;
         public string? userCode { get; set; }
         public string? factoryName { get; set; }
         public string? workshopName { get; set; }
+        public string? picklingDevCode { get; set; }
         public string? teamName { get; set; }
         public string? shiftName { get; set; }
         public string? loginType { get; set; }
