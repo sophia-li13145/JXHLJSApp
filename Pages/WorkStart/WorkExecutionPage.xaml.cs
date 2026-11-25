@@ -4,12 +4,13 @@ using JXHLJSApp.Services.WorkOrders;
 
 namespace JXHLJSApp.Pages.WorkStart;
 
-public partial class WorkExecutionPage : ContentPage
+public partial class WorkExecutionPage : ContentPage, IQueryAttributable
 {
     private readonly IWorkOrderApi _workOrderApi;
     private bool _isOpeningMachineScanner;
     private readonly IProductionContextService _productionContext;
     private List<WorkOrderDetailDto> _tasks = new();
+    private bool _isLoadingTaskPool;
     public WorkExecutionPage(
         IWorkOrderApi workOrderApi,
         IProductionContextService productionContext)
@@ -17,6 +18,18 @@ public partial class WorkExecutionPage : ContentPage
         InitializeComponent();
         _workOrderApi = workOrderApi;
         _productionContext = productionContext;
+    }
+
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (!query.TryGetValue("pauseUpdated", out var value) ||
+            !string.Equals(value?.ToString(), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        // 从“暂停作业”返回时立即重新拉取任务池与暂停记录，避免数据滞后。
+        _ = MainThread.InvokeOnMainThreadAsync(LoadTaskPoolAsync);
     }
 
     protected override async void OnAppearing()
@@ -39,6 +52,13 @@ public partial class WorkExecutionPage : ContentPage
 
     private async Task LoadTaskPoolAsync()
     {
+        // 返回导航会同时触发 ApplyQueryAttributes 与 OnAppearing，这里做并发保护，只发一次请求。
+        if (_isLoadingTaskPool)
+        {
+            return;
+        }
+
+        _isLoadingTaskPool = true;
         try
         {
             var current = _productionContext.Current;
@@ -62,6 +82,10 @@ public partial class WorkExecutionPage : ContentPage
             {
                 task.isPicklingContext = isPickling;
             }
+
+            // 停工产出长度记录挂在任务卡“生产重量”下方，查询失败不影响任务池展示。
+            await ApplyStopLengthRecordsAsync(_tasks, workOrderNo!);
+
             TaskPoolList.ItemsSource = _tasks;
         }
         catch (Exception ex)
@@ -70,30 +94,40 @@ public partial class WorkExecutionPage : ContentPage
         }
         finally
         {
+            _isLoadingTaskPool = false;
             RefreshContainer.IsRefreshing = false;
         }
     }
 
-    private void UpdateProductionContextStatus(string status)
+    private async Task ApplyStopLengthRecordsAsync(List<WorkOrderDetailDto> tasks, string workOrderNo)
     {
-        var current = _productionContext.Current;
-        if (current is null)
+        if (tasks.Count == 0)
         {
             return;
         }
 
-        _productionContext.Set(new ProductionContext
+        try
         {
-            WorkOrderId = current.WorkOrderId,
-            WorkOrderNo = current.WorkOrderNo,
-            OperationName = current.OperationName,
-            ExecutionId = current.ExecutionId,
-            MachineCode = current.MachineCode,
-            IsPicklingMachineConfirmed = current.IsPicklingMachineConfirmed,
-            Status = status,
-            StartedAt = current.StartedAt,
-            SessionId = current.SessionId
-        });
+            var records = await _workOrderApi.GetWorkOrderStopLengthListAsync(workOrderNo);
+            if (records.Count == 0)
+            {
+                return;
+            }
+
+            var matched = tasks
+                .Where(task => string.Equals(task.workOrderNo?.Trim(), workOrderNo.Trim(), StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            var targets = matched.Count > 0 ? matched : tasks;
+
+            foreach (var task in targets)
+            {
+                task.stopLengthRecords = records;
+            }
+        }
+        catch
+        {
+            // 停工记录属于附属信息，查询异常时不打断任务池展示。
+        }
     }
 
     private async void OnInstructionTapped(object sender, TappedEventArgs e)
@@ -149,33 +183,8 @@ public partial class WorkExecutionPage : ContentPage
             return;
         }
 
-        var confirm = await DisplayAlert("确认暂停", $"确认暂停工单 {workOrderNo} 吗？", "确认", "取消");
-        if (!confirm)
-        {
-            return;
-        }
-
-        try
-        {
-            RefreshContainer.IsRefreshing = true;
-            var success = await _workOrderApi.StopWorkOrderAsync(workOrderNo);
-            if (!success)
-            {
-                await ErrorDialogService.ShowAsync(this, "暂停失败", "接口未返回成功，请稍后重试。", "确定");
-                return;
-            }
-
-            UpdateProductionContextStatus("Paused");
-            await LoadTaskPoolAsync();
-        }
-        catch (Exception ex)
-        {
-            await ErrorDialogService.ShowAsync(this, "暂停失败", ex.Message, "确定");
-        }
-        finally
-        {
-            RefreshContainer.IsRefreshing = false;
-        }
+        // 停工接口需要产出长度数量、长度单位与备注，先进入暂停作业页面采集参数。
+        await Shell.Current.GoToAsync(AppShell.RouteWorkPause);
     }
 
     private async void OnWorkCompletionTapped(object sender, TappedEventArgs e)

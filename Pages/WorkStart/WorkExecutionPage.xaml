@@ -116,6 +116,26 @@
                                                     <Label Text="生产重量" TextColor="#5C6F8F" />
                                                     <Label Grid.Column="1" Text="{Binding completedWeightDisplay}" TextColor="{Binding statusTextColor}" FontAttributes="Bold" />
                                                 </Grid>
+                                                <VerticalStackLayout Spacing="6" IsVisible="{Binding hasStopLengthRecords}">
+                                                    <Label Text="暂停记录" TextColor="#C47A00" FontSize="14" FontAttributes="Bold" />
+                                                    <VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding stopLengthRecords}">
+                                                        <BindableLayout.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border BackgroundColor="#FFF8E8" Stroke="#F5C77E" StrokeThickness="1" Padding="12,10">
+                                                                    <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                                                                    <Grid ColumnDefinitions="76,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="4" ColumnSpacing="8">
+                                                                        <Label Text="操作人" TextColor="#8A6B33" FontSize="14" />
+                                                                        <Label Grid.Column="1" Text="{Binding operatorDisplay}" TextColor="#001431" FontSize="15" FontAttributes="Bold" />
+                                                                        <Label Grid.Row="1" Text="暂停长度" TextColor="#8A6B33" FontSize="14" />
+                                                                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding outputLengthDisplay}" TextColor="#001431" FontSize="15" FontAttributes="Bold" />
+                                                                        <Label Grid.Row="2" Text="操作时间" TextColor="#8A6B33" FontSize="14" />
+                                                                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding stopTimeDisplay}" TextColor="#001431" FontSize="15" FontAttributes="Bold" />
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </BindableLayout.ItemTemplate>
+                                                    </VerticalStackLayout>
+                                                </VerticalStackLayout>
                                                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding isPicklingTask}">
                                                     <Label Text="生产件数" TextColor="#5C6F8F" />
                                                     <Label Grid.Column="1" Text="{Binding hangCountDisplay}" TextColor="{Binding statusTextColor}" FontAttributes="Bold" />

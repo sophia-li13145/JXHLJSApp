@@ -56,6 +56,7 @@ namespace JXHLJSApp
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.PicklingInputRecordListPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.MaterialOperationSuccessPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.WorkCompletionPage>();
+            builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.WorkPausePage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.AbnormalReportPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.ReworkReportPage>();
             builder.Services.AddTransient<JXHLJSApp.Pages.WorkStart.AbnormalReportSuccessPage>();

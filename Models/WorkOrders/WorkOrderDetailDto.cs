@@ -74,6 +74,11 @@ public sealed class WorkOrderDetailDto
     /// <summary>由页面按当前生产上下文写入的酸洗标记，非接口返回列。</summary>
     public bool isPicklingContext { get; set; }
 
+    /// <summary>由页面写入的当前工单停工产出长度记录，非接口返回列。</summary>
+    public List<WorkOrderStopLengthDto> stopLengthRecords { get; set; } = new();
+
+    public bool hasStopLengthRecords => stopLengthRecords.Count > 0;
+
     public bool isPicklingTask => isPicklingContext
         || operationName?.Trim().StartsWith("酸洗", StringComparison.OrdinalIgnoreCase) == true;
     public bool showsProcessMaterial => !isPicklingTask;

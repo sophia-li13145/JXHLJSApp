@@ -33,7 +33,8 @@ public interface IWorkOrderApi
     Task<bool> AddAbnormalRecordAsync(WorkOrderAbnormalAddRequestDto request, CancellationToken ct = default);
     Task<WorkOrderCompletionStatusDto?> GetWorkOrderCompletionStatusAsync(string workOrderNo, CancellationToken ct = default);
     Task<WorkOrderOperationResult> ConfirmCompletionAsync(string workOrderNo, CancellationToken ct = default);
-    Task<bool> StopWorkOrderAsync(string workOrderNo, CancellationToken ct = default);
+    Task<WorkOrderOperationResult> StopWorkOrderAsync(WorkOrderStopRequestDto request, CancellationToken ct = default);
+    Task<List<WorkOrderStopLengthDto>> GetWorkOrderStopLengthListAsync(string workOrderNo, CancellationToken ct = default);
     Task<ProductionStatisticsDto?> GetProductionStatisticsAsync(string date, CancellationToken ct = default);
 }
 
@@ -65,6 +66,7 @@ public sealed class WorkOrderApi : IWorkOrderApi
     private readonly string _workOrderCompletionStatusEndpoint;
     private readonly string _confirmCompletionEndpoint;
     private readonly string _orderStopEndpoint;
+    private readonly string _stopLengthListEndpoint;
     private readonly string _productionStatisticsEndpoint;
     private IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? _workOrderDictNames;
     private IReadOnlyDictionary<string, string>? _deviceTypeNames;
@@ -120,6 +122,8 @@ public sealed class WorkOrderApi : IWorkOrderApi
             configLoader.GetApiPath("workOrder.confirmCompletion", "/pda/pmsWorkOrder/confirmCompletion"), servicePath);
         _orderStopEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.orderStop", "/pda/pmsWorkOrder/orderStop"), servicePath);
+        _stopLengthListEndpoint = ServiceUrlHelper.NormalizeRelative(
+            configLoader.GetApiPath("workOrder.stopLengthList", "/pda/pmsWorkOrder/getWorkOrderStopLengthList"), servicePath);
         _productionStatisticsEndpoint = ServiceUrlHelper.NormalizeRelative(
             configLoader.GetApiPath("workOrder.productionStatistics", "/pda/pmsWorkOrder/getProductionStatistics"), servicePath);
     }
@@ -470,15 +474,42 @@ public sealed class WorkOrderApi : IWorkOrderApi
 
 
 
-    public async Task<bool> StopWorkOrderAsync(string workOrderNo, CancellationToken ct = default)
+    public async Task<WorkOrderOperationResult> StopWorkOrderAsync(WorkOrderStopRequestDto request, CancellationToken ct = default)
     {
+        var payload = new WorkOrderStopRequestDto
+        {
+            workOrderNo = request.workOrderNo?.Trim(),
+            outputLength = request.outputLength,
+            unit = string.IsNullOrWhiteSpace(request.unit) ? null : request.unit.Trim(),
+            memo = string.IsNullOrWhiteSpace(request.memo) ? null : request.memo.Trim()
+        };
+
         var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, _orderStopEndpoint);
-        using var resp = await _http.PostAsJsonAsync(url, new { workOrderNo }, JsonOptions, ct).ConfigureAwait(false);
+        using var resp = await _http.PostAsJsonAsync(url, payload, JsonOptions, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         var data = await JsonSerializer.DeserializeAsync<ApiResp<JsonElement?>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        if (data?.success == false)
+        {
+            return new WorkOrderOperationResult(false, data.message);
+        }
+
         EnsureApiSuccess(data);
-        return ReadFlexibleBooleanResult(data);
+        return new WorkOrderOperationResult(ReadFlexibleBooleanResult(data), data?.message);
+    }
+
+    public async Task<List<WorkOrderStopLengthDto>> GetWorkOrderStopLengthListAsync(string workOrderNo, CancellationToken ct = default)
+    {
+        var url = ServiceUrlHelper.BuildFullUrl(_http.BaseAddress, BuildUrlWithQuery(_stopLengthListEndpoint, new Dictionary<string, string?>
+        {
+            [nameof(workOrderNo)] = workOrderNo
+        }));
+        using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var data = await JsonSerializer.DeserializeAsync<ApiResp<List<WorkOrderStopLengthDto>>>(stream, JsonOptions, ct).ConfigureAwait(false);
+        EnsureApiSuccess(data);
+        return data?.result ?? new List<WorkOrderStopLengthDto>();
     }
 
     private static bool ReadFlexibleBooleanResult(ApiResp<JsonElement?>? response)
@@ -744,6 +775,14 @@ public sealed class MaterialInputConfirmDto
     public string? qrCode { get; set; }
     public string? spec { get; set; }
     public string? workOrderNo { get; set; }
+}
+
+public sealed class WorkOrderStopRequestDto
+{
+    public string? workOrderNo { get; set; }
+    public decimal? outputLength { get; set; }
+    public string? unit { get; set; }
+    public string? memo { get; set; }
 }
 
 public sealed class MaterialOutputConfirmDto
